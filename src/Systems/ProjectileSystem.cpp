@@ -17,14 +17,14 @@ namespace GLVM::ecs
 {
     CProjectileSystem::CProjectileSystem(core::CStack& inputStack) : inputStack (inputStack)
     {}
-    
+
     void CProjectileSystem::Update()
     {
 		namespace cm = GLVM::ecs::components;
-		
+
         ComponentManager* pComponent_Manager = GLVM::ecs::ComponentManager::GetInstance();
         EntityManager* pEntity_Manager       = GLVM::ecs::EntityManager::GetInstance();
-    
+
         core::vector<unsigned int>* pEntity_Container_refMove =
 			pComponent_Manager->GetEntityContainer<cm::controller>();
         unsigned int u_iVector_Move_Size = pEntity_Container_refMove->GetSize();
@@ -35,10 +35,10 @@ namespace GLVM::ecs
 		unsigned int iEntity_refView = 0;
 		if ( pEntity_Container_refView->GetSize() > 0 )
 			iEntity_refView = (*pEntity_Container_refView)[0];
-		
+
         cm::beholder* view_Component = pComponent_Manager->GetComponent<cm::beholder>(iEntity_refView);
-        
-        float cameraSpeed = 5.5f * deltaFrameTime;            
+
+        float cameraSpeed = 5.5f * deltaFrameTime;
 
         if(projectileCooldown > 0)
             projectileCooldown -= cameraSpeed;
@@ -69,7 +69,7 @@ namespace GLVM::ecs
 																						   cm::mesh,
 																						   cm::collider,
 																						   cm::pointLight>();
-		
+
         for(unsigned int x = 0; x < linkedEntities.GetSize(); ++x) {
             unsigned int uiEntity_refProjectile = linkedEntities[x];
             cm::transform* rTransformProjectile = pComponent_Manager->GetComponent<cm::transform>(uiEntity_refProjectile);
@@ -79,7 +79,7 @@ namespace GLVM::ecs
 		}
 
         for(unsigned int i = 0; i < linkedEntities.GetSize(); ++i) {
-			
+
             unsigned int uiEntity_refProjectile = linkedEntities[i];
             if(pComponent_Manager->GetComponent<cm::collider>(uiEntity_refProjectile)->bWall_Collision_ ||
                pComponent_Manager->GetComponent<cm::collider>(uiEntity_refProjectile)->bGround_Collision_) {
@@ -105,7 +105,7 @@ namespace GLVM::ecs
 															  cm::projectile, cm::pointLight>(uiEntity_Projectile);
 
         core::Sound::CSoundSample* pSound_Sample = new core::Sound::CSoundSample();
-        pSound_Sample->kPath_to_File_ = "../laser2.wav";
+        pSound_Sample->kPath_to_File_ = "sounds/pistol.wav";
         pSound_Sample->uiDuration_ = 5;
         pSound_Sample->uiRate_ = 22050;
         soundEngine->GetSoundContainer().Push(pSound_Sample);
@@ -122,7 +122,7 @@ namespace GLVM::ecs
 		.shininess = 128.0f * 0.078125f };
         cm::transform* rTransformProjectile = componentManager->GetComponent<cm::transform>(uiEntity_Projectile);
         rTransformProjectile->fScale = 0.1f;
-		
+
 		cm::transform* transform = componentManager->GetComponent<cm::transform>(entityRefMove);
 		if ( transform != nullptr )
 			rTransformProjectile->tPosition = transform->tPosition;
@@ -131,7 +131,7 @@ namespace GLVM::ecs
 		rTransformProjectile->yaw        = fYaw;
 		rTransformProjectile->pitch      = fPitch;
         rTransformProjectile->tPosition += rTransformProjectile->tForward * 2.0;
-		
+
 		*(componentManager->GetComponent<cm::pointLight>(uiEntity_Projectile)) = { .position = rTransformProjectile->tPosition,
 			.ambient = { 0.1f, 0.1f, 0.1f }, .diffuse = { 0.5f, 0.5f, 0.5f }, .specular = { 1.1f, 1.2f, 1.3f },
 			.constant = 1.4f, .linear = 0.1f, .quadratic = 0.128f };
@@ -148,7 +148,7 @@ namespace GLVM::ecs
 
         g_eEvent.mousePointerPosition.pitch = fPitch;
         g_eEvent.mousePointerPosition.yaw = fYaw;
-        
+
         if(fPitch > 89.0f)
             fPitch = 89.0f;
         if(fPitch < -89.0f)
@@ -159,7 +159,7 @@ namespace GLVM::ecs
 		float cosPitch = std::cos(Radians(fPitch / 2));
 		float sinYaw = std::sin(Radians(-fYaw / 2));
 		float cosYaw = std::cos(Radians(-fYaw / 2));
-		
+
 		Quaternion pitchQuat;
 		Quaternion yawQuat;
 		pitchQuat.w = cosPitch;
@@ -181,7 +181,7 @@ namespace GLVM::ecs
 		forward[0] = result.x;
 		forward[1] = result.y;
 		forward[2] = result.z;
-		
+
         // front[0] = std::cos(Radians(fYaw)) * std::cos(Radians(fPitch));
         // front[1] = std::sin(Radians(fPitch));
         // front[2] = std::sin(Radians(fYaw)) * std::cos(Radians(fPitch));
