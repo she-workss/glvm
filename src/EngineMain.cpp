@@ -49,11 +49,11 @@ int main() {
 
     /// Loading method with stb_image
     // [[maybe_unused]] ecs::TextureHandle chelikTextureHandle =
-    // GLVM->LoadTextureFromFile("textures/data/glvm.png");
+    // GLVM->LoadTextureFromFile("assets/textures/data/glvm.png");
     // [[maybe_unused]] ecs::TextureHandle witchTexturehandle =
-    // GLVM->LoadTextureFromFile("textures/data/sample1.png");
+    // GLVM->LoadTextureFromFile("assets/textures/data/sample1.png");
     // [[maybe_unused]] ecs::TextureHandle grayTextureHandle =
-    // GLVM->LoadTextureFromFile("textures/data/sample2.png");
+    // GLVM->LoadTextureFromFile("assets/textures/data/sample2.png");
 
     Entity uiPlayer = EntityManager->CreateEntity();
     ComponentManager->CreateComponent<cm::mesh, cm::controller, cm::collider,

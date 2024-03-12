@@ -92,7 +92,7 @@ endif()
 
 # Include directories
 include_directories(include)
-include_directories(textures)
+include_directories(assets/textures)
 
 # Find packages
 find_package(OpenGL REQUIRED)
@@ -127,9 +127,9 @@ add_executable(glvm
     src/WinApi/SoundEngineWaveform.cpp
     src/WinApi/WindowWinOpengl.cpp
     src/WinApi/WindowWinVulkan.cpp
-    textures/glvm.cpp
-    textures/sample1.cpp
-    textures/sample2.cpp
+    assets/textures/glvm.cpp
+    assets/textures/sample1.cpp
+    assets/textures/sample2.cpp
 )
 
 # Link libraries
