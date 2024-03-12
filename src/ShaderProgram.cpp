@@ -41,8 +41,8 @@ void Shader::SetVec4(const std::string &name, int x, int y, int z,
                      int w) const {
     pGLUniform4i(pGLGet_Uniform_Location(iID, name.c_str()), x, y, z, w);
 }
-void Shader::SetUniformID(const char *_uniformIdentificator, int _id) {
-    pGLUniform1i(pGLGet_Uniform_Location(iID, _uniformIdentificator), _id);
+void Shader::SetUniformID(const char *_uniformIdentifier, int _id) {
+    pGLUniform1i(pGLGet_Uniform_Location(iID, _uniformIdentifier), _id);
 }
 
 void Shader::SetMat4(const std::string &name, mat4 &mat) const {
@@ -62,7 +62,7 @@ void Shader::SetMat4(const std::string &name, unsigned int matrixNumber,
 // GL_FALSE, &mat[0][0]);
 // }
 
-///< Functions for exmination of shaders errors
+///< Functions for examination of shaders errors
 void Shader::CheckCompileErrors(unsigned int shader, std::string type) {
     int iSuccess;
     char cInfo_Log[ARRAY_INFO_LOG_RANGE];

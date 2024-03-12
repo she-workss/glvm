@@ -559,7 +559,7 @@ private:
     /// Main pipeline depth.
     VkImageView depthImageView;
 
-    /// Depth varialbes for shadow map.
+    /// Depth variables for shadow map.
     unsigned int directionalLightNumber = 0;
     std::vector<VK_Image> directionalLightShadowMapImages;
     std::vector<VkFramebuffer> directionalLightShadowMapFrameBuffers;
@@ -613,7 +613,7 @@ private:
     std::vector<VkBuffer> vertexBufferContainer;
     std::vector<VkDeviceMemory> vertexBufferMemoryContainer;
     std::vector<VkBuffer> indexBufferContainer;
-    std::vector<VkDeviceMemory> indexBufferMemoryContaner;
+    std::vector<VkDeviceMemory> indexBufferMemoryContainer;
     uint32_t wavefrontObjCounter = 0;
 
     std::vector<VkBuffer> modelMatrixUniformBuffers;
@@ -649,7 +649,7 @@ private:
     std::vector<VkDescriptorSet> spotLightUboDescriptorSets;
     std::vector<VkDescriptorSet> diffuseSamplerDescriptorSets;
     std::vector<VkDescriptorSet> specularSamplerDescriptorSets;
-    std::vector<VkDescriptorSet> directionalLightSamperDescriptorSets;
+    std::vector<VkDescriptorSet> directionalLightSamplerDescriptorSets;
     std::vector<VkDescriptorSet> pointLightSamplerDescriptorSets;
     std::vector<VkDescriptorSet> spotLightSamplerDescriptorSets;
 
@@ -755,7 +755,7 @@ private:
     void createSpotLightShadowMapDescriptorSets();
     void createPointLightShadowMapDescriptorSets();
     void createMainRenderDescriptorSets();
-    void updateSamplersDescriptroSets(uint32_t diffuse_id,
+    void updateSamplersDescriptorSets(uint32_t diffuse_id,
                                       uint32_t specular_id);
     void updateDirectionalLightShadowMapDescriptorSets();
     void updateSpotLightShadowMapDescriptorSets();
@@ -812,7 +812,7 @@ private:
     void directionalLightShadowMapDrawFrame();
     void spotLightShadowMapDrawFrame();
     void pointLightShadowMapDrawFrame();
-    void directionalLightRecordCoomandBuffer(VkCommandBuffer &commandBuffer,
+    void directionalLightRecordCommandBuffer(VkCommandBuffer &commandBuffer,
                                              uint32_t imageIndex);
     void spotLightRecordCommandBuffer(VkCommandBuffer &commandBuffer,
                                       uint32_t imageIndex);

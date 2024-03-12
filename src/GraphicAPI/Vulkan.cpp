@@ -191,9 +191,9 @@ void CVulkanRenderer::loadWavefrontObj() {
                            vertexBufferMemoryContainer[m], aVertices_[m]);
 
         indexBufferContainer.emplace_back();
-        indexBufferMemoryContaner.emplace_back();
-        createIndexBuffer(indexBufferContainer[m], indexBufferMemoryContaner[m],
-                          aIndices_[m]);
+        indexBufferMemoryContainer.emplace_back();
+        createIndexBuffer(indexBufferContainer[m],
+                          indexBufferMemoryContainer[m], aIndices_[m]);
         ++wavefrontObjCounter;
     }
 }
@@ -489,7 +489,7 @@ void CVulkanRenderer::run() {
             DescriptorsTypes::SPECULAR_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT,
             DS_0_count, DS_0_binding);
 
-    core::vector<u32> DS_0_3_bindigs;
+    core::vector<u32> DS_0_3_bindings;
     core::vector<u32> DS_0_3_count;
 
     DS_0_3_count.Push(1);
@@ -497,15 +497,15 @@ void CVulkanRenderer::run() {
     DS_0_3_count.Push(32);
     DS_0_3_count.Push(8);
 
-    DS_0_3_bindigs.Push(0);
-    DS_0_3_bindigs.Push(1);
-    DS_0_3_bindigs.Push(5);
-    DS_0_3_bindigs.Push(37);
+    DS_0_3_bindings.Push(0);
+    DS_0_3_bindings.Push(1);
+    DS_0_3_bindings.Push(5);
+    DS_0_3_bindings.Push(37);
 
     mainRenderScenePipeline.addDescriptor(
             VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             DescriptorsTypes::LIGHT_SAMPLERS, VK_SHADER_STAGE_FRAGMENT_BIT,
-            DS_0_3_count, DS_0_3_bindigs);
+            DS_0_3_count, DS_0_3_bindings);
 
     mainRenderScenePipeline.vertShader = vertShaderMain_;
     mainRenderScenePipeline.fragShader = fragShaderMain_;
@@ -636,9 +636,9 @@ void CVulkanRenderer::initializeGLTF() {
                            aVertices_[nextIndexGLTF]);
 
         indexBufferContainer.emplace_back();
-        indexBufferMemoryContaner.emplace_back();
+        indexBufferMemoryContainer.emplace_back();
         createIndexBuffer(indexBufferContainer[nextIndexGLTF],
-                          indexBufferMemoryContaner[nextIndexGLTF],
+                          indexBufferMemoryContainer[nextIndexGLTF],
                           aIndices_[nextIndexGLTF]);
     }
 }
@@ -793,7 +793,7 @@ void CVulkanRenderer::cleanup() {
 
     for (size_t i = 0; i < vertexBufferContainer.size(); ++i) {
         vkDestroyBuffer(device, indexBufferContainer[i], nullptr);
-        vkFreeMemory(device, indexBufferMemoryContaner[i], nullptr);
+        vkFreeMemory(device, indexBufferMemoryContainer[i], nullptr);
 
         vkDestroyBuffer(device, vertexBufferContainer[i], nullptr);
         vkFreeMemory(device, vertexBufferMemoryContainer[i], nullptr);
@@ -1339,9 +1339,9 @@ void CVulkanRenderer::createPointLightShadowMapRenderPass() {
 void CVulkanRenderer::createDescriptorSetLayout(
         core::vector<Descriptor> &descriptors) {
     for (u32 i = 0; i < descriptors.GetSize(); ++i) {
-        u32 bindigs_size = descriptors[i].binding.GetSize();
+        u32 bindings_size = descriptors[i].binding.GetSize();
         std::vector<VkDescriptorSetLayoutBinding> bindings;
-        for (u32 j = 0; j < bindigs_size; ++j) {
+        for (u32 j = 0; j < bindings_size; ++j) {
             VkDescriptorSetLayoutBinding modelMatrixUboLayout {};
             modelMatrixUboLayout.binding = descriptors[i].binding[j];
             modelMatrixUboLayout.descriptorCount =
@@ -1886,7 +1886,7 @@ void CVulkanRenderer::createTextureSampler() {
         samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
         samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
-        textureImages[i].sampler = {}; /// TODO: Is it realy need here?
+        textureImages[i].sampler = {}; /// TODO: Is it really need here?
         if (vkCreateSampler(device, &samplerInfo, nullptr,
                             &textureImages[i].sampler) != VK_SUCCESS) {
             throw std::runtime_error("failed to create texture sampler!");
@@ -1914,7 +1914,7 @@ void CVulkanRenderer::createShadowMapTextureSampler() {
         samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
         samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
-        pointLightImages[i].sampler = {}; /// TODO: Is it realy need here?
+        pointLightImages[i].sampler = {}; /// TODO: Is it really need here?
         if (vkCreateSampler(device, &samplerInfo, nullptr,
                             &pointLightImages[i].sampler) != VK_SUCCESS) {
             throw std::runtime_error("failed to create texture sampler!");
@@ -2684,11 +2684,11 @@ void CVulkanRenderer::createMainRenderDescriptorSets() {
                                descriptorWrites.data(), 0, nullptr);
     }
 
-    core::vector<u32> specularSamplerBindigs =
+    core::vector<u32> specularSamplerBindings =
             mainRenderScenePipeline.getBindingOfDescriptor(
                     DescriptorsTypes::SPECULAR_SAMPLER);
 
-    int specularSamplerBinding = specularSamplerBindigs[0];
+    int specularSamplerBinding = specularSamplerBindings[0];
 
     if (initializeTextureData_.size() > 0) {
         u32 DS_specular_number = initializeTextureData_.size();
@@ -2736,14 +2736,14 @@ void CVulkanRenderer::createMainRenderDescriptorSets() {
         }
     }
 
-    core::vector<u32> lightsSamplersBindigs =
+    core::vector<u32> lightsSamplersBindings =
             mainRenderScenePipeline.getBindingOfDescriptor(
                     DescriptorsTypes::LIGHT_SAMPLERS);
 
-    int diffuseCisBinding = lightsSamplersBindigs[0];
-    int directionalLightShadowMapsCisBinding = lightsSamplersBindigs[1];
-    int pointLightShadowMapsCisBinding = lightsSamplersBindigs[2];
-    int spotLightShadowMapsCisBinding = lightsSamplersBindigs[3];
+    int diffuseCisBinding = lightsSamplersBindings[0];
+    int directionalLightShadowMapsCisBinding = lightsSamplersBindings[1];
+    int pointLightShadowMapsCisBinding = lightsSamplersBindings[2];
+    int spotLightShadowMapsCisBinding = lightsSamplersBindings[3];
 
     for (size_t i = 0; i < DIRECTIONAL_LIGHTS_NUMBER; ++i) {
         directionalLightsImageInfo[i] = {};
@@ -2854,17 +2854,17 @@ void CVulkanRenderer::createMainRenderDescriptorSets() {
     }
 }
 
-void CVulkanRenderer::updateSamplersDescriptroSets(uint32_t diffuse_id,
+void CVulkanRenderer::updateSamplersDescriptorSets(uint32_t diffuse_id,
                                                    uint32_t specular_id) {
-    core::vector<u32> lightsSamplersBindigs =
+    core::vector<u32> lightsSamplersBindings =
             mainRenderScenePipeline.getBindingOfDescriptor(
                     DescriptorsTypes::LIGHT_SAMPLERS);
 
-    int diffuseCisBinding = lightsSamplersBindigs[0];
-    int specularCisBinding = lightsSamplersBindigs[1];
-    int directionalLightShadowMapsCisBinding = lightsSamplersBindigs[2];
-    int pointLightShadowMapsCisBinding = lightsSamplersBindigs[3];
-    int spotLightShadowMapsCisBinding = lightsSamplersBindigs[4];
+    int diffuseCisBinding = lightsSamplersBindings[0];
+    int specularCisBinding = lightsSamplersBindings[1];
+    int directionalLightShadowMapsCisBinding = lightsSamplersBindings[2];
+    int pointLightShadowMapsCisBinding = lightsSamplersBindings[3];
+    int spotLightShadowMapsCisBinding = lightsSamplersBindings[4];
 
     for (size_t i = 0; i < DIRECTIONAL_LIGHTS_NUMBER; ++i) {
         directionalLightsImageInfo[i] = {};
@@ -2964,10 +2964,10 @@ void CVulkanRenderer::updateSamplersDescriptroSets(uint32_t diffuse_id,
 }
 
 void CVulkanRenderer::updateDirectionalLightShadowMapDescriptorSets() {
-    core::vector<u32> directionalLightBindigs =
+    core::vector<u32> directionalLightBindings =
             directionalLightPipeline.getBindingOfDescriptor(
                     DescriptorsTypes::DIRECTIONAL_LIGHT_SHADOW_MAP_MATRIX_UBO);
-    int directionalLightShadowMapMatrixUboBinding = directionalLightBindigs[0];
+    int directionalLightShadowMapMatrixUboBinding = directionalLightBindings[0];
 
     for (size_t i = 0;
          i < MAX_FRAMES_IN_FLIGHT * directionalLightUboDescriptorsNumber; ++i) {
@@ -3089,10 +3089,10 @@ void CVulkanRenderer::updateDescriptorSets() {
         }
     }
 
-    core::vector<u32> specularSamplerBindigs =
+    core::vector<u32> specularSamplerBindings =
             mainRenderScenePipeline.getBindingOfDescriptor(
                     DescriptorsTypes::SPECULAR_SAMPLER);
-    int specularSamplerBinding = specularSamplerBindigs[0];
+    int specularSamplerBinding = specularSamplerBindings[0];
     u32 DS_specular_number = initializeTextureData_.size();
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT * DS_specular_number; ++i) {
         VkDescriptorImageInfo imageInfo {};
@@ -3117,10 +3117,10 @@ void CVulkanRenderer::updateDescriptorSets() {
                                descriptorWrites.data(), 0, nullptr);
     }
 
-    core::vector<u32> lightDataBindigs =
+    core::vector<u32> lightDataBindings =
             mainRenderScenePipeline.getBindingOfDescriptor(
                     DescriptorsTypes::LIGHT_DATA);
-    int lightDataUboBinding = lightDataBindigs[0];
+    int lightDataUboBinding = lightDataBindings[0];
 
     if (lightDataUboBinding != -1) {
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT * lightDataSize; ++i) {
@@ -3458,7 +3458,7 @@ void CVulkanRenderer::recordCommandBuffer(VkCommandBuffer &commandBuffer,
 
         unsigned int indicesContainerSize = aIndices_[uiVertexId].size();
 
-        //			updateSamplersDescriptroSets(diffuseTextureIndex,
+        //			updateSamplersDescriptorSets(diffuseTextureIndex,
         // specularTextureIndex);
         vkCmdBindDescriptorSets(
                 commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -4007,7 +4007,7 @@ void CVulkanRenderer::directionalLightShadowMapDrawFrame() {
     vkResetCommandBuffer(
             directionalLightCommandBuffers[directionalLightCurrentFrame],
             /*VkCommandBufferResetFlagBits*/ 0);
-    directionalLightRecordCoomandBuffer(
+    directionalLightRecordCommandBuffer(
             directionalLightCommandBuffers[directionalLightCurrentFrame],
             imageIndex);
 
@@ -4226,7 +4226,7 @@ void CVulkanRenderer::pointLightShadowMapDrawFrame() {
     // mutex2.unlock();
 }
 
-void CVulkanRenderer::directionalLightRecordCoomandBuffer(
+void CVulkanRenderer::directionalLightRecordCommandBuffer(
         VkCommandBuffer &commandBuffer, [[maybe_unused]] uint32_t imageIndex) {
     ecs::ComponentManager *componentManager =
             ecs::ComponentManager::GetInstance();
@@ -4778,27 +4778,27 @@ QueueFamilyIndices CVulkanRenderer::findQueueFamilies(VkPhysicalDevice device) {
 
 std::vector<const char *> CVulkanRenderer::getRequiredExtensions() {
 #ifdef VK_USE_PLATFORM_XLIB_KHR
-    std::vector<const char *> pRequiredExtentions = {
+    std::vector<const char *> pRequiredExtensions = {
             "VK_KHR_xlib_surface", "VK_EXT_acquire_xlib_display",
             "VK_KHR_display", "VK_KHR_surface", "VK_EXT_direct_mode_display"};
 #endif
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
-    std::vector<const char *> pRequiredExtentions = {
+    std::vector<const char *> pRequiredExtensions = {
             "VK_KHR_xcb_surface", "VK_KHR_display", "VK_KHR_surface",
             "VK_EXT_direct_mode_display"};
 #endif
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    std::vector<const char *> pRequiredExtentions = {"VK_KHR_win32_surface",
+    std::vector<const char *> pRequiredExtensions = {"VK_KHR_win32_surface",
                                                      "VK_KHR_surface"};
 #endif
 
     if (enableValidationLayers) {
-        pRequiredExtentions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        pRequiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
 
-    return pRequiredExtentions;
+    return pRequiredExtensions;
 }
 
 bool CVulkanRenderer::checkValidationLayerSupport() {
@@ -5083,9 +5083,9 @@ void CVulkanRenderer::setDebugObjectNames() {
     // VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT; 	std::string
     // imageName = ConcatIntBetweenTwoStrings(VK_DEBUG_IMAGE_SET_RED, " Point
     // light shadow map image # ", i); 	const char* strImageName =
-    // imageName.c_str(); 	pointLightImageObjectInfo.pObjectName = strImageName;
-    // 	pointLightImageObjectInfo.objectType = VK_OBJECT_TYPE_IMAGE;
-    // 	pointLightImageObjectInfo.objectHandle =
+    // imageName.c_str(); 	pointLightImageObjectInfo.pObjectName =
+    // strImageName; 	pointLightImageObjectInfo.objectType =
+    // VK_OBJECT_TYPE_IMAGE; 	pointLightImageObjectInfo.objectHandle =
     // (uint64_t)pointLightShadowMapImages[i].image;
     // SetDebugObjectName(device, &pointLightImageObjectInfo);
     // }

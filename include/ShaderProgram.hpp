@@ -52,7 +52,7 @@ public:
             vertexShaderFile.close();
             fragmentShaderFile.close();
 
-            /// Converting to string varibale thread data
+            /// Converting to string variable thread data
             vertexShaderCode = Vertex_Shader_Stream.str();
             fragmentShaderCode = Fragment_Shader_Stream.str();
 
@@ -65,7 +65,7 @@ public:
                 geometryShaderCode = geometryShaderStream.str();
             }
         } catch (std::ifstream::failure &e) {
-            std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ"
+            std::cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ"
                       << std::endl;
         }
         const char *pVertexShaderCode = vertexShaderCode.c_str();
@@ -124,7 +124,7 @@ public:
     void SetVec4(const std::string &name, float x, float y, float z,
                  float w) const;
     void SetVec4(const std::string &name, int x, int y, int z, int w) const;
-    void SetUniformID(const char *_uniformIdentificator, int _id);
+    void SetUniformID(const char *_uniformIdentifier, int _id);
     void SetMat4(const std::string &name, mat4 &mat) const;
     void SetMat4(const std::string &name, unsigned int matrixNumber,
                  mat4 &mat) const;

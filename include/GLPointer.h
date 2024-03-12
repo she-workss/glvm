@@ -108,7 +108,7 @@ EXTERN void (*pGLGen_Framebuffers)(GLsizei n, GLuint *ids);
 
 EXTERN void (*pGLBind_Framebuffer)(GLenum target, GLuint framebuffer);
 
-EXTERN void (*pGLFramebuffer_Texture2D)(GLenum target, GLenum atachment,
+EXTERN void (*pGLFramebuffer_Texture2D)(GLenum target, GLenum attachment,
                                         GLenum textarget, GLuint texture,
                                         GLint level);
 

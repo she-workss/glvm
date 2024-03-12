@@ -140,7 +140,7 @@ EXTERN_C void Initializer() {
                     (const GLubyte *)"glBindFramebuffer");
 
     pGLFramebuffer_Texture2D =
-            (void (*)(GLenum target, GLenum atachment, GLenum textarget,
+            (void (*)(GLenum target, GLenum attachment, GLenum textarget,
                       GLuint texture, GLint level))
                     GET_PROC_ADDRESS((const GLubyte *)"glFramebufferTexture2D");
 
