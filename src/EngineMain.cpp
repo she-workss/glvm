@@ -18,25 +18,25 @@ int main() {
 
     core::Engine *GLVM = core::Engine::GetInstance();
     [[maybe_unused]] cm::MeshHandle cubeHandle_OBJ =
-            GLVM->LoadMeshFromFile_OBJ("waveFrontObj/cube.obj");
+            GLVM->LoadMeshFromFile_OBJ("assets/obj/cube.obj");
     [[maybe_unused]] cm::MeshHandle coneHandle_OBJ =
-            GLVM->LoadMeshFromFile_OBJ("waveFrontObj/cone.obj");
+            GLVM->LoadMeshFromFile_OBJ("assets/obj/cone.obj");
     [[maybe_unused]] cm::MeshHandle icoSphereHandle_OBJ =
-            GLVM->LoadMeshFromFile_OBJ("waveFrontObj/ico_sphere.obj");
+            GLVM->LoadMeshFromFile_OBJ("assets/obj/ico_sphere.obj");
     [[maybe_unused]] cm::MeshHandle monkeyHandle_OBJ =
-            GLVM->LoadMeshFromFile_OBJ("waveFrontObj/monkey.obj");
+            GLVM->LoadMeshFromFile_OBJ("assets/obj/monkey.obj");
     [[maybe_unused]] cm::MeshHandle uvSphereHandle_OBJ =
-            GLVM->LoadMeshFromFile_OBJ("waveFrontObj/uv_sphere.obj");
+            GLVM->LoadMeshFromFile_OBJ("assets/obj/uv_sphere.obj");
     [[maybe_unused]] cm::MeshHandle torusHandle_OBJ =
-            GLVM->LoadMeshFromFile_OBJ("waveFrontObj/torus.obj");
+            GLVM->LoadMeshFromFile_OBJ("assets/obj/torus.obj");
     [[maybe_unused]] cm::MeshHandle pipeHandle_OBJ =
-            GLVM->LoadMeshFromFile_OBJ("waveFrontObj/pipe.obj");
+            GLVM->LoadMeshFromFile_OBJ("assets/obj/pipe.obj");
     [[maybe_unused]] cm::MeshHandle hyperCubeHandle_GLTF =
-            GLVM->LoadMeshFromFile_GLTF("gltf/hyper_cube.gltf");
+            GLVM->LoadMeshFromFile_GLTF("assets/gltf/hyper_cube.gltf");
     [[maybe_unused]] cm::MeshHandle megaChelHandle_GLTF =
-            GLVM->LoadMeshFromFile_GLTF("gltf/mega_chel.gltf");
+            GLVM->LoadMeshFromFile_GLTF("assets/gltf/mega_chel.gltf");
     [[maybe_unused]] cm::MeshHandle simpleCubeHandle_GLTF =
-            GLVM->LoadMeshFromFile_GLTF("gltf/simpleCube2.gltf");
+            GLVM->LoadMeshFromFile_GLTF("assets/gltf/simpleCube2.gltf");
 
     [[maybe_unused]] ecs::TextureHandle glvmTextureHandle =
             GLVM->LoadTextureFromAddress(128, 128, glvm_dat_len, glvm_dat);
