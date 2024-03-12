@@ -458,19 +458,23 @@ public:
     float fPitch = 0.0f;
 
     const char *vertShaderMain_ =
-            "shaders/vk_shaders/mainRendererShaders/vert.spv";
+            "assets/shaders/vk_shaders/mainRendererShaders/vert.spv";
     const char *fragShaderMain_ =
-            "shaders/vk_shaders/mainRendererShaders/frag.spv";
+            "assets/shaders/vk_shaders/mainRendererShaders/frag.spv";
 
     const char *vertShaderFlatShadowMap =
-            "shaders/vk_shaders/flatShadowMapShaders/vertFlatShadowMap.spv";
+            "assets/shaders/vk_shaders/flatShadowMapShaders/"
+            "vertFlatShadowMap.spv";
     const char *fragShaderDirectionalLightShadowMap =
-            "shaders/vk_shaders/flatShadowMapShaders/fragFlatShadowMap.spv";
+            "assets/shaders/vk_shaders/flatShadowMapShaders/"
+            "fragFlatShadowMap.spv";
 
     const char *vertShaderCubeShadowMap =
-            "shaders/vk_shaders/cubeShadowMapShaders/vertCubeShadowMap.spv";
+            "assets/shaders/vk_shaders/cubeShadowMapShaders/"
+            "vertCubeShadowMap.spv";
     const char *fragShaderCubeShadowMap =
-            "shaders/vk_shaders/cubeShadowMapShaders/fragCubeShadowMap.spv";
+            "assets/shaders/vk_shaders/cubeShadowMapShaders/"
+            "fragCubeShadowMap.spv";
 
     unsigned int texturePool_;
 

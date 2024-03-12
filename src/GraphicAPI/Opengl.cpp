@@ -48,19 +48,20 @@
 
 namespace GLVM::core {
 COpenglRenderer::COpenglRenderer() {
-    coreShaderProgram = new Shader("shaders/gl_shaders/CoreShader.vert",
-                                   "shaders/gl_shaders/CoreShader.frag");
+    coreShaderProgram = new Shader("assets/shaders/gl_shaders/CoreShader.vert",
+                                   "assets/shaders/gl_shaders/CoreShader.frag");
     flatShadowMapShaderProgram =
-            new Shader("shaders/gl_shaders/FlatShadowMap.vert",
-                       "shaders/gl_shaders/FlatShadowMap.frag");
+            new Shader("assets/shaders/gl_shaders/FlatShadowMap.vert",
+                       "assets/shaders/gl_shaders/FlatShadowMap.frag");
     cubeShadowMapShaderProgram =
-            new Shader("shaders/gl_shaders/CubeShadowMap.vert",
-                       "shaders/gl_shaders/CubeShadowMap.frag",
-                       "shaders/gl_shaders/CubeShadowMap.geom");
-    debugQuadDepth_ = new Shader("shaders/gl_shaders/DebugQuadDepth.vert",
-                                 "shaders/gl_shaders/DebugQuadDepth.frag");
-    debugLines = new Shader("shaders/gl_shaders/debugLines.vert",
-                            "shaders/gl_shaders/debugLines.frag");
+            new Shader("assets/shaders/gl_shaders/CubeShadowMap.vert",
+                       "assets/shaders/gl_shaders/CubeShadowMap.frag",
+                       "assets/shaders/gl_shaders/CubeShadowMap.geom");
+    debugQuadDepth_ =
+            new Shader("assets/shaders/gl_shaders/DebugQuadDepth.vert",
+                       "assets/shaders/gl_shaders/DebugQuadDepth.frag");
+    debugLines = new Shader("assets/shaders/gl_shaders/debugLines.vert",
+                            "assets/shaders/gl_shaders/debugLines.frag");
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
