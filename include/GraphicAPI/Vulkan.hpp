@@ -413,14 +413,14 @@ namespace GLVM::core
 		float fYaw   = -90.0f;
         float fPitch = 0.0f;
 
-        const char* vertShaderMain_ = "VKshaders/mainRendererShaders/vert.spv";
-        const char* fragShaderMain_ = "VKshaders/mainRendererShaders/frag.spv";
+        const char* vertShaderMain_ = "shaders/vk_shaders/mainRendererShaders/vert.spv";
+        const char* fragShaderMain_ = "shaders/vk_shaders/mainRendererShaders/frag.spv";
 
-        const char* vertShaderFlatShadowMap = "VKshaders/flatShadowMapShaders/vertFlatShadowMap.spv";
-        const char* fragShaderDirectionalLightShadowMap = "VKshaders/flatShadowMapShaders/fragFlatShadowMap.spv";
+        const char* vertShaderFlatShadowMap = "shaders/vk_shaders/flatShadowMapShaders/vertFlatShadowMap.spv";
+        const char* fragShaderDirectionalLightShadowMap = "shaders/vk_shaders/flatShadowMapShaders/fragFlatShadowMap.spv";
 
-        const char* vertShaderCubeShadowMap = "VKshaders/cubeShadowMapShaders/vertCubeShadowMap.spv";
-        const char* fragShaderCubeShadowMap = "VKshaders/cubeShadowMapShaders/fragCubeShadowMap.spv";
+        const char* vertShaderCubeShadowMap = "shaders/vk_shaders/cubeShadowMapShaders/vertCubeShadowMap.spv";
+        const char* fragShaderCubeShadowMap = "shaders/vk_shaders/cubeShadowMapShaders/fragCubeShadowMap.spv";
 
         unsigned int texturePool_;
 

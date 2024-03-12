@@ -10,8 +10,8 @@
 namespace GLVM::ecs
 {
 	CGUISystem::CGUISystem() {
-		_Shader_Program = new Shader("GLshaders/GUI.vert", "GLshaders/GUI.frag");
-		debugLines      = new Shader("GLshaders/debugLines.vert", "GLshaders/debugLines.frag");
+		_Shader_Program = new Shader("shaders/gl_shaders/GUI.vert", "shaders/gl_shaders/GUI.frag");
+		debugLines      = new Shader("shaders/gl_shaders/debugLines.vert", "shaders/gl_shaders/debugLines.frag");
 	}
 
     void CGUISystem::Update()
