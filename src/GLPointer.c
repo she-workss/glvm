@@ -11,7 +11,7 @@
 #endif
 
 #define INIT_EXT
-#include "include/GLPointer.h"
+#include "GLPointer.h"
 
 EXTERN_C void Initializer() {
     pGLVertex_Arrays = (void (*)(GLsizei, GLuint))GET_PROC_ADDRESS(
