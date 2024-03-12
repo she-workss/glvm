@@ -99,7 +99,7 @@ find_package(OpenGL REQUIRED)
 find_package(Vulkan REQUIRED)
 
 # Define the executable
-add_executable(${PROJECT_NAME}
+add_executable(glvm
     GLPointer.c
     src/ComponentManager.cpp
     src/Engine.cpp
@@ -133,7 +133,7 @@ add_executable(${PROJECT_NAME}
 )
 
 # Link libraries
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(glvm
     gdi32
     opengl32
     winmm
@@ -141,7 +141,7 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 # Additional linker flags
-target_link_options(${PROJECT_NAME} PRIVATE
+target_link_options(glvm PRIVATE
     -static
     -static-libgcc
     -static-libstdc++
