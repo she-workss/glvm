@@ -1,6 +1,6 @@
 // This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts: <fellfrostqtw@gmail.com>
-// Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
+// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
+// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
 
 #ifndef CONSTANTS
@@ -26,13 +26,11 @@
 #define PI 3.14159265
 
 #define NUMBER_OF_CREATING_TEXTURE_OBJECT_1 1
-#define SOME_STRANGE_STUFF                  0
-#define MIPMAP_LEVEL                        0
+#define SOME_STRANGE_STUFF 0
+#define MIPMAP_LEVEL 0
 #define SOME_OLD_STUFF 0
 
 constexpr unsigned int k_iUint_Max = 4000000000;
 constexpr int k_iNull = 0;
 
 #endif
-
-

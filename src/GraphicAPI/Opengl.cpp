@@ -50,11 +50,13 @@ namespace GLVM::core {
 COpenglRenderer::COpenglRenderer() {
     coreShaderProgram = new Shader("shaders/gl_shaders/CoreShader.vert",
                                    "shaders/gl_shaders/CoreShader.frag");
-    flatShadowMapShaderProgram = new Shader("shaders/gl_shaders/FlatShadowMap.vert",
-                                            "shaders/gl_shaders/FlatShadowMap.frag");
-    cubeShadowMapShaderProgram = new Shader("shaders/gl_shaders/CubeShadowMap.vert",
-                                            "shaders/gl_shaders/CubeShadowMap.frag",
-                                            "shaders/gl_shaders/CubeShadowMap.geom");
+    flatShadowMapShaderProgram =
+            new Shader("shaders/gl_shaders/FlatShadowMap.vert",
+                       "shaders/gl_shaders/FlatShadowMap.frag");
+    cubeShadowMapShaderProgram =
+            new Shader("shaders/gl_shaders/CubeShadowMap.vert",
+                       "shaders/gl_shaders/CubeShadowMap.frag",
+                       "shaders/gl_shaders/CubeShadowMap.geom");
     debugQuadDepth_ = new Shader("shaders/gl_shaders/DebugQuadDepth.vert",
                                  "shaders/gl_shaders/DebugQuadDepth.frag");
     debugLines = new Shader("shaders/gl_shaders/debugLines.vert",
