@@ -13,13 +13,13 @@
 #include <cassert>
 
 namespace GLVM::Core
-{    
+{
 
     void CJsonParser::ReadFile(const char* _filePath) {
         const char* _pJsonFilePath = _filePath;
         std::ifstream jsonFileInputStream;
         std::stringstream jsonFileOutputStream;
-        
+
         jsonFileInputStream.open(_pJsonFilePath);
         if(jsonFileInputStream.good()) {
 
@@ -36,7 +36,7 @@ namespace GLVM::Core
 
     void CJsonParser::Parse() {
 		currentChar_ = pJsonFileData_[globalFileCounter_];
-		
+
 		while (currentChar_ != '\0') {
 			currentChar_ = pJsonFileData_[globalFileCounter_];
 
@@ -47,7 +47,7 @@ namespace GLVM::Core
 				currentChar_ = pJsonFileData_[globalFileCounter_];
 				}
 			}
-			
+
 			if (currentChar_ == '"') {
 				bufferString_ = StringParse();
 
@@ -166,8 +166,8 @@ namespace GLVM::Core
 				else
 					keyFlag = false;
 
-			} 
-			
+			}
+
 			++globalFileCounter_;
 		}
 	}
@@ -185,7 +185,7 @@ namespace GLVM::Core
 		jsonArray.value.array = new core::vector<JsonValue>;
 		return jsonArray;
 	}
-	
+
 	std::string CJsonParser::BoolOrNullParse() {
 		std::string boolOrNullString = "";
 		while (1) {
@@ -197,7 +197,7 @@ namespace GLVM::Core
 				return boolOrNullString;
 		}
 	}
-	
+
 	bool CJsonParser::IsContainChar(std::string _string, char _char) {
 		for (unsigned int i = 0; i < _string.size(); ++i) {
 			if (_string[i] == _char)
@@ -206,7 +206,7 @@ namespace GLVM::Core
 
 		return false;
 	}
-			
+
 	std::string CJsonParser::NumberAsStringParse() {
 		std::string numberAsString = "";
 		while (1) {
@@ -223,7 +223,7 @@ namespace GLVM::Core
 				return numberAsString;
 		}
 	}
-		
+
  	std::string CJsonParser::StringParse() {
 		++globalFileCounter_;
 		std::string localBuffer = "";
@@ -239,7 +239,7 @@ namespace GLVM::Core
 			}
 		}
 	}
-	
+
 	core::vector<char> CJsonParser::StringToVectorOfChars(std::string _string) {
 		core::vector<char> vectorWithChars;
 		for (unsigned int i = 0; i < _string.size(); ++i) {
@@ -248,7 +248,7 @@ namespace GLVM::Core
 
 		return vectorWithChars;
 	}
-	
+
 	int CJsonParser::ParseInteger(core::vector<char> _word) {
 		core::vector<int> baseContainer;
 
@@ -271,10 +271,10 @@ namespace GLVM::Core
 
 		if (negateFlag)
 			iResult *= -1;
-		
+
         return iResult;
     }
-    
+
     double CJsonParser::ParseFloating(core::vector<char> _word) {
 		core::vector<int> baseContainer;
 
@@ -320,7 +320,7 @@ namespace GLVM::Core
 				ePartContainer.Push(baseContainer[i]);
 				continue;
 			}
-			
+
             if (baseContainer[i] >= 0 && baseContainer[i] <= 9) {
                 if (dotFlag)
                     floatingPartContainer.Push(baseContainer[i]);
@@ -335,7 +335,7 @@ namespace GLVM::Core
         unsigned int ePartContainerSize = ePartContainer.GetSize();
         for (unsigned int i = 0; i < ePartContainerSize; ++i)
             eNumber += ePartContainer[i] * std::pow(10, (ePartContainerSize - 1) - i);
-		
+
         unsigned int integerPartContainerSize = integerPartContainer.GetSize();
         for (unsigned int i = 0; i < integerPartContainerSize; ++i)
             integerPart += integerPartContainer[i] * std::pow(10, (integerPartContainerSize - 1) - i);
@@ -353,7 +353,7 @@ namespace GLVM::Core
 			else
 				result *= std::pow(10, eNumber);
 		}
-		
+
         if (negateFlag)
             result *= -1.0f;
 
@@ -370,7 +370,7 @@ namespace GLVM::Core
 				SearchInJsonArray((*arrayValue)[i].value.array, key_, resultVector);
 		}
 	}
-	
+
 	void CJsonParser::SearchInJsonObject(HashMap<JsonValue>* mapValue, const char* key_,
 										 core::vector<JsonValue>& resultVector) const {
 		for ( unsigned int i = 0; i < mapValue->GetCapacity(); ++i ) {
@@ -393,8 +393,8 @@ namespace GLVM::Core
 				}
 			}
 		}
-	}		
-	
+	}
+
 	core::vector<JsonValue> CJsonParser::Search(const char* key_) const {
 		core::vector<JsonValue> resultVector;
 		SearchInJsonObject(root_->value.object, key_, resultVector);
@@ -409,12 +409,12 @@ namespace GLVM::Core
 							   bool& noAnimations) {
 		ReadFile(pathsGLTF_);
 		Parse();
-		
+
 		Core::JsonValue* gltf = GetRoot();
 		std::string binary_path = *(*gltf)["buffers"][0]["uri"].value.string;
 		int full_byte_size = (*gltf)["buffers"][0]["byteLength"].value.iNumber;;
 		std::ifstream in_stream;
-		in_stream.open("../gltf/" + binary_path, std::ios::binary);
+		in_stream.open("gltf/" + binary_path, std::ios::binary);
 		char* buffer = new char[full_byte_size];
 		in_stream.read(buffer, full_byte_size);
 		in_stream.close();
@@ -463,7 +463,7 @@ namespace GLVM::Core
 		core::vector<float> weightsContainer;
 		core::vector<int> jointsIndices;
 		core::vector<core::vector<int>> children;
-			
+
 		if ( skins.GetSize() > 0 ) {
 			noAnimations = false;
 			joints = (*gltf)["skins"][0]["joints"];
@@ -521,7 +521,7 @@ namespace GLVM::Core
 //					emptyChildren.Push(-1);
 					children.Push(emptyChildren);
 				}
-				
+
 				if ( node.value.object->Contain("scale") ) {
 					Core::JsonValue array = (*node.value.object)["scale"];
 					for ( unsigned int i = 0; i < array.value.array->GetSize(); ++i ) {
@@ -543,7 +543,7 @@ namespace GLVM::Core
 
 
 				}
-				
+
 				mat4 model = translation * scale * rotation;
 				globalTransformJointNode.Push(model);
 			}
@@ -615,10 +615,10 @@ namespace GLVM::Core
 			}
 
 			Core::JsonValue samplers = (*gltf)["animations"][0]["samplers"];
-				
+
 			core::vector<unsigned int> translationInputs;
 			core::vector<unsigned int> translationOutputs;
-				
+
 			for ( unsigned int i = 0; i < translationSamplerIndices.GetSize(); ++i)
 				translationInputs.Push(samplers[translationSamplerIndices[i]]["input"].value.iNumber);
 
@@ -659,7 +659,7 @@ namespace GLVM::Core
 
 			core::vector<unsigned int> rotationInputs;
 			core::vector<unsigned int> rotationOutputs;
-				
+
 			for ( unsigned int i = 0; i < rotationSamplerIndices.GetSize(); ++i)
 				rotationInputs.Push(samplers[rotationSamplerIndices[i]]["input"].value.iNumber);
 
@@ -697,10 +697,10 @@ namespace GLVM::Core
 
 				rotations.Push(temp);
 			}
-			
+
 			core::vector<unsigned int> scaleInputs;
 			core::vector<unsigned int> scaleOutputs;
-				
+
 			for ( unsigned int i = 0; i < scaleSamplerIndices.GetSize(); ++i)
 				scaleInputs.Push(samplers[scaleSamplerIndices[i]]["input"].value.iNumber);
 
@@ -751,7 +751,7 @@ namespace GLVM::Core
 					}
 				}
 				parent_joins.Push(current_joint);
-				
+
 			  most_scary_operator_of_all_time:                                                           ///< Not so scary at all. Am i right?
 				continue;
 			}
@@ -806,10 +806,10 @@ namespace GLVM::Core
 				}
 				jointMatricesAccumulator.Push(globalAllFrameNodeMatrixAccumulator);
 			}
-			
+
 			for ( unsigned int j = 0; j < translations.GetSize(); ++j ) {
 				core::vector<mat4>  globalAllFrameNodeMatrix;
-				
+
 				for ( unsigned int i = 0; i < frameInputsTranslation[0].GetSize(); ++i ) {
 					mat4 rootTransform(1.0f);
 					for ( unsigned int b = 0; b < joints_bones[j].GetSize() - 1; ++b ) {
@@ -896,7 +896,7 @@ namespace GLVM::Core
 		if ( !node_stack.empty() ) {
 			topJointIndex = getJointIndex(joints, node_stack.top());
 		}
-		
+
 		if ( node_stack.size() > deepness_stack.size() ) {
 			u32 firstChild = 0;
 			deepness_stack.push(firstChild);
@@ -933,9 +933,9 @@ namespace GLVM::Core
 					u32 currentJoinIndex = getJointIndex(joints, node_stack[i]);
 					current_node_indices.Push(currentJoinIndex);
 				}
-		
+
 				result.Push(current_node_indices);
-			
+
 				nextNodeIndex = children[topJointIndex][deepness_stack.top()];
 				node_stack.push(nextNodeIndex);
 				++deepness_stack.top();
@@ -950,7 +950,7 @@ namespace GLVM::Core
 			}
 
 			result.Push(current_node_indices);
-			
+
 			deepness_stack.pop();
 			node_stack.pop();
 			traversalBones( children, joints, node_stack, deepness_stack, result );
@@ -990,7 +990,7 @@ namespace GLVM::Core
 
 	bool CJsonParser::containsElemnt(core::vector<core::vector<unsigned int>> container, unsigned int element) {
 		bool flag = false;
-		
+
 		for ( unsigned int i = 0; i < container.GetSize(); ++i ) {
 			for ( unsigned int j = 0; j < container[i].GetSize(); ++j ) {
 				if ( container[i][j] == element )
@@ -1000,7 +1000,7 @@ namespace GLVM::Core
 
 		return flag;
 	}
-	
+
 	u32 CJsonParser::getJointIndex(Core::JsonValue joints, i32 searchingIndex) {
 		for ( unsigned int i = 0; i < joints.value.array->GetSize(); ++i ) {
 			int currentJointIndex = (*joints.value.array)[i].value.iNumber;

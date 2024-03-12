@@ -10,10 +10,10 @@
 namespace GLVM::ecs
 {
 	CGUISystem::CGUISystem() {
-		_Shader_Program = new Shader("../GLshaders/GUI.vert", "../GLshaders/GUI.frag");
-		debugLines      = new Shader("../GLshaders/debugLines.vert", "../GLshaders/debugLines.frag");
+		_Shader_Program = new Shader("GLshaders/GUI.vert", "GLshaders/GUI.frag");
+		debugLines      = new Shader("GLshaders/debugLines.vert", "GLshaders/debugLines.frag");
 	}
-	
+
     void CGUISystem::Update()
     {
         Matrix<float, 4> tModel_Matrix(1.0);
@@ -24,14 +24,14 @@ namespace GLVM::ecs
         Matrix<float, 4> tView_Matrix(1.0f);
 
         _Shader_Program->Use();
-		
+
         unsigned int uiTransformt_Loc = pGLGet_Uniform_Location(_Shader_Program->iID, "modelMatrix");
 		pGLUniform_Matrix4fv(uiTransformt_Loc, NUMBER_OF_MATRICES, GL_FALSE, &tModel_Matrix[0][0]);
 
 //		tProjection_Matrix = Perspective(Radians(90.0f), (float)1920 / (float)1080, 1.0f, 100.0f);
 		unsigned int transformLocationProjection = pGLGet_Uniform_Location(_Shader_Program->iID, "projectionMatrix");
 		pGLUniform_Matrix4fv(transformLocationProjection, NUMBER_OF_MATRICES, GL_FALSE, &tProjection_Matrix[0][0]);
-						
+
         float aCrosshair_Vertices[] = {
 			-0.1, 0.5, -0.3,
 			0.1, -0.5, -0.3,
@@ -45,7 +45,7 @@ namespace GLVM::ecs
 			-0.5, 0.1, -0.3,
 			-0.5, -0.1, -0.3,
 			0.5, -0.1, -0.3
-        }; 
+        };
 
         pGLGen_Vertex_Arrays(1, &iVao_Crosshair_);
         pGLGen_Buffers(1, &iVbo_Crosshair_);
@@ -57,13 +57,13 @@ namespace GLVM::ecs
 
         pGLVertex_Attrib_Pointer(0, VERTEX_SIZE, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)VERTEX_OFFSET);
         pGLEnable_Vertex_Attrib_Array(LAYOUT_0);
-        
+
         glClear(GL_DEPTH_BUFFER_BIT);
-        
+
         glDrawArrays(GL_TRIANGLES, 0, 12);
 
         // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-        pGLBind_Buffer(GL_ARRAY_BUFFER, 0); 
+        pGLBind_Buffer(GL_ARRAY_BUFFER, 0);
 
         // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
         // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
@@ -82,13 +82,13 @@ namespace GLVM::ecs
 //         Matrix<float, 4> tView_Matrix2(1.0f);
 
 //         _Shader_Program->Use();
-		
+
 //         unsigned int uiTransformt_Loc2 = pGLGet_Uniform_Location(_Shader_Program->iID, "modelMatrix");
 // 		pGLUniform_Matrix4fv(uiTransformt_Loc2, NUMBER_OF_MATRICES, GL_FALSE, &tModel_Matrix[0][0]);
 
 // 		tProjection_Matrix = Perspective(Radians(90.0f), (float)1920 / (float)1080, 1.0f, 100.0f);
 // 		pGLUniform_Matrix4fv(transformLocationProjection, NUMBER_OF_MATRICES, GL_FALSE, &tProjection_Matrix[0][0]);
-		
+
 // 		GLuint vboRay, vaoRay;
 // 		float ray[24] = {
 // 			0.0f,  -0.5f, -0.3f,
@@ -117,14 +117,14 @@ namespace GLVM::ecs
 
 //         pGLVertex_Attrib_Pointer(0, VERTEX_SIZE, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)VERTEX_OFFSET);
 //         pGLEnable_Vertex_Attrib_Array(LAYOUT_0);
-        
+
 //         glClear(GL_DEPTH_BUFFER_BIT);
-        
+
 // //        glDrawArrays(GL_TRIANGLES, 0, 6);
-// 		glDrawArrays(GL_LINES, 0, 8);	
+// 		glDrawArrays(GL_LINES, 0, 8);
 
 //         // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-//         pGLBind_Buffer(GL_ARRAY_BUFFER, 0); 
+//         pGLBind_Buffer(GL_ARRAY_BUFFER, 0);
 
 //         // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
 //         // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
@@ -144,7 +144,7 @@ namespace GLVM::ecs
 
 
 // 		debugLines->Use();
-		
+
 // 		mat4 planeModelMatrix(1.0);
 // 		planeModelMatrix[0][0] = 5.0;
 // 		planeModelMatrix[1][1] = 5.0;
@@ -157,7 +157,7 @@ namespace GLVM::ecs
 // 		// for ( int i = 0; i < 4; ++i )
 // 		// 	for ( int j = 0; j < 4; ++j)
 // 		// 		std::cout << planeModelMatrix[i][j] << std::endl;
-		
+
 //         // Matrix<float, 4> planeModelMatrix(1.0);
 //         // planeModelMatrix[0][0] = 0.05;
 //         // planeModelMatrix[1][1] = 0.05;
@@ -170,9 +170,9 @@ namespace GLVM::ecs
 // 		unsigned int uiPlayerEntity = (*pEntityContainerRefView)[0];
 // 		cm::beholder* playerViewComponent = componentManager->GetComponent<cm::beholder>(uiPlayerEntity);
 // 		cm::transform* playerTransformComponent = componentManager->GetComponent<cm::transform>(uiPlayerEntity);
-		
+
 // //		viewPosition = playerViewComponent.Position;
-		
+
 // //		debugLines->SetMat4("modelMatrix", planeModelMatrix);
 // 		unsigned int location = pGLGet_Uniform_Location(debugLines->iID, "modelMatrix");
 // 		pGLUniform_Matrix4fv(location, NUMBER_OF_MATRICES, GL_FALSE, &planeModelMatrix[0][0]);
@@ -188,21 +188,21 @@ namespace GLVM::ecs
 // 		pGLEnable_Vertex_Attrib_Array(LAYOUT_0);
 // 		pGLVertex_Attrib_Pointer(LAYOUT_1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 // 		pGLEnable_Vertex_Attrib_Array(LAYOUT_1);
-		
+
 // 		// pGLBind_Buffer(GL_ARRAY_BUFFER, 0);
 // 		// pGLBind_Vertex_Array(0);
 
 //         glClear(GL_DEPTH_BUFFER_BIT);
-		
+
 // //		pGLBind_Buffer(GL_ARRAY_BUFFER, vboLines);
 // //		pGLBind_Vertex_Array(vaoPlane);
 // 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
-// 		pGLBind_Buffer(GL_ARRAY_BUFFER, 0); 
+// 		pGLBind_Buffer(GL_ARRAY_BUFFER, 0);
 
 //         // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
 //         // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-//         pGLBind_Vertex_Array(0);         
+//         pGLBind_Vertex_Array(0);
 
 // 		mat4 linesModelMatrix(1.0);
 // 		linesModelMatrix[0][0] = 10.0;
@@ -224,7 +224,7 @@ namespace GLVM::ecs
 // 			playerTransformComponent->tPosition[1] + playerViewComponent->forward[1],
 // 			playerTransformComponent->tPosition[2] + playerViewComponent->forward[2],
 // 		    0.0f, 0.0f, 0.0f };
-		
+
 // 		pGLGen_Vertex_Arrays(1, &vaoLines);
 // 		pGLGen_Buffers(1, &vboLines);
 // 		pGLBind_Vertex_Array(vaoLines);
@@ -237,7 +237,7 @@ namespace GLVM::ecs
 // 		pGLEnable_Vertex_Attrib_Array(LAYOUT_1);
 
 // 		pGLBind_Vertex_Array(vaoLines);
-// 		glDrawArrays(GL_LINES, 0, 2);	
+// 		glDrawArrays(GL_LINES, 0, 2);
 	}
 
 

@@ -122,7 +122,7 @@ namespace GLVM::core
         std::vector<VkSurfaceFormatKHR> formats;
         std::vector<VkPresentModeKHR> presentModes;
     };
-    
+
     struct Vertex {
         vec3 pos;
         vec3 color;
@@ -166,11 +166,11 @@ namespace GLVM::core
             attributeDescriptions[4].location = 4;
             attributeDescriptions[4].format = VK_FORMAT_R32G32B32A32_SFLOAT;
             attributeDescriptions[4].offset = offsetof(Vertex, weights);
-			
+
             return attributeDescriptions;
         }
     };
-	
+
 	enum class DescriptorsTypes {
 		/// UBO - uniform buffer object
 		DIRECTIONAL_LIGHT_SHADOW_MAP_MATRIX_UBO,
@@ -203,7 +203,7 @@ namespace GLVM::core
 		uint32_t width;
 		uint32_t height;
 	};
-	
+
 	struct Descriptor {
 		VkDescriptorType       vkType;
 		DescriptorsTypes       type;
@@ -214,7 +214,7 @@ namespace GLVM::core
 
 		std::vector<VkBuffer> uniformBuffers;
 		std::vector<VkDeviceMemory> uniformBuffersMemory;
-		
+
 		std::vector<VK_Image> textureImages;
 	};
 
@@ -257,13 +257,13 @@ namespace GLVM::core
 	struct LightSpaceMatrixUBO {
 		alignas(16) mat4 spotSpaceMatrix[SPOT_LIGHTS_NUMBER];
 		alignas(16) uint32_t spotLightsNumber;
-		
+
 		alignas(16) mat4 dirSpaceMatrix[DIRECTIONAL_LIGHTS_NUMBER];
 		alignas(16) uint32_t directionalLightsNumber;
 	};
 
 #define MAX_JOINTS_NUMBER 18
-	
+
     struct alignas(64) ModelMatrixUBO {
         mat4 model;
         mat4 view;
@@ -275,7 +275,7 @@ namespace GLVM::core
 
 		alignas(16) mat4 spotSpaceMatrix[SPOT_LIGHTS_NUMBER];
 		alignas(16) uint32_t spotLightsNumber;
-		
+
 		alignas(16) mat4 dirSpaceMatrix[DIRECTIONAL_LIGHTS_NUMBER];
 		alignas(16) uint32_t directionalLightsNumber;
     };
@@ -303,7 +303,7 @@ namespace GLVM::core
 		vec3 lightPosition;
 		float farPlane;
 	};
-	
+
 	struct alignas(16) DirectionalLight {
 		vec4 position;
 		vec4 direction;
@@ -342,7 +342,7 @@ namespace GLVM::core
 		float linear;
 		float quadratic;
 	};
-	
+
     struct LightData {
 		alignas(16) vec3 viewPosition;
 
@@ -352,7 +352,7 @@ namespace GLVM::core
 
 		DirectionalLight directionalLights[DIRECTIONAL_LIGHTS_NUMBER];
 		int directionalLightsArraySize;
-		
+
 		SpotLight spotLights[SPOT_LIGHTS_NUMBER];
 		int spotLightArraySize;
     };
@@ -368,7 +368,7 @@ namespace GLVM::core
         {{-0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f},{0.0f, 0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f, 0.0f}},
         {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f, 0.0f}},
     };
-    
+
     const std::vector<uint16_t> indices = {
         4, 2, 0,
         2, 7, 3,
@@ -388,14 +388,14 @@ namespace GLVM::core
         0, 1, 2, 2, 1, 3,
         4, 5, 6, 6, 5, 7
     };
-    
+
     class CVulkanRenderer : public IRenderer {
     public:
 	    float previousTime = 0;
 		float accumulator = 0;
 		bool animationFlag = false;
 		unsigned int actorsNumber = 0;
-		
+
         std::vector<ecs::Texture> initializeTextureData_;
         std::vector<ecs::Texture> texture_load_data_;
         std::vector<ecs::Texture> hudTexture_load_data_;
@@ -413,29 +413,29 @@ namespace GLVM::core
 		float fYaw   = -90.0f;
         float fPitch = 0.0f;
 
-        const char* vertShaderMain_ = "../VKshaders/mainRendererShaders/vert.spv";
-        const char* fragShaderMain_ = "../VKshaders/mainRendererShaders/frag.spv";
+        const char* vertShaderMain_ = "VKshaders/mainRendererShaders/vert.spv";
+        const char* fragShaderMain_ = "VKshaders/mainRendererShaders/frag.spv";
 
-        const char* vertShaderFlatShadowMap = "../VKshaders/flatShadowMapShaders/vertFlatShadowMap.spv";
-        const char* fragShaderDirectionalLightShadowMap = "../VKshaders/flatShadowMapShaders/fragFlatShadowMap.spv";
+        const char* vertShaderFlatShadowMap = "VKshaders/flatShadowMapShaders/vertFlatShadowMap.spv";
+        const char* fragShaderDirectionalLightShadowMap = "VKshaders/flatShadowMapShaders/fragFlatShadowMap.spv";
 
-        const char* vertShaderCubeShadowMap = "../VKshaders/cubeShadowMapShaders/vertCubeShadowMap.spv";
-        const char* fragShaderCubeShadowMap = "../VKshaders/cubeShadowMapShaders/fragCubeShadowMap.spv";
-		
+        const char* vertShaderCubeShadowMap = "VKshaders/cubeShadowMapShaders/vertCubeShadowMap.spv";
+        const char* fragShaderCubeShadowMap = "VKshaders/cubeShadowMapShaders/fragCubeShadowMap.spv";
+
         unsigned int texturePool_;
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
 		GLVM::core::WindowXCBVulkan Window;
 #endif
-		
+
 #ifdef VK_USE_PLATFORM_XLIB_KHR
         GLVM::core::WindowXVulkan Window;
 #endif
-    
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
         GLVM::core::WindowWinVulkan Window;
 #endif
-        
+
         CVulkanRenderer();
         ~CVulkanRenderer() override;
 
@@ -451,7 +451,7 @@ namespace GLVM::core
 		void SetViewMatrix(ecs::components::transform& _Player, ecs::components::beholder& cameraComponent);
 		void SetProjectionMatrix();
         void run() override;
-    
+
     private:
         VkInstance instance;
         VkDebugUtilsMessengerEXT debugMessenger;
@@ -464,12 +464,12 @@ namespace GLVM::core
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
         VkXcbSurfaceCreateInfoKHR createXcbSurfaceInfo;
-#endif		
-		
+#endif
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
         VkWin32SurfaceCreateInfoKHR createWin32SurfaceInfo;
 #endif
-    
+
         VkSurfaceKHR surface;
 
         VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
@@ -491,7 +491,7 @@ namespace GLVM::core
 		Pipeline directionalLightPipeline;
 		Pipeline spotLightPipeline;
 		Pipeline pointLightPipeline;
-		
+
         VkPipelineLayout pipelineLayout;
         VkPipeline graphicsPipeline;
 
@@ -523,7 +523,7 @@ namespace GLVM::core
 		std::vector<VkBuffer> lightSpaceMatrixBuffer;
 		std::vector<VkDeviceMemory> lightSpaceMatrixMemory;
 		std::vector<VkDescriptorSet> lightSpaceMatrixDescriptorSet;
-		
+
 		unsigned int	pointLightNumber	   = 0;
 		std::vector<VK_Image> spotLightShadowMapImages;
 		std::vector<std::vector<VkFramebuffer>> pointLightShadowMapFrameBuffers;
@@ -573,7 +573,7 @@ namespace GLVM::core
 		VkDescriptorImageInfo directionalLightsImageInfo[DIRECTIONAL_LIGHTS_NUMBER];
 		VkDescriptorImageInfo pointLightsImageInfo[POINT_LIGHTS_NUMBER];
 		VkDescriptorImageInfo spotLightsImageInfo[SPOT_LIGHTS_NUMBER];
-		
+
         VkDescriptorPool descriptorPool;
 		unsigned int matrixUboDescriptorsNumber = 0;
 //		unsigned int viewPositionUboDescriptorsNumber = 0;
@@ -617,17 +617,17 @@ namespace GLVM::core
         std::vector<VkSemaphore> pointLightShadowMapImageAvailableSemaphores;
         std::vector<VkSemaphore> pointLightShadowMapRenderFinishedSemaphores;
         std::vector<VkFence> pointLightShadowMapInFlightFences;
-		
+
         uint32_t currentFrame = 0;
 		uint32_t directionalLightCurrentFrame = 0;
 		uint32_t spotLightCurrentFrame = 0;
 		uint32_t pointLightCurrentFrame = 0;
 
-		std::mutex mutex0; 
+		std::mutex mutex0;
 		std::mutex mutex1;
 		std::mutex mutex2;
 		std::mutex shadowMapPassesMutex;
-		
+
         bool framebufferResized = false;
 
         void initWindow();
