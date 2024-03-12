@@ -100,12 +100,15 @@ find_package(Vulkan REQUIRED)
 
 # Define the executable
 add_executable(glvm
-    GLPointer.c
+    assets/textures/glvm.cpp
+    assets/textures/sample1.cpp
+    assets/textures/sample2.cpp
     src/ComponentManager.cpp
     src/Engine.cpp
     src/EngineMain.cpp
     src/EntityManager.cpp
     src/Event.cpp
+    src/GLPointer.c
     src/GraphicAPI/Opengl.cpp
     src/GraphicAPI/Vulkan.cpp
     src/JsonParser.cpp
@@ -127,9 +130,6 @@ add_executable(glvm
     src/WinApi/SoundEngineWaveform.cpp
     src/WinApi/WindowWinOpengl.cpp
     src/WinApi/WindowWinVulkan.cpp
-    assets/textures/glvm.cpp
-    assets/textures/sample1.cpp
-    assets/textures/sample2.cpp
 )
 
 # Link libraries
