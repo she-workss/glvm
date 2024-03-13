@@ -46,5 +46,6 @@
     "C_Cpp.codeAnalysis.clangTidy.checks.disabled": [
         "modernize-use-trailing-return-type",
         "readability-identifier-length"
-    ]
+    ],
+    "sonarlint.pathToCompileCommands": "${workspaceFolder}\\build\\release\\compile_commands.json"
 }
