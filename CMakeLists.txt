@@ -106,33 +106,33 @@ add_executable(glvm
     assets/textures/glvm.cpp
     assets/textures/sample1.cpp
     assets/textures/sample2.cpp
-    src/ComponentManager.cpp
-    src/Engine.cpp
-    src/EngineMain.cpp
-    src/EntityManager.cpp
-    src/Event.cpp
-    src/GLPointer.c
-    src/graphic_api/Opengl.cpp
-    src/graphic_api/Vulkan.cpp
-    src/JsonParser.cpp
-    src/MeshManager.cpp
-    src/ShaderProgram.cpp
-    src/SoundEngineFactory.cpp
-    src/SystemManager.cpp
-    src/systems/AnimationSystem.cpp
-    src/systems/CameraSystem.cpp
-    src/systems/CollisionSystem.cpp
-    src/systems/GUISystem.cpp
-    src/systems/MovementSystem.cpp
-    src/systems/PhysicsSystem.cpp
-    src/systems/ProjectileSystem.cpp
-    src/TextureManager.cpp
-    src/TimerCreator.cpp
-    src/WavefrontObjParser.cpp
-    src/win_api/ChronoWin.cpp
-    src/win_api/SoundEngineWaveform.cpp
-    src/win_api/WindowWinOpengl.cpp
-    src/win_api/WindowWinVulkan.cpp
+    src/component_manager.cpp
+    src/engine.cpp
+    src/engine_main.cpp
+    src/entity_manager.cpp
+    src/event.cpp
+    src/gl_pointer.c
+    src/graphic_api/open_gl.cpp
+    src/graphic_api/vulkan.cpp
+    src/json_parser.cpp
+    src/mesh_manager.cpp
+    src/shader_program.cpp
+    src/sound_engine_factory.cpp
+    src/system_manager.cpp
+    src/systems/animation_system.cpp
+    src/systems/camera_system.cpp
+    src/systems/collision_system.cpp
+    src/systems/gui_system.cpp
+    src/systems/movement_system.cpp
+    src/systems/physics_system.cpp
+    src/systems/projectile_system.cpp
+    src/texture_manager.cpp
+    src/timer_creator.cpp
+    src/wavefront_obj_parser.cpp
+    src/win_api/chrono_win.cpp
+    src/win_api/sound_engine_waveform.cpp
+    src/win_api/window_win_open_gl.cpp
+    src/win_api/window_win_vulkan.cpp
 )
 
 # Link libraries

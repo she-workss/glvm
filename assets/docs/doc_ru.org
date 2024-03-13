@@ -105,7 +105,7 @@ ECS даёт возможность легко добавлять новые и 
      mv robot.h /path/to/GLVM/textures
 #+end_src
 
-  4. И затем просто подключите этот хэдер в "SpritesData.hpp":
+  4. И затем просто подключите этот хэдер в "sprites_data.hpp":
 
 #+begin_src c++
       #ifndef SPRITES_DATA
@@ -235,8 +235,8 @@ ECS даёт возможность легко добавлять новые и 
 #+begin_src c++
   ...
   #ifdef __linux__
-  //#include "unix_api/WindowXOpengl.hpp"
-  #include "unix_api/WindowXCBOpengl.hpp"
+  //#include "unix_api/window_x_open_gl.hpp"
+  #include "unix_api/window_xcb_open_gl.hpp"
   #endif
   ...
 #+end_src

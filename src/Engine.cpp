@@ -3,21 +3,21 @@
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
 
-#include "Engine.hpp"
-#include "ISoundEngine.hpp"
-#include "ShaderProgram.hpp"
-#include "SoundEngineFactory.hpp"
-#include "SystemManager.hpp"
-#include "Texture.hpp"
-#include "components/VertexComponent.hpp"
-#include "graphic_api/Opengl.hpp"
-#include "graphic_api/Vulkan.hpp"
-#include "systems/CameraSystem.hpp"
-#include "systems/CollisionSystem.hpp"
-#include "systems/GUISystem.hpp"
-#include "systems/MovementSystem.hpp"
-#include "systems/PhysicsSystem.hpp"
-#include "systems/ProjectileSystem.hpp"
+#include "engine.hpp"
+#include "components/vertex_component.hpp"
+#include "graphic_api/open_gl.hpp"
+#include "graphic_api/vulkan.hpp"
+#include "i_sound_engine.hpp"
+#include "shader_program.hpp"
+#include "sound_engine_factory.hpp"
+#include "system_manager.hpp"
+#include "systems/camera_system.hpp"
+#include "systems/collision_system.hpp"
+#include "systems/gui_system.hpp"
+#include "systems/movement_system.hpp"
+#include "systems/physics_system.hpp"
+#include "systems/projectile_system.hpp"
+#include "texture.hpp"
 #include <cstdint>
 #include <limits>
 #include <mutex>

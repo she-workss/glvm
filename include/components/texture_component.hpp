@@ -3,6 +3,17 @@
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
 
-#include "event.hpp"
+#ifndef TEXTURE_COMPONENT
+#define TEXTURE_COMPONENT
 
-extern GLVM::core::CEvent g_eEvent;
+// #include <vector>
+// #include <iostream>
+// #include "graphic_api/vulkan.hpp"
+
+namespace GLVM::ecs::components {
+struct texture {
+    unsigned int id;
+};
+} // namespace GLVM::ecs::components
+
+#endif

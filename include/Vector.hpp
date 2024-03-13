@@ -6,10 +6,10 @@
 #ifndef VECTOR_CONTAINER
 #define VECTOR_CONTAINER
 
-#include "Constants.hpp"
-#include "IContainer.hpp"
 #include "Iterator.hpp"
-#include "VertexMath.hpp"
+#include "constants.hpp"
+#include "i_container.hpp"
+#include "vertex_math.hpp"
 #include <assert.h>
 #include <cstddef>
 #include <iostream>

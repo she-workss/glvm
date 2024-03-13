@@ -3,6 +3,15 @@
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
 
-#include "event.hpp"
+#ifndef EVENT_COMPONENT
+#define EVENT_COMPONENT
 
-extern GLVM::core::CEvent g_eEvent;
+#include "../event.hpp"
+
+namespace GLVM::ecs::components {
+struct event {
+    core::EEvents eEvent_;
+};
+} // namespace GLVM::ecs::components
+
+#endif

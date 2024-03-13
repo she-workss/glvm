@@ -3,6 +3,12 @@
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
 
-#include "event.hpp"
+#ifndef VECTOR_ITERATOR
+#define VECTOR_ITERATOR
 
-extern GLVM::core::CEvent g_eEvent;
+#include "vector.hpp"
+#include <Iterator.hpp>
+
+namespace GLVM::core {}
+
+#endif

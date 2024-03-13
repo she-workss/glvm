@@ -99,7 +99,7 @@ The GLVM engine is based on a simple entity-component system (ECS) that uses spa
      mv robot.h /path/to/GLVM/textures
 #+end_src
 
-  4. Then, just include the header in "SpritesData.hpp":
+  4. Then, just include the header in "sprites_data.hpp":
 
 #+begin_src c++
       #ifndef SPRITES_DATA
@@ -226,8 +226,8 @@ For GLTF:
 #+begin_src c++
   ...
   #ifdef __linux__
-  //#include "unix_api/WindowXOpengl.hpp"
-  #include "unix_api/WindowXCBOpengl.hpp"
+  //#include "unix_api/window_x_open_gl.hpp"
+  #include "unix_api/window_xcb_open_gl.hpp"
   #endif
   ...
 #+end_src

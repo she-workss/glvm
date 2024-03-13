@@ -3,6 +3,19 @@
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
 
+#ifndef ISYSTEM
+#define ISYSTEM
+
+#include "component_manager.hpp"
 #include "event.hpp"
 
-extern GLVM::core::CEvent g_eEvent;
+namespace GLVM::ecs {
+class ISystem {
+public:
+    virtual ~ISystem() {
+    }
+    virtual void Update() = 0;
+};
+} // namespace GLVM::ecs
+
+#endif
