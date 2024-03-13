@@ -3,22 +3,24 @@
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
 
+#include "graphic_api/vulkan.hpp"
 #include "component_manager.hpp"
 #include "components/controller_component.hpp"
 #include "components/material_component.hpp"
 #include "components/transform_component.hpp"
 #include "components/vertex_component.hpp"
 #include "components/view_component.hpp"
-#include "graphic_api/vulkan.hpp"
 #include "texture.hpp"
 #include "vector.hpp"
 #include "wavefront_obj_parser.hpp"
+
+#include <vulkan/vulkan_core.h>
+
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <exception>
 #include <thread>
-#include <vulkan/vulkan_core.h>
 
 namespace GLVM::core {
 VkResult CreateDebugUtilsMessengerEXT(

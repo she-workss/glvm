@@ -5,6 +5,7 @@
 #pragma once
 
 #include "i_window.hpp"
+
 #include <GL/gl.h>
 #include <GL/glx.h>
 #include <X11/Xlib.h>

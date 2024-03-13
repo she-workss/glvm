@@ -3,8 +3,8 @@
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
 
-#include "components/vertex_component.hpp"
 #include "engine.hpp"
+#include "components/vertex_component.hpp"
 #include "graphic_api/open_gl.hpp"
 #include "graphic_api/vulkan.hpp"
 #include "i_sound_engine.hpp"
@@ -18,6 +18,7 @@
 #include "systems/physics_system.hpp"
 #include "systems/projectile_system.hpp"
 #include "texture.hpp"
+
 #include <cstdint>
 #include <limits>
 #include <mutex>

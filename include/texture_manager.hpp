@@ -8,6 +8,7 @@
 #include "constants.hpp"
 #include "gl_pointer.h"
 #include "texture.hpp"
+
 #include <mutex>
 #include <vector>
 

@@ -6,6 +6,7 @@
 #include "win_api/window_win_open_gl.hpp"
 #include "event.hpp"
 #include "gl_pointer.h"
+
 #include <iostream>
 #include <iterator>
 

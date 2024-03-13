@@ -6,6 +6,7 @@
 #include "texture_manager.hpp"
 #include "components/material_component.hpp"
 #include "texture.hpp"
+
 #include <iostream>
 
 namespace GLVM::ecs {

@@ -5,6 +5,7 @@
 
 #include "shader_program.hpp"
 #include "gl_pointer.h"
+
 #include <GL/gl.h>
 
 #define ARRAY_INFO_LOG_RANGE 1024

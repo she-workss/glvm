@@ -24,8 +24,10 @@
 #include "texture_manager.hpp"
 #include "timer_creator.hpp"
 #include "vector.hpp"
+
 #include <GL/gl.h>
 #include <GL/glext.h>
+
 #include <mutex>
 
 using Entity = unsigned int;

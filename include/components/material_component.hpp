@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef MATERIAL_COMPONENT
-#define MATERIAL_COMPONENT
+#pragma once
 
 #include "texture.hpp"
 #include "vertex_math.hpp"
@@ -19,5 +17,3 @@ struct material {
     float shininess;
 };
 } // namespace GLVM::ecs::components
-
-#endif

@@ -4,7 +4,7 @@
 // License: http://opensource.org/licenses/MIT
 #pragma once
 
-#include <assert.h>
+#include <cassert>
 
 namespace GLVM::core {
 

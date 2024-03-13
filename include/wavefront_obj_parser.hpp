@@ -5,6 +5,7 @@
 #pragma once
 
 #include "vector.hpp"
+
 #include <cassert>
 #include <cmath>
 #include <cstdio>
@@ -15,7 +16,6 @@
 #include <sstream>
 #include <string>
 #include <vector>
-
 #include <chrono>
 #include <thread>
 

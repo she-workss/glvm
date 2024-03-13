@@ -7,8 +7,10 @@
 #include "event.hpp"
 #include "i_sound_engine.hpp"
 #include "vector.hpp"
+
 #include <alsa/asoundlib.h>
 #include <alsa/pcm.h>
+
 #include <bits/types/FILE.h>
 
 namespace GLVM::core::Sound {

@@ -16,6 +16,7 @@
 #include "i_system.hpp"
 #include "vector.hpp"
 #include "vertex_math.hpp"
+
 #include <mutex>
 
 namespace GLVM::ecs {

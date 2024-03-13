@@ -12,6 +12,7 @@
 #ifdef _WIN32
 #include <GL/gl.h>
 #include <GL/glext.h>
+
 #include <windows.h>
 #endif
 

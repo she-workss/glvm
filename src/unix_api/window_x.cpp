@@ -4,12 +4,13 @@
 // License: http://opensource.org/licenses/MIT
 
 #include "unix_api/window_x.hpp"
-
 #include "event.hpp"
 #include "gl_pointer.h"
+
 #include <GL/glx.h>
 #include <X11/X.h>
 #include <X11/Xlib.h>
+
 #include <bits/types/time_t.h>
 #include <bits/types/wint_t.h>
 #include <iostream>

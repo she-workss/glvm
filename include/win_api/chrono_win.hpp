@@ -5,6 +5,7 @@
 #pragma once
 
 #include "i_chrono.hpp"
+
 #include <windows.h>
 
 namespace GLVM::Time {

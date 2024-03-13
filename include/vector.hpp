@@ -4,11 +4,12 @@
 // License: http://opensource.org/licenses/MIT
 #pragma once
 
-#include "Iterator.hpp"
 #include "constants.hpp"
 #include "i_container.hpp"
+#include "iterator.hpp"
 #include "vertex_math.hpp"
-#include <assert.h>
+
+#include <cassert>
 #include <cstddef>
 #include <iostream>
 

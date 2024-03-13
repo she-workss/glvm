@@ -6,6 +6,7 @@
 
 #include "gl_pointer.h"
 #include "vertex_math.hpp"
+
 #include <fstream>
 #include <iostream>
 #include <sstream>

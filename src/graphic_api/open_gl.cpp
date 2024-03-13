@@ -30,18 +30,18 @@
 #include "vertex_data.hpp"
 #include "vertex_math.hpp"
 #include "wavefront_obj_parser.hpp"
+
 #include <GL/gl.h>
 #include <GL/glext.h>
-#include <cmath>
 
 #include <chrono>
+#include <cmath>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
-#include <math.h>
 #include <ratio>
 #include <sstream>
 #include <thread>

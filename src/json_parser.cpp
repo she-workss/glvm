@@ -6,7 +6,7 @@
 #include "json_parser.hpp"
 #include "stack.hpp"
 #include "vector.hpp"
-#include <cassert>
+
 #include <chrono>
 #include <cstdint>
 #include <ostream>

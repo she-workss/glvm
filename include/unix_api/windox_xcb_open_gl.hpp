@@ -4,23 +4,24 @@
 // License: http://opensource.org/licenses/MIT
 #pragma once
 
-#include "i_window.hpp"
-#include <cstdint>
-#include <cstdio>
-#include <unistd.h>
-
 #include "events_stack.hpp"
 #include "gl_pointer.h"
+#include "i_window.hpp"
+
 #include <GL/gl.h>
 #include <GL/glx.h>
 #include <X11/Xlib-xcb.h> // For XGetXCBConnection, link with libX11-xcb
 #include <X11/Xlib.h>
-#include <cassert>
-#include <iostream>
 #include <xcb/xcb.h>
 #include <xcb/xcb_cursor.h>
 #include <xcb/xcb_keysyms.h>
 #include <xcb/xproto.h>
+
+#include <cassert>
+#include <cstdint>
+#include <cstdio>
+#include <iostream>
+#include <unistd.h>
 
 namespace GLVM::core {
 typedef uint32_t xcb_window_t;

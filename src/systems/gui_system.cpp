@@ -4,6 +4,7 @@
 // License: http://opensource.org/licenses/MIT
 
 #include "systems/gui_system.hpp"
+
 #include <GL/gl.h>
 
 namespace GLVM::ecs {

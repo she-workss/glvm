@@ -7,10 +7,12 @@
 #include "events_stack.hpp"
 #include "gl_pointer.h"
 #include "i_window.hpp"
+
 #include <GL/gl.h>
 #include <GL/glext.h>
-#include <stdio.h>
-#include <wchar.h>
+
+#include <cstdio>
+#include <cwchar>
 #include <windows.h>
 #include <windowsx.h>
 

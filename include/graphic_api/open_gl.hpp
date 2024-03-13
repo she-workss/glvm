@@ -26,9 +26,6 @@
 #include "vector.hpp"
 #include "vertex_math.hpp"
 #include "wavefront_obj_parser.hpp"
-#include <GL/gl.h>
-#include <GL/glext.h>
-#include <fstream>
 
 #ifdef __linux__
 #include "unix_api/window_xcb_open_gl.hpp"
@@ -37,6 +34,11 @@
 #ifdef _WIN32
 #include "win_api/window_win_open_gl.hpp"
 #endif
+
+#include <GL/gl.h>
+#include <GL/glext.h>
+
+#include <fstream>
 
 #define MAX_JOINTS_NUMBER 18
 namespace GLVM::core {

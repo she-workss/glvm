@@ -5,6 +5,7 @@
 
 #include "wavefront_obj_parser.hpp"
 #include "vector.hpp"
+
 #include <chrono>
 #include <iterator>
 

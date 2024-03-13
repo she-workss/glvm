@@ -5,6 +5,7 @@
 #pragma once
 
 #include "event.hpp"
+
 #include <iostream>
 
 namespace GLVM::core {

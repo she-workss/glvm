@@ -6,6 +6,7 @@
 
 #include "i_system.hpp"
 #include "vector.hpp"
+
 #include <mutex>
 
 namespace GLVM::ecs {

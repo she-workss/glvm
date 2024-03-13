@@ -10,6 +10,7 @@
 #include "i_system.hpp"
 #include "shader_program.hpp"
 #include "vertex_math.hpp"
+
 #include <GL/gl.h>
 
 namespace GLVM::ecs {

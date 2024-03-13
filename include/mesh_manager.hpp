@@ -6,6 +6,7 @@
 
 #include "components/vertex_component.hpp"
 #include "vector.hpp"
+
 #include <mutex>
 #include <vector>
 

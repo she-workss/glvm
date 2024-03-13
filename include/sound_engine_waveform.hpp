@@ -5,9 +5,11 @@
 #pragma once
 
 #include "i_sound_engine.hpp"
-#include <windows.h>
 
+// clang-format off
+#include <windows.h>
 #include <mmsystem.h>
+// clang-format on
 
 namespace GLVM::core::Sound {
 class CSoundEngineWaveform : public ISoundEngine {

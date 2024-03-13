@@ -20,7 +20,7 @@
 #include "components/view_component.hpp"
 #include "i_container.hpp"
 #include "vector.hpp"
-#include <assert.h>
+
 #include <cassert>
 #include <compare>
 #include <concepts>

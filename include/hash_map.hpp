@@ -5,6 +5,7 @@
 #pragma once
 
 #include "vector.hpp"
+
 #include <iostream>
 #include <random>
 #include <string>

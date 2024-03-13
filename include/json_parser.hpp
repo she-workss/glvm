@@ -8,6 +8,7 @@
 #include "stack.hpp"
 #include "typenames.hpp"
 #include "vector.hpp"
+
 #include <chrono>
 #include <cmath>
 #include <cstdint>
@@ -15,7 +16,6 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-#include <string.h>
 #include <string>
 #include <thread>
 

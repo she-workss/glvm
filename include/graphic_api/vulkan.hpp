@@ -4,21 +4,6 @@
 // License: http://opensource.org/licenses/MIT
 #pragma once
 
-#include <algorithm>
-#include <array>
-#include <chrono>
-#include <cmath>
-#include <cstdint>
-#include <cstdlib>
-#include <cstring>
-#include <fstream>
-#include <iostream>
-#include <new>
-#include <optional>
-#include <set>
-#include <stdexcept>
-#include <vector>
-
 #include "component_manager.hpp"
 #include "components/material_component.hpp"
 #include "components/texture_component.hpp"
@@ -48,6 +33,7 @@
 #include "vulkan/vulkan.h"
 #include "vulkan/vulkan_core.h"
 #include "vulkan/vulkan_xcb.h"
+
 #include <xcb/xcb.h>
 #endif
 
@@ -56,13 +42,30 @@
 #include "vulkan/vulkan.h"
 #include "vulkan/vulkan_core.h"
 #include "vulkan/vulkan_xlib.h"
+
 #include <X11/Xlib.h>
 #endif
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 #include "win_api/window_win_vulkan.hpp"
+
 #include <vulkan/vulkan.h>
 #endif
+
+#include <algorithm>
+#include <array>
+#include <chrono>
+#include <cmath>
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <new>
+#include <optional>
+#include <set>
+#include <stdexcept>
+#include <vector>
 
 #define SHADOW_MAP_SIZE 640
 

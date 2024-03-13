@@ -5,14 +5,16 @@
 
 #include "unix_api/window_xcb_vulkan.hpp"
 #include "event.hpp"
+
 #include <X11/X.h>
 #include <X11/XKBlib.h>
-#include <cstdint>
 #include <xcb/xcb.h>
 #include <xcb/xcb_cursor.h>
 #include <xcb/xcb_keysyms.h>
 #include <xcb/xfixes.h>
 #include <xcb/xproto.h>
+
+#include <cstdint>
 
 namespace GLVM::core {
 WindowXCBVulkan::WindowXCBVulkan() {

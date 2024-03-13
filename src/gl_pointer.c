@@ -1,3 +1,6 @@
+#define INIT_EXT
+#include "gl_pointer.h"
+
 #ifdef __linux__
 #include <GL/glx.h>
 #define GET_PROC_ADDRESS glXGetProcAddress
@@ -6,12 +9,10 @@
 #ifdef _WIN32
 #include <GL/gl.h>
 #include <GL/glext.h>
+
 #include <windows.h>
 #define GET_PROC_ADDRESS(s) wglGetProcAddress((LPCSTR)s)
 #endif
-
-#define INIT_EXT
-#include "gl_pointer.h"
 
 EXTERN_C void Initializer() {
     pGLVertex_Arrays = (void (*)(GLsizei, GLuint))GET_PROC_ADDRESS(

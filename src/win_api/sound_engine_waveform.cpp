@@ -4,6 +4,7 @@
 // License: http://opensource.org/licenses/MIT
 
 #include "sound_engine_waveform.hpp"
+
 #include <cstdio>
 #include <fstream>
 #include <iostream>

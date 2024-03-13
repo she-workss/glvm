@@ -4,7 +4,7 @@
 // License: http://opensource.org/licenses/MIT
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 typedef uint8_t u8;
 typedef int8_t i8;

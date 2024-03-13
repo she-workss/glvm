@@ -4,8 +4,6 @@
 // License: http://opensource.org/licenses/MIT
 #pragma once
 
-#include "vector.hpp"
-
 namespace GLVM::ecs::components {
 class collider {
 public:
