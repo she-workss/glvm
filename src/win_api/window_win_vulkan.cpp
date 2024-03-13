@@ -19,10 +19,8 @@ namespace GLVM::core {
 WindowWinVulkan::WindowWinVulkan() {
     const char *_title = "Window class";
     int _width = 1920, _height = 1080;
-
     // Register the window class for the main window.
     window_Class_.style = 0;
-    //        wc.lpfnWndProc = procedure;
     window_Class_.lpfnWndProc = MainWndProc;
     window_Class_.cbClsExtra = 0;
     window_Class_.cbWndExtra = 0;
@@ -40,13 +38,11 @@ WindowWinVulkan::WindowWinVulkan() {
     RECT rect;
     SetRect(&rect, 0, 0, _width, _height);
     AdjustWindowRect(&rect, style, FALSE);
-
     // Create the main window.
     pModern_Window_ = CreateWindowA(
             "Window class", _title, style, CW_USEDEFAULT, CW_USEDEFAULT,
             rect.right - rect.left, rect.bottom - rect.top, (HWND)NULL,
             (HMENU)NULL, NULL, (LPVOID)NULL);
-
     // Show the window and paint its contents.
     ShowWindow(pModern_Window_, SW_SHOWDEFAULT);
     UpdateWindow(pModern_Window_);
@@ -60,7 +56,7 @@ void WindowWinVulkan::ClearDisplay() {
 }
 
 bool WindowWinVulkan::HandleEvent(CEvent &_Event) {
-    ///< Create message struct object.
+    // Create message struct object.
     MSG msg;
 
     SetWindowLongPtrW(pModern_Window_, GWLP_USERDATA, (LONG_PTR)&_Event);
@@ -89,7 +85,7 @@ void WindowWinVulkan::CursorLock(int _x_position, int _y_position,
     POINT point_position {960, 540};
     ClientToScreen(pModern_Window_, &point_position);
 
-    ///< Solve a problem with endlessly growing numbers in the start game run.
+    // Solve a problem with endlessly growing numbers in the start game run.
     if (_x_position > 1911 || _x_position < 0 || _y_position > 1052 ||
         _y_position < 0) {
         return;
@@ -111,31 +107,20 @@ void WindowWinVulkan::CursorLock(int _x_position, int _y_position,
     SetCursorPos(point_position.x, point_position.y);
     SetCursor(NULL);
 }
-//}
-///< Callback method for events handling.
+
+// Callback method for events handling.
 LRESULT CALLBACK WindowWinVulkan::MainWndProc(HWND _pHwnd, UINT _pMsg,
                                               WPARAM _pWParam,
                                               LPARAM _pLParam) {
     CEvent *pEvent = (CEvent *)GetWindowLongPtrW(_pHwnd, GWLP_USERDATA);
 
     int iMouse_Position_X, iMouse_Position_Y;
-    // tagRECT rect;
-    // const RECT* rect_ptr = &rect;
-
     switch (_pMsg) {
         case WM_CREATE:
-            // GetWindowRect(pModern_Window_, &rect);
-            // ClipCursor(rect_ptr);
-            ///< Initialize the window.
             return 0;
-
-            // case WM_PAINT:
-            //     ///< Paint the window's client area.
-            //     return 0;
-
         case WM_SIZE:
+            // Set the size and position of the window.
             glViewport(0, 0, LOWORD(_pLParam), HIWORD(_pLParam));
-            ///< Set the size and position of the window.
             return 0;
 
         case WM_LBUTTONDOWN:
@@ -268,11 +253,7 @@ LRESULT CALLBACK WindowWinVulkan::MainWndProc(HWND _pHwnd, UINT _pMsg,
         case WM_DESTROY:
             PostQuitMessage(0);
             break;
-
-            //
-            // Process other messages.
-            //
-
+        // Process other messages.
         default:
             return DefWindowProc(_pHwnd, _pMsg, _pWParam, _pLParam);
     }

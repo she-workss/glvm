@@ -13,8 +13,11 @@
 
 namespace GLVM::core::Sound {
 class CSoundEngineWaveform : public ISoundEngine {
-    HANDLE hData = NULL; ///< handle of waveform data memory
-    HPSTR lpData = NULL; ///< pointer to waveform data memory
+    // Handle of waveform data memory
+    HANDLE hData = NULL;
+
+    // Pointer to waveform data memory
+    HPSTR lpData = NULL;
 
     vector<CSoundSample *> tSound_Container;
 

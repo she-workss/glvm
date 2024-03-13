@@ -23,8 +23,6 @@ public:
     Matrix(T arg = 0) {
         for (int i = 0; i < var; ++i) {
             m_matrix[i][i] = arg;
-            // if(i == (var-1))
-            // 	m_matrix[i][i] = 1;
         }
     }
 
@@ -328,10 +326,6 @@ template<class T, class T2, int var, int var2>
 Matrix<T, var> Translate(Matrix<T, var> matrix, Vector<T2, var2> vector) {
     Matrix<T, var> tempMatrix(1.0f);
     tempMatrix = matrix;
-
-    // for(int i = 0; i < var; ++i)
-    // 	tempMatrix[i][var-1] += vector[i];
-
     for (int i = 0; i < var; ++i) {
         tempMatrix[var - 1][i] += vector[i];
     }
@@ -365,56 +359,6 @@ Matrix<T, var> RotateZ(Matrix<T, var> matrix, float angle) {
 
     return tempMatrix2;
 }
-
-// template <typename T, int size>
-// T Deteminant(Matrix<T, size> _matrix)
-// {
-//     if(size <= 1)
-//         return;
-//     int iDeterminant = 0;
-//     int iSign = 1;
-
-//     Matrix<T, (size - 1)> _temp_Matrix;
-
-//     for(int i = 0; i < size; ++i)
-//     {
-//         if(i % 2 == 1)
-//             iSign = -1;
-//         else
-//             iSign = 1;
-
-//         if(size == 2)
-//             return (_matrix[0][i] *iSign) * (_matrix[0][0] * _matrix[1][1] -
-//             _matrix[0][1] * _matrix[1][0]);
-
-//         for(int j = 0; j < (size - 1); ++j)
-//         {
-//             if(j == i)
-//                 continue;
-//             for(int x = 0; x < (size - 1); ++x)
-//             {
-//                 if(x == i)
-//                     continue;
-
-//                 _temp_Matrix = _matrix[j][x];
-//             }
-//         }
-
-//         iDeterminant = (_matrix[0][i] * iSign) * iDeterminant(_temp_Matrix);
-//     }
-
-//     return iDeterminant;
-// }
-
-// template <typename T>
-// Vector<T, 3> Cross(Vector<T, 3> _vector1, Vector<T, 3> _vector2)
-// {
-//     return Vector<T, 3>(_vector1[1] * _vector2[2] - _vector1[2] *
-//     _vector2[1],
-//                            _vector1[2] * _vector2[0] - _vector1[0] *
-//                            _vector2[2], _vector1[0] * _vector2[1] -
-//                            _vector1[1] * _vector2[0]);
-// }
 
 template<typename T>
 Vector<T, 3> Cross(Vector<T, 3> _vector1, Vector<T, 3> _vector2) {
@@ -457,36 +401,6 @@ Vector<T, 3> Normalize(Vector<T, 3> _vector) {
 
     return _vector;
 }
-
-// template <typename T>
-// Matrix<T, 4> LookAtRH(Vector<T, 3> _eye, Vector<T, 3> _target, Vector<T, 3>
-// _up)
-// {
-//     Vector<T, 3> z_axis = Normalize(_eye - _target);
-//     Vector<T, 3> x_axis = Normalize(Cross(_up, z_axis));
-//     Vector<T, 3> y_axis = Cross(z_axis, x_axis);
-
-//     Matrix<T, 4> tOrientation(Vector<T, 4>(x_axis[0], y_axis[0], z_axis[0],
-//     0),
-//                               Vector<T, 4>(x_axis[1], y_axis[1], z_axis[1],
-//                               0), Vector<T, 4>(x_axis[2], y_axis[2],
-//                               z_axis[2], 0), Vector<T, 4>(0, 0, 0, 1));
-
-//     Matrix<T, 4> tTranslation(Vector<T, 4>(1, 0, 0 ,0),
-//                               Vector<T, 4>(0, 1, 0, 0),
-//                               Vector<T, 4>(0, 0, 1, 0),
-//                               Vector<T, 4>(-_eye[0], -_eye[1], -_eye[2], 1));
-
-//     return (tOrientation * tTranslation);
-
-//     // Matrix<T, 4> tView(Vector<T, 4>(x_axis[0], y_axis[0], z_axis[0], 0),
-//     //                    Vector<T, 4>(x_axis[1], y_axis[1], z_axis[1], 0),
-//     //                    Vector<T, 4>(x_axis[2], y_axis[2], z_axis[2], 0),
-//     //                    Vector<T, 4>(-Dot(x_axis, _eye), -Dot(y_axis,
-//     _eye), -Dot(z_axis, _eye), 1));
-
-//     // return tView;
-// }
 
 template<typename T>
 Matrix<T, 4> GLVM_perspectiveRH_ZO(T fov, T aspect, T near_plane, T far_plane) {
@@ -546,8 +460,6 @@ Matrix<T, 4> lookAtRH(Vector<T, 3> _eye, Vector<T, 3> _center,
     Result[3][0] = -Dot(s, _eye);
     Result[3][1] = -Dot(u, _eye);
     Result[3][2] = Dot(f, _eye);
-    //    Result.SelfTensorTranspose();
-
     return Result;
 }
 
@@ -587,8 +499,6 @@ Matrix<T, 4> LookAtMain(Vector<T, 3> _eye, Vector<T, 3> _center,
 template<typename T>
 Matrix<T, 4> FPSview(Vector<T, 3> _eye, Vector<T, 3> _center,
                      Vector<T, 3> _up) {
-    //    _center.m_vector[1] = _eye.m_vector[1];
-
     Vector<T, 3> f(Normalize(_center - _eye));
     Vector<T, 3> s(Normalize(Cross(f, _up)));
     Vector<T, 3> u(Cross(s, f));
@@ -606,8 +516,6 @@ Matrix<T, 4> FPSview(Vector<T, 3> _eye, Vector<T, 3> _center,
     Result[3][0] = -Dot(s, _eye);
     Result[3][1] = -Dot(u, _eye);
     Result[3][2] = Dot(f, _eye);
-    //    Result.SelfTensorTranspose();
-
     return Result;
 }
 
@@ -646,12 +554,8 @@ Matrix<T, 4> FPS_View_RH(Vector<T, 3> _eye, float _pitch, float _yaw) {
 template<class T, int var, int vec_size>
 Matrix<T, var> Rotate(Vector<T, vec_size> vector, float angle) {
     vector = (Normalize(vector));
-
-    //	angle *= PI / 180;
     Matrix<T, var> tempMatrix(1.0f);
-
-    /// Transposed rotate matrix.
-
+    // Transposed rotate matrix.
     tempMatrix[0][0] =
             std::cos(angle) +
             (vector[0] * vector[0]) * (static_cast<T>(1) - std::cos(angle));
@@ -686,52 +590,6 @@ Matrix<T, var> Rotate(Vector<T, vec_size> vector, float angle) {
     tempMatrix[1][3] = static_cast<T>(0);
     tempMatrix[2][3] = static_cast<T>(0);
     tempMatrix[3][3] = static_cast<T>(1);
-
-    /// Normal rotate matrix.
-
-    // tempMatrix[0][0] = std::cos(angle) + (vector[0] * vector[0]) *
-    // (static_cast<T>(1) - std::cos(angle)); tempMatrix[0][1] = vector[0] *
-    // vector[1] * (static_cast<T>(1) - std::cos(angle)) - vector[2] *
-    // std::sin(angle); tempMatrix[0][2] = vector[0] * vector[2] *
-    // (static_cast<T>(1) - std::cos(angle)) + vector[1] * std::sin(angle);
-    // tempMatrix[0][3] = static_cast<T>(0);
-    // tempMatrix[1][0] = vector[1] * vector[0] * (static_cast<T>(1) -
-    // std::cos(angle)) + vector[2] * std::sin(angle); tempMatrix[1][1] =
-    // std::cos(angle) + (vector[1] * vector[1]) * (static_cast<T>(1) -
-    // std::cos(angle)); tempMatrix[1][2] = vector[1] * vector[2] *
-    // (static_cast<T>(1) - std::cos(angle)) - vector[0] * std::sin(angle);
-    // tempMatrix[1][3] = static_cast<T>(0);
-    // tempMatrix[2][0] = vector[2] * vector[0] * (static_cast<T>(1) -
-    // std::cos(angle)) - vector[1] * std::sin(angle); tempMatrix[2][1] =
-    // vector[2] * vector[1] * (static_cast<T>(1) - std::cos(angle)) + vector[0]
-    // * std::sin(angle); tempMatrix[2][2] = std::cos(angle) + (vector[2] *
-    // vector[2]) * (static_cast<T>(1) - std::cos(angle)); tempMatrix[2][3] =
-    // static_cast<T>(0); tempMatrix[3][0] = static_cast<T>(0); tempMatrix[3][1]
-    // = static_cast<T>(0); tempMatrix[3][2] = static_cast<T>(0);
-    // tempMatrix[3][3] = static_cast<T>(1);
-
-    // tempMatrix[0][0] = std::cos(angle) + (vector[0] * vector[0]) * (1 -
-    // std::cos(angle)); tempMatrix[0][1] = vector[0] * vector[1] * (1 -
-    // std::cos(angle)) - vector[2] * std::sin(angle); tempMatrix[0][2] =
-    // vector[0] * vector[2] * (1 - std::cos(angle)) + vector[1] *
-    // std::sin(angle); tempMatrix[0][3] = 0; tempMatrix[1][0] = vector[1] *
-    // vector[0] * (1 - std::cos(angle)) + vector[2] * std::sin(angle);
-    // tempMatrix[1][1] = std::cos(angle) + (vector[1] * vector[1]) * (1 -
-    // std::cos(angle)); tempMatrix[1][2] = vector[1] * vector[2] * (1 -
-    // std::cos(angle)) - vector[0] * std::sin(angle); tempMatrix[1][3] = 0;
-    // tempMatrix[2][0] = vector[2] * vector[0] * (1 - std::cos(angle)) -
-    // vector[1] * std::sin(angle); tempMatrix[2][1] = vector[2] * vector[1] *
-    // (1 - std::cos(angle)) + vector[0] * std::sin(angle); tempMatrix[2][2] =
-    // std::cos(angle) + (vector[2] * vector[2]) * (1 - std::cos(angle));
-    // tempMatrix[2][3] = 0;
-    // tempMatrix[3][0] = 0;
-    // tempMatrix[3][1] = 0;
-    // tempMatrix[3][2] = 0;
-    // tempMatrix[3][3] = 1;
-
-    // Matrix<float, 4> model_mat(1.0f);
-    // model_mat = matrix * tempMatrix;
-
     return tempMatrix;
 }
 
@@ -819,13 +677,6 @@ Matrix<T, var> Perspective(T fov, T aspect, T near_plane, T far_plane) {
 #else
     return perspectiveRH_ZO(fov, aspect, near_plane, far_plane);
 #endif
-    // float S = std::tan((fov/2)*(PI/360));
-    // Matrix<float, var> tempMatrix;
-    // tempMatrix[0][0] = 1/((1280.0f/1280.0f)*S);
-    // tempMatrix[1][1] = 1/S;
-    // tempMatrix[2][2] = -((f+n)/(f-n));
-    // tempMatrix[2][3] = -((2*f*n)/(f-n));
-    // tempMatrix[3][2] = -1;
 }
 
 constexpr float Max(float var1, float var2) {

@@ -6,15 +6,9 @@
 #ifndef EVENT
 #define EVENT
 
-// #include "stack.hpp"
-
 namespace GLVM::core {
 
 class CStack;
-
-/*! \enum EEvents
-    \brief Realise event event types.
-*/
 
 enum EEvents {
     eDEFAULT,
@@ -53,10 +47,6 @@ struct SMousePointerPosition {
     float pitch;
     float yaw;
 };
-
-/*! \class Event
-    \brief Realise event game system.
-*/
 
 class CEvent {
     EEvents eEvent_;

@@ -59,7 +59,7 @@ class Engine {
     ecs::CPhysicsSystem *physicsSystem;
     ecs::CProjectileSystem *projectileSystem;
 
-    /// For FPS counting
+    // For FPS counting
     unsigned int fpsCounter = 0;
     double fpsAccumulator = 0;
 
@@ -68,13 +68,14 @@ class Engine {
 public:
     ~Engine();
 
-    Engine(Engine &_engine) =
-            delete; ///< Dont need to make copy because of singleton property.
-    void operator=(const Engine &_engine) =
-            delete; ///< Dont need assignment operator because of singleton
-                    ///< property.
-    static Engine *GetInstance(); ///< It possibly to get only one instance of
-                                  ///< this class whith this method
+    // Dont need to make copy because of singleton property.
+    Engine(Engine &_engine) = delete;
+
+    // Dont need assignment operator because of singleton property.
+    void operator=(const Engine &_engine) = delete;
+
+    // It possibly to get only one instance of this class with this method.
+    static Engine *GetInstance();
 
     void GameLoop(RendererType renderer);
     void EventQueueFlush();

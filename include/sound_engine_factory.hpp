@@ -9,13 +9,6 @@
 #include "i_sound_engine.hpp"
 
 namespace GLVM::core::Sound {
-/*!
-  \brief Create sound engine enterface.
-
-  This class creates a sound engine independent interface.
-  Implemented by means of the factory method.
-*/
-
 class CSoundEngineFactory {
 public:
     ISoundEngine *CreateSoundEngine();

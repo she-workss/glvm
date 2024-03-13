@@ -16,11 +16,9 @@
 #include "vertex_math.hpp"
 
 namespace GLVM::ecs {
-/*! This update searching for refering to colliders entities and check their
- *  transform components for collision, and if collision detected check if
- *  backtracking entity had gravity component for call Gravity function.
- */
-
+// This update searching for referring to colliders entities and check their
+// transform components for collision, and if collision detected check if
+// backtracking entity had gravity component for call Gravity function.
 void CPhysicsSystem::Update() {
     namespace cm = GLVM::ecs::components;
 

@@ -19,7 +19,7 @@ public:
     Shader *Shader_Program_;
     Matrix<float, 4> tProjection_Matrix {1.0f};
 
-    ///< Mouse parameters.
+    // Mouse parameters.
     float fYaw = -90.0f;
     float fPitch = 0.0f;
     float fLast_X = 1920.0f / 2.0f;

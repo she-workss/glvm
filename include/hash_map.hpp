@@ -168,15 +168,3 @@ private:
         hashMap_ = temp;
     }
 };
-
-// union Variant
-// {
-//     std::string string;
-//     float integer;
-//     bool boolean;
-//     int null;
-// 	GLVM::core::vector<Variant> array;
-//     HashMap<Variant> map;
-//     Variant() {}
-//     ~Variant() {}
-// };

@@ -27,9 +27,8 @@ public:
     TextureManager();
 
     void SetTextureVector(std::vector<Texture> _textureVector);
-    static TextureManager *
-    GetInstance(); ///< It possibly to get only one instance of this class whith
-                   ///< this method.
+    // It possibly to get only one instance of this class with this method.
+    static TextureManager *GetInstance();
     static TextureManager *GetHUDInstance();
     void BindTexture(Entity_ID _entityID, Texture_ID _textureID);
     void LoadTextureData(GLVM::ecs::Texture &_Texture);

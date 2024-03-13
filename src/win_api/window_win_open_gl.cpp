@@ -17,13 +17,14 @@
 
 namespace GLVM::core {
 window_win_open_gl::window_win_open_gl() {
-    ///< Create classic window
+    // Create classic window
     pClassic_Window_ =
             CreateWindowA("STATIC", "", WS_POPUP | WS_DISABLED, 0, 0, 1, 1,
                           NULL, NULL, GetModuleHandle(NULL), NULL);
-    pClassic_DC_ = GetDC(pClassic_Window_); ///< DC - device context.
+    // Get Device context
+    pClassic_DC_ = GetDC(pClassic_Window_);
 
-    ///< Set classic pixel format
+    // Set classic pixel format
     PIXELFORMATDESCRIPTOR classic_Format_Descriptor = {
             sizeof(classic_Format_Descriptor),
             1,
@@ -57,20 +58,14 @@ window_win_open_gl::window_win_open_gl() {
     SetPixelFormat(pClassic_DC_, iClassic_Pixel_Format,
                    &classic_Format_Descriptor);
 
-    ///< Create classic context
+    // Create classic context
     pClassic_Context_ = wglCreateContext(pClassic_DC_);
     wglMakeCurrent(pClassic_DC_, pClassic_Context_);
 
     int iMajor, iMinor;
     glGetIntegerv(4, &iMajor);
     glGetIntegerv(2, &iMinor);
-    //		if ( iMajor < 3 || ( iMajor == 3 && iMinor < 2 ) ) throw
-    // VersionException();
-
-    // Load OpenGL extensions
-    // LoadExtensions();
-
-    ///< Create final pixel format
+    // Create final pixel format
     const int aPixel_Attribs[] = {WGL_DRAW_TO_WINDOW_ARB,
                                   GL_TRUE,
                                   WGL_SUPPORT_OPENGL_ARB,
@@ -104,7 +99,6 @@ window_win_open_gl::window_win_open_gl() {
 
     window_Class_ = {};
 
-    //        window_Class_.style = WS_VISIBLE;
     window_Class_.style = CS_DBLCLKS | CS_PARENTDC;
     window_Class_.lpfnWndProc = MainWndProc;
     window_Class_.cbClsExtra = 0;
@@ -127,11 +121,9 @@ window_win_open_gl::window_win_open_gl() {
     UINT pFormat_Count;
     WGLChoosePixFormatARB(pModern_DC_, aPixel_Attribs, NULL, 1,
                           &iModern_Pixel_Format, &pFormat_Count);
-    //		if ( pFormat_Count == 0 ) throw PixelFormatException();
     SetPixelFormat(pModern_DC_, iModern_Pixel_Format,
                    &classic_Format_Descriptor);
-
-    ///< Create modern OpenGL 4.2 context
+    // Create modern OpenGL 4.2 context
     int aAttributes[] = {WGL_CONTEXT_MAJOR_VERSION_ARB,
                          4,
                          WGL_CONTEXT_MINOR_VERSION_ARB,
@@ -143,7 +135,7 @@ window_win_open_gl::window_win_open_gl() {
     pModern_Context_ =
             WGLCreateContextAtribbARB(pModern_DC_, NULL, aAttributes);
 
-    ///< Clean up
+    // Clean up
     wglMakeCurrent(pModern_DC_, pModern_Context_);
 
     SetCursorPos(0, 0);
@@ -163,7 +155,7 @@ void window_win_open_gl::ClearDisplay() {
 }
 
 bool window_win_open_gl::HandleEvent(CEvent &_Event) {
-    ///< Create message struct object.
+    // Create message struct object
     MSG msg;
 
     SetWindowLongPtrW(pModern_Window_, GWLP_USERDATA, (LONG_PTR)&_Event);
@@ -192,7 +184,7 @@ void window_win_open_gl::CursorLock(int _x_position, int _y_position,
     POINT point_position {960, 540};
     ClientToScreen(pModern_Window_, &point_position);
 
-    ///< Solve a problem with endlessly growing numbers in the start game run.
+    // Solve a problem with endlessly growing numbers in the start game run
     if (_x_position > 1911 || _x_position < 0 || _y_position > 1052 ||
         _y_position < 0) {
         return;
@@ -215,32 +207,19 @@ void window_win_open_gl::CursorLock(int _x_position, int _y_position,
     SetCursor(NULL);
 }
 
-///< Callback method for events handling.
+// Callback method for events handling
 LRESULT CALLBACK window_win_open_gl::MainWndProc(HWND _pHwnd, UINT _pMsg,
                                                  WPARAM _pWParam,
                                                  LPARAM _pLParam) {
     CEvent *pEvent = (CEvent *)GetWindowLongPtrW(_pHwnd, GWLP_USERDATA);
-
     int iMouse_Position_X, iMouse_Position_Y;
-    // tagRECT rect;
-    // const RECT* rect_ptr = &rect;
-
     switch (_pMsg) {
         case WM_CREATE:
-            // GetWindowRect(pModern_Window_, &rect);
-            // ClipCursor(rect_ptr);
-            ///< Initialize the window.
             return 0;
-
-            // case WM_PAINT:
-            //     ///< Paint the window's client area.
-            //     return 0;
-
         case WM_SIZE:
+            // Set the size and position of the window
             glViewport(0, 0, LOWORD(_pLParam), HIWORD(_pLParam));
-            ///< Set the size and position of the window.
             return 0;
-
         case WM_LBUTTONDOWN:
             pEvent->SetEvent(EEvents::eMOUSE_LEFT_BUTTON);
             return 0;
@@ -371,11 +350,7 @@ LRESULT CALLBACK window_win_open_gl::MainWndProc(HWND _pHwnd, UINT _pMsg,
         case WM_DESTROY:
             PostQuitMessage(0);
             break;
-
-            //
-            // Process other messages.
-            //
-
+        // Process other messages
         default:
             return DefWindowProc(_pHwnd, _pMsg, _pWParam, _pLParam);
     }

@@ -19,14 +19,12 @@ class CSystemManager : public ISystem {
     ~CSystemManager();
 
 public:
-    CSystemManager(CSystemManager &_system_Manager) =
-            delete; ///< Dont need to make cope because of singleton property.
-    void operator=(const CSystemManager &_system_Manager) =
-            delete; ///< Dont need assignment operator because of singleton
-                    ///< property.
-    static CSystemManager *
-    GetInstance(); ///< It possibly to get only one instance of this class whith
-                   ///< this method.
+    // Dont need to make cope because of singleton property.
+    CSystemManager(CSystemManager &_system_Manager) = delete;
+    // Dont need assignment operator because of singleton property.
+    void operator=(const CSystemManager &_system_Manager) = delete;
+    // It possibly to get only one instance of this class with this method.
+    static CSystemManager *GetInstance();
 
     inline static unsigned int s_iSystem_ID = 0;
     core::vector<ISystem *> tSystemContainer;

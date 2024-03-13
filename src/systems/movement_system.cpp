@@ -43,15 +43,9 @@ void CMovementSystem::Update() {
     float cameraSpeed = 5.5f * deltaFrameTime;
 
     for (unsigned int i = 0; i < linkedEntitiesVectorSize; ++i) {
-        // std::cout << "i: " << i << std::endl;
-        // std::cout << "size: " << linkedEntitiesVectorSize << std::endl;
         Entity currentEntity = linkedEntities[i];
         cm::beholder *beholderComponent =
                 componentManager->GetComponent<cm::beholder>(currentEntity);
-        //			cm::transform* transformComponent   =
-        // componentManager->GetComponent<cm::transform>(currentEntity);
-        // vec3 result = { 0.0f, 0.0f, 0.0f };
-
         for (int n = 0; n < 6; ++n) {
             vec3 right;
             vec3 forward;
@@ -61,28 +55,24 @@ void CMovementSystem::Update() {
                     componentManager->CreateComponent<cm::move>(currentEntity);
                     componentManager->GetComponent<cm::move>(currentEntity)
                             ->frameMovement -= right * cameraSpeed;
-                    //					result -= right * cameraSpeed;
                     break;
                 case core::EEvents::eMOVE_RIGHT:
                     right = CalculateVectorRL(*beholderComponent);
                     componentManager->CreateComponent<cm::move>(currentEntity);
                     componentManager->GetComponent<cm::move>(currentEntity)
                             ->frameMovement += right * cameraSpeed;
-                    //					result += right * cameraSpeed;
                     break;
                 case core::EEvents::eMOVE_BACKWARD:
                     forward = CalculateVectorFB(*beholderComponent, g_eEvent);
                     componentManager->CreateComponent<cm::move>(currentEntity);
                     componentManager->GetComponent<cm::move>(currentEntity)
                             ->frameMovement -= forward * cameraSpeed;
-                    //					result -= forward * cameraSpeed;
                     break;
                 case core::EEvents::eMOVE_FORWARD:
                     forward = CalculateVectorFB(*beholderComponent, g_eEvent);
                     componentManager->CreateComponent<cm::move>(currentEntity);
                     componentManager->GetComponent<cm::move>(currentEntity)
                             ->frameMovement += forward * cameraSpeed;
-                    //					result += forward * cameraSpeed;
                     break;
                 case core::EEvents::eJUMP: {
                     cm::collider *collider =
@@ -98,31 +88,15 @@ void CMovementSystem::Update() {
                 default:
                     break;
             }
-            // FIXME: FLASH LIGHT CRUTCH
-
-            // core::vector<unsigned int>* pEntityContainerRefSpotLight =
-            // ecs::GetEntityContainer<ecs::spotLight>(*pComponent_Manager);
-            // unsigned int spotLightComponentContainerSize =
-            // pEntityContainerRefSpotLight->GetSize(); for(int x = 0; x <
-            // spotLightComponentContainerSize; ++x) { 	unsigned int
-            // uiSpotLightEntity = (*pEntityContainerRefSpotLight)[x];
-            // 	ecs::spotLight& spotLightComponent =
-            // pComponent_Manager->GetComponent<ecs::spotLight>(uiSpotLightEntity);
-            // 	spotLightComponent.direction = rTransformComponent.tForward;
-            // 	spotLightComponent.position  = rTransformComponent.tPosition;
-            // }
+            // FIXME: Flashlight crutch
         }
     }
-    // FIXME: NO NEED TO HAVE SPECIAL FIELD FOR GRAVITY FRAME MOVEMENT
+    // FIXME: No need to have special field for gravity frame movement
     for (unsigned int n = 0;
          n < componentManager->GetEntityContainer<cm::rigidBody>()->GetSize();
          ++n) {
-        //            int iEntity_refRigidBody =
-        //            (*ecs::GetEntityContainer<ecs::rigidBody>(*pComponent_Manager))[n];
         int iEntity_refRigidBody =
                 (*componentManager->GetEntityContainer<cm::rigidBody>())[n];
-        //            ecs::transform& rTransform_Component =
-        //            pComponent_Manager->GetComponent<ecs::transform>(iEntity_refRigidBody);
         cm::transform *rTransform_Component =
                 componentManager->GetComponent<cm::transform>(
                         iEntity_refRigidBody);
@@ -145,7 +119,6 @@ void CMovementSystem::Update() {
 
 Vector<float, 3>
 CMovementSystem::CalculateVectorRL(components::beholder &beholder) {
-    //		std::cout << beholder.up << std::endl;
     Vector<float, 3> normalizedVector =
             Normalize(Cross(beholder.forward, beholder.up));
     return normalizedVector;
@@ -155,9 +128,6 @@ Vector<float, 3>
 CMovementSystem::CalculateVectorFB(components::beholder &beholder,
                                    core::CEvent &event) {
     Vector<float, 3> forward(0.0f);
-    // forward[0] = std::cos(Radians(event.mousePointerPosition.yaw * 2));
-    // forward[2] = std::sin(Radians(event.mousePointerPosition.yaw * 2));
-
     float sinYaw = std::sin(Radians(-event.mousePointerPosition.yaw / 2));
     float cosYaw = std::cos(Radians(-event.mousePointerPosition.yaw / 2));
 
@@ -179,7 +149,6 @@ CMovementSystem::CalculateVectorFB(components::beholder &beholder,
     forward[2] = result.z;
 
     beholder.forward = Normalize(forward);
-    //		std::cout << beholder.forward << std::endl;
     return beholder.forward;
 }
 } // namespace GLVM::ecs

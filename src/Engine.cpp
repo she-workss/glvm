@@ -24,25 +24,18 @@
 #include <sys/types.h>
 #include <thread>
 
-/*******************************************************************
- * Legends never die...
- * You are about to face most terrifying data structures of all time.
- *    "Abandon hope all ye who enter here..." (c) Dante Alighieri.
- *******************************************************************
- *****************  👑  !!!  DESTRUCTOR_3000  !!!  👑  *************/
-
-/*******************************************************************
- *                                                                  *
- *                             \_/                                  *
- *                            (* *)                                 *
- *                           __)#(__                                *
- *                          ( )...( )(_)                            *
- *                          || |_| ||//                             *
- *                       >==() | | ()/                              *
- *                           _(___)_                                *
- *                          [-]   [-]                               *
- *                                                                  *
- ********************************************************************/
+// Legends never die...
+// You are about to face most terrifying data structures of all time.
+// "Abandon hope all ye who enter here..." (c) Dante Alighieri.
+// 👑 !!! DESTRUCTOR_3000 !!! 👑
+//       \_/
+//      (* *)
+//     __)#(__
+//    ( )...( )(_)
+//    || |_| ||//
+// >==() | | ()/
+//     _(___)_
+//    [-]   [-]
 
 #define DESTRUCTOR_3000                                                        \
     std::cout << "You have been destructurized. [=]___[=]" << std::endl;       \
@@ -74,7 +67,7 @@ Engine::Engine() {
 
     ecs::CSystemManager *pSystem_Manager = ecs::CSystemManager::GetInstance();
 
-    ///< Call of ActivateSystem function must be in this order.
+    // Call of ActivateSystem function must be in this order.
     pSystem_Manager->ActivateSystem(movementSystem);
     pSystem_Manager->ActivateSystem(projectileSystem);
     pSystem_Manager->ActivateSystem(collisionSystem);
@@ -124,12 +117,12 @@ void Engine::RenderOpengl() {
 #ifdef __linux__
     // XEvent uXEvent;
     // while (XPending(openglRenderer->Window.GetDisplay())) {
-    // 	XNextEvent(openglRenderer->Window.GetDisplay(), &uXEvent);
+    //     XNextEvent(openglRenderer->Window.GetDisplay(), &uXEvent);
     // }
 
-    // xcb_generic_event_t* event;
-    // while (( event = xcb_poll_for_event (
-    // openglRenderer->Window.GetConnection() ))) {
+    // xcb_generic_event_t *event;
+    // while ((event = xcb_poll_for_event(
+    //                 openglRenderer->Window.GetConnection()))) {
     // }
 #endif
 
@@ -154,8 +147,6 @@ void Engine::RenderOpengl() {
             EEvents::eGAME_LOOP_KILL) {
             bGame_Loop_Active = false;
         }
-
-        //			Input_Stack_.PrintStack();
         g_eEvent.SetLastEvent(Input_Stack_);
 
         openglRenderer->Window.CursorLock(
@@ -215,12 +206,6 @@ void Engine::RenderVulkan() {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
-
-    // while(GetMessageA(&msg, vulkanRenderer->Window.GetModernWindowHWND(),
-    // WM_KEYFIRST, WM_KEYLAST)) {
-    // 		// TranslateMessage( &msg );
-    // 		// DispatchMessage( &msg );
-    // }
 #endif
 
     while (bGame_Loop_Active) {
@@ -231,12 +216,10 @@ void Engine::RenderVulkan() {
         vulkanRenderer->Window.ClearDisplay();
 
         vulkanRenderer->Window.HandleEvent(g_eEvent);
-        // 	Input_Stack_.ControlInput(g_eEvent);
         if ((Input_Stack_.SearchElement(EEvents::eGAME_LOOP_KILL)) ==
             EEvents::eGAME_LOOP_KILL) {
             bGame_Loop_Active = false;
         }
-        // }
         g_eEvent.SetLastEvent(Input_Stack_);
 
         vulkanRenderer->Window.CursorLock(
@@ -322,8 +305,6 @@ void Engine::FPScounter() {
 }
 
 void Engine::GameKill() {
-    // delete soundEngine;
-    // soundEngine = nullptr;
     delete chrono;
     chrono = nullptr;
     delete collisionSystem;

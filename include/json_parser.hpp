@@ -76,10 +76,6 @@ struct JsonValue {
         type = JSON_BOOLEAN;
         value.boolean = _bool;
     }
-    // JsonValue(void* _null) {
-    // 	type = JSON_NULL;
-    // 	value.null = _null;
-    // }
 
     JsonValue(const JsonValue &_value) {
         type = JSON_INVALID_VALUE;

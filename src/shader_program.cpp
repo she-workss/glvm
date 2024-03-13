@@ -9,11 +9,12 @@
 
 #define ARRAY_INFO_LOG_RANGE 1024
 
-///< Activate shader program
+// Activate shader program
 void Shader::Use() {
     pGLUse_Program(iID);
 }
-///< Uniform functions
+
+// Uniform functions
 void Shader::SetBool(const std::string &name, bool value) const {
     pGLUniform1i(pGLGet_Uniform_Location(iID, name.c_str()), (int)value);
 }
@@ -56,13 +57,7 @@ void Shader::SetMat4(const std::string &name, unsigned int matrixNumber,
                          matrixNumber, GL_FALSE, &mat[0][0]);
 }
 
-// void Shader::SetMat4(const std::string &name, glm::mat4 &mat) const
-// {
-// 	pGLUniform_Matrix4fv(pGLGet_Uniform_Location(iID, name.c_str()), 1,
-// GL_FALSE, &mat[0][0]);
-// }
-
-///< Functions for examination of shaders errors
+// Functions for examination of shaders errors
 void Shader::CheckCompileErrors(unsigned int shader, std::string type) {
     int iSuccess;
     char cInfo_Log[ARRAY_INFO_LOG_RANGE];

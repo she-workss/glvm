@@ -14,17 +14,6 @@
 
 namespace GLVM::core {
 WindowXVulkan::WindowXVulkan() {
-    // const int aAttrib[] =
-    // {
-    //     GLX_RENDER_TYPE, GLX_RGBA_BIT,
-    //     GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
-    //     GLX_DOUBLEBUFFER, true,
-    //     GLX_RED_SIZE, 1,
-    //     GLX_GREEN_SIZE, 1,
-    //     GLX_BLUE_SIZE, 1,
-    //     None
-    // };
-
     pDisp_ = XOpenDisplay(NULL);
     Root_Window_ = DefaultRootWindow(pDisp_);
     Set_Window_Attributes_.event_mask =
@@ -34,10 +23,8 @@ WindowXVulkan::WindowXVulkan() {
     Win_ = XCreateWindow(pDisp_, Root_Window_, 0, 0, 1920, 1080, 0,
                          CopyFromParent, InputOutput, CopyFromParent,
                          CWEventMask, &Set_Window_Attributes_);
-    ///< Show_the_window
-
+    // Show_the_window
     XMapWindow(pDisp_, Win_);
-
     XWarpPointer(pDisp_, None, Win_, 0, 0, 0, 0, 0, 0);
 
     Cursor invisibleCursor;
@@ -55,7 +42,6 @@ WindowXVulkan::WindowXVulkan() {
     XFreePixmap(pDisp_, bitmapNoData);
 
     XGetWindowAttributes(pDisp_, Win_, &GWindow_Attributes_);
-    //		const int kInterval = 1;
 }
 
 WindowXVulkan::~WindowXVulkan() = default;
@@ -69,11 +55,6 @@ Display *WindowXVulkan::GetDisplay() {
 
 void WindowXVulkan::CursorLock(int _x_position, int _y_position, int *_x_offset,
                                int *_y_offset) {
-    ///< Solve a problem with endlessly growing numbers in the start game run.
-    // if(_x_position > 1920 || _x_position < 0 || _y_position > 1080 ||
-    // _y_position < 0)
-    //     return;
-
     int iOffset_X = 0, iOffset_Y = 0;
     iOffset_X = _x_position - 960;
     iOffset_Y = _y_position - 540;
@@ -109,16 +90,11 @@ bool WindowXVulkan::HandleEvent(CEvent &_Event) {
         switch (uXEvent.type) {
             case MotionNotify:
                 motion = uXEvent.xmotion;
-
                 _Event.SetEvent(EEvents::eMOUSE_POINTER_POSITION);
                 _Event.mousePointerPosition.position_X = motion.x;
                 _Event.mousePointerPosition.position_Y = motion.y;
-
-                ///< Search MapNotify events depend on XMapWindow(pDisp_, Win_)
-                ///< function.
-                //				break;
             case MapNotify:
-                ///< Link mouse cursor to specified window.
+                // Link mouse cursor to specified window
                 XGrabPointer(pDisp_, Win_, True, PointerMotionMask,
                              GrabModeAsync, GrabModeAsync, Win_, None,
                              CurrentTime);
@@ -173,7 +149,7 @@ bool WindowXVulkan::HandleEvent(CEvent &_Event) {
                     if (uXNext_Event.type == KeyPress &&
                         uXNext_Event.xkey.time == uXEvent.xkey.time &&
                         uXNext_Event.xkey.keycode == uXEvent.xkey.keycode) {
-                        ///< Key wasn’t actually released
+                        // Key wasn't actually released
                         XNextEvent(pDisp_, &uXNext_Event);
                         continue;
                     }
@@ -206,9 +182,6 @@ bool WindowXVulkan::HandleEvent(CEvent &_Event) {
 
 void WindowXVulkan::Close() {
     XDestroyWindow(pDisp_, Win_);
-    //        XFreeColormap(pDisp_, Color_Map_);
-    //        XFree(pVisual_);
-    //        XFree(pFbc_);
     XCloseDisplay(pDisp_);
 }
 } // namespace GLVM::core

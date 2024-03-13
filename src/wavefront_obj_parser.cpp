@@ -9,21 +9,8 @@
 #include <iterator>
 
 namespace GLVM::core {
-// CWaveFrontObjParser* CWaveFrontObjParser::pInstance_ = nullptr;
-// std::mutex CWaveFrontObjParser::Mutex_;
-
 CWaveFrontObjParser::CWaveFrontObjParser() {
 }
-
-// CWaveFrontObjParser* CWaveFrontObjParser::GetInstance()
-// {
-//     std::lock_guard<std::mutex> lock(Mutex_);
-//     if(pInstance_ == nullptr)
-//     {
-//         pInstance_ = new CWaveFrontObjParser();
-//     }
-//     return pInstance_;
-// }
 
 const GLVM::core::vector<SVertex> &
 CWaveFrontObjParser::getCoordinateVertices() const {
@@ -57,19 +44,9 @@ void CWaveFrontObjParser::ReadFile(const char *_filePath) {
     }
 
     pWavefrontObjFileData = sWavefrontObjFileData.c_str();
-
-    // for (int i = 0; i < sWavefrontObjFileData.size(); ++i) {
-    // 	if (sWavefrontObjFileData[i] == '\n')
-    // 		std::cout << sWavefrontObjFileData[i] << std::endl;
-    // 	else
-    // 		std::cout << sWavefrontObjFileData[i];
-    // }
 }
 
 void CWaveFrontObjParser::ParseFile() {
-    // unsigned int uiCoordinateVerticesIndex = 0;
-    // unsigned int uiTextureVerticesIndex = 0;
-    // unsigned int uiFacesIndex = 0;
     if (pWavefrontObjFileData == nullptr) {
         return;
     }
@@ -80,23 +57,18 @@ void CWaveFrontObjParser::ParseFile() {
         if (line[0] == "v") {
             SVertex vertex = ParseVertices(line);
             coordinateVertices_.Push(vertex);
-            //                ++uiCoordinateVerticesIndex;
         }
         if (line[0] == "vt") {
             SVertex vertex = ParseVertices(line);
             textureVertices_.Push(vertex);
-            //                ++uiTextureVerticesIndex;
         }
         if (line[0] == "vn") {
             SVertex vertex = ParseVertices(line);
             normals_.Push(vertex);
-            //                ++uiTextureVerticesIndex;
         }
         if (line[0] == "f") {
             SFace face = ParseFaces(line);
             faces_.Push(face);
-
-            //                ++uiFacesIndex;
         }
     }
 }

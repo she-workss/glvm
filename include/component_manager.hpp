@@ -9,6 +9,7 @@
 #include "components/animation_move_component.hpp"
 #include "components/attack_component.hpp"
 #include "components/collider_component.hpp"
+#include "components/controller_component.hpp"
 #include "components/directional_light_component.hpp"
 #include "components/event_component.hpp"
 #include "components/material_component.hpp"
@@ -21,14 +22,12 @@
 #include "components/view_component.hpp"
 #include "i_container.hpp"
 #include "vector.hpp"
+#include <assert.h>
 #include <cassert>
 #include <compare>
 #include <concepts>
-#include <iostream>
-// #include "components/vertex_component.hpp"
-#include "components/controller_component.hpp"
-#include <assert.h>
 #include <cstdlib>
+#include <iostream>
 #include <mutex>
 
 typedef unsigned int Entity;
@@ -49,59 +48,55 @@ class ComponentManager {
         if (existComponentContainerFlag) {
             return localContainerID;
         }
-
-        localContainerID =
-                componentsContainerID; ///< Give a value of global component
-                                       ///< container ID's counter to local
-                                       ///< container ID of current component
-                                       ///< type.
+        // Give a value of global component container ID's counter to local
+        // container ID of current component type.
+        localContainerID = componentsContainerID;
         existComponentContainerFlag = true;
 
+        // Create component container of current type.
         core::vector<componentType> *componentContainer =
-                new core::vector<componentType>; ///< Create component container
-                                                 ///< of current type.
+                new core::vector<componentType>;
+
         worldComponentsContainer.Push(componentContainer);
-
+        // Create ID's component container.
         core::vector<Entity> *sparseEntitiesMapToComponents =
-                new core::vector<Entity>; ///< Create ID's component container.
+                new core::vector<Entity>;
         worldSparseEntitiesMapToComponents.Push(sparseEntitiesMapToComponents);
-
+        // Create ID's component container.
         core::vector<Entity> *denseEntitiesMapToComponents =
-                new core::vector<Entity>; ///< Create ID's component container.
+                new core::vector<Entity>;
         worldDenseComponentsMapToEntities.Push(denseEntitiesMapToComponents);
         componentsTypes.Push(typeid(componentType).name());
-        //				std::cout << typeid(Component_Type).name() << std::endl;
         ++componentsContainerID;
         return localContainerID;
     }
 
 public:
     inline static unsigned int componentsContainerID = 0;
-    core::vector<core::IContainer *>
-            worldComponentsContainer; ///< Contains all local containers for
-                                      ///< diferent types of components.
-    core::vector<core::vector<Entity> *>
-            worldSparseEntitiesMapToComponents; ///< Contains all local
-                                                ///< container with IDs for
-                                                ///< diferent types of
-                                                ///< components.
+
+    // Contains all local containers for different types of components.
+    core::vector<core::IContainer *> worldComponentsContainer;
+
+    // Contains all local container with IDs for different types of components.
+    core::vector<core::vector<Entity> *> worldSparseEntitiesMapToComponents;
+
     core::vector<core::vector<Entity> *> worldDenseComponentsMapToEntities;
 
     core::vector<const char *> componentsTypes;
 
-    ComponentManager(ComponentManager &componentManager) =
-            delete; ///< Dont need to make cope because of singleton property.
-    void operator=(const ComponentManager &componentManager) =
-            delete; ///< Dont need assignment operator because of singleton
-                    ///< property.
-    static ComponentManager *
-    GetInstance(); ///< It possibly to get only one instance of this class whith
-                   ///< this method.
+    // Dont need to make cope because of singleton property.
+    ComponentManager(ComponentManager &componentManager) = delete;
+
+    // Dont need assignment operator because of singleton property.
+    void operator=(const ComponentManager &componentManager) = delete;
+
+    // It possibly to get only one instance of this class with this method.
+    static ComponentManager *GetInstance();
 
     template<typename componentType>
     void CreateComponent(const Entity &entity) {
-        unsigned int localContainerID =
-                0; ///< Index for world components and world ID's containers.
+        // Index for world components and world ID's containers.
+        unsigned int localContainerID = 0;
         componentType Component;
         localContainerID = CreateComponentContainer<componentType>();
 
@@ -112,7 +107,6 @@ public:
         core::vector<componentType> &components =
                 *static_cast<core::vector<componentType> *>(
                         worldComponentsContainer[localContainerID]);
-        //			std::cout << typeid(componentType).name() << std::endl;
         if (checkAvailability(sparse, dense, entity)) {
             return;
         }
@@ -131,8 +125,7 @@ public:
     bool checkAvailability(core::vector<Entity> &sparse,
                            core::vector<Entity> &dense, Entity entity);
 
-    /// Allow to give a various components to chosen entity.
-
+    // Allow to give a various components to chosen entity.
     template<typename componentType1, typename componentType2, typename... Args>
     void CreateComponent(Entity &entity) {
         CreateComponent<componentType2, Args...>(entity);
@@ -231,12 +224,9 @@ public:
         }
     }
 
-    /**************************************************************************************
-     * Dont need to delete real component in this method. Because systems dont
-     *work with component without indices for that component in ordered
-     *container.
-     **************************************************************************************/
-
+    // Dont need to delete real component in this method. Because systems dont
+    // work with component without indices for that component in ordered
+    // container.
     template<typename componentType>
     void RemoveComponent(Entity &entity) {
         unsigned int localContainerID;
@@ -252,8 +242,6 @@ public:
 
         if (checkAvailability(sparse, dense, entity)) {
             assert(dense.GetSize() == components.GetSize());
-            //				std::cout << "DELETE: " <<
-            // typeid(componentType).name() << std::endl;
             Entity indexInDenseOfRemovableEntity = sparse[entity];
             Entity indexInSparseOfSwapableEntity = dense.GetHead();
             const componentType &componentFromLastIndex = components.GetHead();
@@ -269,98 +257,46 @@ public:
 
     void RemoveAllComponents(Entity &entity) {
         // TODO: DYNAMIC CAST THAT CAN RETURN 0 IF CANT CAST
-
-        // for ( unsigned int i = 0; i < worldComponentsContainer.GetSize(); ++i
-        // ) { 	core::vector<Entity>& sparse =
-        // *static_cast<core::vector<Entity>*>
-        // 		(worldSparseEntitiesMapToComponents[i]);
-        // 	core::vector<Entity>& dense = *static_cast<core::vector<Entity>*>
-        // 		(worldDenseComponentsMapToEntities[i]);
-        // 	core::vector<core::IContainer>& components =
-        // *static_cast<core::vector<core::IContainer>*>
-        // 		(worldComponentsContainer[i]);
-
-        // 	if ( checkAvailability( sparse, dense, entity ) ) {
-        // 		assert( dense.GetSize() == components.GetSize() );
-        // 		std::cout << "DELETE!" << std::endl;
-        // 		Entity indexInDenseOfRemovableEntity = sparse[entity];
-        // 		Entity indexInSparseOfSwapableEntity = dense.GetHead();
-        // 		const core::IContainer& componentFromLastIndex =
-        // components.GetHead(); 		dense[indexInDenseOfRemovableEntity] =
-        // indexInSparseOfSwapableEntity; 		dense.Pop();
-        // 		components[indexInDenseOfRemovableEntity] =
-        // componentFromLastIndex; 		components.Pop();
-        // 		sparse[indexInSparseOfSwapableEntity] =
-        // indexInDenseOfRemovableEntity;
-        // 	}
-        // }
-
         for (unsigned int i = 0; i < worldComponentsContainer.GetSize(); ++i) {
-            //				std::cout << "iteration: " << i << std::endl;
             if (componentsTypes[i] == typeid(components::transform).name()) {
-                // std::cout << "transform from container: " <<
-                // componentsTypes[i] << std::endl; std::cout << "transform from
-                // typeid: " << typeid(components::transform).name() <<
-                // std::endl;
                 RemoveComponent<components::transform>(entity);
-                //					std::cout << "Delete transform" <<
-                // std::endl;
             } else if (componentsTypes[i] ==
                        typeid(components::beholder).name()) {
                 RemoveComponent<components::beholder>(entity);
-                //					std::cout << "Delete beholder" << std::endl;
             } else if (componentsTypes[i] ==
                        typeid(components::animation).name()) {
                 RemoveComponent<components::animation>(entity);
-                //					std::cout << "Delete animation" <<
-                // std::endl;
             } else if (componentsTypes[i] ==
                        typeid(components::collider).name()) {
                 RemoveComponent<components::collider>(entity);
-                //					std::cout << "Delete collider" << std::endl;
             } else if (componentsTypes[i] ==
                        typeid(components::directionalLight).name()) {
                 RemoveComponent<components::directionalLight>(entity);
-                //					std::cout << "Delete directional light" <<
-                // std::endl;
             } else if (componentsTypes[i] ==
                        typeid(components::pointLight).name()) {
                 RemoveComponent<components::pointLight>(entity);
-                //					std::cout << "Delete point light" <<
-                // std::endl;
             } else if (componentsTypes[i] ==
                        typeid(components::spotLight).name()) {
                 RemoveComponent<components::spotLight>(entity);
-                //					std::cout << "Delete spot light" <<
-                // std::endl;
             } else if (componentsTypes[i] == typeid(components::event).name()) {
                 RemoveComponent<components::event>(entity);
-                //					std::cout << "Delete event" << std::endl;
             } else if (componentsTypes[i] ==
                        typeid(components::material).name()) {
                 RemoveComponent<components::material>(entity);
-                //					std::cout << "Delete material" << std::endl;
             } else if (componentsTypes[i] == typeid(components::move).name()) {
                 RemoveComponent<components::move>(entity);
-                //					std::cout << "Delete move" << std::endl;
             } else if (componentsTypes[i] == typeid(components::mesh).name()) {
                 RemoveComponent<components::mesh>(entity);
-                //					std::cout << "Delete vertex" << std::endl;
             } else if (componentsTypes[i] ==
                        typeid(GLVM::ecs::components::controller).name()) {
                 RemoveComponent<GLVM::ecs::components::controller>(entity);
-                //					std::cout << "Delete controller" <<
-                // std::endl;
             } else if (componentsTypes[i] ==
                        typeid(GAME_MECHANICS::ECS::components::attack).name()) {
                 RemoveComponent<GAME_MECHANICS::ECS::components::attack>(
                         entity);
-                //				 	std::cout << "Delete attack" << std::endl;
             } else if (componentsTypes[i] ==
                        typeid(components::projectile).name()) {
                 RemoveComponent<components::projectile>(entity);
-                //				 	std::cout << "Delete projectile" <<
-                // std::endl;
             } else {
                 continue;
             }
@@ -378,14 +314,6 @@ public:
         core::VectorIterator<componentType> iterator(*componentVector);
         return iterator;
     }
-
-    // template <typename componentType>
-    // core::VectorIterator<Entity> GetEntityContainer() {
-    // 	core::vector<Entity>* entityVector =
-    // static_cast<core::vector<Entity>*>(worldDenseComponentsMapToEntities[CreateComponentContainer<componentType>()]);
-    // 	core::VectorIterator<Entity> iterator(*entityVector);
-    // 	return iterator;
-    // }
 
     template<typename componentType>
     core::vector<componentType> *GetComponentContainer() {

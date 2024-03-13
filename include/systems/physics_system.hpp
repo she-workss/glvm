@@ -28,17 +28,15 @@ public:
         : gravity(gravity_), Input_Stack_(_input_Stack) {
     }
 
-    ///< Set Y-axis of transform component of backtracking entity to upper
-    ///< Y-axis of ground entity.
-
+    // Set Y-axis of transform component of backtracking entity to upper Y-axis
+    // of ground entity.
     void Gravity();
 
-    /*! This update searching for refering to colliders entities and check their
-     *  transform components for collision, and if collision detected check if
-     *  backtracking entity had gravity component for call Gravity function.
-     */
-
+    // This update searching for referring to colliders entities and check their
+    // transform components for collision, and if collision detected check if
+    // backtracking entity had gravity component for call Gravity function.
     void Update() override;
+
     void Repel(components::transform &_transform_Component, float &_fDelta_Time,
                components::beholder &_view_Component, core::CEvent &_event);
 };

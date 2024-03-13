@@ -6,10 +6,6 @@
 #ifndef VERTEX_COMPONENT
 #define VERTEX_COMPONENT
 
-// #include <vector>
-// #include <iostream>
-// #include "graphic_api/vulkan.hpp"
-
 #include <cstdint>
 
 namespace GLVM::ecs::components {

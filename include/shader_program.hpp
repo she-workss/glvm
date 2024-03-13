@@ -13,12 +13,6 @@
 #include <sstream>
 #include <string>
 
-/*! \class Shader
-    \brief Class for creating shader program
-
-    Contains vertex and fragment shaders
-*/
-
 class Shader {
 public:
     unsigned int iID;
@@ -39,24 +33,24 @@ public:
         geometryShaderFile.exceptions(std::ifstream::failbit |
                                       std::ifstream::badbit);
         try {
-            /// Open files
+            // Open files
             vertexShaderFile.open(vertexShaderPath_);
             fragmentShaderFile.open(fragmentShaderPath_);
             std::stringstream Vertex_Shader_Stream, Fragment_Shader_Stream;
 
-            /// Read file buffers
+            // Read file buffers
             Vertex_Shader_Stream << vertexShaderFile.rdbuf();
             Fragment_Shader_Stream << fragmentShaderFile.rdbuf();
 
-            /// Close files
+            // Close files
             vertexShaderFile.close();
             fragmentShaderFile.close();
 
-            /// Converting to string variable thread data
+            // Converting to string variable thread data
             vertexShaderCode = Vertex_Shader_Stream.str();
             fragmentShaderCode = Fragment_Shader_Stream.str();
 
-            /// If geometry shader path is present, also load a geometry shader
+            // If geometry shader path is present, also load a geometry shader
             if (geometryShaderPath_ != nullptr) {
                 geometryShaderFile.open(geometryShaderPath_);
                 std::stringstream geometryShaderStream;
@@ -71,22 +65,22 @@ public:
         const char *pVertexShaderCode = vertexShaderCode.c_str();
         const char *pFragmentShaderCode = fragmentShaderCode.c_str();
 
-        /// Shaders compilation
+        // Shaders compilation
         GLuint uiVertex, uiFragment, uiGeometryShaderID;
 
-        /// Vertex shader
+        // Vertex shader
         uiVertex = pGLCreate_Shader(GL_VERTEX_SHADER);
         pGLShader_Source(uiVertex, 1, &pVertexShaderCode, NULL);
         pGLCompile_Shader(uiVertex);
         CheckCompileErrors(uiVertex, "VERTEX");
 
-        /// Fragment shader
+        // Fragment shader
         uiFragment = pGLCreate_Shader(GL_FRAGMENT_SHADER);
         pGLShader_Source(uiFragment, 1, &pFragmentShaderCode, NULL);
         pGLCompile_Shader(uiFragment);
         CheckCompileErrors(uiFragment, "FRAGMENT");
 
-        /// Geometry shader
+        // Geometry shader
         if (geometryShaderPath_ != nullptr) {
             const char *pGeometryShaderCode = geometryShaderCode.c_str();
             uiGeometryShaderID = pGLCreate_Shader(GL_GEOMETRY_SHADER);
@@ -95,7 +89,7 @@ public:
             CheckCompileErrors(uiGeometryShaderID, "GEOMETRY");
         }
 
-        ///< Shader program
+        // Shader program
         iID = pGLCreate_Program();
         pGLAttach_Shader(iID, uiVertex);
         pGLAttach_Shader(iID, uiFragment);
@@ -105,7 +99,7 @@ public:
         pGLLink_Program(iID);
         CheckCompileErrors(iID, "PROGRAM");
 
-        ///< Free shaders
+        // Free shaders
         pGLDelete_Shader(uiVertex);
         pGLDelete_Shader(uiFragment);
         if (geometryShaderPath_ != nullptr) {
@@ -128,7 +122,6 @@ public:
     void SetMat4(const std::string &name, mat4 &mat) const;
     void SetMat4(const std::string &name, unsigned int matrixNumber,
                  mat4 &mat) const;
-    //	void SetMat4(const std::string &name, glm::mat4 &mat) const;
 
 private:
     void CheckCompileErrors(unsigned int shader, std::string type);

@@ -50,9 +50,7 @@ CWindowX::CWindowX() {
         printf("\n\tno appropriate visual found\n\n");
         exit(0);
     } else {
-
-        ///< creates hexadecimal output like in glxinfo
-
+        // Creates hexadecimal output like in glxinfo
         printf("\n\tvisual %p selected\n", (void *)pVisual_->visualid);
     }
 
@@ -78,16 +76,10 @@ CWindowX::CWindowX() {
         exit(1);
     }
 
-    ///< Set desired minimum OpenGL version
-
+    // Set desired minimum OpenGL version
     int aContext_Attribs[] = {GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
-                              GLX_CONTEXT_MINOR_VERSION_ARB, 2,
-                              // GLX_CONTEXT_PROFILE_MASK_ARB,
-                              // GLX_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
-                              None};
-
-    ///< Create modern OpenGL context
-
+                              GLX_CONTEXT_MINOR_VERSION_ARB, 2, None};
+    // Create modern OpenGL context
     Context_ = pGLXCreateContextAttribsARB_(pDisp_, pFbc_[0], NULL, true,
                                             aContext_Attribs);
     if (!Context_) {
@@ -95,8 +87,7 @@ CWindowX::CWindowX() {
         exit(1);
     }
 
-    ///< Show_the_window
-
+    // Show the window
     XMapWindow(pDisp_, Win_);
     glXMakeCurrent(pDisp_, Win_, Context_);
 
@@ -105,8 +96,6 @@ CWindowX::CWindowX() {
     glGetIntegerv(GL_MINOR_VERSION, &iMinor);
     printf("OpenGL context created.\nVersion %d.%d\nVendor %s\nRenderer %s\n",
            iMajor, iMinor, glGetString(GL_VENDOR), glGetString(GL_RENDERER));
-
-    ///< glEnable(GL_DEPTH_TEST);
 
     Cursor invisibleCursor;
     Pixmap bitmapNoData;
@@ -137,7 +126,7 @@ CWindowX::~CWindowX() {
 
 void CWindowX::CursorLock(int _x_position, int _y_position, int *_x_offset,
                           int *_y_offset) {
-    ///< Solve a problem with endlessly growing numbers in the start game run.
+    // Solve a problem with endlessly growing numbers in the start game run.
     if (_x_position > 1920 || _x_position < 0 || _y_position > 1080 ||
         _y_position < 0) {
         return;
@@ -180,19 +169,15 @@ bool CWindowX::HandleEvent(CEvent &_Event) {
 
         switch (uXEvent.type) {
             case MotionNotify:
-
-                ///< With structure "motion" we can get position of mouse
-                ///< pointer and e.c.
+                // With structure "motion" we can get position of mouse
+                // pointer and e.c.
                 motion = uXEvent.xmotion;
 
                 _Event.SetEvent(EEvents::eMOUSE_POINTER_POSITION);
                 _Event.mouse_Pointer_Position_.iPosition_X = motion.x;
                 _Event.mouse_Pointer_Position_.iPosition_Y = motion.y;
-
-                ///< Search MapNotify events depend on XMapWindow(pDisp_, Win_)
-                ///< function.
             case MapNotify:
-                ///< Link mouse cursor to specified window.
+                // Link mouse cursor to specified window.
                 XGrabPointer(pDisp_, Win_, True, PointerMotionMask,
                              GrabModeAsync, GrabModeAsync, Win_, None,
                              CurrentTime);
@@ -247,7 +232,7 @@ bool CWindowX::HandleEvent(CEvent &_Event) {
                     if (uXNext_Event.type == KeyPress &&
                         uXNext_Event.xkey.time == uXEvent.xkey.time &&
                         uXNext_Event.xkey.keycode == uXEvent.xkey.keycode) {
-                        ///< Key wasn’t actually released
+                        // Key wasn't actually released
                         XNextEvent(pDisp_, &uXNext_Event);
                         continue;
                     }
@@ -313,8 +298,7 @@ CWindowX::CWindowX() {
     Win_ = XCreateWindow(pDisp_, Root_Window_, 0, 0, 1920, 1080, 0,
                          CopyFromParent, InputOutput, CopyFromParent,
                          CWEventMask, &Set_Window_Attributes_);
-    ///< Show_the_window
-
+    // Show the window
     XMapWindow(pDisp_, Win_);
 
     Cursor invisibleCursor;
@@ -347,7 +331,7 @@ Display *CWindowX::GetDisplay() {
 
 void CWindowX::CursorLock(int _x_position, int _y_position, int *_x_offset,
                           int *_y_offset) {
-    ///< Solve a problem with endlessly growing numbers in the start game run.
+    // Solve a problem with endlessly growing numbers in the start game run.
     if (_x_position > 1920 || _x_position < 0 || _y_position > 1080 ||
         _y_position < 0) {
         return;
@@ -392,11 +376,8 @@ bool CWindowX::HandleEvent(CEvent &_Event) {
                 _Event.SetEvent(EEvents::eMOUSE_POINTER_POSITION);
                 _Event.mouse_Pointer_Position_.iPosition_X = motion.x;
                 _Event.mouse_Pointer_Position_.iPosition_Y = motion.y;
-
-                ///< Search MapNotify events depend on XMapWindow(pDisp_, Win_)
-                ///< function.
             case MapNotify:
-                ///< Link mouse cursor to specified window.
+                // Link mouse cursor to specified window.
                 XGrabPointer(pDisp_, Win_, True, PointerMotionMask,
                              GrabModeAsync, GrabModeAsync, Win_, None,
                              CurrentTime);
@@ -451,7 +432,7 @@ bool CWindowX::HandleEvent(CEvent &_Event) {
                     if (uXNext_Event.type == KeyPress &&
                         uXNext_Event.xkey.time == uXEvent.xkey.time &&
                         uXNext_Event.xkey.keycode == uXEvent.xkey.keycode) {
-                        ///< Key wasn’t actually released
+                        // Key wasn't actually released
                         XNextEvent(pDisp_, &uXNext_Event);
                         continue;
                     }
@@ -483,9 +464,6 @@ bool CWindowX::HandleEvent(CEvent &_Event) {
 
 void CWindowX::Close() {
     XDestroyWindow(pDisp_, Win_);
-    //        XFreeColormap(pDisp_, Color_Map_);
-    //        XFree(pVisual_);
-    //        XFree(pFbc_);
     XCloseDisplay(pDisp_);
 }
 #endif

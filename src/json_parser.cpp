@@ -311,7 +311,8 @@ double CJsonParser::ParseFloating(core::vector<char> _word) {
     bool dotFlag = false;
     bool negateFlag = false;
     bool eFlag = false;
-    bool eSign = false; ///< false value equal "+" sign;
+    // false value equal "+" sign
+    bool eSign = false;
     unsigned int baseContainerSize = baseContainer.GetSize();
 
     if (baseContainer[0] == -3) {
@@ -599,7 +600,6 @@ void CJsonParser::LoadGLTF(
                 children.Push(local_children);
             } else {
                 core::vector<int> emptyChildren;
-                //					emptyChildren.Push(-1);
                 children.Push(emptyChildren);
             }
 
@@ -898,7 +898,7 @@ void CJsonParser::LoadGLTF(
             scales.Push(temp);
         }
 
-        /// Searching for parent joins WITH GOAT GOTO OPERATOR!!!
+        // Searching for parent joins WITH GOAT GOTO OPERATOR
         core::vector<int> parent_joins;
         for (unsigned int s = 0; s < joints.value.array->GetSize(); ++s) {
             int current_joint = (*joints.value.array)[s].value.iNumber;
@@ -906,21 +906,21 @@ void CJsonParser::LoadGLTF(
             for (unsigned w = 0; w < children.GetSize(); ++w) {
                 for (unsigned q = 0; q < children[w].GetSize(); ++q) {
                     if (children[w][q] == current_joint) {
-                        goto most_scary_operator_of_all_time; ///< Yes. This is
-                                                              ///< what we all
-                                                              ///< deserve
+                        // Yes. This is what we all deserve
+                        goto most_scary_operator_of_all_time;
                     }
                 }
             }
             parent_joins.Push(current_joint);
 
-        most_scary_operator_of_all_time: ///< Not so scary at all. Am i right?
+        // Not so scary at all. Am I right?
+        most_scary_operator_of_all_time:
             continue;
         }
 
         frames = frameInputsTranslation[0];
-        core::vector<core::vector<mat4>>
-                jointMatricesAccumulator; ///< Delete this sheet!
+        // Delete this shit
+        core::vector<core::vector<mat4>> jointMatricesAccumulator;
 
         core::vector<core::vector<unsigned int>> joints_bones;
         for (unsigned int w = 0; w < parent_joins.GetSize(); ++w) {

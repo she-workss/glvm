@@ -15,7 +15,7 @@
 #include "gl_pointer.h"
 #include <GL/gl.h>
 #include <GL/glx.h>
-#include <X11/Xlib-xcb.h> /* for XGetXCBConnection, link with libX11-xcb */
+#include <X11/Xlib-xcb.h> // For XGetXCBConnection, link with libX11-xcb
 #include <X11/Xlib.h>
 #include <cassert>
 #include <iostream>

@@ -47,7 +47,7 @@ int main() {
             GLVM->LoadTextureFromAddress(128, 128, sample2_dat_len,
                                          sample2_dat);
 
-    /// Loading method with stb_image
+    // Loading method with stb_image
     // [[maybe_unused]] ecs::TextureHandle chelikTextureHandle =
     // GLVM->LoadTextureFromFile("assets/textures/data/glvm.png");
     // [[maybe_unused]] ecs::TextureHandle witchTexturehandle =
@@ -126,49 +126,49 @@ int main() {
     // ComponentManager->CreateComponent<cm::mesh, cm::material,
     // cm::directionalLight, cm::transform>(directionalLight0);
     // *ComponentManager->GetComponent<cm::directionalLight>(directionalLight0)
-    // = { .position = { 10.0f, 15.0f, -2.0f }, 	.direction = { -5.0f, -3.0f,
+    // = { .position = { 10.0f, 15.0f, -2.0f },    .direction = { -5.0f, -3.0f,
     // 0.0f}, .ambient = { 0.05f, 0.05f, 0.05f }, .diffuse = {0.8f, 0.8f, 0.8f},
-    // 	.specular = {1.0f, 1.0f, 1.0f}};
+    //    .specular = {1.0f, 1.0f, 1.0f}};
     // *ComponentManager->GetComponent<cm::transform>(directionalLight0) = {
-    // .tPosition = { 10.0f, 15.0f, -2.0f }, 	.fScale = 0.2f };
+    // .tPosition = { 10.0f, 15.0f, -2.0f },    .fScale = 0.2f };
     // ComponentManager->GetComponent<cm::mesh>(directionalLight0)->handle =
     // hyperCubeHandle_GLTF; cm::material* materialDirectionalLight0  =
     // ComponentManager->GetComponent<cm::material>(directionalLight0);
     // *materialDirectionalLight0 = { .diffuseTextureID_ = grayTextureHandle,
     // .specularTextureID_ = grayTextureHandle, .ambient = { 0.05f, 0.05f, 0.0f
-    // }, 	.shininess = 128.0f * 0.078125f };
+    // },    .shininess = 128.0f * 0.078125f };
 
     // Entity directionalLight1 = EntityManager->CreateEntity();
     // ComponentManager->CreateComponent<cm::mesh, cm::material,
     // cm::directionalLight, cm::transform>(directionalLight1);
     // *ComponentManager->GetComponent<cm::directionalLight>(directionalLight1)
-    // = { .position = { 0.0f, 3.0f, 2.0f }, 	.direction = { 5.0f, -1.0f,
+    // = { .position = { 0.0f, 3.0f, 2.0f },    .direction = { 5.0f, -1.0f,
     // 0.0f}, .ambient = { 0.05f, 0.05f, 0.05f }, .diffuse = {0.8f, 0.8f, 0.8f},
-    // 	.specular = {1.0f, 1.0f, 1.0f}};
+    //    .specular = {1.0f, 1.0f, 1.0f}};
     // *ComponentManager->GetComponent<cm::transform>(directionalLight1) = {
-    // .tPosition = { 0.0f, 3.0f, 2.0f }, 	.fScale = 0.2f };
+    // .tPosition = { 0.0f, 3.0f, 2.0f },    .fScale = 0.2f };
     // ComponentManager->GetComponent<cm::mesh>(directionalLight1)->handle =
     // hyperCubeHandle_GLTF; cm::material* materialDirectionalLight1  =
     // ComponentManager->GetComponent<cm::material>(directionalLight1);
     // *materialDirectionalLight1 = { .diffuseTextureID_ = grayTextureHandle,
     // .specularTextureID_ = grayTextureHandle, .ambient = { 0.05f, 0.05f, 0.0f
-    // }, 	.shininess = 128.0f * 0.078125f };
+    // },    .shininess = 128.0f * 0.078125f };
 
     // Entity directionalLight2 = EntityManager->CreateEntity();
     // ComponentManager->CreateComponent<cm::mesh, cm::material,
     // cm::directionalLight, cm::transform>(directionalLight2);
     // *ComponentManager->GetComponent<cm::directionalLight>(directionalLight2)
-    // = { .position = { 3.0f, 3.0f, 0.0f }, 	.direction = { 1.0f, -1.0f,
+    // = { .position = { 3.0f, 3.0f, 0.0f },    .direction = { 1.0f, -1.0f,
     // -5.0f}, .ambient = { 0.05f, 0.05f, 0.05f }, .diffuse = {0.8f, 0.8f,
-    // 0.8f}, 	.specular = {1.0f, 1.0f, 1.0f}};
+    // 0.8f},    .specular = {1.0f, 1.0f, 1.0f}};
     // *ComponentManager->GetComponent<cm::transform>(directionalLight2) = {
-    // .tPosition = { 3.0f, 3.0f, 0.0f }, 	.fScale = 0.2f };
+    // .tPosition = { 3.0f, 3.0f, 0.0f },    .fScale = 0.2f };
     // ComponentManager->GetComponent<cm::mesh>(directionalLight2)->handle =
     // hyperCubeHandle_GLTF; cm::material* materialDirectionalLight2  =
     // ComponentManager->GetComponent<cm::material>(directionalLight2);
     // *materialDirectionalLight2 = { .diffuseTextureID_ = grayTextureHandle,
     // .specularTextureID_ = grayTextureHandle, .ambient = { 0.05f, 0.05f, 0.0f
-    // }, 	.shininess = 128.0f * 0.078125f };
+    // },    .shininess = 128.0f * 0.078125f };
 
     Entity pointLight0 = EntityManager->CreateEntity();
     ComponentManager->CreateComponent<cm::mesh, cm::material, cm::pointLight,
@@ -194,9 +194,9 @@ int main() {
     // ComponentManager->CreateComponent<cm::mesh, cm::material, cm::pointLight,
     // cm::transform>(pointLight1);
     // *ComponentManager->GetComponent<cm::pointLight>(pointLight1)  = {
-    // .position = { 0.0f, 3.0f, 0.0f }, 	.ambient = { 0.2f, 0.2f, 0.2f },
+    // .position = { 0.0f, 3.0f, 0.0f },    .ambient = { 0.2f, 0.2f, 0.2f },
     // .diffuse = { 0.7f, 0.7f, 0.7f }, .specular = { 0.8f, 0.8f, 0.8f },
-    // 	.constant = 1.0f, .linear = 0.09f, .quadratic = 0.032f };
+    //    .constant = 1.0f, .linear = 0.09f, .quadratic = 0.032f };
     // *ComponentManager->GetComponent<cm::transform>(pointLight1) = {
     // .tPosition = { 0.0f, 3.0f, 0.0f }, .fScale = 0.3f };
     // ComponentManager->GetComponent<cm::mesh>(pointLight1)->handle =
@@ -209,9 +209,9 @@ int main() {
     // ComponentManager->CreateComponent<cm::mesh, cm::material, cm::pointLight,
     // cm::transform>(pointLight2);
     // *ComponentManager->GetComponent<cm::pointLight>(pointLight2)  = {
-    // .position = { 0.0f, 3.0f, 2.0f }, 	.ambient = { 0.2f, 0.2f, 0.2f },
+    // .position = { 0.0f, 3.0f, 2.0f },    .ambient = { 0.2f, 0.2f, 0.2f },
     // .diffuse = { 0.7f, 0.7f, 0.7f }, .specular = { 0.8f, 0.8f, 0.8f },
-    // 	.constant = 1.0f, .linear = 0.09f, .quadratic = 0.032f };
+    //    .constant = 1.0f, .linear = 0.09f, .quadratic = 0.032f };
     // *ComponentManager->GetComponent<cm::transform>(pointLight2) = {
     // .tPosition = { 0.0f, 3.0f, 2.0f }, .fScale = 0.3f };
     // ComponentManager->GetComponent<cm::mesh>(pointLight2)->handle =
@@ -224,9 +224,9 @@ int main() {
     // ComponentManager->CreateComponent<cm::mesh, cm::material, cm::pointLight,
     // cm::transform>(pointLight3);
     // *ComponentManager->GetComponent<cm::pointLight>(pointLight3)  = {
-    // .position = { 2.0f, 3.0f, 0.0f }, 	.ambient = { 0.2f, 0.2f, 0.2f },
+    // .position = { 2.0f, 3.0f, 0.0f },    .ambient = { 0.2f, 0.2f, 0.2f },
     // .diffuse = { 0.7f, 0.7f, 0.7f }, .specular = { 0.8f, 0.8f, 0.8f },
-    // 	.constant = 1.0f, .linear = 0.09f, .quadratic = 0.032f };
+    //    .constant = 1.0f, .linear = 0.09f, .quadratic = 0.032f };
     // *ComponentManager->GetComponent<cm::transform>(pointLight3) = {
     // .tPosition = { 2.0f, 3.0f, 0.0f }, .fScale = 0.3f };
     // ComponentManager->GetComponent<cm::mesh>(pointLight3)->handle =
@@ -239,9 +239,9 @@ int main() {
     // ComponentManager->CreateComponent<cm::mesh, cm::material, cm::pointLight,
     // cm::transform>(pointLight4);
     // *ComponentManager->GetComponent<cm::pointLight>(pointLight4)  = {
-    // .position = { 0.27f, 5.3f, 0.25f }, 	.ambient = { 0.2f, 0.2f, 0.2f },
+    // .position = { 0.27f, 5.3f, 0.25f },    .ambient = { 0.2f, 0.2f, 0.2f },
     // .diffuse = { 0.7f, 0.7f, 0.7f }, .specular = { 0.8f, 0.8f, 0.8f },
-    // 	.constant = 2.17f, .linear = 0.39f, .quadratic = 0.532f };
+    //    .constant = 2.17f, .linear = 0.39f, .quadratic = 0.532f };
     // *ComponentManager->GetComponent<cm::transform>(pointLight4) = {
     // .tPosition = { 0.5f, 3.0f, 0.8f }, .fScale = 0.3f };
     // ComponentManager->GetComponent<cm::mesh>(pointLight4)->handle =
@@ -254,10 +254,10 @@ int main() {
     // ComponentManager->CreateComponent<cm::mesh, cm::material, cm::spotLight,
     // cm::transform>(spotLight1);
     // *ComponentManager->GetComponent<cm::spotLight>(spotLight1) = { .position
-    // = { 1.0f, 15.0f, -5.0f }, 	.direction = { 0.0f, -1.0f, 1.0f }, .cutOff
+    // = { 1.0f, 15.0f, -5.0f },    .direction = { 0.0f, -1.0f, 1.0f }, .cutOff
     // = 32.5f, .outerCutOff = 37.5f, .ambient = { 0.05f, 0.05f, 0.05f },
-    // 	.diffuse = { 1.8f, 1.8f, 1.8f }, .specular = { 2.0f, 2.0f, 2.0f },
-    // .constant = 1.0f, .linear = 0.09f, 	.quadratic = 0.032f };
+    //    .diffuse = { 1.8f, 1.8f, 1.8f }, .specular = { 2.0f, 2.0f, 2.0f },
+    // .constant = 1.0f, .linear = 0.09f,    .quadratic = 0.032f };
     // *ComponentManager->GetComponent<cm::transform>(spotLight1) = { .tPosition
     // = { 1.0f, 15.0f, -5.0f }, .fScale = 0.5f };
     // ComponentManager->GetComponent<cm::mesh>(spotLight1)->handle =
@@ -270,10 +270,10 @@ int main() {
     // ComponentManager->CreateComponent<cm::mesh, cm::material, cm::spotLight,
     // cm::transform>(spotLight2);
     // *ComponentManager->GetComponent<cm::spotLight>(spotLight2) = { .position
-    // = { 0.0f, 3.0f, 10.0f }, 	.direction = { 0.0f, 0.0f, -5.0f }, .cutOff
+    // = { 0.0f, 3.0f, 10.0f },    .direction = { 0.0f, 0.0f, -5.0f }, .cutOff
     // = 32.5f, .outerCutOff = 37.5f, .ambient = { 0.05f, 0.05f, 0.05f },
-    // 	.diffuse = { 0.8f, 0.8f, 0.8f }, .specular = { 1.0f, 1.0f, 1.0f },
-    // .constant = 1.0f, .linear = 0.09f, 	.quadratic = 0.032f };
+    //    .diffuse = { 0.8f, 0.8f, 0.8f }, .specular = { 1.0f, 1.0f, 1.0f },
+    // .constant = 1.0f, .linear = 0.09f,    .quadratic = 0.032f };
     // *ComponentManager->GetComponent<cm::transform>(spotLight2) = { .tPosition
     // = { 0.0f, 3.0f, 10.0f }, .fScale = 1.0f };
     // ComponentManager->GetComponent<cm::mesh>(spotLight2)->handle =
@@ -282,11 +282,9 @@ int main() {
     // *materialSpotLight2 = { .diffuseTextureID_ = grayTextureHandle,
     // .specularTextureID_ = grayTextureHandle };
 
-    ///< Game rendering loop
-    GLVM->GameLoop(GLVM::core::OPENGL_RENDERER);
-    //	GLVM->GameLoop(GLVM::core::VULKAN_RENDERER);
-
+    // Game rendering loop
+    // GLVM->GameLoop(GLVM::core::OPENGL_RENDERER);
+    GLVM->GameLoop(GLVM::core::VULKAN_RENDERER);
     GLVM->GameKill();
-
     return 0;
 }

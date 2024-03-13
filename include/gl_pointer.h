@@ -134,6 +134,4 @@ EXTERN void (*pGLXSwap_Interval_EXT)(Display *, GLXDrawable, int);
 EXTERN BOOL(WINAPI *pWGLSwap_Interval_EXT)(int);
 #endif
 
-// EXTERN BOOL (WINAPI *pWGLSwap_Interval_EXT)(int);
-
 #endif

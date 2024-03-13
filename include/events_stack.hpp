@@ -61,9 +61,7 @@ public:
         }
     }
 
-    ///<       !!!!!!!!!!!!!!!!!!!!!!!!!!! DELETE ALL THIS IF'S WHITH CHECKEVENT
-    ///<       FUNCTION !!!!!!!!!!!!!!!!!!!!!!!!!!
-
+    // TODO: Delete all this if's with CheckEvent function
     void ControlInput(CEvent &_eEvent) {
         if (!(SearchElement(_eEvent.GetEvent()) == eEmpty)) {
             return;

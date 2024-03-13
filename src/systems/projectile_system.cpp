@@ -60,12 +60,6 @@ void CProjectileSystem::Update() {
             }
         }
     }
-
-    // core::vector<unsigned int>* pEntity_Container_refProjectile =
-    // 	pComponent_Manager->GetEntityContainer<cm::projectile>();
-    // unsigned int uiVector_Projectile_Size =
-    // pEntity_Container_refProjectile->GetSize();
-
     ComponentManager *componentManager = ComponentManager::GetInstance();
     core::vector<Entity> linkedEntities =
             componentManager->collectLinkedEntities<
@@ -98,16 +92,6 @@ void CProjectileSystem::Update() {
             pEntity_Manager->RemoveEntity(uiEntity_refProjectile,
                                           pComponent_Manager);
         }
-        //			std::cout << "Size: " << linkedEntities.GetSize() <<
-        // std::endl;
-        //			pComponent_Manager->GetEntityContainer<cm::projectile>()->Print();
-        //			std::cout << "Colliders container size: " <<
-        // pComponent_Manager->GetEntityContainer<cm::collider>()->GetSize() <<
-        // std::endl; 			std::cout << "Projectiles container size 1: " <<
-        // linkedEntities.GetSize() << std::endl; 			std::cout <<
-        // "Projectiles container size 2: " << uiVector_Projectile_Size <<
-        // std::endl; 			std::cout << "entity: " <<
-        // uiEntity_refProjectile << std::endl;
     }
 }
 
@@ -219,10 +203,6 @@ CProjectileSystem::GetDirectionVector(components::beholder &beholder) {
     forward[0] = result.x;
     forward[1] = result.y;
     forward[2] = result.z;
-
-    // front[0] = std::cos(Radians(fYaw)) * std::cos(Radians(fPitch));
-    // front[1] = std::sin(Radians(fPitch));
-    // front[2] = std::sin(Radians(fYaw)) * std::cos(Radians(fPitch));
     beholder.forward = Normalize(forward);
 
     return beholder.forward;

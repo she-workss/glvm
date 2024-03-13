@@ -190,11 +190,6 @@ void COpenglRenderer::draw() {
     coreShaderProgram->SetInt("sampledSpotShadowOrdinalNumbersArraySize",
                               sampledSpotLightEntityIDcontainer.size());
 
-    // core::vector<unsigned int>* pEntityContainerRefView =
-    // 	pComponent_Manager->GetEntityContainer<cm::beholder>();
-    // unsigned int uiPlayerEntity = (*pEntityContainerRefView)[0];
-    // cm::transform* playerTransformComponent =
-    // pComponent_Manager->GetComponent<cm::transform>(uiPlayerEntity);
     core::vector<unsigned int> *pEntityContainerRefPointLight =
             pComponent_Manager->GetEntityContainer<cm::pointLight>();
     unsigned int pointLightComponentContainerSize =
@@ -206,11 +201,6 @@ void COpenglRenderer::draw() {
         unsigned int entityID = (*pEntityContainerRefPointLight)[i];
         cm::pointLight *pointLightComponent =
                 pComponent_Manager->GetComponent<cm::pointLight>(entityID);
-        //			float distance =
-        // VectorLength(playerTransformComponent->tPosition,
-        // pointLightComponent->position);
-
-        //			if ( distance < 4.5f ) {
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         sampledPointLightEntityIDcontainer.push_back(i);
@@ -226,7 +216,6 @@ void COpenglRenderer::draw() {
                         appropriatePointLightComponentIndex, "]"),
                 i);
         ++appropriatePointLightComponentIndex;
-        //			}
     }
 
     coreShaderProgram->SetInt("sampledPointShadowOrdinalNumbersArraySize",
@@ -514,10 +503,10 @@ void COpenglRenderer::ComputeDirectionalLight() {
         coreShaderProgram->SetVec3(
                 ConcatIntBetweenTwoStrings(leftString, x, "].ambient"),
                 directionalLightComponent->ambient);
+        // Darken diffuse light a bit
         coreShaderProgram->SetVec3(
                 ConcatIntBetweenTwoStrings(leftString, x, "].diffuse"),
-                directionalLightComponent
-                        ->diffuse); // darken diffuse light a bit
+                directionalLightComponent->diffuse);
         coreShaderProgram->SetVec3(
                 ConcatIntBetweenTwoStrings(leftString, x, "].specular"),
                 directionalLightComponent->specular);
@@ -547,9 +536,10 @@ void COpenglRenderer::ComputePointLight() {
         coreShaderProgram->SetVec3(
                 ConcatIntBetweenTwoStrings(leftString, x, "].ambient"),
                 pointLightComponent->ambient);
+        // Darken diffuse light a bit
         coreShaderProgram->SetVec3(
                 ConcatIntBetweenTwoStrings(leftString, x, "].diffuse"),
-                pointLightComponent->diffuse); // darken diffuse light a bit
+                pointLightComponent->diffuse);
         coreShaderProgram->SetVec3(
                 ConcatIntBetweenTwoStrings(leftString, x, "].specular"),
                 pointLightComponent->specular);
@@ -596,9 +586,10 @@ void COpenglRenderer::ComputeSpotLight() {
         coreShaderProgram->SetVec3(
                 ConcatIntBetweenTwoStrings(leftString, x, "].ambient"),
                 spotLightComponent->ambient);
+        // Darken diffuse light a bit
         coreShaderProgram->SetVec3(
                 ConcatIntBetweenTwoStrings(leftString, x, "].diffuse"),
-                spotLightComponent->diffuse); // darken diffuse light a bit
+                spotLightComponent->diffuse);
         coreShaderProgram->SetVec3(
                 ConcatIntBetweenTwoStrings(leftString, x, "].specular"),
                 spotLightComponent->specular);
@@ -786,24 +777,14 @@ void COpenglRenderer::Raycasting() {
                         GLVM::ecs::EntityManager::GetInstance();
                 entityManager->RemoveEntity(uiEntity_refProjectile,
                                             componentManager);
-                /// TODO: There is a big quastion is this decrement have sence.
-                //					--linkedEntitiesVectorSize;
+                // TODO: There is a big question: is this decrement have sense?
+                // --linkedEntitiesVectorSize;
             }
         }
     }
 }
 
 void COpenglRenderer::RaycastingDebug() {
-    /// TODO: This code for debug purpouses only
-    // float plane[] = {
-    // 	-0.3f, -0.3f, -0.5f, 0.3f, 0.5f, 0.7f,
-    // 	0.3f, -0.3f, -0.5f, 0.3f, 0.5f, 0.7f,
-    // 	0.3f,  0.3f, -0.5f, 0.3f, 0.5f, 0.7f,
-    // 	0.3f,  0.3f, -0.5f, 0.3f, 0.5f, 0.7f,
-    // 	-0.3f,  0.3f, -0.5f, 0.3f, 0.5f, 0.7f,
-    // 	-0.3f, -0.3f, -0.5f, 0.3f, 0.5f, 0.7f
-    // };
-
     debugLines->Use();
 
     mat4 planeModelMatrix(1.0);
@@ -899,7 +880,7 @@ void COpenglRenderer::RaycastingDebug() {
 void COpenglRenderer::RenderQuad() {
     if (quadVAO_ == 0) {
         float quadVertices[] = {
-                // positions        // texture Coords
+                // positions        // texture coords
                 -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
                 1.0f,  1.0f, 0.0f, 1.0f, 1.0f, 1.0f,  -1.0f, 0.0f, 1.0f, 0.0f,
         };
@@ -932,9 +913,8 @@ void COpenglRenderer::SetVertices(std::vector<unsigned int> &_aIndices,
 
     pGLGen_Buffers(1, &iEbo_);
 
-    ///< First we link the vertex array object, then we link and set the vertex
-    ///< buffers, and then we configure the vertex attributes.
-
+    // First we link the vertex array object, then we link and set the vertex
+    // buffers, and then we configure the vertex attributes.
     pGLBind_Vertex_Array(iVao_);
 
     pGLBind_Buffer(GL_ARRAY_BUFFER, iVbo_);
@@ -1115,7 +1095,7 @@ void COpenglRenderer::SetMeshData(std::vector<const char *> _pathsArray,
 }
 
 void COpenglRenderer::LoadTextureData(GLVM::ecs::Texture &texture) {
-    ///< Loading and creating texture.
+    // Loading and creating texture.
     glGenTextures(NUMBER_OF_CREATING_TEXTURE_OBJECT_1, &texture.iTexture_);
     glBindTexture(GL_TEXTURE_2D, texture.iTexture_);
 
@@ -1128,13 +1108,13 @@ void COpenglRenderer::LoadTextureData(GLVM::ecs::Texture &texture) {
             reinterpret_cast<int *>(&texture.iHeight_), &channels, 0);
 #endif
 
-    ///< Loading image, creating texture and generation mipmap-levels
+    // Loading image, creating texture and generation mipmap-levels
     glTexImage2D(GL_TEXTURE_2D, MIPMAP_LEVEL, GL_RGBA, texture.iWidth_,
                  texture.iHeight_, SOME_OLD_STUFF, GL_RGBA, GL_UNSIGNED_BYTE,
                  texture.u_iData_);
     pGLGenerate_Mipmap(GL_TEXTURE_2D);
 
-    ///< Setting applying parameters
+    // Setting applying parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 }

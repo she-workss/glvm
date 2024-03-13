@@ -77,9 +77,6 @@ public:
 };
 
 class CWaveFrontObjParser {
-    // static CWaveFrontObjParser* pInstance_;
-    // static std::mutex  Mutex_;
-
     GLVM::core::vector<SVertex> coordinateVertices_;
     GLVM::core::vector<SVertex> textureVertices_;
     GLVM::core::vector<SVertex> normals_;
@@ -91,9 +88,6 @@ class CWaveFrontObjParser {
 
 public:
     CWaveFrontObjParser();
-
-    //        static CWaveFrontObjParser* GetInstance(); ///< It possibly to get
-    //        only one instance of this class whith this method.
 
     [[nodiscard]] const GLVM::core::vector<SVertex> &
     getCoordinateVertices() const;

@@ -23,15 +23,15 @@ class EntityManager {
     EntityManager();
     ~EntityManager();
 
-public: ///< !!!!!DELETE!!!!!!!!!!!!!!!11
-    EntityManager(EntityManager &_entity_Manager) =
-            delete; ///< Dont need to make cope because of singleton property.
-    void operator=(const EntityManager &_entity_Manager) =
-            delete; ///< Dont need assignment operator because of singleton
-                    ///< property.
-    static EntityManager *
-    GetInstance(); ///< It possibly to get only one instance of this class whith
-                   ///< this method.
+public: // TODO: Delete me
+    // Dont need to make cope because of singleton property.
+    EntityManager(EntityManager &_entity_Manager) = delete;
+
+    // Dont need assignment operator because of singleton property.
+    void operator=(const EntityManager &_entity_Manager) = delete;
+
+    // It possibly to get only one instance of this class with this method.
+    static EntityManager *GetInstance();
 
     [[nodiscard]] Entity_ID CreateEntity();
 

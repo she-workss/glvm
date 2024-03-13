@@ -179,7 +179,7 @@ struct Vertex {
 };
 
 enum class DescriptorsTypes {
-    /// UBO - uniform buffer object
+    // UBO - uniform buffer object
     DIRECTIONAL_LIGHT_SHADOW_MAP_MATRIX_UBO,
     SPOT_LIGHT_SHADOW_MAP_MATRIX_UBO,
     POINT_LIGHT_SHADOW_MAP_MATRIX_UBO,
@@ -447,10 +447,12 @@ public:
     std::vector<const char *> pathsArray_;
     core::vector<const char *> pathsGLTF_;
     std::vector<std::vector<core::Vertex>> aVertices_;
-    //		std::vector<std::vector<core::Vertex>> aVertices_GLTF;
-    std::vector<std::vector<uint32_t>> aIndices_; ///< wavefront.obj indices
-    std::vector<std::vector<float>> aVertexesTemp_; ///< gltf indices
-    std::vector<std::vector<uint32_t>> aIndicesTemp_; ///< Temp
+    // wavefront.obj indices
+    std::vector<std::vector<uint32_t>> aIndices_;
+    // gltf indices
+    std::vector<std::vector<float>> aVertexesTemp_;
+    // temp
+    std::vector<std::vector<uint32_t>> aIndicesTemp_;
     core::vector<core::vector<core::vector<mat4>>> jointMatricesPerMesh;
     core::vector<core::vector<float>> frames;
 
@@ -556,10 +558,10 @@ private:
     VkCommandPool pointLightCommandPool;
     VkCommandPool mainRenderCommandPool;
 
-    /// Main pipeline depth.
+    // Main pipeline depth
     VkImageView depthImageView;
 
-    /// Depth variables for shadow map.
+    // Depth variables for shadow map
     unsigned int directionalLightNumber = 0;
     std::vector<VK_Image> directionalLightShadowMapImages;
     std::vector<VkFramebuffer> directionalLightShadowMapFrameBuffers;
@@ -570,11 +572,7 @@ private:
     std::vector<VkDeviceMemory>
             shadowMapDirectionalLightModelMatrixUniformBuffersMemory;
 
-    /*
-    ===================================
-    FOR TEST ONLY!!!
-    ===================================
-    */
+    // For test only
     mat4 dirLightSpaceMatrix[DIRECTIONAL_LIGHTS_NUMBER];
     mat4 spotLightSpaceMatrix[SPOT_LIGHTS_NUMBER];
     std::vector<VkBuffer> lightSpaceMatrixBuffer;
@@ -635,12 +633,12 @@ private:
 
     VkDescriptorPool descriptorPool;
     unsigned int matrixUboDescriptorsNumber = 0;
-    //		unsigned int viewPositionUboDescriptorsNumber = 0;
     unsigned int directionalLightUboDescriptorsNumber = 0;
     unsigned int pointLightUboDescriptorsNumber = 0;
     unsigned int spotLightUboDescriptorsNumber = 0;
-    u32 lightDataSize; ///< Var for choose correct number of ds from dir, spot,
-                       ///< point light and beholder number
+    // Var for choose correct number of ds from dir, spot, point light and
+    // beholder number
+    u32 lightDataSize;
     std::vector<VkDescriptorSet> matrixUboDescriptorSets;
     std::vector<VkDescriptorSet> lightDataUboDescriptorSets;
     std::vector<VkDescriptorSet> materialUboDescriptorSets;
@@ -658,22 +656,22 @@ private:
     std::vector<VkCommandBuffer> pointLightCommandBuffers;
     std::vector<VkCommandBuffer> mainRenderCommandBuffers;
 
-    /// Main render pipe line sync objects
+    // Main render pipe line sync objects
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
 
-    /// Directional light shadow map sync objects
+    // Directional light shadow map sync objects
     std::vector<VkSemaphore> directionalLightShadowMapImageAvailableSemaphores;
     std::vector<VkSemaphore> directionalLightShadowMapRenderFinishedSemaphores;
     std::vector<VkFence> directionalLightShadowMapInFlightFences;
 
-    /// Spot light shadow map sync objects
+    // Spot light shadow map sync objects
     std::vector<VkSemaphore> spotLightShadowMapImageAvailableSemaphores;
     std::vector<VkSemaphore> spotLightShadowMapRenderFinishedSemaphores;
     std::vector<VkFence> spotLightShadowMapInFlightFences;
 
-    /// Point light shadow map sync objects
+    // Point light shadow map sync objects
     std::vector<VkSemaphore> pointLightShadowMapImageAvailableSemaphores;
     std::vector<VkSemaphore> pointLightShadowMapRenderFinishedSemaphores;
     std::vector<VkFence> pointLightShadowMapInFlightFences;

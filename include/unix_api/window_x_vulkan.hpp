@@ -18,8 +18,6 @@ class WindowXVulkan : public IWindow {
     Window Root_Window_;
     XSetWindowAttributes Set_Window_Attributes_;
 
-    // XWindowAttributes gwa_;
-
 public:
     Display *pDisp_;
     Window Win_;

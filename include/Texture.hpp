@@ -18,9 +18,8 @@ struct TextureHandle {
 };
 
 struct Texture {
-    unsigned int vkAvailableInnerId_ =
-            0; ///< This field using to choose specific instance of texture
-               ///< image in Vulkan.
+    // This field using to choose specific instance of texture image in Vulkan.
+    unsigned int vkAvailableInnerId_ = 0;
     unsigned int vkInnerIdLimit_ = 10;
 
     GLuint iTexture_;

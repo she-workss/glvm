@@ -56,7 +56,7 @@ public:
     void Close() override;
     virtual void CursorLock(int _x_position, int _y_position, int *_x_offset,
                             int *_y_offset) override;
-    ///< Callback method for events handling.
+    // Callback method for events handling.
     static LRESULT CALLBACK MainWndProc(HWND _pHwnd, UINT _pMsg,
                                         WPARAM _pWParam, LPARAM _pLParam);
 }; // namespace GLVM::core

@@ -25,7 +25,6 @@ public:
     core::EEvents eSave_Event_;
     static const int anim_index_array = 3;
     int anim_count = 0;
-    //		core::CStack& _Inputs;
     core::EEvents eEvent_;
     double Animation_Delta;
     double Delta_Time;
@@ -35,7 +34,7 @@ public:
             {vertices7, vertices8, vertices9},
             {vertices10, vertices11, vertices12}};
 
-    ///< Write one side of cube(if vertex component had vertices for 3D cube).
+    // Write one side of cube(if vertex component had vertices for 3D cube).
     void ArrayCopy(float *_aArray_Source, float *_aArray_Destination,
                    unsigned int _u_iRange) {
         for (unsigned int i = 0; i < _u_iRange; ++i) {

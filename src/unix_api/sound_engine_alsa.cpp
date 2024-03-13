@@ -8,22 +8,17 @@
 namespace GLVM::core::Sound {
 void CSoundEngineAlsa::SoundStream() {
     for (unsigned int i = 0; i < tSound_Contaier.GetSize(); ++i) {
-        // std::cout << (*tSound_Contaier[i]).kPath_to_File_ << std::endl;
-        // std::cout << (*tSound_Contaier[i]).uiDuration_ << std::endl;
-        // std::cout << (*tSound_Contaier[i]).uiRate_ << std::endl;
         PlaybackSoundSample(*tSound_Contaier[i]);
         tSound_Contaier.Remove(i);
-        //            tSound_Contaier.RemoveObject(tSound_Contaier[i]);
     }
 }
 
 void CSoundEngineAlsa::PlaybackSoundSample(CSoundSample &_sound_sample) {
     const char *kDevice = "default";
     snd_pcm_format_t format = SND_PCM_FORMAT_S16_LE;
-    //            snd_pcm_format_t format = SND_PCM_FORMAT_S24_LE;
     snd_pcm_access_t access = SND_PCM_ACCESS_RW_INTERLEAVED;
     unsigned int uiChannels = 2, uiRate;
-    unsigned int uiLatency = 500000; /* 0.5 s */
+    unsigned int uiLatency = 500000; // 0.5s
     snd_pcm_t *pPcm;
     unsigned int uiFrame_Size = uiChannels * 2;
 
@@ -49,12 +44,8 @@ void CSoundEngineAlsa::PlaybackSoundSample(CSoundSample &_sound_sample) {
         data = buf;
         while (rest > 0) {
             frames = snd_pcm_writei(pPcm, data, rest);
-            // if (frames < 0)
-            //     CHECK(snd_pcm_recover(pPcm, frames, 0));
-            // else {
             rest -= frames;
             data += frames * uiFrame_Size;
-            //                    }
         }
     }
     free(buf);

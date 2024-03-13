@@ -25,8 +25,8 @@ public:
     std::vector<const char *> pathsArray_;
     core::vector<const char *> pathsGLTF_;
 
-    static MeshManager *GetInstance(); ///< It possibly to get only one instance
-                                       ///< of this class whith this method.
+    // It possibly to get only one instance of this class with this method.
+    static MeshManager *GetInstance();
     void SetMesh(const char *_pathToMesh);
     void SetMeshGLTF(const char *pathToMesh);
 };

@@ -6,10 +6,6 @@
 #ifndef TEXTURE_COMPONENT
 #define TEXTURE_COMPONENT
 
-// #include <vector>
-// #include <iostream>
-// #include "graphic_api/vulkan.hpp"
-
 namespace GLVM::ecs::components {
 struct texture {
     unsigned int id;

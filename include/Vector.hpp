@@ -151,8 +151,7 @@ vector<T>::~vector() {
     rowInnerData = nullptr;
 }
 
-/// Push element on top of the container.
-
+// Push element on top of the container.
 template<class T>
 void vector<T>::Push(T item) {
     if (size == capacity) {
@@ -181,10 +180,6 @@ void vector<T>::Pop() {
     }
 
     T &element = *(T *)&rowInnerData[(size - 1) * sizeof(T)];
-    // if ( typeid(T).name() == typeid(unsigned int).name() ) {
-    // 	element = 0;                                                     ///<
-    // For debug purpouses only!!!
-    // }
     element.~T();
     --size;
 }
@@ -223,8 +218,7 @@ VectorIterator<T> vector<T>::Find(T &element) {
     return iterator;
 }
 
-/// Insert element into chosen cell.
-
+// Insert element into chosen cell.
 template<typename T>
 void vector<T>::Resize(const unsigned int index) {
     if (index < size) {
@@ -269,14 +263,6 @@ void vector<T>::Remove(unsigned int index) {
         previousElement.~T();
         new (&rowInnerData[j * sizeof(T)]) T(element);
     }
-
-    /// FIXME: FOR DEBUG ONLY!
-    // if ( typeid(T).name() == typeid(unsigned int).name() ) {
-    // 	T& element = *(T*)&rowInnerData[(size - 1) * sizeof(T)];
-    // 	element = 0;                                                     ///<
-    // For debug purpouses only!!!
-    // }
-
     --size;
 }
 
@@ -342,28 +328,11 @@ void vector<T>::clear() {
     if (size < 1) {
         return;
     }
-
-    /// FIXME: FOR DEBUG ONLY!
-    if (typeid(T).name() == typeid(unsigned int).name()) {
-        for (unsigned int i = 0; i < capacity; ++i) {
-            T &element = *(T *)&rowInnerData[i * sizeof(T)];
-            element = 0; ///< For debug purpouses only!!!
-        }
-    }
-
     for (unsigned int i = 0; i < size; ++i) {
         T &element = *(T *)&rowInnerData[i * sizeof(T)];
         element.~T();
     }
-
-    /// FIXME: DEBUG ONLY!
-    // unsigned int sizeOfType = sizeof(T);
-    // for (unsigned int j = 0; j < capacity * sizeOfType; ++j) {
-    // 	*(unsigned char*)&rowInnerData[j] = 0;
-    // }
-
     size = 0;
-    //		capacity = 0;
 }
 
 template<class T>

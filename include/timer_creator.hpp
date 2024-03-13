@@ -8,13 +8,6 @@
 
 #include "i_chrono.hpp"
 
-/*! \class TimerCreator
-    \brief Create timer interface
-
-    This class creates a timer independent interface.
-    Implemented by means of the factory method.
-*/
-
 namespace GLVM::Time {
 class CTimerCreator {
 public:

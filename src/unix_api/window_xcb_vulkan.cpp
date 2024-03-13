@@ -16,10 +16,9 @@
 
 namespace GLVM::core {
 WindowXCBVulkan::WindowXCBVulkan() {
-    /// Open the connection to the X server
+    // Open the connection to the X server
     connection = xcb_connect(NULL, NULL);
-
-    /// Get the first screen
+    // Get the first screen
     const xcb_setup_t *setup = xcb_get_setup(connection);
     assert(connection != NULL);
 
@@ -38,28 +37,23 @@ WindowXCBVulkan::WindowXCBVulkan() {
                      XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_EXPOSURE |
                      XCB_EVENT_MASK_POINTER_MOTION |
                      XCB_EVENT_MASK_ENTER_WINDOW | XCB_EVENT_MASK_LEAVE_WINDOW;
-    //		event_flags[2] = cursor;
-
-    /// Create window
+    // Create window
     window = xcb_generate_id(connection);
-    xcb_create_window(connection, ///< Connection
-                      XCB_COPY_FROM_PARENT, ///< Depth (same as root)
-                      window, ///< Window id
-                      screen->root, ///< Parent window
-                      0, 0, ///< x, y
-                      1920, 1080, ///< width, height
-                      10, ///< Border width
-                      XCB_WINDOW_CLASS_INPUT_OUTPUT, ///< Class
-                      screen->root_visual, ///< Visual
-                      event_mask, event_flags); ///< Masks, not used yet
+    xcb_create_window(connection, // Connection
+                      XCB_COPY_FROM_PARENT, // Depth (same as root)
+                      window, // Window id
+                      screen->root, // Parent window
+                      0, 0, // x, y
+                      1920, 1080, // width, height
+                      10, // Border width
+                      XCB_WINDOW_CLASS_INPUT_OUTPUT, // Class
+                      screen->root_visual, // Visual
+                      event_mask, event_flags); // Masks, not used yet
 
-    /// Map the window on the screen
+    // Map the window on the screen
     xcb_map_window(connection, window);
-
-    /// Make sure commands are sent befour we pause so that the window gets
-    /// shown
+    // Make sure commands are sent before we pause so that the window gets shown
     xcb_flush(connection);
-
     HideCursor();
 }
 
@@ -129,24 +123,14 @@ void WindowXCBVulkan::print_modifiers(uint32_t mask) {
 
 bool WindowXCBVulkan::HandleEvent([[maybe_unused]] CEvent &_Event) {
     xcb_generic_event_t *generic_event;
-
-    // 		while (( event = xcb_poll_for_event ( GetConnection() ))) {
-    // //			std::cout << event->response_type << std::endl;
-    // 		}
     bool next_generic_event_flag = false;
     while (next_generic_event_flag ||
            (generic_event = xcb_poll_for_event(connection))) {
         next_generic_event_flag = false;
-        //		  buffer_event:
         switch (generic_event->response_type & ~0x80) {
             case XCB_EXPOSE: {
                 [[maybe_unused]] xcb_expose_event_t *expose_event =
                         (xcb_expose_event_t *)generic_event;
-
-                // printf ("Window %i exposed. Region to be redrawn at location
-                // (%d,%d), with dimension (%d,%d)\n", expose_event->window,
-                // expose_event->x, expose_event->y, expose_event->width,
-                // expose_event->height);
                 break;
             }
             case XCB_BUTTON_PRESS: {
@@ -157,27 +141,15 @@ bool WindowXCBVulkan::HandleEvent([[maybe_unused]] CEvent &_Event) {
                 switch (expose_event->detail) {
                     case 1:
                         _Event.SetEvent(EEvents::eMOUSE_LEFT_BUTTON);
-                        // printf ("Button %d pressed in window %i, at
-                        // coordinates (%d,%d)\n", 		expose_event->detail,
-                        // expose_event->event, expose_event->event_x,
-                        // expose_event->event_y);
                         break;
                     case 3:
                         _Event.SetEvent(EEvents::eMOUSE_RIGHT_BUTTON);
-                        // printf ("Button %d pressed in window %i, at
-                        // coordinates (%d,%d)\n", 		expose_event->detail,
-                        // expose_event->event, expose_event->event_x,
-                        // expose_event->event_y);
                         break;
+                    // Wheel button up
                     case 4:
-                        // printf ("Wheel Button up in window %i, at coordinates
-                        // (%d,%d)\n", 		expose_event->event,
-                        // expose_event->event_x, expose_event->event_y);
                         break;
+                    // Wheel button down
                     case 5:
-                        // printf ("Wheel Button down in window %i, at
-                        // coordinates (%d,%d)\n", 		expose_event->event,
-                        // expose_event->event_x, expose_event->event_y);
                         break;
                 }
 
@@ -191,17 +163,9 @@ bool WindowXCBVulkan::HandleEvent([[maybe_unused]] CEvent &_Event) {
                 switch (expose_event->detail) {
                     case 1:
                         _Event.SetEvent(EEvents::eMOUSE_LEFT_BUTTON_RELEASE);
-                        // printf ("Button %d released in window %i, at
-                        // coordinates (%d,%d)\n", 		expose_event->detail,
-                        // expose_event->event, expose_event->event_x,
-                        // expose_event->event_y);
                         break;
                     case 3:
                         _Event.SetEvent(EEvents::eMOUSE_RIGHT_BUTTON_RELEASE);
-                        // printf ("Button %d released in window %i, at
-                        // coordinates (%d,%d)\n", 		expose_event->detail,
-                        // expose_event->event, expose_event->event_x,
-                        // expose_event->event_y);
                         break;
                 }
 
@@ -214,16 +178,10 @@ bool WindowXCBVulkan::HandleEvent([[maybe_unused]] CEvent &_Event) {
                 _Event.SetEvent(EEvents::eMOUSE_POINTER_POSITION);
                 _Event.mousePointerPosition.position_X = expose_event->event_x;
                 _Event.mousePointerPosition.position_Y = expose_event->event_y;
-
-                // printf ("Mouse moved in window %i, at coordinates (%d,%d)\n",
-                // 		expose_event->event, expose_event->event_x,
-                // expose_event->event_y);
             }
             case XCB_MAP_WINDOW: {
-                //				std::cout << "MAP WINDOW" << std::endl;
-
-                /// Make sure commands are sent befour we pause so that the
-                /// window gets shown
+                // Make sure commands are sent before we pause so that the
+                // window gets shown
                 xcb_flush(connection);
 
                 xcb_grab_pointer_cookie_t cookie = xcb_grab_pointer(
@@ -238,32 +196,11 @@ bool WindowXCBVulkan::HandleEvent([[maybe_unused]] CEvent &_Event) {
             case XCB_ENTER_NOTIFY: {
                 [[maybe_unused]] xcb_enter_notify_event_t *expose_event =
                         (xcb_enter_notify_event_t *)generic_event;
-
-                // printf ("Mouse entered window %i, at coordinates (%d,%d)\n",
-                // 		expose_event->event, expose_event->event_x,
-                // expose_event->event_y);
                 break;
             }
-            // case XCB_LEAVE_NOTIFY: {
-            // 	xcb_leave_notify_event_t *expose_event =
-            // (xcb_leave_notify_event_t *)generic_event;
-
-            // 	printf ("Mouse left window %i, at coordinates (%d,%d)\n",
-            // 			expose_event->event, expose_event->event_x,
-            // expose_event->event_y); 	break;
-            // }
             case XCB_KEY_PRESS: {
                 xcb_key_press_event_t *expose_event =
                         (xcb_key_press_event_t *)generic_event;
-                // print_modifiers(expose_event->state);
-
-                // printf ("Key pressed in window %i\n",
-                // 		expose_event->event);
-
-                //				xcb_keycode_t key_code = expose_event->detail;
-                //				std::cout << "Detail: " <<
-                // xcb_key_press_lookup_keysym(key_symbols, expose_event, 0) <<
-                // std::endl;
                 xcb_keysym_t keysym = xcb_key_press_lookup_keysym(
                         key_symbols, expose_event, 0);
 
@@ -293,11 +230,6 @@ bool WindowXCBVulkan::HandleEvent([[maybe_unused]] CEvent &_Event) {
             case XCB_KEY_RELEASE: {
                 xcb_key_release_event_t *key_release_event =
                         (xcb_key_release_event_t *)generic_event;
-                // print_modifiers(key_release_event->state);
-
-                // printf ("Key released in window %i\n",
-                // 		key_release_event->event);
-
                 next_generic_event = xcb_poll_for_event(connection);
                 if (next_generic_event != NULL) {
                     xcb_key_press_event_t *key_press_event =
@@ -310,9 +242,6 @@ bool WindowXCBVulkan::HandleEvent([[maybe_unused]] CEvent &_Event) {
                     if (next_generic_event->response_type == XCB_KEY_PRESS &&
                         key_press_event->time == key_release_event->time &&
                         press_keysym == release_keysym) {
-                        ///< Key wasn’t actually released
-                        //						generic_event =
-                        // xcb_poll_for_event (connection);
                         next_generic_event = NULL;
                         continue;
                     } else {
@@ -322,8 +251,6 @@ bool WindowXCBVulkan::HandleEvent([[maybe_unused]] CEvent &_Event) {
 
                 xcb_keysym_t release_keysym = xcb_key_press_lookup_keysym(
                         key_symbols, key_release_event, 0);
-                //				std::cout << "KEYSYM RELEASE: " <<
-                // release_keysym << std::endl;
                 switch (release_keysym) {
                     case 97:
                         _Event.SetEvent(GLVM::core::eKEYRELEASE_A);
@@ -344,22 +271,14 @@ bool WindowXCBVulkan::HandleEvent([[maybe_unused]] CEvent &_Event) {
 
                 break;
             }
-                // default:
-                // 	/* Unknown event type, ignore it */
-                // 	printf("Unknown event: %d\n", generic_event->response_type);
-                // 	break;
         }
         if (next_generic_event != NULL) {
-            //				Input_Stack_->ControlInput(_Event);
             *generic_event = *next_generic_event;
             next_generic_event = NULL;
-            //				goto buffer_event;
         } else {
             free(generic_event);
         }
-
         Input_Stack_->ControlInput(_Event);
-        /* Free the Generic Event */
     }
 
     return false;

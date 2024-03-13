@@ -29,8 +29,6 @@ class CWindowX : public IWindow {
     GLXFBConfig *pFbc_;
     GLXDrawable Drawable;
 
-    // XWindowAttributes gwa_;
-
 public:
     CWindowX();
     ~CWindowX();

@@ -33,7 +33,6 @@
 #include <fstream>
 
 #ifdef __linux__
-// #include "unix_api/window_x_open_gl.hpp"
 #include "unix_api/window_xcb_open_gl.hpp"
 #endif
 
@@ -42,13 +41,6 @@
 #endif
 
 #define MAX_JOINTS_NUMBER 18
-
-/*! \class Renderer.
-  \brief Render all game objects.
-
-  Take a game object to render in DrawSprite method.
-*/
-
 namespace GLVM::core {
 class COpenglRenderer : public IRenderer {
 public:
@@ -66,7 +58,6 @@ public:
     window_win_open_gl Window;
 #endif
 
-    //		unsigned int appropriateLightComponentIndex = 0;
     const unsigned int SCREEN_WIDTH = 1920;
     const unsigned int SCREEN_HEIGHT = 1080;
     const unsigned int SHADOW_WIDTH = 1024;
@@ -75,7 +66,8 @@ public:
     Shader *flatShadowMapShaderProgram;
     Shader *cubeShadowMapShaderProgram;
     Shader *debugQuadDepth_;
-    Shader *debugLines; ///< For debug only
+    // For debug only
+    Shader *debugLines;
     GLuint quadVAO_;
     GLuint quadVBO_;
     float delta;
@@ -98,32 +90,26 @@ public:
                        -0.5f, 0.0f, 0.0f,  0.0f,  -0.3f, 0.3f,  -0.5f, 0.0f,
                        0.0f,  0.0f, -0.3f, -0.3f, -0.5f, 0.0f,  0.0f,  0.0f};
 
-    /// Directional light
+    // Directional light
     std::vector<unsigned int> directionalLightFlatShadowMapFBOcontainer;
     std::vector<unsigned int> directionalLightFlatShadowMapTextureContainer;
-    std::vector<unsigned int>
-            sampledDirectionalLightEntityIDcontainer; ///< Sampled depend on
-                                                      ///< distance from light
-                                                      ///< source to object
-                                                      ///< entity IDs for poit
-                                                      ///< light shadow map.
+    // Sampled depend on distance from light source to object entity IDs for
+    // point light shadow map.
+    std::vector<unsigned int> sampledDirectionalLightEntityIDcontainer;
 
-    /// Point light
+    // Point light
     std::vector<unsigned int> pointLightCubeShadowMapFBOcontainer;
     std::vector<unsigned int> pointLightCubeShadowMapTextureContainer;
-    std::vector<unsigned int>
-            sampledPointLightEntityIDcontainer; ///< Sampled depend on distance
-                                                ///< from light source to object
-                                                ///< entity IDs for poit light
-                                                ///< shadow map.
+    // Sampled depend on distance from light source to object entity IDs for
+    // point light shadow map.
+    std::vector<unsigned int> sampledPointLightEntityIDcontainer;
 
-    /// Spot light
+    // Spot light
     std::vector<unsigned int> spotLightFlatShadowMapTextureContainer;
     std::vector<unsigned int> spotLightFlatShadowMapFBOContainer;
     std::vector<unsigned int> sampledSpotLightEntityIDcontainer;
-    float borderColor[4] = {1.0f, 1.0f, 1.0f,
-                            1.0f}; ///< Border color for fix shadow issue in
-                                   ///< flat shadow map in long range.
+    // Border color for fix shadow issue in flat shadow map in long range.
+    float borderColor[4] = {1.0f, 1.0f, 1.0f, 1.0f};
     float fYaw = -90.0f;
     float pitch = 0.0f;
     mat4 spotLightSpaceMatrixContainer[8];
@@ -142,11 +128,6 @@ public:
     core::vector<core::vector<float>> frames;
     float frameAccumulator = 0.0f;
     unsigned int currentFrame = 0;
-
-    //		core::vector<mat4> inverseMatrices;
-
-    //		core::vector<core::vector<Vector<short, 4>>> jointIndicesPerVertex;
-    //		core::vector<core::vector<vec4>> weightsPerVertex;
     std::vector<GLuint> VBOcontainer_;
     std::vector<GLuint> VAOcontainer_;
     std::vector<GLuint> EBOcontainer_;
@@ -186,7 +167,8 @@ public:
     void EvaluateFlatDebugShader();
     void RenderScene(Shader *shaderProgram_);
     void Raycasting();
-    void RaycastingDebug(); ///< TODO: For debug only
+    // TODO: For debug only
+    void RaycastingDebug();
     void RenderQuad();
     void SetVertices(std::vector<unsigned int> &_aIndices,
                      std::vector<float> &_aVertices);

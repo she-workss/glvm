@@ -27,8 +27,6 @@ class WindowXOpengl : public IWindow {
     GLXFBConfig *pFbc_;
     GLXDrawable Drawable;
 
-    // XWindowAttributes gwa_;
-
 public:
     Display *pDisp_;
     Window Win_;
