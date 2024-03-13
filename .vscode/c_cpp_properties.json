@@ -4,8 +4,8 @@
             "name": "Win32",
             "includePath": [
                 "${default}",
-                "${workspaceFolder}/include",
-                "${workspaceFolder}/assets/textures"
+                "${workspaceFolder}/include/**",
+                "${workspaceFolder}/assets/textures/**"
             ],
             "defines": [
                 "_DEBUG",
