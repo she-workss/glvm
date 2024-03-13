@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef POINT_LIGHT_COMPONENT
-#define POINT_LIGHT_COMPONENT
+#pragma once
 
 #include "vertex_math.hpp"
 
@@ -21,5 +19,3 @@ struct pointLight {
     float quadratic;
 };
 } // namespace GLVM::ecs::components
-
-#endif

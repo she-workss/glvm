@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef CONTROLLER_SYSTEM
-#define CONTROLLER_SYSTEM
+#pragma once
 
 #include "event.hpp"
 #include "stack.hpp"
@@ -19,5 +17,3 @@ public:
     void Update();
 };
 } // namespace GLVM::core
-
-#endif

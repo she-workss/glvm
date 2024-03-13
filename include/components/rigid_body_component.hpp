@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef RIGIDBODY_COMPONENT
-#define RIGIDBODY_COMPONENT
+#pragma once
 
 #include "vertex_math.hpp"
 
@@ -18,5 +16,3 @@ public:
     float jumpAccumulator = 0.0f;
 };
 } // namespace GLVM::ecs::components
-
-#endif

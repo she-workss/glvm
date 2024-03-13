@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef ENTITY_MANAGER
-#define ENTITY_MANAGER
+#pragma once
 
 #include "component_manager.hpp"
 #include "vector.hpp"
@@ -39,5 +37,3 @@ public: // TODO: Delete me
                       ComponentManager *_ComponentManager);
 };
 } // namespace GLVM::ecs
-
-#endif

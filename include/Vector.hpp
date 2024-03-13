@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef VECTOR_CONTAINER
-#define VECTOR_CONTAINER
+#pragma once
 
 #include "Iterator.hpp"
 #include "constants.hpp"
@@ -349,5 +347,3 @@ void vector<T>::Print() {
     std::cout << "End of container" << std::endl;
 }
 } // namespace GLVM::core
-
-#endif

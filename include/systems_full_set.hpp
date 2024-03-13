@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef SYSTEMS_FULL_SET
-#define SYSTEMS_FULL_SET
+#pragma once
 
 #include "systems/camera_system.hpp"
 #include "systems/collision_system.hpp"
@@ -12,5 +10,3 @@
 #include "systems/movement_system.hpp"
 #include "systems/physics_system.hpp"
 #include "systems/projectile_system.hpp"
-
-#endif

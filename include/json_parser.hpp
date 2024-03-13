@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef JSON_PARSER
-#define JSON_PARSER
+#pragma once
 
 #include "hash_map.hpp"
 #include "stack.hpp"
@@ -282,5 +280,3 @@ public:
     unsigned int getJointIndex(Core::JsonValue joints, int searchingIndex);
 };
 } // namespace GLVM::Core
-
-#endif

@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef CHRONOWIN
-#define CHRONOWIN
+#pragma once
 
 #include "i_chrono.hpp"
 #include <windows.h>
@@ -23,5 +21,3 @@ public:
     double GetElapsed();
 };
 } // namespace GLVM::Time
-
-#endif

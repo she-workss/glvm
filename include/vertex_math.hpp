@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef VERTEX_MATH
-#define VERTEX_MATH
+#pragma once
 
 #include <cmath>
 #include <iostream>
@@ -800,5 +798,3 @@ Matrix<T, var> rotateQuaternion(Quaternion quaternion) {
 
     return result;
 }
-
-#endif

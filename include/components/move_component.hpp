@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef MOVE_COMPONENT
-#define MOVE_COMPONENT
+#pragma once
 
 #include "event.hpp"
 #include "vertex_math.hpp"
@@ -16,5 +14,3 @@ struct move {
     vec3 gravity {0.0f, 0.0f, 0.0f};
 };
 } // namespace GLVM::ecs::components
-
-#endif

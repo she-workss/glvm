@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef MESH_MANAGER
-#define MESH_MANAGER
+#pragma once
 
 #include "components/vertex_component.hpp"
 #include "vector.hpp"
@@ -31,5 +29,3 @@ public:
     void SetMeshGLTF(const char *pathToMesh);
 };
 } // namespace GLVM::core
-
-#endif

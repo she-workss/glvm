@@ -2,12 +2,8 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef CONTROLLER_COMPONENT
-#define CONTROLLER_COMPONENT
+#pragma once
 
 namespace GLVM::ecs::components {
 struct controller {};
 } // namespace GLVM::ecs::components
-
-#endif

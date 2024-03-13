@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef EVENT_COMPONENT
-#define EVENT_COMPONENT
+#pragma once
 
 #include "../event.hpp"
 
@@ -13,5 +11,3 @@ struct event {
     core::EEvents eEvent_;
 };
 } // namespace GLVM::ecs::components
-
-#endif

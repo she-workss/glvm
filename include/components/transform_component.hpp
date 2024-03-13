@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef TRANSFORM_COMPONENT
-#define TRANSFORM_COMPONENT
+#pragma once
 
 #include "vertex_math.hpp"
 
@@ -24,5 +22,3 @@ struct transform {
     bool gltf = true;
 };
 } // namespace GLVM::ecs::components
-
-#endif

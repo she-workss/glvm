@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef GLPOINTER
-#define GLPOINTER
+#pragma once
 
 #ifdef __linux__
 #include <GL/glx.h>
@@ -132,6 +130,4 @@ EXTERN void (*pGLXSwap_Interval_EXT)(Display *, GLXDrawable, int);
 
 #ifdef _WIN32
 EXTERN BOOL(WINAPI *pWGLSwap_Interval_EXT)(int);
-#endif
-
 #endif

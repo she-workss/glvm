@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef TEXTURE_MANAGER
-#define TEXTURE_MANAGER
+#pragma once
 
 #include "components/material_component.hpp"
 #include "constants.hpp"
@@ -36,5 +34,3 @@ public:
     void UnbindTexture(components::material _textureComponent, Entity _entity);
 };
 } // namespace GLVM::ecs
-
-#endif

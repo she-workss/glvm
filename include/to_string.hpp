@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef TO_STRING
-#define TO_STRING
+#pragma once
 
 #include <string>
 
@@ -70,5 +68,3 @@ inline std::string ConcatIntBetweenTwoStrings(std::string leftString,
 
     return resultString;
 }
-
-#endif

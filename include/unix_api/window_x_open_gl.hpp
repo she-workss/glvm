@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef WINDOW_X_OPENGL
-#define WINDOW_X_OPENGL
+#pragma once
 
 #include "events_stack.hpp"
 #include "i_window.hpp"
@@ -45,5 +43,3 @@ public:
     void Close() override;
 };
 } // namespace GLVM::core
-
-#endif

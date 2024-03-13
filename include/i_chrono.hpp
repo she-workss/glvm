@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef ITIMER
-#define ITIMER
+#pragma once
 
 namespace GLVM::Time {
 class IChrono {
@@ -17,5 +15,3 @@ public:
     virtual double GetElapsed() = 0;
 };
 } // namespace GLVM::Time
-
-#endif

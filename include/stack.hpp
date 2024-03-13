@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef CLASSIC_STACK
-#define CLASSIC_STACK
+#pragma once
 
 #include <assert.h>
 
@@ -113,5 +111,3 @@ public:
 };
 
 } // namespace GLVM::core
-
-#endif

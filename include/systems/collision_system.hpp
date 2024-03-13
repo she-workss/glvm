@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef COLLISION_SYSTEM
-#define COLLISION_SYSTEM
+#pragma once
 
 #include "components/collider_component.hpp"
 #include "components/event_component.hpp"
@@ -43,5 +41,3 @@ public:
                  float rayCasterScale, float receiverScale);
 };
 } // namespace GLVM::ecs
-
-#endif

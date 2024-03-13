@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef WINDOW_WIN_OPENGL
-#define WINDOW_WIN_OPENGL
+#pragma once
 
 #include "events_stack.hpp"
 #include "gl_pointer.h"
@@ -61,5 +59,3 @@ public:
                                         WPARAM _pWParam, LPARAM _pLParam);
 }; // namespace GLVM::core
 } // namespace GLVM::core
-
-#endif

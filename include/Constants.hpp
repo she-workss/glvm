@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef CONSTANTS
-#define CONSTANTS
+#pragma once
 
 #define MATRIX_RANGE 16
 #define VERTEX_ARRAY_RANGE 180
@@ -32,5 +30,3 @@
 
 constexpr unsigned int k_iUint_Max = 4000000000;
 constexpr int k_iNull = 0;
-
-#endif

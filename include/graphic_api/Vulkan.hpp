@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef VULKAN_RENDERER_HG
-#define VULKAN_RENDERER_HG
+#pragma once
 
 #include <algorithm>
 #include <array>
@@ -843,5 +841,3 @@ private:
 };
 
 }; // namespace GLVM::core
-
-#endif

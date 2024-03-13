@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef GUI_SYSTEM
-#define GUI_SYSTEM
+#pragma once
 
 #include "constants.hpp"
 #include "component_manager.hpp"
@@ -28,5 +26,3 @@ public:
     Shader *debugLines;
 };
 } // namespace GLVM::ecs
-
-#endif

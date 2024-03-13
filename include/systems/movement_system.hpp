@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef MOVEMENT_SYSTEM
-#define MOVEMENT_SYSTEM
+#pragma once
 
 #include "component_manager.hpp"
 #include "components/move_component.hpp"
@@ -35,5 +33,3 @@ public:
                                        core::CEvent &event);
 };
 } // namespace GLVM::ecs
-
-#endif

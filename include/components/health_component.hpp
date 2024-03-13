@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef HEALTH
-#define HEALTH
+#pragma once
 
 namespace GAME_MECHANICS::ecs::components {
 struct health {
@@ -12,5 +10,3 @@ struct health {
     float currentHealth;
 };
 } // namespace GAME_MECHANICS::ecs::components
-
-#endif

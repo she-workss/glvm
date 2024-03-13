@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef CAMERA_SYSTEM
-#define CAMERA_SYSTEM
+#pragma once
 
 #include "components/transform_component.hpp"
 #include "components/view_component.hpp"
@@ -32,5 +30,3 @@ public:
     void SetProjectionMatrix();
 };
 } // namespace GLVM::ecs
-
-#endif

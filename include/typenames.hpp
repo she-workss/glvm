@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef TYPE_NAMES
-#define TYPE_NAMES
+#pragma once
 
 #include <stdint.h>
 
@@ -19,5 +17,3 @@ typedef int64_t i64;
 typedef float f32;
 typedef double f64;
 typedef long double f128;
-
-#endif

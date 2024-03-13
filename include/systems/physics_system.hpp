@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef PHYSICS_SYSTEM
-#define PHYSICS_SYSTEM
+#pragma once
 
 #include "../component_manager.hpp"
 #include "../event.hpp"
@@ -41,5 +39,3 @@ public:
                components::beholder &_view_Component, core::CEvent &_event);
 };
 } // namespace GLVM::ecs
-
-#endif

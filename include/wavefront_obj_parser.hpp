@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef WAVEFRONT_OBJ_PARSER
-#define WAVEFRONT_OBJ_PARSER
+#pragma once
 
 #include "vector.hpp"
 #include <cassert>
@@ -107,5 +105,3 @@ public:
     float ParseFloating(GLVM::core::vector<char> _word);
 };
 } // namespace GLVM::core
-
-#endif

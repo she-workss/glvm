@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef IRENDERER
-#define IRENDERER
+#pragma once
 
 #include "components/material_component.hpp"
 #include "components/transform_component.hpp"
@@ -29,5 +27,3 @@ public:
     virtual void run() = 0;
 };
 } // namespace GLVM::core
-
-#endif

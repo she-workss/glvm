@@ -2,9 +2,7 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-
-#ifndef SOUND_ENGINE
-#define SOUND_ENGINE
+#pragma once
 
 #include "event.hpp"
 #include "i_sound_engine.hpp"
@@ -24,5 +22,3 @@ public:
     vector<CSoundSample *> &GetSoundContainer() override;
 };
 } // namespace GLVM::core::Sound
-
-#endif
