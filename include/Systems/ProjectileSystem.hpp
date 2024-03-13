@@ -7,12 +7,6 @@
 #define PROJECTILE_SYSTEM
 
 #include "ComponentManager.hpp"
-#include "Components/ColliderComponent.hpp"
-#include "Components/MaterialComponent.hpp"
-#include "Components/MoveComponent.hpp"
-#include "Components/ProjectileComponent.hpp"
-#include "Components/TransformComponent.hpp"
-#include "Components/ViewComponent.hpp"
 #include "EntityManager.hpp"
 #include "EventsStack.hpp"
 #include "Globals.hpp"
@@ -20,6 +14,12 @@
 #include "ISystem.hpp"
 #include "TextureManager.hpp"
 #include "Vector.hpp"
+#include "components/ColliderComponent.hpp"
+#include "components/MaterialComponent.hpp"
+#include "components/MoveComponent.hpp"
+#include "components/ProjectileComponent.hpp"
+#include "components/TransformComponent.hpp"
+#include "components/ViewComponent.hpp"
 
 namespace GLVM::ecs {
 class CProjectileSystem : public ISystem {

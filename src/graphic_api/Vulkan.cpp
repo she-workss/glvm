@@ -3,16 +3,16 @@
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
 
-#include "GraphicAPI/Vulkan.hpp"
+#include "graphic_api/Vulkan.hpp"
 #include "ComponentManager.hpp"
-#include "Components/ControllerComponent.hpp"
-#include "Components/MaterialComponent.hpp"
-#include "Components/TransformComponent.hpp"
-#include "Components/VertexComponent.hpp"
-#include "Components/ViewComponent.hpp"
 #include "Texture.hpp"
 #include "Vector.hpp"
 #include "WavefrontObjParser.hpp"
+#include "components/ControllerComponent.hpp"
+#include "components/MaterialComponent.hpp"
+#include "components/TransformComponent.hpp"
+#include "components/VertexComponent.hpp"
+#include "components/ViewComponent.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>

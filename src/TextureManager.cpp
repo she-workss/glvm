@@ -4,8 +4,8 @@
 // License: http://opensource.org/licenses/MIT
 
 #include "TextureManager.hpp"
-#include "Components/MaterialComponent.hpp"
 #include "Texture.hpp"
+#include "components/MaterialComponent.hpp"
 #include <iostream>
 
 namespace GLVM::ecs {

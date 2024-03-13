@@ -11,6 +11,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_CXX_STANDARD 20)
 
+include(CTest)
+enable_testing()
+
 # # Create `cppcheck` directory in each build directory to store cppcheck reports
 # file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/cppcheck)
 
@@ -109,27 +112,27 @@ add_executable(glvm
     src/EntityManager.cpp
     src/Event.cpp
     src/GLPointer.c
-    src/GraphicAPI/Opengl.cpp
-    src/GraphicAPI/Vulkan.cpp
+    src/graphic_api/Opengl.cpp
+    src/graphic_api/Vulkan.cpp
     src/JsonParser.cpp
     src/MeshManager.cpp
     src/ShaderProgram.cpp
     src/SoundEngineFactory.cpp
     src/SystemManager.cpp
-    src/Systems/AnimationSystem.cpp
-    src/Systems/CameraSystem.cpp
-    src/Systems/CollisionSystem.cpp
-    src/Systems/GUISystem.cpp
-    src/Systems/MovementSystem.cpp
-    src/Systems/PhysicsSystem.cpp
-    src/Systems/ProjectileSystem.cpp
+    src/systems/AnimationSystem.cpp
+    src/systems/CameraSystem.cpp
+    src/systems/CollisionSystem.cpp
+    src/systems/GUISystem.cpp
+    src/systems/MovementSystem.cpp
+    src/systems/PhysicsSystem.cpp
+    src/systems/ProjectileSystem.cpp
     src/TextureManager.cpp
     src/TimerCreator.cpp
     src/WavefrontObjParser.cpp
-    src/WinApi/ChronoWin.cpp
-    src/WinApi/SoundEngineWaveform.cpp
-    src/WinApi/WindowWinOpengl.cpp
-    src/WinApi/WindowWinVulkan.cpp
+    src/win_api/ChronoWin.cpp
+    src/win_api/SoundEngineWaveform.cpp
+    src/win_api/WindowWinOpengl.cpp
+    src/win_api/WindowWinVulkan.cpp
 )
 
 # Link libraries

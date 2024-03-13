@@ -3,23 +3,13 @@
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
 
-#include "GraphicAPI/Opengl.hpp"
+#include "graphic_api/Opengl.hpp"
 #include "ComponentManager.hpp"
-#include "Components/ColliderComponent.hpp"
-#include "Components/DirectionalLightComponent.hpp"
-#include "Components/MaterialComponent.hpp"
-#include "Components/PointLightComponent.hpp"
-#include "Components/RigidBodyComponent.hpp"
-#include "Components/SpotLightComponent.hpp"
-#include "Components/TransformComponent.hpp"
-#include "Components/VertexComponent.hpp"
-#include "Components/ViewComponent.hpp"
 #include "Constants.hpp"
 #include "Engine.hpp"
 #include "Event.hpp"
 #include "GLPointer.h"
 #include "Globals.hpp"
-#include "GraphicAPI/Vulkan.hpp"
 #include "JsonParser.hpp"
 #include "MeshManager.hpp"
 #include "ShaderProgram.hpp"
@@ -30,6 +20,16 @@
 #include "VertexData.hpp"
 #include "VertexMath.hpp"
 #include "WavefrontObjParser.hpp"
+#include "components/ColliderComponent.hpp"
+#include "components/DirectionalLightComponent.hpp"
+#include "components/MaterialComponent.hpp"
+#include "components/PointLightComponent.hpp"
+#include "components/RigidBodyComponent.hpp"
+#include "components/SpotLightComponent.hpp"
+#include "components/TransformComponent.hpp"
+#include "components/VertexComponent.hpp"
+#include "components/ViewComponent.hpp"
+#include "graphic_api/Vulkan.hpp"
 #include <GL/gl.h>
 #include <GL/glext.h>
 #include <cmath>

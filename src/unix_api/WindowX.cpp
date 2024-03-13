@@ -3,7 +3,7 @@
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
 
-#include "UnixApi/WindowX.hpp"
+#include "unix_api/WindowX.hpp"
 
 #include "Event.hpp"
 #include "GLPointer.h"
@@ -218,7 +218,7 @@ bool CWindowX::HandleEvent(CEvent &_Event) {
             case KeyPress:
                 ulKey = XLookupKeysym(&uXEvent.xkey, 0);
                 switch (ulKey) {
-                    case XK_Escape:
+                    case XK_q:
                         _Event.SetEvent(EEvents::eGAME_LOOP_KILL);
                         break;
                     case XK_a:
@@ -422,7 +422,7 @@ bool CWindowX::HandleEvent(CEvent &_Event) {
             case KeyPress:
                 ulKey = XLookupKeysym(&uXEvent.xkey, 0);
                 switch (ulKey) {
-                    case XK_Escape:
+                    case XK_q:
                         _Event.SetEvent(EEvents::eGAME_LOOP_KILL);
                         break;
                     case XK_a:

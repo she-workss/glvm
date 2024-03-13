@@ -6,11 +6,11 @@
 #ifndef SYSTEMS_FULL_SET
 #define SYSTEMS_FULL_SET
 
-#include "Systems/CameraSystem.hpp"
-#include "Systems/CollisionSystem.hpp"
-#include "Systems/GUISystem.hpp"
-#include "Systems/MovementSystem.hpp"
-#include "Systems/PhysicsSystem.hpp"
-#include "Systems/ProjectileSystem.hpp"
+#include "systems/CameraSystem.hpp"
+#include "systems/CollisionSystem.hpp"
+#include "systems/GUISystem.hpp"
+#include "systems/MovementSystem.hpp"
+#include "systems/PhysicsSystem.hpp"
+#include "systems/ProjectileSystem.hpp"
 
 #endif

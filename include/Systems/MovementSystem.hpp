@@ -7,10 +7,6 @@
 #define MOVEMENT_SYSTEM
 
 #include "ComponentManager.hpp"
-#include "Components/MoveComponent.hpp"
-#include "Components/SpotLightComponent.hpp"
-#include "Components/TransformComponent.hpp"
-#include "Components/ViewComponent.hpp"
 #include "EntityManager.hpp"
 #include "Event.hpp"
 #include "EventsStack.hpp"
@@ -19,6 +15,10 @@
 #include "ISystem.hpp"
 #include "Vector.hpp"
 #include "VertexMath.hpp"
+#include "components/MoveComponent.hpp"
+#include "components/SpotLightComponent.hpp"
+#include "components/TransformComponent.hpp"
+#include "components/ViewComponent.hpp"
 
 namespace GLVM::ecs {
 class CMovementSystem : public ISystem {

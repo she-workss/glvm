@@ -6,10 +6,10 @@
 #include "TimerCreator.hpp"
 
 #ifdef __linux__
-#include "UnixApi/ChronoX.hpp"
+#include "unix_api/ChronoX.hpp"
 #endif
 #ifdef _WIN32
-#include "WinApi/ChronoWin.hpp"
+#include "win_api/ChronoWin.hpp"
 #endif
 
 namespace GLVM::Time {

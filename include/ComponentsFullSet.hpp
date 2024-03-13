@@ -6,19 +6,19 @@
 #ifndef COMPONENTS_FULL_SET
 #define COMPONENTS_FULL_SET
 
-#include "Components/AnimationMoveComponent.hpp"
-#include "Components/ColliderComponent.hpp"
-#include "Components/ControllerComponent.hpp"
-#include "Components/DirectionalLightComponent.hpp"
-#include "Components/EventComponent.hpp"
-#include "Components/MaterialComponent.hpp"
-#include "Components/MoveComponent.hpp"
-#include "Components/PointLightComponent.hpp"
-#include "Components/RigidBodyComponent.hpp"
-#include "Components/SpotLightComponent.hpp"
-#include "Components/TextureComponent.hpp"
-#include "Components/TransformComponent.hpp"
-#include "Components/VertexComponent.hpp"
-#include "Components/ViewComponent.hpp"
+#include "components/AnimationMoveComponent.hpp"
+#include "components/ColliderComponent.hpp"
+#include "components/ControllerComponent.hpp"
+#include "components/DirectionalLightComponent.hpp"
+#include "components/EventComponent.hpp"
+#include "components/MaterialComponent.hpp"
+#include "components/MoveComponent.hpp"
+#include "components/PointLightComponent.hpp"
+#include "components/RigidBodyComponent.hpp"
+#include "components/SpotLightComponent.hpp"
+#include "components/TextureComponent.hpp"
+#include "components/TransformComponent.hpp"
+#include "components/VertexComponent.hpp"
+#include "components/ViewComponent.hpp"
 
 #endif

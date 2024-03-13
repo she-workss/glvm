@@ -7,14 +7,6 @@
 #define OPENGL
 
 #include "ComponentManager.hpp"
-#include "Components/AnimationMoveComponent.hpp"
-#include "Components/DirectionalLightComponent.hpp"
-#include "Components/MaterialComponent.hpp"
-#include "Components/PointLightComponent.hpp"
-#include "Components/SpotLightComponent.hpp"
-#include "Components/TransformComponent.hpp"
-#include "Components/VertexComponent.hpp"
-#include "Components/ViewComponent.hpp"
 #include "Constants.hpp"
 #include "Event.hpp"
 #include "GLPointer.h"
@@ -28,17 +20,25 @@
 #include "Vector.hpp"
 #include "VertexMath.hpp"
 #include "WavefrontObjParser.hpp"
+#include "components/AnimationMoveComponent.hpp"
+#include "components/DirectionalLightComponent.hpp"
+#include "components/MaterialComponent.hpp"
+#include "components/PointLightComponent.hpp"
+#include "components/SpotLightComponent.hpp"
+#include "components/TransformComponent.hpp"
+#include "components/VertexComponent.hpp"
+#include "components/ViewComponent.hpp"
 #include <GL/gl.h>
 #include <GL/glext.h>
 #include <fstream>
 
 #ifdef __linux__
-// #include "UnixApi/WindowXOpengl.hpp"
-#include "UnixApi/WindowXCBOpengl.hpp"
+// #include "unix_api/WindowXOpengl.hpp"
+#include "unix_api/WindowXCBOpengl.hpp"
 #endif
 
 #ifdef _WIN32
-#include "WinApi/WindowWinOpengl.hpp"
+#include "win_api/WindowWinOpengl.hpp"
 #endif
 
 #define MAX_JOINTS_NUMBER 18

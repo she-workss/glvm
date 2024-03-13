@@ -3,7 +3,7 @@
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
 
-#include "WinApi/ChronoWin.hpp"
+#include "win_api/ChronoWin.hpp"
 
 namespace GLVM::Time {
 CTimerWin::CTimerWin() {

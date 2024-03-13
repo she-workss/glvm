@@ -3,7 +3,7 @@
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
 
-#include "Systems/GUISystem.hpp"
+#include "systems/GUISystem.hpp"
 #include <GL/gl.h>
 
 namespace GLVM::ecs {

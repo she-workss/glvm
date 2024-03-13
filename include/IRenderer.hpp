@@ -6,10 +6,10 @@
 #ifndef IRENDERER
 #define IRENDERER
 
-#include "Components/MaterialComponent.hpp"
-#include "Components/TransformComponent.hpp"
 #include "Texture.hpp"
 #include "Vector.hpp"
+#include "components/MaterialComponent.hpp"
+#include "components/TransformComponent.hpp"
 #include <vector>
 
 namespace GLVM::core {

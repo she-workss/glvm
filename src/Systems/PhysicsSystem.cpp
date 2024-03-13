@@ -3,17 +3,17 @@
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
 
-#include "Systems/PhysicsSystem.hpp"
+#include "systems/PhysicsSystem.hpp"
 #include "ComponentManager.hpp"
-#include "Components/ColliderComponent.hpp"
-#include "Components/MoveComponent.hpp"
-#include "Components/RigidBodyComponent.hpp"
-#include "Components/TransformComponent.hpp"
-#include "Components/ViewComponent.hpp"
 #include "EntityManager.hpp"
 #include "Event.hpp"
 #include "Globals.hpp"
 #include "VertexMath.hpp"
+#include "components/ColliderComponent.hpp"
+#include "components/MoveComponent.hpp"
+#include "components/RigidBodyComponent.hpp"
+#include "components/TransformComponent.hpp"
+#include "components/ViewComponent.hpp"
 
 namespace GLVM::ecs {
 /*! This update searching for refering to colliders entities and check their

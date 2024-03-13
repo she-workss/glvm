@@ -6,12 +6,12 @@
 #ifndef CAMERA_SYSTEM
 #define CAMERA_SYSTEM
 
-#include "Components/TransformComponent.hpp"
-#include "Components/ViewComponent.hpp"
 #include "Globals.hpp"
 #include "ISystem.hpp"
 #include "ShaderProgram.hpp"
 #include "VertexMath.hpp"
+#include "components/TransformComponent.hpp"
+#include "components/ViewComponent.hpp"
 
 namespace GLVM::ecs {
 class CCameraSystem : public ISystem {

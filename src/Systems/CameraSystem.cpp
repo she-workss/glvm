@@ -3,10 +3,10 @@
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
 
-#include "Systems/CameraSystem.hpp"
-#include "Components/TransformComponent.hpp"
-#include "Components/ViewComponent.hpp"
+#include "systems/CameraSystem.hpp"
 #include "VertexMath.hpp"
+#include "components/TransformComponent.hpp"
+#include "components/ViewComponent.hpp"
 
 namespace GLVM::ecs {
 void CCameraSystem::Update() {

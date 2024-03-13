@@ -6,18 +6,18 @@
 #ifndef COLLISION_SYSTEM
 #define COLLISION_SYSTEM
 
-#include "Components/ColliderComponent.hpp"
-#include "Components/EventComponent.hpp"
-#include "Components/MoveComponent.hpp"
-#include "Components/RigidBodyComponent.hpp"
-#include "Components/TransformComponent.hpp"
-#include "Components/VertexComponent.hpp"
-#include "Components/ViewComponent.hpp"
 #include "Event.hpp"
 #include "Globals.hpp"
 #include "ISystem.hpp"
 #include "Vector.hpp"
 #include "VertexMath.hpp"
+#include "components/ColliderComponent.hpp"
+#include "components/EventComponent.hpp"
+#include "components/MoveComponent.hpp"
+#include "components/RigidBodyComponent.hpp"
+#include "components/TransformComponent.hpp"
+#include "components/VertexComponent.hpp"
+#include "components/ViewComponent.hpp"
 #include <mutex>
 
 namespace GLVM::ecs {

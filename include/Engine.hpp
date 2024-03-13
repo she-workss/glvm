@@ -13,8 +13,6 @@
 #include "Event.hpp"
 #include "EventsStack.hpp"
 #include "GLPointer.h"
-#include "GraphicAPI/Opengl.hpp"
-#include "GraphicAPI/Vulkan.hpp"
 #include "IChrono.hpp"
 #include "IContainer.hpp"
 #include "ISoundEngine.hpp"
@@ -26,6 +24,8 @@
 #include "TextureManager.hpp"
 #include "TimerCreator.hpp"
 #include "Vector.hpp"
+#include "graphic_api/Opengl.hpp"
+#include "graphic_api/Vulkan.hpp"
 #include <GL/gl.h>
 #include <GL/glext.h>
 #include <mutex>

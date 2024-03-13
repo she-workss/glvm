@@ -3,15 +3,15 @@
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
 
-#include "Components/ColliderComponent.hpp"
-#include "Components/ControllerComponent.hpp"
-#include "Components/MaterialComponent.hpp"
-#include "Components/PointLightComponent.hpp"
-#include "Components/ProjectileComponent.hpp"
-#include "Components/TransformComponent.hpp"
-#include "Components/VertexComponent.hpp"
 #include "Texture.hpp"
-#include <Systems/ProjectileSystem.hpp>
+#include "components/ColliderComponent.hpp"
+#include "components/ControllerComponent.hpp"
+#include "components/MaterialComponent.hpp"
+#include "components/PointLightComponent.hpp"
+#include "components/ProjectileComponent.hpp"
+#include "components/TransformComponent.hpp"
+#include "components/VertexComponent.hpp"
+#include <systems/ProjectileSystem.hpp>
 
 namespace GLVM::ecs {
 CProjectileSystem::CProjectileSystem(core::CStack &inputStack)
@@ -106,8 +106,8 @@ void CProjectileSystem::Update() {
         // std::endl; 			std::cout << "Projectiles container size 1: " <<
         // linkedEntities.GetSize() << std::endl; 			std::cout <<
         // "Projectiles container size 2: " << uiVector_Projectile_Size <<
-        // std::endl; 			std::cout << "entity: " << uiEntity_refProjectile <<
-        // std::endl;
+        // std::endl; 			std::cout << "entity: " <<
+        // uiEntity_refProjectile << std::endl;
     }
 }
 

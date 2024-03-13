@@ -6,10 +6,10 @@
 #ifndef TEXTURE_MANAGER
 #define TEXTURE_MANAGER
 
-#include "Components/MaterialComponent.hpp"
 #include "Constants.hpp"
 #include "GLPointer.h"
 #include "Texture.hpp"
+#include "components/MaterialComponent.hpp"
 #include <mutex>
 #include <vector>
 

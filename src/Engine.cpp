@@ -4,20 +4,20 @@
 // License: http://opensource.org/licenses/MIT
 
 #include "Engine.hpp"
-#include "Components/VertexComponent.hpp"
-#include "GraphicAPI/Opengl.hpp"
-#include "GraphicAPI/Vulkan.hpp"
 #include "ISoundEngine.hpp"
 #include "ShaderProgram.hpp"
 #include "SoundEngineFactory.hpp"
 #include "SystemManager.hpp"
-#include "Systems/CameraSystem.hpp"
-#include "Systems/CollisionSystem.hpp"
-#include "Systems/GUISystem.hpp"
-#include "Systems/MovementSystem.hpp"
-#include "Systems/PhysicsSystem.hpp"
-#include "Systems/ProjectileSystem.hpp"
 #include "Texture.hpp"
+#include "components/VertexComponent.hpp"
+#include "graphic_api/Opengl.hpp"
+#include "graphic_api/Vulkan.hpp"
+#include "systems/CameraSystem.hpp"
+#include "systems/CollisionSystem.hpp"
+#include "systems/GUISystem.hpp"
+#include "systems/MovementSystem.hpp"
+#include "systems/PhysicsSystem.hpp"
+#include "systems/ProjectileSystem.hpp"
 #include <cstdint>
 #include <limits>
 #include <mutex>

@@ -6,27 +6,27 @@
 #ifndef COMPONENT_MANAGER
 #define COMPONENT_MANAGER
 
-#include "Components/AnimationMoveComponent.hpp"
-#include "Components/AttackComponent.hpp"
-#include "Components/ColliderComponent.hpp"
-#include "Components/DirectionalLightComponent.hpp"
-#include "Components/EventComponent.hpp"
-#include "Components/MaterialComponent.hpp"
-#include "Components/MoveComponent.hpp"
-#include "Components/PointLightComponent.hpp"
-#include "Components/ProjectileComponent.hpp"
-#include "Components/SpotLightComponent.hpp"
-#include "Components/TransformComponent.hpp"
-#include "Components/VertexComponent.hpp"
-#include "Components/ViewComponent.hpp"
 #include "IContainer.hpp"
 #include "Vector.hpp"
+#include "components/AnimationMoveComponent.hpp"
+#include "components/AttackComponent.hpp"
+#include "components/ColliderComponent.hpp"
+#include "components/DirectionalLightComponent.hpp"
+#include "components/EventComponent.hpp"
+#include "components/MaterialComponent.hpp"
+#include "components/MoveComponent.hpp"
+#include "components/PointLightComponent.hpp"
+#include "components/ProjectileComponent.hpp"
+#include "components/SpotLightComponent.hpp"
+#include "components/TransformComponent.hpp"
+#include "components/VertexComponent.hpp"
+#include "components/ViewComponent.hpp"
 #include <cassert>
 #include <compare>
 #include <concepts>
 #include <iostream>
-// #include "Components/VertexComponent.hpp"
-#include "Components/ControllerComponent.hpp"
+// #include "components/VertexComponent.hpp"
+#include "components/ControllerComponent.hpp"
 #include <assert.h>
 #include <cstdlib>
 #include <mutex>
@@ -253,7 +253,7 @@ public:
         if (checkAvailability(sparse, dense, entity)) {
             assert(dense.GetSize() == components.GetSize());
             //				std::cout << "DELETE: " <<
-            //typeid(componentType).name() << std::endl;
+            // typeid(componentType).name() << std::endl;
             Entity indexInDenseOfRemovableEntity = sparse[entity];
             Entity indexInSparseOfSwapableEntity = dense.GetHead();
             const componentType &componentFromLastIndex = components.GetHead();
@@ -304,7 +304,7 @@ public:
                 // std::endl;
                 RemoveComponent<components::transform>(entity);
                 //					std::cout << "Delete transform" <<
-                //std::endl;
+                // std::endl;
             } else if (componentsTypes[i] ==
                        typeid(components::beholder).name()) {
                 RemoveComponent<components::beholder>(entity);
@@ -313,7 +313,7 @@ public:
                        typeid(components::animation).name()) {
                 RemoveComponent<components::animation>(entity);
                 //					std::cout << "Delete animation" <<
-                //std::endl;
+                // std::endl;
             } else if (componentsTypes[i] ==
                        typeid(components::collider).name()) {
                 RemoveComponent<components::collider>(entity);
@@ -322,17 +322,17 @@ public:
                        typeid(components::directionalLight).name()) {
                 RemoveComponent<components::directionalLight>(entity);
                 //					std::cout << "Delete directional light" <<
-                //std::endl;
+                // std::endl;
             } else if (componentsTypes[i] ==
                        typeid(components::pointLight).name()) {
                 RemoveComponent<components::pointLight>(entity);
                 //					std::cout << "Delete point light" <<
-                //std::endl;
+                // std::endl;
             } else if (componentsTypes[i] ==
                        typeid(components::spotLight).name()) {
                 RemoveComponent<components::spotLight>(entity);
                 //					std::cout << "Delete spot light" <<
-                //std::endl;
+                // std::endl;
             } else if (componentsTypes[i] == typeid(components::event).name()) {
                 RemoveComponent<components::event>(entity);
                 //					std::cout << "Delete event" << std::endl;
@@ -350,7 +350,7 @@ public:
                        typeid(GLVM::ecs::components::controller).name()) {
                 RemoveComponent<GLVM::ecs::components::controller>(entity);
                 //					std::cout << "Delete controller" <<
-                //std::endl;
+                // std::endl;
             } else if (componentsTypes[i] ==
                        typeid(GAME_MECHANICS::ECS::components::attack).name()) {
                 RemoveComponent<GAME_MECHANICS::ECS::components::attack>(
@@ -360,7 +360,7 @@ public:
                        typeid(components::projectile).name()) {
                 RemoveComponent<components::projectile>(entity);
                 //				 	std::cout << "Delete projectile" <<
-                //std::endl;
+                // std::endl;
             } else {
                 continue;
             }

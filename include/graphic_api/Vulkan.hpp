@@ -22,9 +22,6 @@
 #include <vector>
 
 #include "ComponentManager.hpp"
-#include "Components/MaterialComponent.hpp"
-#include "Components/TextureComponent.hpp"
-#include "Components/TransformComponent.hpp"
 #include "Globals.hpp"
 #include "IRenderer.hpp"
 #include "JsonParser.hpp"
@@ -35,6 +32,9 @@
 #include "Vector.hpp"
 #include "VertexMath.hpp"
 #include "WavefrontObjParser.hpp"
+#include "components/MaterialComponent.hpp"
+#include "components/TextureComponent.hpp"
+#include "components/TransformComponent.hpp"
 
 #ifdef __linux__
 // #define VK_USE_PLATFORM_XLIB_KHR
@@ -46,7 +46,7 @@
 #endif
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
-#include "UnixApi/WindowXCBVulkan.hpp"
+#include "unix_api/WindowXCBVulkan.hpp"
 #include "vulkan/vulkan.h"
 #include "vulkan/vulkan_core.h"
 #include "vulkan/vulkan_xcb.h"
@@ -54,7 +54,7 @@
 #endif
 
 #ifdef VK_USE_PLATFORM_XLIB_KHR
-#include "UnixApi/WindowXVulkan.hpp"
+#include "unix_api/WindowXVulkan.hpp"
 #include "vulkan/vulkan.h"
 #include "vulkan/vulkan_core.h"
 #include "vulkan/vulkan_xlib.h"
@@ -62,7 +62,7 @@
 #endif
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-#include "WinApi/WindowWinVulkan.hpp"
+#include "win_api/WindowWinVulkan.hpp"
 #include <vulkan/vulkan.h>
 #endif
 

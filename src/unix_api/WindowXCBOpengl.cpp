@@ -3,7 +3,7 @@
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
 
-#include "UnixApi/WindowXCBOpengl.hpp"
+#include "unix_api/WindowXCBOpengl.hpp"
 #include <X11/X.h>
 #include <X11/XKBlib.h>
 #include <cstdint>
@@ -286,7 +286,7 @@ bool WindowXCBOpengl::HandleEvent([[maybe_unused]] CEvent &_Event) {
                         (xcb_expose_event_t *)generic_event;
 
                 // printf ("Window %i exposed. Region to be redrawn at location
-                // (%d,%d), with dimension (%d,%d)\n", 		expose_event->window,
+                // (%d,%d), with dimension (%d,%d)\n", expose_event->window,
                 // expose_event->x, expose_event->y, expose_event->width,
                 // expose_event->height);
                 break;
@@ -405,8 +405,8 @@ bool WindowXCBOpengl::HandleEvent([[maybe_unused]] CEvent &_Event) {
 
                 //				xcb_keycode_t key_code = expose_event->detail;
                 //				std::cout << "Detail: " <<
-                //xcb_key_press_lookup_keysym(key_symbols, expose_event, 0) <<
-                //std::endl;
+                // xcb_key_press_lookup_keysym(key_symbols, expose_event, 0) <<
+                // std::endl;
                 // [[maybe_unused]] xcb_keysym_t keysym =
                 // xcb_key_press_lookup_keysym(key_symbols, expose_event, 0);
 
@@ -418,22 +418,22 @@ bool WindowXCBOpengl::HandleEvent([[maybe_unused]] CEvent &_Event) {
                         break;
                     case 97:
                         //						std::cout << "A key press" <<
-                        //std::endl;
+                        // std::endl;
                         _Event.SetEvent(EEvents::eMOVE_LEFT);
                         break;
                     case 100:
                         //						std::cout << "D key press" <<
-                        //std::endl;
+                        // std::endl;
                         _Event.SetEvent(EEvents::eMOVE_RIGHT);
                         break;
                     case 115:
                         //						std::cout << "S key press" <<
-                        //std::endl;
+                        // std::endl;
                         _Event.SetEvent(EEvents::eMOVE_BACKWARD);
                         break;
                     case 119:
                         //						std::cout << "W key press" <<
-                        //std::endl;
+                        // std::endl;
                         _Event.SetEvent(EEvents::eMOVE_FORWARD);
                         break;
                     case 32:
@@ -485,8 +485,9 @@ bool WindowXCBOpengl::HandleEvent([[maybe_unused]] CEvent &_Event) {
                         // printf ("Key FAKE released in window %i\n",
                         // 		key_release_event->event);
                         //						std::cout << "Key FAKE released
-                        //in window" << std::endl; 						generic_event =
-                        //xcb_poll_for_event (connection); 						free (generic_event);
+                        // in window" << std::endl;
+                        // generic_event = xcb_poll_for_event (connection);
+                        // free (generic_event);
                         next_generic_event = NULL;
                         continue;
                     } else {
@@ -507,28 +508,28 @@ bool WindowXCBOpengl::HandleEvent([[maybe_unused]] CEvent &_Event) {
                         // printf ("Key released in window %i\n",
                         // 		key_release_event->event);
                         //					std::cout << "A key release" <<
-                        //std::endl;
+                        // std::endl;
                         _Event.SetEvent(GLVM::core::eKEYRELEASE_A);
                         break;
                     case 100:
                         // printf ("Key released in window %i\n",
                         // 		key_release_event->event);
                         //					std::cout << "D key release" <<
-                        //std::endl;
+                        // std::endl;
                         _Event.SetEvent(GLVM::core::eKEYRELEASE_D);
                         break;
                     case 115:
                         // printf ("Key released in window %i\n",
                         // 		key_release_event->event);
                         //					std::cout << "S key release" <<
-                        //std::endl;
+                        // std::endl;
                         _Event.SetEvent(GLVM::core::eKEYRELEASE_S);
                         break;
                     case 119:
                         // printf ("Key released in window %i\n",
                         // 		key_release_event->event);
                         //					std::cout << "W key release" <<
-                        //std::endl;
+                        // std::endl;
                         _Event.SetEvent(GLVM::core::eKEYRELEASE_W);
                         break;
                     case 32:

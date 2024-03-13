@@ -4,7 +4,7 @@
 // License: http://opensource.org/licenses/MIT
 
 #include "MeshManager.hpp"
-#include "Components/VertexComponent.hpp"
+#include "components/VertexComponent.hpp"
 
 namespace GLVM::core {
 MeshManager *MeshManager::pInstance_ = nullptr;

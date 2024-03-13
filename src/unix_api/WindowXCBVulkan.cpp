@@ -3,7 +3,7 @@
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
 
-#include "UnixApi/WindowXCBVulkan.hpp"
+#include "unix_api/WindowXCBVulkan.hpp"
 #include "Event.hpp"
 #include <X11/X.h>
 #include <X11/XKBlib.h>

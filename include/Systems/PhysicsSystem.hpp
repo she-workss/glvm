@@ -8,13 +8,13 @@
 
 #include "../ComponentManager.hpp"
 #include "../Event.hpp"
-#include "Components/ColliderComponent.hpp"
-#include "Components/EventComponent.hpp"
-#include "Components/TransformComponent.hpp"
-#include "Components/ViewComponent.hpp"
 #include "EventsStack.hpp"
 #include "ISystem.hpp"
 #include "Vector.hpp"
+#include "components/ColliderComponent.hpp"
+#include "components/EventComponent.hpp"
+#include "components/TransformComponent.hpp"
+#include "components/ViewComponent.hpp"
 
 namespace GLVM::ecs {
 class CPhysicsSystem : public ISystem {

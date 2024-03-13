@@ -6,8 +6,8 @@
 #ifndef MESH_MANAGER
 #define MESH_MANAGER
 
-#include "Components/VertexComponent.hpp"
 #include "Vector.hpp"
+#include "components/VertexComponent.hpp"
 #include <mutex>
 #include <vector>
 

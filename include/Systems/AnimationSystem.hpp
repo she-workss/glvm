@@ -7,14 +7,14 @@
 #define ANIMATION_SYSTEM
 
 #include "ComponentManager.hpp"
-#include "Components/AnimationMoveComponent.hpp"
-#include "Components/VertexComponent.hpp"
 #include "Event.hpp"
 #include "GLPointer.h"
 #include "ISystem.hpp"
 #include "Stack.hpp"
 #include "Vector.hpp"
 #include "VertexData.hpp"
+#include "components/AnimationMoveComponent.hpp"
+#include "components/VertexComponent.hpp"
 
 #define ANIM_PER_AXIS_NUMBER 4
 

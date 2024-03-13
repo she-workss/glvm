@@ -3,8 +3,9 @@
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
 
-#include "UnixApi/WindowXVulkan.hpp"
+#include "unix_api/WindowXOpengl.hpp"
 
+#include "Event.hpp"
 #include "GLPointer.h"
 #include <GL/glx.h>
 #include <X11/Xlib.h>
@@ -13,32 +14,98 @@
 #include <iostream>
 
 namespace GLVM::core {
-WindowXVulkan::WindowXVulkan() {
-    // const int aAttrib[] =
-    // {
-    //     GLX_RENDER_TYPE, GLX_RGBA_BIT,
-    //     GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
-    //     GLX_DOUBLEBUFFER, true,
-    //     GLX_RED_SIZE, 1,
-    //     GLX_GREEN_SIZE, 1,
-    //     GLX_BLUE_SIZE, 1,
-    //     None
-    // };
+WindowXOpengl::WindowXOpengl() {
+    const int aAttrib[] = {GLX_RENDER_TYPE,
+                           GLX_RGBA_BIT,
+                           GLX_DRAWABLE_TYPE,
+                           GLX_WINDOW_BIT,
+                           GLX_DOUBLEBUFFER,
+                           true,
+                           GLX_RED_SIZE,
+                           1,
+                           GLX_GREEN_SIZE,
+                           1,
+                           GLX_BLUE_SIZE,
+                           1,
+                           None};
 
     pDisp_ = XOpenDisplay(NULL);
+
+    pFbc_ = glXChooseFBConfig(pDisp_, DefaultScreen(pDisp_), aAttrib,
+                              &iNum_Fbc_);
+
+    if (!pFbc_) {
+        printf("glXChooseFBConfig() failed\n");
+        exit(1);
+    }
+
+    pVisual_ = glXGetVisualFromFBConfig(pDisp_, pFbc_[0]);
+
+    if (pVisual_ == NULL) {
+        printf("\n\tno appropriate visual found\n\n");
+        exit(0);
+    } else {
+
+        ///< creates hexadecimal output like in glxinfo
+
+        printf("\n\tvisual %p selected\n", (void *)pVisual_->visualid);
+    }
+
     Root_Window_ = DefaultRootWindow(pDisp_);
+    Color_Map_ =
+            XCreateColormap(pDisp_, Root_Window_, pVisual_->visual, AllocNone);
+
+    Set_Window_Attributes_.colormap = Color_Map_;
     Set_Window_Attributes_.event_mask =
             KeyPressMask | KeyReleaseMask | PointerMotionMask |
             StructureNotifyMask | ButtonPressMask | ButtonReleaseMask;
 
     Win_ = XCreateWindow(pDisp_, Root_Window_, 0, 0, 1920, 1080, 0,
-                         CopyFromParent, InputOutput, CopyFromParent,
-                         CWEventMask, &Set_Window_Attributes_);
+                         pVisual_->depth, InputOutput, pVisual_->visual,
+                         CWColormap | CWEventMask, &Set_Window_Attributes_);
+
+    XStoreName(pDisp_, Win_, "RPGESHECHKA");
+
+    pGLXCreateContextAttribsARB_ = (GLXContext(*)(
+            Display *, GLXFBConfig, GLXContext, Bool, const int *))
+            glXGetProcAddress((const GLubyte *)"glXCreateContextAttribsARB");
+
+    if (!pGLXCreateContextAttribsARB_) {
+        printf("glXCreateContextAttribsARB() not found\n");
+        exit(1);
+    }
+
+    ///< Set desired minimum OpenGL version
+
+    int aContext_Attribs[] = {GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
+                              GLX_CONTEXT_MINOR_VERSION_ARB, 2,
+                              // GLX_CONTEXT_PROFILE_MASK_ARB,
+                              // GLX_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
+                              None};
+
+    ///< Create modern OpenGL context
+
+    Context_ = pGLXCreateContextAttribsARB_(pDisp_, pFbc_[0], NULL, true,
+                                            aContext_Attribs);
+    if (!Context_) {
+        printf("Failed to create OpenGL context. Exiting.\n");
+        exit(1);
+    }
+
     ///< Show_the_window
 
     XMapWindow(pDisp_, Win_);
+    glXMakeCurrent(pDisp_, Win_, Context_);
 
     XWarpPointer(pDisp_, None, Win_, 0, 0, 0, 0, 0, 0);
+
+    int iMajor = 0, iMinor = 0;
+    glGetIntegerv(GL_MAJOR_VERSION, &iMajor);
+    glGetIntegerv(GL_MINOR_VERSION, &iMinor);
+    printf("OpenGL context created.\nVersion %d.%d\nVendor %s\nRenderer %s\n",
+           iMajor, iMinor, glGetString(GL_VENDOR), glGetString(GL_RENDERER));
+
+    ///< glEnable(GL_DEPTH_TEST);
 
     Cursor invisibleCursor;
     Pixmap bitmapNoData;
@@ -55,19 +122,19 @@ WindowXVulkan::WindowXVulkan() {
     XFreePixmap(pDisp_, bitmapNoData);
 
     XGetWindowAttributes(pDisp_, Win_, &GWindow_Attributes_);
-    //		const int kInterval = 1;
+    Drawable = glXGetCurrentDrawable();
+    Initializer();
+    const int kInterval = 0;
+
+    if (Drawable) {
+        pGLXSwap_Interval_EXT(pDisp_, Drawable, kInterval);
+    }
 }
 
-WindowXVulkan::~WindowXVulkan() = default;
-
-Window WindowXVulkan::GetWindow() {
-    return Win_;
-}
-Display *WindowXVulkan::GetDisplay() {
-    return pDisp_;
+WindowXOpengl::~WindowXOpengl() {
 }
 
-void WindowXVulkan::CursorLock(int _x_position, int _y_position, int *_x_offset,
+void WindowXOpengl::CursorLock(int _x_position, int _y_position, int *_x_offset,
                                int *_y_offset) {
     ///< Solve a problem with endlessly growing numbers in the start game run.
     // if(_x_position > 1920 || _x_position < 0 || _y_position > 1080 ||
@@ -91,13 +158,16 @@ void WindowXVulkan::CursorLock(int _x_position, int _y_position, int *_x_offset,
     XFlush(pDisp_);
 }
 
-void WindowXVulkan::SwapBuffers() {
+void WindowXOpengl::SwapBuffers() {
+    glXSwapBuffers(pDisp_, Win_);
 }
 
-void WindowXVulkan::ClearDisplay() {
+void WindowXOpengl::ClearDisplay() {
+    glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-bool WindowXVulkan::HandleEvent(CEvent &_Event) {
+bool WindowXOpengl::HandleEvent(CEvent &_Event) {
     XEvent uXEvent;
 
     while (XPending(pDisp_)) {
@@ -108,6 +178,9 @@ bool WindowXVulkan::HandleEvent(CEvent &_Event) {
 
         switch (uXEvent.type) {
             case MotionNotify:
+
+                ///< With structure "motion" we can get position of mouse
+                ///< pointer and e.c.
                 motion = uXEvent.xmotion;
 
                 _Event.SetEvent(EEvents::eMOUSE_POINTER_POSITION);
@@ -116,7 +189,6 @@ bool WindowXVulkan::HandleEvent(CEvent &_Event) {
 
                 ///< Search MapNotify events depend on XMapWindow(pDisp_, Win_)
                 ///< function.
-                //				break;
             case MapNotify:
                 ///< Link mouse cursor to specified window.
                 XGrabPointer(pDisp_, Win_, True, PointerMotionMask,
@@ -144,7 +216,7 @@ bool WindowXVulkan::HandleEvent(CEvent &_Event) {
             case KeyPress:
                 ulKey = XLookupKeysym(&uXEvent.xkey, 0);
                 switch (ulKey) {
-                    case XK_Escape:
+                    case XK_Q:
                         _Event.SetEvent(EEvents::eGAME_LOOP_KILL);
                         break;
                     case XK_a:
@@ -204,11 +276,20 @@ bool WindowXVulkan::HandleEvent(CEvent &_Event) {
     return false;
 }
 
-void WindowXVulkan::Close() {
+Window WindowXOpengl::GetWindow() {
+    return Win_;
+}
+Display *WindowXOpengl::GetDisplay() {
+    return pDisp_;
+}
+
+void WindowXOpengl::Close() {
+    glXMakeCurrent(pDisp_, None, NULL);
+    glXDestroyContext(pDisp_, Context_);
     XDestroyWindow(pDisp_, Win_);
-    //        XFreeColormap(pDisp_, Color_Map_);
-    //        XFree(pVisual_);
-    //        XFree(pFbc_);
+    XFreeColormap(pDisp_, Color_Map_);
+    XFree(pVisual_);
+    XFree(pFbc_);
     XCloseDisplay(pDisp_);
 }
 } // namespace GLVM::core

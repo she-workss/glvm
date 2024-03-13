@@ -1,4 +1,4 @@
-#include "Systems/ControllerSystem.hpp"
+#include "systems/ControllerSystem.hpp"
 #include "Event.hpp"
 
 namespace GLVM::core {

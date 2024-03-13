@@ -3,10 +3,10 @@
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
 
-#include "Components/RigidBodyComponent.hpp"
 #include "Engine.hpp"
 #include "SpritesData.hpp"
 #include "Texture.hpp"
+#include "components/RigidBodyComponent.hpp"
 
 int main() {
     using namespace GLVM;

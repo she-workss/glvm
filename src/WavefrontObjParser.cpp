@@ -70,6 +70,9 @@ void CWaveFrontObjParser::ParseFile() {
     // unsigned int uiCoordinateVerticesIndex = 0;
     // unsigned int uiTextureVerticesIndex = 0;
     // unsigned int uiFacesIndex = 0;
+    if (pWavefrontObjFileData == nullptr) {
+        return;
+    }
     while (pWavefrontObjFileData[uiCounter] != '\0') {
         GLVM::core::vector<vector<char>> line =
                 Split(pWavefrontObjFileData, ' ', '\n', uiCounter);

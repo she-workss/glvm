@@ -3,20 +3,20 @@
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
 
-#include "Systems/CollisionSystem.hpp"
+#include "systems/CollisionSystem.hpp"
 #include "ComponentManager.hpp"
-#include "Components/ColliderComponent.hpp"
-#include "Components/EventComponent.hpp"
-#include "Components/MaterialComponent.hpp"
-#include "Components/MoveComponent.hpp"
-#include "Components/RigidBodyComponent.hpp"
-#include "Components/TransformComponent.hpp"
-#include "Components/ViewComponent.hpp"
 #include "EntityManager.hpp"
 #include "Event.hpp"
 #include "EventsStack.hpp"
 #include "Vector.hpp"
 #include "VertexMath.hpp"
+#include "components/ColliderComponent.hpp"
+#include "components/EventComponent.hpp"
+#include "components/MaterialComponent.hpp"
+#include "components/MoveComponent.hpp"
+#include "components/RigidBodyComponent.hpp"
+#include "components/TransformComponent.hpp"
+#include "components/ViewComponent.hpp"
 
 namespace GLVM::ecs {
 bool CCollisionSystem::BoxCollider(vec3 backtrackingPosition,
