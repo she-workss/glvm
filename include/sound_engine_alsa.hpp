@@ -11,8 +11,6 @@
 #include <alsa/asoundlib.h>
 #include <alsa/pcm.h>
 
-#include <bits/types/FILE.h>
-
 namespace GLVM::core::Sound {
 class CSoundEngineAlsa : public ISoundEngine {
     vector<CSoundSample *> tSound_Contaier;

@@ -11,8 +11,6 @@
 #include <X11/X.h>
 #include <X11/Xlib.h>
 
-#include <bits/types/time_t.h>
-#include <bits/types/wint_t.h>
 #include <iostream>
 
 // #define VULKAN
