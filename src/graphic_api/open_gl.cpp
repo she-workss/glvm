@@ -75,16 +75,16 @@ COpenglRenderer::COpenglRenderer() {
 
     AllocateTextureMemory(pointLightCubeShadowMapFBOcontainer,
                           pointLightCubeShadowMapTextureContainer,
-                          GL_TEXTURE_CUBE_MAP, GL_CLAMP_TO_EDGE, 16,
+                          GL_TEXTURE_CUBE_MAP, GL_CLAMP_TO_EDGE, 2,
                           "pointLightCubeShadowMapArray", 0);
     AllocateTextureMemory(spotLightFlatShadowMapFBOContainer,
                           spotLightFlatShadowMapTextureContainer, GL_TEXTURE_2D,
-                          GL_CLAMP_TO_BORDER, 8, "spotLightFlatShadowMapArray",
-                          16);
+                          GL_CLAMP_TO_BORDER, 2, "spotLightFlatShadowMapArray",
+                          2);
     AllocateTextureMemory(directionalLightFlatShadowMapFBOcontainer,
                           directionalLightFlatShadowMapTextureContainer,
-                          GL_TEXTURE_2D, GL_CLAMP_TO_BORDER, 4,
-                          "directionalLightFlatShadowMapArray", 24);
+                          GL_TEXTURE_2D, GL_CLAMP_TO_BORDER, 2,
+                          "directionalLightFlatShadowMapArray", 4);
 
     glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 }

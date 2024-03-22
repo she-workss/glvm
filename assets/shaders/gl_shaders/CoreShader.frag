@@ -3,9 +3,9 @@ out vec4 fragColor;
 // flat in int spotLightSpaceMatrixArraySize;
 // flat in int directionalLightSpaceMatrixArraySize;
 
-#define DIRECTIONAL_LIGHTS_NUMBER                          4
-#define POINT_LIGHTS_NUMBER                                32
-#define SPOT_LIGHTS_NUMBER                                 8
+#define DIRECTIONAL_LIGHTS_NUMBER                          2
+#define POINT_LIGHTS_NUMBER                                2
+#define SPOT_LIGHTS_NUMBER                                 2
 
 in VS_OUT {
 	vec3 fragmentPosition;
@@ -20,12 +20,12 @@ struct Material {
 	sampler2D diffuse;
 	sampler2D specular;
     float     shininess;
-}; 
+};
 
 struct DirectionalLight {
 	vec3 position;
 	vec3 direction;
-  
+
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
@@ -93,7 +93,7 @@ void main()
 {
 	vec3 normal        = normalize(fs_in.normal);
 	vec3 viewDirection = normalize(viewPosition - fs_in.fragmentPosition);
-	
+
 	vec3 result = vec3(0.0, 0.0, 0.0);
 	// Compute directional lighting
 	int directionalLightIndicesCounter    = 0;
@@ -149,7 +149,7 @@ void main()
 		if(j == spotLightIndexAccumulator && spotLightIndicesCounter != sampledSpotShadowOrdinalNumbersArraySize) {    ///< DELETE GOVNO!!!!!!!
 			shadow = ComputeSpotShadow(spotLights[j], fs_in.fragmentPositionSpotLightSpace[j],
 										spotLightFlatShadowMapArray[spotLightIndicesCounter]);
-			
+
 			++spotLightIndicesCounter;
 			spotLightIndexAccumulator = spotLightFlatShadowMapComponentIndices[spotLightIndicesCounter];
 		}
@@ -219,7 +219,7 @@ vec3 ComputeSpotLight(SpotLight light, vec3 normal, vec3 fragmentPosition, vec3 
 	float specularComponent = pow(max(dot(viewDirection, reflectDirection), 0.0f), material.shininess);
 	// attenuation
 	float distance    = length(light.position - fragmentPosition);
-	float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance)); 
+	float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
 	// spotlight intensity
     float theta     = dot(lightDirection, normalize(-light.direction));
 	float epsilon   = light.cutOff - light.outerCutOff;
@@ -231,7 +231,7 @@ vec3 ComputeSpotLight(SpotLight light, vec3 normal, vec3 fragmentPosition, vec3 
 //	ambient  *= attenuation * intensity;
     diffuse  *= attenuation * intensity;
     specular *= attenuation * intensity;
-	
+
     return (ambient + diffuse + specular);
 }
 
@@ -263,7 +263,7 @@ float ComputeDirectionalShadow(DirectionalLight light, vec4 fragmentPositionDire
 		}
 	}
 	shadow /= 9.0;
-	
+
 	if (projectiveCoordinates.z > 1.0)
 		shadow = 0.0;
 
@@ -272,7 +272,7 @@ float ComputeDirectionalShadow(DirectionalLight light, vec4 fragmentPositionDire
 
 	// if (projectiveCoordinates.y > 1.0 || projectiveCoordinates.y < -1.0)
 	// 	shadow = 0.0;
-		
+
 	return shadow;
 }
 
@@ -312,13 +312,13 @@ float ComputePointShadow(PointLight light, vec3 fragmentPosition, samplerCube cu
 	// Test for shadows ranged cube of offsets
 	vec3 sampleOffsetDirections[20] = vec3[]
 		(
-			vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1), 
+			vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1),
 			vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
 			vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
 			vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
 			vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
-		);  
-	
+		);
+
 	float shadow  = 0.0;
 	float bias    = 0.15;
 	float samples = 20;
@@ -366,7 +366,7 @@ float ComputeSpotShadow(SpotLight light, vec4 fragmentPositionSpotLightSpace, sa
 		}
 	}
 	shadow /= 9.0;
-	
+
 	if (projectiveCoordinates.z > 1.0)
 		shadow = 0.0;
 
@@ -375,6 +375,6 @@ float ComputeSpotShadow(SpotLight light, vec4 fragmentPositionSpotLightSpace, sa
 
 	// if (projectiveCoordinates.y > 1.0 || projectiveCoordinates.y < -1.0)
 	// 	shadow = 0.0;
-		
+
 	return shadow;
 }

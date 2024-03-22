@@ -8,8 +8,8 @@ layout (location = 2) in vec2 textureCoordinates;
 layout (location = 3) in vec4 jointIndices;
 layout (location = 4) in vec4 weights;
 
-#define SPOT_LIGHT_SPACE_MATRIX_CONTAINER_SIZE 8
-#define DIRECTIONAL_LIGHT_SPACE_MATRIX_CONTAINER_SIZE 4
+#define SPOT_LIGHT_SPACE_MATRIX_CONTAINER_SIZE 2
+#define DIRECTIONAL_LIGHT_SPACE_MATRIX_CONTAINER_SIZE 2
 
 out vec2 textureCoords;
 // flat out int spotLightSpaceMatrixArraySize;
@@ -56,12 +56,12 @@ void main()
 			);
 	}
 
-	
+
 	vec4 worldPosition = modelMatrix * skinMatrix * vec4(vertexPosition, 1.0);
 
     // gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(vertexPosition.x, vertexPosition.y, vertexPosition.z, 1.0);
 	// fragmentPosition = vec3(modelMatrix * vec4(vertexPosition.x, vertexPosition.y, vertexPosition.z, 1.0));
- 	// TextureCoord = vec2(aTextureCoord.x, aTextureCoord.y);	
+ 	// TextureCoord = vec2(aTextureCoord.x, aTextureCoord.y);
 	// normal = normal;
 	vs_out.fragmentPosition           = worldPosition.xyz;
 //	vs_out.normal                     = transpose(inverse(mat3(modelMatrix))) * normal;
@@ -71,16 +71,16 @@ void main()
     else
         vs_out.normal = transpose(inverse(mat3(modelMatrix * skinMatrix))) * normal;
 	vs_out.textureCoords              = textureCoordinates;
-	for (int i = 0; i < directionalLightSpaceMatrixContainerSize; ++i) 
+	for (int i = 0; i < directionalLightSpaceMatrixContainerSize; ++i)
 		vs_out.fragmentPositionDirectionalLightSpace[i] = directionalLightSpaceMatrixContainer[i] * worldPosition;
-	for (int j = 0; j < spotLightSpaceMatrixContainerSize; ++j) 
+	for (int j = 0; j < spotLightSpaceMatrixContainerSize; ++j)
 		vs_out.fragmentPositionSpotLightSpace[j] = spotLightSpaceMatrixContainer[j] * worldPosition;
 
 //	vs_out.normal = normalize(vs_out.normal);
 	// spotLightSpaceMatrixArraySize        = spotLightSpaceMatrixContainerSize;
 	// directionalLightSpaceMatrixArraySize = directionalLightSpaceMatrixContainerSize;
 
-	
+
 //	vec4 worldPosition = skinMatrix * inverseMatrices[int(jointIndices.x)] * vec4(vertexPosition, 1.0);
 //	vec4 worldPosition = transform0 * transform1 * transform2 * vec4(vertexPosition, 1.0);
 //	vec4 worldPosition = transform0 * vec4(vertexPosition, 1.0);
