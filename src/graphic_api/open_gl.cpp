@@ -48,8 +48,9 @@
 
 namespace GLVM::core {
 COpenglRenderer::COpenglRenderer() {
-    coreShaderProgram = new Shader("assets/shaders/gl_shaders/CoreShader.vert",
-                                   "assets/shaders/gl_shaders/CoreShader.frag");
+    coreShaderProgram =
+            new Shader("assets/shaders/gl_shaders/core_shader.vert",
+                       "assets/shaders/gl_shaders/core_shader.frag");
     flatShadowMapShaderProgram =
             new Shader("assets/shaders/gl_shaders/FlatShadowMap.vert",
                        "assets/shaders/gl_shaders/FlatShadowMap.frag");
