@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.9)
 project(GLVM
     VERSION 0.1.0
     DESCRIPTION "GLVM Engine"
@@ -41,6 +41,7 @@ enable_testing()
 if((CMAKE_CXX_COMPILER_ID MATCHES "GNU") OR
     (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
     set(CXX_FLAGS
+        # -Os
         -Wall
         -Wcast-align
         -Wcast-qual
@@ -60,6 +61,7 @@ if((CMAKE_CXX_COMPILER_ID MATCHES "GNU") OR
         # -fanalyzer)
 
     set(C_FLAGS
+        # -Os
         -Wall
         -Wcast-align
         -Wcast-qual
@@ -134,6 +136,16 @@ add_executable(glvm
     src/win_api/window_win_open_gl.cpp
     src/win_api/window_win_vulkan.cpp
 )
+
+# Enable LTO
+include(CheckIPOSupported)
+check_ipo_supported(RESULT supported OUTPUT error)
+
+if(supported)
+    set_property(TARGET glvm PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+else()
+    message(STATUS "IPO/LTO not supported: <${error}>")
+endif()
 
 # Link libraries
 target_link_libraries(glvm
