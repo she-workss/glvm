@@ -41,8 +41,12 @@ enable_testing()
 if((CMAKE_CXX_COMPILER_ID MATCHES "GNU") OR
     (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
     set(CXX_FLAGS
-        # -Os
+        -O2
+        # -march=native
         -Wall
+	-Wnrvo
+        -Wdangling-reference
+        -Wtemplate-id-cdtor
         -Wcast-align
         -Wcast-qual
         -Wconversion
@@ -61,8 +65,12 @@ if((CMAKE_CXX_COMPILER_ID MATCHES "GNU") OR
         # -fanalyzer)
 
     set(C_FLAGS
-        # -Os
+        -O2
+        # -march=native
         -Wall
+	-Wnrvo
+        -Wdangling-reference
+        -Wtemplate-id-cdtor
         -Wcast-align
         -Wcast-qual
         -Wconversion
