@@ -125,7 +125,6 @@ add_executable(glvm
     src/mesh_manager.cpp
     src/sound_engine_factory.cpp
     src/system_manager.cpp
-    src/systems/animation_system.cpp
     src/systems/camera_system.cpp
     src/systems/collision_system.cpp
     src/systems/movement_system.cpp
