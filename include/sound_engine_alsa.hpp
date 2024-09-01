@@ -4,6 +4,7 @@
 // License: http://opensource.org/licenses/MIT
 #pragma once
 
+#ifdef __linux
 #include "event.hpp"
 #include "i_sound_engine.hpp"
 #include "vector.hpp"
@@ -22,3 +23,4 @@ public:
     vector<CSoundSample *> &GetSoundContainer() override;
 };
 } // namespace GLVM::core::Sound
+#endif
