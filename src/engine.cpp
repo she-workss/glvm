@@ -22,23 +22,6 @@
 #include <sys/types.h>
 #include <thread>
 
-// Legends never die...
-// You are about to face most terrifying data structures of all time.
-// "Abandon hope all ye who enter here..." (c) Dante Alighieri.
-// 👑 !!! DESTRUCTOR_3000 !!! 👑
-//       \_/
-//      (* *)
-//     __)#(__
-//    ( )...( )(_)
-//    || |_| ||//
-// >==() | | ()/
-//     _(___)_
-//    [-]   [-]
-
-#define DESTRUCTOR_3000                                                        \
-    std::cout << "You have been destructurized. [=]___[=]" << std::endl;       \
-    exit(1)
-
 GLVM::core::CEvent g_eEvent;
 
 namespace GLVM::core {
@@ -209,7 +192,6 @@ void Engine::FPScounter() {
     ++fpsCounter;
     fpsAccumulator += deltaFrameTime;
     if (fpsAccumulator > 1.0f) {
-        std::cout << "FPS: " << fpsCounter << std::endl;
         fpsCounter = 0;
         fpsAccumulator = 0;
     }
