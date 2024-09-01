@@ -44,7 +44,7 @@ if((CMAKE_CXX_COMPILER_ID MATCHES "GNU") OR
         -O2
         # -march=native
         -Wall
-	-Wnrvo
+        -Wnrvo
         -Wdangling-reference
         -Wtemplate-id-cdtor
         -Wcast-align
@@ -68,7 +68,7 @@ if((CMAKE_CXX_COMPILER_ID MATCHES "GNU") OR
         -O2
         # -march=native
         -Wall
-	-Wnrvo
+        -Wnrvo
         -Wdangling-reference
         -Wtemplate-id-cdtor
         -Wcast-align
