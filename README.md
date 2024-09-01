@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="assets/branding/glvm_logo.png" alt="GLVM Logo" />
-</p>
-
 # Game Loop Versatile Modules (GLVM)
 
 This is my simple game engine for Linux and Windows OS's with both Vulkan and
@@ -104,7 +100,7 @@ dnf install libX11-devel \
 
 ### Linux
 
-Release  mode:
+Release mode:
 
 ```bash
 ./tools/build.sh -r
@@ -118,7 +114,7 @@ Debug mode:
 
 ### Windows
 
-Release  mode:
+Release mode:
 
 ```bash
 tools\build.bat -r
