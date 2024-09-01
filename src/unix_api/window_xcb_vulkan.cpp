@@ -109,20 +109,6 @@ void WindowXCBVulkan::SwapBuffers() {};
 
 void WindowXCBVulkan::ClearDisplay() {};
 
-void WindowXCBVulkan::print_modifiers(uint32_t mask) {
-    const char **mod,
-            *mods[] = {"Shift",   "Lock",    "Ctrl",   "Alt",     "Mod2",
-                       "Mod3",    "Mod4",    "Mod5",   "Button1", "Button2",
-                       "Button3", "Button4", "Button5"};
-    printf("Modifier mask: ");
-    for (mod = mods; mask; mask >>= 1, mod++) {
-        if (mask & 1) {
-            std::cout << *mod << std::endl;
-        }
-    };
-    putchar('\n');
-}
-
 bool WindowXCBVulkan::HandleEvent([[maybe_unused]] CEvent &_Event) {
     xcb_generic_event_t *generic_event;
     bool next_generic_event_flag = false;
@@ -138,8 +124,6 @@ bool WindowXCBVulkan::HandleEvent([[maybe_unused]] CEvent &_Event) {
             case XCB_BUTTON_PRESS: {
                 xcb_button_press_event_t *expose_event =
                         (xcb_button_press_event_t *)generic_event;
-                print_modifiers(expose_event->state);
-
                 switch (expose_event->detail) {
                     case 1:
                         _Event.SetEvent(EEvents::eMOUSE_LEFT_BUTTON);
@@ -160,8 +144,6 @@ bool WindowXCBVulkan::HandleEvent([[maybe_unused]] CEvent &_Event) {
             case XCB_BUTTON_RELEASE: {
                 xcb_button_release_event_t *expose_event =
                         (xcb_button_release_event_t *)generic_event;
-                print_modifiers(expose_event->state);
-
                 switch (expose_event->detail) {
                     case 1:
                         _Event.SetEvent(EEvents::eMOUSE_LEFT_BUTTON_RELEASE);

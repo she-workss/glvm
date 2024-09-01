@@ -28,8 +28,6 @@ class WindowXCBVulkan : public IWindow {
     xcb_key_symbols_t *key_symbols;
     xcb_generic_event_t *next_generic_event;
 
-    static void print_modifiers(uint32_t mask);
-
 public:
     CStack *Input_Stack_;
 

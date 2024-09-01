@@ -26,7 +26,6 @@ void CJsonParser::ReadFile(const char *_filePath) {
         jsonFileInputStream.close();
         sJsonFileData_ = jsonFileOutputStream.str();
     } else {
-        std::cout << "Error of reading json file" << std::endl;
         return;
     }
 
@@ -351,7 +350,6 @@ double CJsonParser::ParseFloating(core::vector<char> _word) {
                 integerPartContainer.Push(baseContainer[i]);
             }
         } else {
-            std::cout << "Element is not a number" << std::endl;
             return NAN;
         }
     }

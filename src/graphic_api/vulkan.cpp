@@ -3238,7 +3238,6 @@ void CVulkanRenderer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
 
     i32 result = vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory);
     if (result != VK_SUCCESS) {
-        std::cout << "result" << result << std::endl;
         throw std::runtime_error("failed to allocate buffer memory!");
     }
 

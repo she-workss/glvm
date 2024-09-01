@@ -76,7 +76,6 @@ public:
     const T &operator[](const unsigned int _iIndex) const;
     T &operator[](const unsigned int _iIndex);
     void clear();
-    void Print();
     vector &operator=(const vector<T> &_vector);
     bool operator==(const char *string_);
     bool empty();
@@ -201,8 +200,6 @@ template<class T>
 VectorIterator<T> vector<T>::Find(T &element) {
     VectorIterator<T> iterator(*this);
     if (!iterator.ValidStatus()) {
-        std::cout << "Vector is empty. Retern iterator with pointer on end"
-                  << std::endl;
         return iterator;
     }
 
@@ -212,7 +209,6 @@ VectorIterator<T> vector<T>::Find(T &element) {
         }
     } while (iterator.Next());
 
-    std::cout << "Vector dont contain this element" << std::endl;
     return iterator;
 }
 
@@ -336,14 +332,5 @@ void vector<T>::clear() {
 template<class T>
 bool vector<T>::empty() {
     return size == 0;
-}
-
-template<class T>
-void vector<T>::Print() {
-    for (unsigned int i = 0; i < size; ++i) {
-        std::cout << *(T *)&rowInnerData[i * sizeof(T)] << std::endl;
-    }
-
-    std::cout << "End of container" << std::endl;
 }
 } // namespace GLVM::core

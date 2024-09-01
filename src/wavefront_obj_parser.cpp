@@ -40,7 +40,6 @@ void CWaveFrontObjParser::ReadFile(const char *_filePath) {
         WavefrontObjFileInputStream.close();
         sWavefrontObjFileData = WavefrontObjFileOutputStream.str();
     } else {
-        std::cout << "Error of reading wavefront.obj file" << std::endl;
         return;
     }
 
@@ -202,7 +201,6 @@ float CWaveFrontObjParser::ParseFloating(GLVM::core::vector<char> _word) {
                 integerPartContainer.Push(baseContainer[i]);
             }
         } else {
-            std::cout << "Element is not a number" << std::endl;
             return NAN;
         }
     }

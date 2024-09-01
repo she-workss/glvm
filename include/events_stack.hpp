@@ -124,12 +124,6 @@ public:
         return aStack_[_iIndex];
     }
 
-    void PrintStack() {
-        for (int i = 0; i < 5; ++i) {
-            std::cout << "Stack: " << aStack_[i] << std::endl;
-        }
-    }
-
     bool CheckEvent(EEvents _element) {
         for (int i = 0; i < iHead_; ++i) {
             if (aStack_[i] == _element) {

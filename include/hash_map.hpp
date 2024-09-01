@@ -117,7 +117,6 @@ public:
     bool SearchKey(const char *key_) {
         for (int i = 0; i < capacity_; ++i) {
             if (hashMap_[i] != nullptr && hashMap_[i]->key_ == key_) {
-                std::cout << "key: " << key_ << std::endl;
                 return true;
             }
         }
