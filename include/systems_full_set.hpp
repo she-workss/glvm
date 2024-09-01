@@ -6,7 +6,6 @@
 
 #include "systems/camera_system.hpp"
 #include "systems/collision_system.hpp"
-#include "systems/gui_system.hpp"
 #include "systems/movement_system.hpp"
 #include "systems/physics_system.hpp"
 #include "systems/projectile_system.hpp"

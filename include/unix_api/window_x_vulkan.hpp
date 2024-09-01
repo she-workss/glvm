@@ -7,8 +7,6 @@
 #include "events_stack.hpp"
 #include "i_window.hpp"
 
-#include <GL/gl.h>
-#include <GL/glx.h>
 #include <X11/Xlib.h>
 
 namespace GLVM::core {

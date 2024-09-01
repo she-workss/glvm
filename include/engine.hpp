@@ -10,14 +10,11 @@
 #include "entity_manager.hpp"
 #include "event.hpp"
 #include "events_stack.hpp"
-#include "gl_pointer.h"
-#include "graphic_api/open_gl.hpp"
 #include "graphic_api/vulkan.hpp"
 #include "i_chrono.hpp"
 #include "i_container.hpp"
 #include "i_sound_engine.hpp"
 #include "i_window.hpp"
-#include "shader_program.hpp"
 #include "system_manager.hpp"
 #include "systems_full_set.hpp"
 #include "texture.hpp"
@@ -25,15 +22,12 @@
 #include "timer_creator.hpp"
 #include "vector.hpp"
 
-#include <GL/gl.h>
-#include <GL/glext.h>
-
 #include <mutex>
 
 using Entity = unsigned int;
 
 namespace GLVM::core {
-enum RendererType { OPENGL_RENDERER, VULKAN_RENDERER };
+enum RendererType { VULKAN_RENDERER };
 
 class Engine {
     static Engine *pInstance_;
@@ -52,7 +46,6 @@ class Engine {
     uint32_t meshID = 0;
     core::vector<ecs::components::MeshHandle> meshHandlers;
     CVulkanRenderer *vulkanRenderer;
-    COpenglRenderer *openglRenderer;
 
     ecs::CCollisionSystem *collisionSystem;
     ecs::CMovementSystem *movementSystem;
@@ -79,7 +72,6 @@ public:
 
     void GameLoop(RendererType renderer);
     void EventQueueFlush();
-    void RenderOpengl();
     void RenderVulkan();
     ecs::TextureHandle LoadTextureFromFile(const char *path_to_texture);
     ecs::TextureHandle LoadTextureFromAddress(unsigned int iWidth,

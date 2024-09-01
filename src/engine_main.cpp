@@ -283,8 +283,6 @@ int main() {
     // .specularTextureID_ = grayTextureHandle };
 
     // Game rendering loop
-    GLVM->GameLoop(GLVM::core::OPENGL_RENDERER);
-    //     GLVM->GameLoop(GLVM::core::VULKAN_RENDERER);
+    GLVM->GameLoop(GLVM::core::VULKAN_RENDERER);
     GLVM->GameKill();
-    return 0;
 }

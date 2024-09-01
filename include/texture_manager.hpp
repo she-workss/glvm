@@ -6,7 +6,6 @@
 
 #include "components/material_component.hpp"
 #include "constants.hpp"
-#include "gl_pointer.h"
 #include "texture.hpp"
 
 #include <mutex>

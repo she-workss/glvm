@@ -5,7 +5,6 @@
 
 #include "win_api/window_win_vulkan.hpp"
 #include "event.hpp"
-#include "gl_pointer.h"
 
 #include <iostream>
 #include <iterator>
@@ -120,8 +119,6 @@ LRESULT CALLBACK WindowWinVulkan::MainWndProc(HWND _pHwnd, UINT _pMsg,
         case WM_CREATE:
             return 0;
         case WM_SIZE:
-            // Set the size and position of the window.
-            glViewport(0, 0, LOWORD(_pLParam), HIWORD(_pLParam));
             return 0;
 
         case WM_LBUTTONDOWN:

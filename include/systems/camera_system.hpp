@@ -8,13 +8,11 @@
 #include "components/view_component.hpp"
 #include "globals.hpp"
 #include "i_system.hpp"
-#include "shader_program.hpp"
 #include "vertex_math.hpp"
 
 namespace GLVM::ecs {
 class CCameraSystem : public ISystem {
 public:
-    Shader *Shader_Program_;
     Matrix<float, 4> tProjection_Matrix {1.0f};
 
     // Mouse parameters.

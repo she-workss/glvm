@@ -4,9 +4,7 @@
 // License: http://opensource.org/licenses/MIT
 
 #include "unix_api/window_x_vulkan.hpp"
-#include "gl_pointer.h"
 
-#include <GL/glx.h>
 #include <X11/Xlib.h>
 
 #include <iostream>

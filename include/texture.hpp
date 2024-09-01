@@ -4,8 +4,6 @@
 // License: http://opensource.org/licenses/MIT
 #pragma once
 
-#include <GL/gl.h>
-
 #include <cstdint>
 #include <vector>
 
@@ -21,7 +19,6 @@ struct Texture {
     unsigned int vkAvailableInnerId_ = 0;
     unsigned int vkInnerIdLimit_ = 10;
 
-    GLuint iTexture_;
     const char *path_to_image;
     std::vector<Entity> entitiesOwnsThisTypeOfTexture_;
     unsigned int id_;

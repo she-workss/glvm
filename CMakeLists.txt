@@ -108,7 +108,6 @@ include_directories(include)
 include_directories(assets/textures)
 
 # Find packages
-find_package(OpenGL REQUIRED)
 find_package(Vulkan REQUIRED)
 
 # Define the executable
@@ -121,18 +120,14 @@ add_executable(glvm
     src/engine_main.cpp
     src/entity_manager.cpp
     src/event.cpp
-    src/gl_pointer.c
-    src/graphic_api/open_gl.cpp
     src/graphic_api/vulkan.cpp
     src/json_parser.cpp
     src/mesh_manager.cpp
-    src/shader_program.cpp
     src/sound_engine_factory.cpp
     src/system_manager.cpp
     src/systems/animation_system.cpp
     src/systems/camera_system.cpp
     src/systems/collision_system.cpp
-    src/systems/gui_system.cpp
     src/systems/movement_system.cpp
     src/systems/physics_system.cpp
     src/systems/projectile_system.cpp
@@ -141,7 +136,6 @@ add_executable(glvm
     src/wavefront_obj_parser.cpp
     src/win_api/chrono_win.cpp
     src/win_api/sound_engine_waveform.cpp
-    src/win_api/window_win_open_gl.cpp
     src/win_api/window_win_vulkan.cpp
 )
 
@@ -158,7 +152,6 @@ endif()
 # Link libraries
 target_link_libraries(glvm
     gdi32
-    opengl32
     winmm
     ${Vulkan_LIBRARY}
 )

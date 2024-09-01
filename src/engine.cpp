@@ -5,15 +5,12 @@
 
 #include "engine.hpp"
 #include "components/vertex_component.hpp"
-#include "graphic_api/open_gl.hpp"
 #include "graphic_api/vulkan.hpp"
 #include "i_sound_engine.hpp"
-#include "shader_program.hpp"
 #include "sound_engine_factory.hpp"
 #include "system_manager.hpp"
 #include "systems/camera_system.hpp"
 #include "systems/collision_system.hpp"
-#include "systems/gui_system.hpp"
 #include "systems/movement_system.hpp"
 #include "systems/physics_system.hpp"
 #include "systems/projectile_system.hpp"
@@ -90,88 +87,13 @@ Engine *Engine::GetInstance() {
 }
 
 void Engine::GameLoop(RendererType renderer) {
-    if (renderer == OPENGL_RENDERER) {
-        RenderOpengl();
-        return;
-    } else if (renderer == VULKAN_RENDERER) {
+    if (renderer == VULKAN_RENDERER) {
         RenderVulkan();
         return;
     }
 }
 
 void Engine::EventQueueFlush() {
-}
-
-void Engine::RenderOpengl() {
-    ecs::CSystemManager *pSystem_Manager = ecs::CSystemManager::GetInstance();
-    bool bGame_Loop_Active = true;
-
-    projectileSystem->textureHandlers = textureHandlers;
-
-    openglRenderer = new COpenglRenderer();
-    openglRenderer->textureVector = textureVector;
-    openglRenderer->pathsArray_ = pathsArray_;
-    openglRenderer->pathsGLTF_ = pathsGLTF_;
-    openglRenderer->run();
-    openglRenderer->Window.Input_Stack_ = &Input_Stack_;
-
-#ifdef __linux__
-    // XEvent uXEvent;
-    // while (XPending(openglRenderer->Window.GetDisplay())) {
-    //     XNextEvent(openglRenderer->Window.GetDisplay(), &uXEvent);
-    // }
-
-    // xcb_generic_event_t *event;
-    // while ((event = xcb_poll_for_event(
-    //                 openglRenderer->Window.GetConnection()))) {
-    // }
-#endif
-
-#ifdef _WIN32
-    MSG msg;
-
-    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
-#endif
-
-    while (bGame_Loop_Active) {
-        deltaFrameTime = chrono->GetElapsed();
-        chrono->Reset();
-        gravity += deltaFrameTime;
-
-        openglRenderer->Window.ClearDisplay();
-
-        openglRenderer->Window.HandleEvent(g_eEvent);
-        if ((Input_Stack_.SearchElement(EEvents::eGAME_LOOP_KILL)) ==
-            EEvents::eGAME_LOOP_KILL) {
-            bGame_Loop_Active = false;
-        }
-        g_eEvent.SetLastEvent(Input_Stack_);
-
-        openglRenderer->Window.CursorLock(
-                g_eEvent.mousePointerPosition.position_X,
-                g_eEvent.mousePointerPosition.position_Y,
-                &g_eEvent.mousePointerPosition.offset_X,
-                &g_eEvent.mousePointerPosition.offset_Y);
-
-        movementSystem->deltaFrameTime = deltaFrameTime;
-        movementSystem->gravity = gravity;
-        collisionSystem->fDelta_Time_ = deltaFrameTime;
-        collisionSystem->gravity = gravity;
-        projectileSystem->deltaFrameTime = deltaFrameTime;
-        projectileSystem->soundEngine = soundEngine;
-        physicsSystem->fDelta_Time_ = deltaFrameTime;
-        physicsSystem->fAcceleration_of_Gravity_ += (deltaFrameTime / 20);
-        physicsSystem->gravity = gravity;
-        openglRenderer->EnlargeFrameAccumulator(deltaFrameTime);
-        pSystem_Manager->Update();
-        openglRenderer->draw();
-        openglRenderer->Window.SwapBuffers();
-    }
-
-    openglRenderer->Window.Close();
 }
 
 void Engine::RenderVulkan() {
@@ -187,18 +109,6 @@ void Engine::RenderVulkan() {
     vulkanRenderer->pathsGLTF_ = pathsGLTF_;
     vulkanRenderer->run();
     vulkanRenderer->Window.Input_Stack_ = &Input_Stack_;
-
-#ifdef __linux__
-    // XEvent uXEvent;
-    // while (XPending(vulkanRenderer->Window.GetDisplay())) {
-    // 	XNextEvent(vulkanRenderer->Window.GetDisplay(), &uXEvent);
-    // }
-
-    // xcb_generic_event_t* event;
-    // while (( event = xcb_poll_for_event (
-    // vulkanRenderer->Window.GetConnection() ))) {
-    // }
-#endif
 
 #ifdef _WIN32
     MSG msg;

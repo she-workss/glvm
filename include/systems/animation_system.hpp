@@ -8,7 +8,6 @@
 #include "components/animation_move_component.hpp"
 #include "components/vertex_component.hpp"
 #include "event.hpp"
-#include "gl_pointer.h"
 #include "i_system.hpp"
 #include "stack.hpp"
 #include "vector.hpp"

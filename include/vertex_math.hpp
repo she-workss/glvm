@@ -431,11 +431,7 @@ Matrix<T, 4> GLVM_perspectiveRH_NO(T fov, T aspect, T near_plane, T far_plane) {
 
 template<typename T>
 Matrix<T, 4> Perspective(T fov, T aspect, T near_plane, T far_plane) {
-#ifdef GLVM_OPENGL_RENDER_BIT
-    return GLVM_perspectiveRH_ZO<T>(fov, aspect, near, far);
-#else
     return GLVM_perspectiveRH_NO<T>(fov, aspect, near_plane, far_plane);
-#endif
 }
 
 template<typename T>
@@ -487,11 +483,7 @@ Matrix<T, 4> lookAtLH(Vector<T, 3> _eye, Vector<T, 3> _center,
 template<typename T>
 Matrix<T, 4> LookAtMain(Vector<T, 3> _eye, Vector<T, 3> _center,
                         Vector<T, 3> _up) {
-#ifdef GLVM_OPENGL_RENDER_BIT
-    return lookAtLH<T>(_eye, _center, _up);
-#else
     return lookAtRH<T>(_eye, _center, _up);
-#endif
 }
 
 template<typename T>
@@ -632,11 +624,7 @@ Matrix<T, 4> orthoLH_NO(T left, T right, T bottom, T top, T near_plane,
 template<class T>
 Matrix<T, 4> ortho(T left, T right, T bottom, T top, T near_plane,
                    T far_plane) {
-#ifdef GLVM_OPENGL_RENDER_BIT
-    return orthoLH_NO<T>(left, right, bottom, top, near, far);
-#else
     return orthoRH_ZO<T>(left, right, bottom, top, near_plane, far_plane);
-#endif
 }
 
 template<class T, int var>
@@ -670,11 +658,7 @@ Matrix<T, var> perspectiveLH_NO(T fov, T aspect, T near_plane, T far_plane) {
 
 template<class T, int var>
 Matrix<T, var> Perspective(T fov, T aspect, T near_plane, T far_plane) {
-#ifdef GLVM_OPENGL_RENDER_BIT
-    return perspectiveLH_NO(fov, aspect, near, far);
-#else
     return perspectiveRH_ZO(fov, aspect, near_plane, far_plane);
-#endif
 }
 
 constexpr float Max(float var1, float var2) {

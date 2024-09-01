@@ -4,19 +4,14 @@
 // License: http://opensource.org/licenses/MIT
 #pragma once
 
-#include "gl_pointer.h"
 #include "i_window.hpp"
-
-#include <GL/gl.h>
-#include <GL/glext.h>
 
 #include <cstdio>
 #include <cwchar>
 #include <windows.h>
 #include <windowsx.h>
 
-// #define VULKAN_API
-#define OPENGL_API
+#define VULKAN_API
 #include "events_stack.hpp"
 
 namespace GLVM::core {
@@ -27,7 +22,6 @@ namespace GLVM::core {
 #define WGL_CONTEXT_CORE_PROFILE_BIT_ARB 0x00000001
 
 #define WGL_DRAW_TO_WINDOW_ARB 0x2001
-#define WGL_SUPPORT_OPENGL_ARB 0x2010
 #define WGL_DOUBLE_BUFFER_ARB 0x2011
 #define WGL_PIXEL_TYPE_ARB 0x2013
 #define WGL_COLOR_BITS_ARB 0x2014
