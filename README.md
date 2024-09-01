@@ -103,13 +103,13 @@ dnf install libX11-devel \
 Release mode:
 
 ```bash
-./tools/build.sh -r
+./tool/build.sh -r
 ```
 
 Debug mode:
 
 ```bash
-./tools/build.sh -d
+./tool/build.sh -d
 ```
 
 ### Windows
@@ -117,13 +117,13 @@ Debug mode:
 Release mode:
 
 ```bash
-tools\build.bat -r
+tool\build.bat -r
 ```
 
 Debug mode:
 
 ```bash
-tools\build.bat -d
+tool\build.bat -d
 ```
 
 # License
