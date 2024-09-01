@@ -4,12 +4,12 @@
 // License: http://opensource.org/licenses/MIT
 #pragma once
 
-#include "../component_manager.hpp"
-#include "../event.hpp"
+#include "component_manager.hpp"
 #include "components/collider_component.hpp"
 #include "components/event_component.hpp"
 #include "components/transform_component.hpp"
 #include "components/view_component.hpp"
+#include "event.hpp"
 #include "events_stack.hpp"
 #include "i_system.hpp"
 #include "vector.hpp"

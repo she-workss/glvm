@@ -4,7 +4,7 @@
 // License: http://opensource.org/licenses/MIT
 #pragma once
 
-#include "../event.hpp"
+#include "event.hpp"
 
 namespace GLVM::ecs::components {
 struct event {
