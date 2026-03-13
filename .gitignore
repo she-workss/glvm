@@ -1,2 +1,5 @@
-bin/
+# Default build folder
 build/
+
+# User presets are local files that don't need to live in repo
+CMakeUserPresets.json
