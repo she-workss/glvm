@@ -4,6 +4,7 @@
 // License: http://opensource.org/licenses/MIT
 
 #include "engine.hpp"
+
 #include "components/vertex_component.hpp"
 #include "graphic_api/vulkan.hpp"
 #include "i_sound_engine.hpp"
@@ -25,10 +26,10 @@
 GLVM::core::CEvent g_eEvent;
 
 namespace GLVM::core {
-Engine *Engine::pInstance_ = nullptr;
+Engine* Engine::pInstance_ = nullptr;
 std::mutex Engine::Mutex_;
 
-void PlaybackSound(Sound::ISoundEngine *_sound_Engine) {
+void PlaybackSound(Sound::ISoundEngine* _sound_Engine) {
     while (1) {
         _sound_Engine->SoundStream();
     }
@@ -46,7 +47,7 @@ Engine::Engine() {
     deltaFrameTime = 0.0;
     g_eEvent.SetEvent(eDEFAULT);
 
-    ecs::CSystemManager *pSystem_Manager = ecs::CSystemManager::GetInstance();
+    ecs::CSystemManager* pSystem_Manager = ecs::CSystemManager::GetInstance();
 
     // Call of ActivateSystem function must be in this order.
     pSystem_Manager->ActivateSystem(movementSystem);
@@ -58,10 +59,9 @@ Engine::Engine() {
     sound_thread.detach();
 }
 
-Engine::~Engine() {
-}
+Engine::~Engine() {}
 
-Engine *Engine::GetInstance() {
+Engine* Engine::GetInstance() {
     std::lock_guard<std::mutex> lock(Mutex_);
     if (pInstance_ == nullptr) {
         pInstance_ = new Engine();
@@ -76,11 +76,10 @@ void Engine::GameLoop(RendererType renderer) {
     }
 }
 
-void Engine::EventQueueFlush() {
-}
+void Engine::EventQueueFlush() {}
 
 void Engine::RenderVulkan() {
-    ecs::CSystemManager *pSystem_Manager = ecs::CSystemManager::GetInstance();
+    ecs::CSystemManager* pSystem_Manager = ecs::CSystemManager::GetInstance();
     bool bGame_Loop_Active = true;
 
     projectileSystem->textureHandlers = textureHandlers;
@@ -110,17 +109,18 @@ void Engine::RenderVulkan() {
         vulkanRenderer->Window.ClearDisplay();
 
         vulkanRenderer->Window.HandleEvent(g_eEvent);
-        if ((Input_Stack_.SearchElement(EEvents::eGAME_LOOP_KILL)) ==
-            EEvents::eGAME_LOOP_KILL) {
+        if ((Input_Stack_.SearchElement(EEvents::eGAME_LOOP_KILL))
+            == EEvents::eGAME_LOOP_KILL) {
             bGame_Loop_Active = false;
         }
         g_eEvent.SetLastEvent(Input_Stack_);
 
         vulkanRenderer->Window.CursorLock(
-                g_eEvent.mousePointerPosition.position_X,
-                g_eEvent.mousePointerPosition.position_Y,
-                &g_eEvent.mousePointerPosition.offset_X,
-                &g_eEvent.mousePointerPosition.offset_Y);
+            g_eEvent.mousePointerPosition.position_X,
+            g_eEvent.mousePointerPosition.position_Y,
+            &g_eEvent.mousePointerPosition.offset_X,
+            &g_eEvent.mousePointerPosition.offset_Y
+        );
 
         movementSystem->deltaFrameTime = deltaFrameTime;
         movementSystem->gravity = gravity;
@@ -140,7 +140,7 @@ void Engine::RenderVulkan() {
     vulkanRenderer->Window.Close();
 }
 
-ecs::TextureHandle Engine::LoadTextureFromFile(const char *path_to_texture) {
+ecs::TextureHandle Engine::LoadTextureFromFile(const char* path_to_texture) {
     uint32_t textureID = textureVector.size();
     ecs::TextureHandle textureHandle;
     textureHandle.id = textureID;
@@ -150,24 +150,29 @@ ecs::TextureHandle Engine::LoadTextureFromFile(const char *path_to_texture) {
     return textureHandle;
 }
 
-ecs::TextureHandle Engine::LoadTextureFromAddress(unsigned int iWidth,
-                                                  unsigned int iHeight,
-                                                  unsigned int dat_length,
-                                                  unsigned char *u_iData) {
+ecs::TextureHandle Engine::LoadTextureFromAddress(
+    unsigned int iWidth,
+    unsigned int iHeight,
+    unsigned int dat_length,
+    unsigned char* u_iData
+) {
     uint32_t textureID = textureVector.size();
     ecs::TextureHandle textureHandle;
     textureHandle.id = textureID;
-    textureVector.push_back({.iWidth_ = iWidth,
-                             .iHeight_ = iHeight,
-                             .dat_length_ = dat_length,
-                             .u_iData_ = u_iData});
+    textureVector.push_back(
+        {.iWidth_ = iWidth,
+         .iHeight_ = iHeight,
+         .dat_length_ = dat_length,
+         .u_iData_ = u_iData}
+    );
     textureHandlers.Push(textureHandle);
 
     return textureHandle;
 }
 
-ecs::components::MeshHandle
-Engine::LoadMeshFromFile_OBJ(const char *_pathToMesh) {
+ecs::components::MeshHandle Engine::LoadMeshFromFile_OBJ(
+    const char* _pathToMesh
+) {
     ecs::components::MeshHandle meshHandle;
     meshHandle.id = meshID;
     pathsArray_.push_back(_pathToMesh);
@@ -177,8 +182,9 @@ Engine::LoadMeshFromFile_OBJ(const char *_pathToMesh) {
     return meshHandle;
 }
 
-ecs::components::MeshHandle
-Engine::LoadMeshFromFile_GLTF(const char *pathToMesh) {
+ecs::components::MeshHandle Engine::LoadMeshFromFile_GLTF(
+    const char* pathToMesh
+) {
     ecs::components::MeshHandle meshHandle;
     meshHandle.id = meshID;
     pathsGLTF_.Push(pathToMesh);

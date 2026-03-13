@@ -9,7 +9,7 @@
 #include <ctime>
 
 namespace GLVM::Time {
-class CTimerX : public IChrono {
+class CTimerX: public IChrono {
     timespec start_;
     timespec now_;
     double lFrequency_;

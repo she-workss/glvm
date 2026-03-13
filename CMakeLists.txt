@@ -4,15 +4,25 @@ project(GLVM
     DESCRIPTION "GLVM Engine"
     LANGUAGES C CXX)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_CURRENT_SOURCE_DIR}/bin")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_SOURCE_DIR}/bin")
+if(MSVC)
+  add_compile_options(
+    $<$<COMPILE_LANGUAGE:CXX>:/std:c++latest>
+    $<$<COMPILE_LANGUAGE:CXX>:/Zc:__cplusplus>
+  )
+  set(CMAKE_CXX_STANDARD_REQUIRED OFF)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-std=c++20>)
+  set(CMAKE_CXX_STANDARD_REQUIRED OFF)
+else()
+  set(CMAKE_CXX_STANDARD 20)
+endif()
 
-set(CMAKE_C_STANDARD 17)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-include(CTest)
-enable_testing()
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  link_libraries(stdc++exp)
+endif()
 
 # # Create `cppcheck` directory in each build directory to store cppcheck reports
 # file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/cppcheck)

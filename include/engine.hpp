@@ -30,27 +30,27 @@ namespace GLVM::core {
 enum RendererType { VULKAN_RENDERER };
 
 class Engine {
-    static Engine *pInstance_;
+    static Engine* pInstance_;
     static std::mutex Mutex_;
 
-    Time::IChrono *chrono;
-    Sound::ISoundEngine *soundEngine;
+    Time::IChrono* chrono;
+    Sound::ISoundEngine* soundEngine;
 
     float deltaFrameTime;
     float gravity;
     CStack Input_Stack_;
     std::vector<ecs::Texture> textureVector;
     core::vector<ecs::TextureHandle> textureHandlers;
-    std::vector<const char *> pathsArray_;
-    core::vector<const char *> pathsGLTF_;
+    std::vector<const char*> pathsArray_;
+    core::vector<const char*> pathsGLTF_;
     uint32_t meshID = 0;
     core::vector<ecs::components::MeshHandle> meshHandlers;
-    CVulkanRenderer *vulkanRenderer;
+    CVulkanRenderer* vulkanRenderer;
 
-    ecs::CCollisionSystem *collisionSystem;
-    ecs::CMovementSystem *movementSystem;
-    ecs::CPhysicsSystem *physicsSystem;
-    ecs::CProjectileSystem *projectileSystem;
+    ecs::CCollisionSystem* collisionSystem;
+    ecs::CMovementSystem* movementSystem;
+    ecs::CPhysicsSystem* physicsSystem;
+    ecs::CProjectileSystem* projectileSystem;
 
     // For FPS counting
     unsigned int fpsCounter = 0;
@@ -62,24 +62,26 @@ public:
     ~Engine();
 
     // Dont need to make copy because of singleton property.
-    Engine(Engine &_engine) = delete;
+    Engine(Engine& _engine) = delete;
 
     // Dont need assignment operator because of singleton property.
-    void operator=(const Engine &_engine) = delete;
+    void operator=(const Engine& _engine) = delete;
 
     // It possibly to get only one instance of this class with this method.
-    static Engine *GetInstance();
+    static Engine* GetInstance();
 
     void GameLoop(RendererType renderer);
     void EventQueueFlush();
     void RenderVulkan();
-    ecs::TextureHandle LoadTextureFromFile(const char *path_to_texture);
-    ecs::TextureHandle LoadTextureFromAddress(unsigned int iWidth,
-                                              unsigned int iHeight,
-                                              unsigned int dat_length,
-                                              unsigned char *u_iData);
-    ecs::components::MeshHandle LoadMeshFromFile_OBJ(const char *_pathToMesh);
-    ecs::components::MeshHandle LoadMeshFromFile_GLTF(const char *pathToMesh);
+    ecs::TextureHandle LoadTextureFromFile(const char* path_to_texture);
+    ecs::TextureHandle LoadTextureFromAddress(
+        unsigned int iWidth,
+        unsigned int iHeight,
+        unsigned int dat_length,
+        unsigned char* u_iData
+    );
+    ecs::components::MeshHandle LoadMeshFromFile_OBJ(const char* _pathToMesh);
+    ecs::components::MeshHandle LoadMeshFromFile_GLTF(const char* pathToMesh);
     void FPScounter();
     void GameKill();
 };

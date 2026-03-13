@@ -13,14 +13,14 @@
 #include <alsa/pcm.h>
 
 namespace GLVM::core::Sound {
-class CSoundEngineAlsa : public ISoundEngine {
-    vector<CSoundSample *> tSound_Contaier;
+class CSoundEngineAlsa: public ISoundEngine {
+    vector<CSoundSample*> tSound_Contaier;
 
 public:
     void SoundStream() override;
-    void PlaybackSoundSample(CSoundSample &_sound_sample) override;
+    void PlaybackSoundSample(CSoundSample& _sound_sample) override;
     void SetMasterVolume(long _lVolume) override;
-    vector<CSoundSample *> &GetSoundContainer() override;
+    vector<CSoundSample*>& GetSoundContainer() override;
 };
 } // namespace GLVM::core::Sound
 #endif

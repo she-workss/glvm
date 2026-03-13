@@ -6,7 +6,7 @@
 
 #include <string>
 
-inline void XorSwap(char *x, char *y) {
+inline void XorSwap(char* x, char* y) {
     if (x != y) {
         *x ^= *y;
         *y ^= *x;
@@ -14,7 +14,7 @@ inline void XorSwap(char *x, char *y) {
     }
 }
 
-inline char *ReverseString(char *string, unsigned int size) {
+inline char* ReverseString(char* string, unsigned int size) {
     char element0;
     char element1;
 
@@ -53,17 +53,21 @@ inline std::string ToString(int value) {
     return std::string(buffer);
 }
 
-inline std::string ConcatIntBetweenTwoStrings(std::string leftString,
-                                              unsigned int value,
-                                              std::string rightString) {
+inline std::string ConcatIntBetweenTwoStrings(
+    std::string leftString,
+    unsigned int value,
+    std::string rightString
+) {
     std::string resultString = leftString + ToString(value) + rightString;
 
     return resultString;
 }
 
-inline std::string ConcatIntBetweenTwoStrings(std::string leftString,
-                                              std::string rightString,
-                                              unsigned int value) {
+inline std::string ConcatIntBetweenTwoStrings(
+    std::string leftString,
+    std::string rightString,
+    unsigned int value
+) {
     std::string resultString = leftString + rightString + ToString(value);
 
     return resultString;

@@ -9,11 +9,11 @@
 
 namespace GLVM::core {
 class ControllerSystem {
-    CStack &inputStack_;
+    CStack& inputStack_;
     CEvent event_;
 
 public:
-    ControllerSystem(CStack &inputStack, CEvent &event);
+    ControllerSystem(CStack& inputStack, CEvent& event);
     void Update();
 };
 } // namespace GLVM::core

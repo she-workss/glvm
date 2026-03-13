@@ -4,39 +4,51 @@
 // License: http://opensource.org/licenses/MIT
 
 #include "unix_api/window_x.hpp"
+
 #include "event.hpp"
 
 #include <X11/X.h>
 #include <X11/Xlib.h>
-
 #include <iostream>
-
 
 namespace GLVM::Core {
 CWindowX::CWindowX() {
-    const int aAttrib[] = {GLX_RENDER_TYPE,
-                           GLX_RGBA_BIT,
-                           GLX_DRAWABLE_TYPE,
-                           GLX_WINDOW_BIT,
-                           GLX_DOUBLEBUFFER,
-                           true,
-                           GLX_RED_SIZE,
-                           1,
-                           GLX_GREEN_SIZE,
-                           1,
-                           GLX_BLUE_SIZE,
-                           1,
-                           None};
+    const int aAttrib[] = {
+        GLX_RENDER_TYPE,
+        GLX_RGBA_BIT,
+        GLX_DRAWABLE_TYPE,
+        GLX_WINDOW_BIT,
+        GLX_DOUBLEBUFFER,
+        true,
+        GLX_RED_SIZE,
+        1,
+        GLX_GREEN_SIZE,
+        1,
+        GLX_BLUE_SIZE,
+        1,
+        None
+    };
 
     pDisp_ = XOpenDisplay(NULL);
     Root_Window_ = DefaultRootWindow(pDisp_);
-    Set_Window_Attributes_.event_mask =
-            KeyPressMask | KeyReleaseMask | PointerMotionMask |
-            StructureNotifyMask | ButtonPressMask | ButtonReleaseMask;
+    Set_Window_Attributes_.event_mask = KeyPressMask | KeyReleaseMask
+        | PointerMotionMask | StructureNotifyMask | ButtonPressMask
+        | ButtonReleaseMask;
 
-    Win_ = XCreateWindow(pDisp_, Root_Window_, 0, 0, 1920, 1080, 0,
-                         CopyFromParent, InputOutput, CopyFromParent,
-                         CWEventMask, &Set_Window_Attributes_);
+    Win_ = XCreateWindow(
+        pDisp_,
+        Root_Window_,
+        0,
+        0,
+        1920,
+        1080,
+        0,
+        CopyFromParent,
+        InputOutput,
+        CopyFromParent,
+        CWEventMask,
+        &Set_Window_Attributes_
+    );
     // Show the window
     XMapWindow(pDisp_, Win_);
 
@@ -47,8 +59,15 @@ CWindowX::CWindowX() {
     black.red = black.green = black.blue = 0;
 
     bitmapNoData = XCreateBitmapFromData(pDisp_, Win_, noData, 8, 8);
-    invisibleCursor = XCreatePixmapCursor(pDisp_, bitmapNoData, bitmapNoData,
-                                          &black, &black, 0, 0);
+    invisibleCursor = XCreatePixmapCursor(
+        pDisp_,
+        bitmapNoData,
+        bitmapNoData,
+        &black,
+        &black,
+        0,
+        0
+    );
     XDefineCursor(pDisp_, Win_, invisibleCursor);
 
     XFreeCursor(pDisp_, invisibleCursor);
@@ -58,21 +77,25 @@ CWindowX::CWindowX() {
     const int kInterval = 1;
 }
 
-CWindowX::~CWindowX() {
-}
+CWindowX::~CWindowX() {}
 
 Window CWindowX::GetWindow() {
     return Win_;
 }
-Display *CWindowX::GetDisplay() {
+
+Display* CWindowX::GetDisplay() {
     return pDisp_;
 }
 
-void CWindowX::CursorLock(int _x_position, int _y_position, int *_x_offset,
-                          int *_y_offset) {
+void CWindowX::CursorLock(
+    int _x_position,
+    int _y_position,
+    int* _x_offset,
+    int* _y_offset
+) {
     // Solve a problem with endlessly growing numbers in the start game run.
-    if (_x_position > 1920 || _x_position < 0 || _y_position > 1080 ||
-        _y_position < 0) {
+    if (_x_position > 1920 || _x_position < 0 || _y_position > 1080
+        || _y_position < 0) {
         return;
     }
 
@@ -93,13 +116,11 @@ void CWindowX::CursorLock(int _x_position, int _y_position, int *_x_offset,
     XFlush(pDisp_);
 }
 
-void CWindowX::SwapBuffers() {
-}
+void CWindowX::SwapBuffers() {}
 
-void CWindowX::ClearDisplay() {
-}
+void CWindowX::ClearDisplay() {}
 
-bool CWindowX::HandleEvent(CEvent &_Event) {
+bool CWindowX::HandleEvent(CEvent& _Event) {
     XEvent uXEvent;
 
     while (XPending(pDisp_)) {
@@ -117,9 +138,17 @@ bool CWindowX::HandleEvent(CEvent &_Event) {
                 _Event.mouse_Pointer_Position_.iPosition_Y = motion.y;
             case MapNotify:
                 // Link mouse cursor to specified window.
-                XGrabPointer(pDisp_, Win_, True, PointerMotionMask,
-                             GrabModeAsync, GrabModeAsync, Win_, None,
-                             CurrentTime);
+                XGrabPointer(
+                    pDisp_,
+                    Win_,
+                    True,
+                    PointerMotionMask,
+                    GrabModeAsync,
+                    GrabModeAsync,
+                    Win_,
+                    None,
+                    CurrentTime
+                );
                 break;
             case ButtonPress:
                 uiMouse_Button = uXEvent.xbutton.button;
@@ -168,9 +197,9 @@ bool CWindowX::HandleEvent(CEvent &_Event) {
                     XEvent uXNext_Event;
                     XPeekEvent(pDisp_, &uXNext_Event);
 
-                    if (uXNext_Event.type == KeyPress &&
-                        uXNext_Event.xkey.time == uXEvent.xkey.time &&
-                        uXNext_Event.xkey.keycode == uXEvent.xkey.keycode) {
+                    if (uXNext_Event.type == KeyPress
+                        && uXNext_Event.xkey.time == uXEvent.xkey.time
+                        && uXNext_Event.xkey.keycode == uXEvent.xkey.keycode) {
                         // Key wasn't actually released
                         XNextEvent(pDisp_, &uXNext_Event);
                         continue;

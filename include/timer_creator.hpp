@@ -9,9 +9,8 @@
 namespace GLVM::Time {
 class CTimerCreator {
 public:
-    ~CTimerCreator() {
-    }
+    ~CTimerCreator() {}
 
-    IChrono *Create();
+    IChrono* Create();
 };
 } // namespace GLVM::Time

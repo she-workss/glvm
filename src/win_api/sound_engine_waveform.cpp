@@ -18,7 +18,7 @@ void CSoundEngineWaveform::SoundStream() {
     }
 }
 
-void CSoundEngineWaveform::PlaybackSoundSample(CSoundSample &_sound_sample) {
+void CSoundEngineWaveform::PlaybackSoundSample(CSoundSample& _sound_sample) {
     HWAVEOUT hWaveOut;
     WAVEHDR lpWaveHdr {};
     WAVEFORMATEX Format;
@@ -40,14 +40,16 @@ void CSoundEngineWaveform::PlaybackSoundSample(CSoundSample &_sound_sample) {
         std::exit(-1);
     }
 
-    std::ifstream file(_sound_sample.kPath_to_File_,
-                       std::ios_base::binary | std::ios_base::in);
+    std::ifstream file(
+        _sound_sample.kPath_to_File_,
+        std::ios_base::binary | std::ios_base::in
+    );
     if (!file) {
         std::cerr << "Fail to open file." << std::endl;
         std::exit(-1);
     }
 
-    char *buf = (char *)malloc(Format.nAvgBytesPerSec * 2);
+    char* buf = (char*)malloc(Format.nAvgBytesPerSec * 2);
     while (1) {
         file.read(buf, Format.nAvgBytesPerSec * 2);
         if (file.gcount() == 0) {
@@ -68,9 +70,9 @@ void CSoundEngineWaveform::PlaybackSoundSample(CSoundSample &_sound_sample) {
     waveOutClose(hWaveOut);
 }
 
-void CSoundEngineWaveform::SetMasterVolume(long _lVolume) {
-}
-vector<CSoundSample *> &CSoundEngineWaveform::GetSoundContainer() {
+void CSoundEngineWaveform::SetMasterVolume(long _lVolume) {}
+
+vector<CSoundSample*>& CSoundEngineWaveform::GetSoundContainer() {
     return tSound_Container;
 }
 } // namespace GLVM::core::Sound

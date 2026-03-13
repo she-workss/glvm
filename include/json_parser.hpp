@@ -34,21 +34,21 @@ enum JsonType {
 struct JsonValue;
 
 union JsonVariant {
-    std::string *string;
+    std::string* string;
     double fNumber;
     int iNumber;
     bool boolean;
-    void *null;
-    GLVM::core::vector<JsonValue> *array;
-    HashMap<JsonValue> *object;
-    JsonVariant() {
-    }
-    JsonVariant(const JsonVariant &object) {
+    void* null;
+    GLVM::core::vector<JsonValue>* array;
+    HashMap<JsonValue>* object;
+
+    JsonVariant() {}
+
+    JsonVariant(const JsonVariant& object) {
         memcpy(this, &object, sizeof(JsonVariant));
     }
 
-    ~JsonVariant() {
-    }
+    ~JsonVariant() {}
 };
 
 struct JsonValue {
@@ -58,24 +58,28 @@ struct JsonValue {
     JsonValue() {
         type = JSON_INVALID_VALUE;
     }
+
     JsonValue(std::string _string) {
         type = JSON_STRING;
         value.string = new std::string(_string);
     }
+
     JsonValue(double _float) {
         type = JSON_FLOAT_NUMBER;
         value.fNumber = _float;
     }
+
     JsonValue(int _int) {
         type = JSON_INTEGER_NUMBER;
         value.iNumber = _int;
     }
+
     JsonValue(bool _bool) {
         type = JSON_BOOLEAN;
         value.boolean = _bool;
     }
 
-    JsonValue(const JsonValue &_value) {
+    JsonValue(const JsonValue& _value) {
         type = JSON_INVALID_VALUE;
 
         switch (_value.type) {
@@ -130,7 +134,7 @@ struct JsonValue {
         }
     }
 
-    void operator=(const JsonValue &_value) {
+    void operator=(const JsonValue& _value) {
         switch (type) {
             case JSON_INVALID_VALUE:
                 break;
@@ -181,8 +185,8 @@ struct JsonValue {
         type = _value.type;
     }
 
-    JsonValue &operator[](std::string key_) {
-        const char *key = key_.c_str();
+    JsonValue& operator[](std::string key_) {
+        const char* key = key_.c_str();
         switch (type) {
             case JSON_OBJECT:
                 return (*value.object)[key];
@@ -193,7 +197,7 @@ struct JsonValue {
         }
     }
 
-    JsonValue &operator[](const unsigned int index_) {
+    JsonValue& operator[](const unsigned int index_) {
         switch (type) {
             case JSON_ARRAY:
                 return (*value.array)[index_];
@@ -207,24 +211,31 @@ struct JsonValue {
     bool isInvalid() {
         return type == JSON_INVALID_VALUE;
     }
+
     bool isObject() {
         return type == JSON_OBJECT;
     }
+
     bool isFloat() {
         return type == JSON_FLOAT_NUMBER;
     }
+
     bool isInterger() {
         return type == JSON_INTEGER_NUMBER;
     }
+
     bool isString() {
         return type == JSON_STRING;
     }
+
     bool isBoolean() {
         return type == JSON_BOOLEAN;
     }
+
     bool isNull() {
         return type == JSON_NULL;
     }
+
     bool isArray() {
         return type == JSON_ARRAY;
     }
@@ -232,28 +243,35 @@ struct JsonValue {
 
 class CJsonParser {
     std::string sJsonFileData_;
-    const char *pJsonFileData_;
+    const char* pJsonFileData_;
     char currentChar_;
     unsigned int globalFileCounter_ = 0;
 
-    core::vector<JsonValue *> stackOfJsonValues_;
-    JsonValue *root_;
+    core::vector<JsonValue*> stackOfJsonValues_;
+    JsonValue* root_;
     bool keyFlag = true;
     std::string lastKey_ = "";
     std::string bufferString_ = "";
 
-    void SearchInJsonObject(HashMap<JsonValue> *mapValue, const char *key_,
-                            core::vector<JsonValue> &resultVector) const;
-    void SearchInJsonArray(core::vector<JsonValue> *arrayValue,
-                           const char *key_,
-                           core::vector<JsonValue> &resultVector) const;
+    void SearchInJsonObject(
+        HashMap<JsonValue>* mapValue,
+        const char* key_,
+        core::vector<JsonValue>& resultVector
+    ) const;
+    void SearchInJsonArray(
+        core::vector<JsonValue>* arrayValue,
+        const char* key_,
+        core::vector<JsonValue>& resultVector
+    ) const;
 
 public:
     ~CJsonParser();
-    JsonValue *GetRoot() {
+
+    JsonValue* GetRoot() {
         return root_;
     }
-    void ReadFile(const char *_filePath);
+
+    void ReadFile(const char* _filePath);
     void Parse();
     JsonValue CreateJsonHashMap();
     JsonValue CreateJsonArray();
@@ -264,19 +282,29 @@ public:
     core::vector<char> StringToVectorOfChars(std::string _string);
     int ParseInteger(core::vector<char> _word);
     double ParseFloating(core::vector<char> _word);
-    core::vector<JsonValue> Search(const char *key_) const;
-    void LoadGLTF(const char *pathsGLTF_, std::vector<float> &aVertexes_,
-                  std::vector<uint32_t> &aIndices_,
-                  core::vector<core::vector<mat4>> &jointMatricesPerMesh,
-                  core::vector<float> &frames, bool &noAnimations);
-    void traversalBones(core::vector<core::vector<int>> children,
-                        Core::JsonValue joints, core::stack<u32> node_stack,
-                        core::stack<u32> deepness_stack,
-                        core::vector<core::vector<u32>> &result);
-    core::vector<core::vector<unsigned int>>
-    makeRenderJointsIndices(core::vector<core::vector<unsigned int>> &input);
-    bool containsElemnt(core::vector<core::vector<unsigned int>> container,
-                        unsigned int element);
+    core::vector<JsonValue> Search(const char* key_) const;
+    void LoadGLTF(
+        const char* pathsGLTF_,
+        std::vector<float>& aVertexes_,
+        std::vector<uint32_t>& aIndices_,
+        core::vector<core::vector<mat4>>& jointMatricesPerMesh,
+        core::vector<float>& frames,
+        bool& noAnimations
+    );
+    void traversalBones(
+        core::vector<core::vector<int>> children,
+        Core::JsonValue joints,
+        core::stack<u32> node_stack,
+        core::stack<u32> deepness_stack,
+        core::vector<core::vector<u32>>& result
+    );
+    core::vector<core::vector<unsigned int>> makeRenderJointsIndices(
+        core::vector<core::vector<unsigned int>>& input
+    );
+    bool containsElemnt(
+        core::vector<core::vector<unsigned int>> container,
+        unsigned int element
+    );
     unsigned int getJointIndex(Core::JsonValue joints, int searchingIndex);
 };
 } // namespace GLVM::Core

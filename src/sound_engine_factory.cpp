@@ -14,7 +14,7 @@
 #endif
 
 namespace GLVM::core::Sound {
-ISoundEngine *CSoundEngineFactory::CreateSoundEngine() {
+ISoundEngine* CSoundEngineFactory::CreateSoundEngine() {
 #ifdef __linux__
     return new CSoundEngineAlsa;
 #endif

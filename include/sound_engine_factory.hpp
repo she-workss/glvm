@@ -9,6 +9,6 @@
 namespace GLVM::core::Sound {
 class CSoundEngineFactory {
 public:
-    ISoundEngine *CreateSoundEngine();
+    ISoundEngine* CreateSoundEngine();
 };
 } // namespace GLVM::core::Sound

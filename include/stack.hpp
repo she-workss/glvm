@@ -14,18 +14,18 @@ class stack {
     unsigned int capacity = 0;
     unsigned int expander = 10;
 
-    T *data = nullptr;
+    T* data = nullptr;
 
 public:
     stack() {
         data = new T[expander];
     }
 
-    stack(const stack &stack) {
+    stack(const stack& stack) {
         this->size_ = stack.size_;
         this->capacity = stack.capacity;
         this->expander = stack.expander;
-        T *temp = new T[stack.capacity];
+        T* temp = new T[stack.capacity];
         for (unsigned int i = 0; i < stack.size_; ++i) {
             temp[i] = stack.data[i];
         }
@@ -37,7 +37,7 @@ public:
         if (size_ == capacity) {
             unsigned int oldCapacity = capacity;
             capacity += capacity / 2 + expander;
-            T *temp = new T[capacity];
+            T* temp = new T[capacity];
             for (unsigned int i = 0; i < oldCapacity; ++i) {
                 temp[i] = data[i];
             }
@@ -58,7 +58,7 @@ public:
         return data[size_];
     }
 
-    T &top() {
+    T& top() {
         assert(size_ > 0);
         unsigned int top = size_ - 1;
         return data[top];
@@ -77,9 +77,11 @@ public:
     unsigned int size() {
         return size_;
     }
+
     bool empty() {
         return size_ == 0;
     }
+
     T operator[](unsigned int index) {
         return data[index];
     }

@@ -31,7 +31,7 @@ namespace GLVM::core {
 #define WGL_SAMPLES_ARB 0x2042
 #define WGL_TYPE_RGBA_ARB 0x202B
 
-class WindowWinVulkan : public IWindow {
+class WindowWinVulkan: public IWindow {
     HWND pClassic_Window_;
     HDC pClassic_DC_;
     HGLRC pClassic_Context_;
@@ -42,19 +42,23 @@ class WindowWinVulkan : public IWindow {
     HWND pModern_Window_;
 
 public:
-    CStack *Input_Stack_;
+    CStack* Input_Stack_;
     WindowWinVulkan();
 
     void SwapBuffers() override;
     void ClearDisplay() override;
-    bool HandleEvent(CEvent &_Event) override;
+    bool HandleEvent(CEvent& _Event) override;
     HWND GetClassicWindowHWND();
     HWND GetModernWindowHWND();
     void Close() override;
-    virtual void CursorLock(int _x_position, int _y_position, int *_x_offset,
-                            int *_y_offset) override;
+    virtual void CursorLock(
+        int _x_position,
+        int _y_position,
+        int* _x_offset,
+        int* _y_offset
+    ) override;
     // Callback method for events handling.
-    static LRESULT CALLBACK MainWndProc(HWND _pHwnd, UINT _pMsg,
-                                        WPARAM _pWParam, LPARAM _pLParam);
+    static LRESULT CALLBACK
+    MainWndProc(HWND _pHwnd, UINT _pMsg, WPARAM _pWParam, LPARAM _pLParam);
 }; // namespace GLVM::core
 } // namespace GLVM::core

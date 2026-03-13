@@ -10,8 +10,8 @@
 namespace GLVM::ecs {
 class ISystem {
 public:
-    virtual ~ISystem() {
-    }
+    virtual ~ISystem() {}
+
     virtual void Update() = 0;
 };
 } // namespace GLVM::ecs

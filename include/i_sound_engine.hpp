@@ -8,18 +8,17 @@
 
 namespace GLVM::core::Sound {
 struct CSoundSample {
-    const char *kPath_to_File_;
+    const char* kPath_to_File_;
     unsigned int uiDuration_;
     unsigned int uiRate_;
 };
 
 class ISoundEngine {
 public:
-    virtual ~ISoundEngine() {
-    }
+    virtual ~ISoundEngine() {}
 
-    virtual vector<CSoundSample *> &GetSoundContainer() = 0;
-    virtual void PlaybackSoundSample(CSoundSample &_sound_sample) = 0;
+    virtual vector<CSoundSample*>& GetSoundContainer() = 0;
+    virtual void PlaybackSoundSample(CSoundSample& _sound_sample) = 0;
     virtual void SetMasterVolume(long _lVolume) = 0;
     virtual void SoundStream() = 0;
 };

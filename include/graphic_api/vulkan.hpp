@@ -87,11 +87,14 @@ const uint32_t HEIGHT = 600;
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 #define NDEBUG
-const std::vector<const char *> validationLayers = {
-        "VK_LAYER_KHRONOS_validation"};
+const std::vector<const char*> validationLayers = {
+    "VK_LAYER_KHRONOS_validation"
+};
 
-const std::vector<const char *> deviceExtensions = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME, "VK_KHR_shader_non_semantic_info"};
+const std::vector<const char*> deviceExtensions = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    "VK_KHR_shader_non_semantic_info"
+};
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
@@ -100,18 +103,21 @@ const bool enableValidationLayers = true;
 #endif
 
 VkResult CreateDebugUtilsMessengerEXT(
-        VkInstance instance,
-        const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
-        const VkAllocationCallbacks *pAllocator,
-        VkDebugUtilsMessengerEXT *pDebugMessenger);
+    VkInstance instance,
+    const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+    const VkAllocationCallbacks* pAllocator,
+    VkDebugUtilsMessengerEXT* pDebugMessenger
+);
 
-void DestroyDebugUtilsMessengerEXT(VkInstance instance,
-                                   VkDebugUtilsMessengerEXT debugMessenger,
-                                   const VkAllocationCallbacks *pAllocator);
+void DestroyDebugUtilsMessengerEXT(
+    VkInstance instance,
+    VkDebugUtilsMessengerEXT debugMessenger,
+    const VkAllocationCallbacks* pAllocator
+);
 
 struct Texture {
     VkDeviceSize textureSize_;
-    unsigned char *textureData_;
+    unsigned char* textureData_;
 };
 
 struct QueueFamilyIndices {
@@ -148,7 +154,7 @@ struct Vertex {
     static std::array<VkVertexInputAttributeDescription, 5>
     getAttributeDescriptions() {
         std::array<VkVertexInputAttributeDescription, 5>
-                attributeDescriptions {};
+            attributeDescriptions {};
 
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
@@ -233,36 +239,43 @@ struct Pipeline {
     unsigned int combinedImageSamplersNumber = 0;
     VkPipeline pipeline;
     VkPipelineLayout pipelineLayout;
-    const char *vertShader = nullptr;
-    const char *fragShader = nullptr;
+    const char* vertShader = nullptr;
+    const char* fragShader = nullptr;
     VkVertexInputBindingDescription bindingDescription;
     std::array<VkVertexInputAttributeDescription, 5> attributeDescriptions;
 
-    void addDescriptor(VkDescriptorType vkType, DescriptorsTypes type,
-                       VkShaderStageFlags shaderStageFlag,
-                       core::vector<u32> descriptorsNumbers,
-                       core::vector<uint32_t> bindings) {
+    void addDescriptor(
+        VkDescriptorType vkType,
+        DescriptorsTypes type,
+        VkShaderStageFlags shaderStageFlag,
+        core::vector<u32> descriptorsNumbers,
+        core::vector<uint32_t> bindings
+    ) {
         if (vkType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
-            descriptors.Push({vkType,
-                              type,
-                              bindings,
-                              shaderStageFlag,
-                              VkDescriptorSetLayout(),
-                              descriptorsNumbers,
-                              {},
-                              {},
-                              {}});
+            descriptors.Push(
+                {vkType,
+                 type,
+                 bindings,
+                 shaderStageFlag,
+                 VkDescriptorSetLayout(),
+                 descriptorsNumbers,
+                 {},
+                 {},
+                 {}}
+            );
             ++uboDescriptorsNumber;
         } else if (vkType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
-            descriptors.Push({vkType,
-                              type,
-                              bindings,
-                              shaderStageFlag,
-                              VkDescriptorSetLayout(),
-                              descriptorsNumbers,
-                              {},
-                              {},
-                              {}});
+            descriptors.Push(
+                {vkType,
+                 type,
+                 bindings,
+                 shaderStageFlag,
+                 VkDescriptorSetLayout(),
+                 descriptorsNumbers,
+                 {},
+                 {},
+                 {}}
+            );
             ++combinedImageSamplersNumber;
         } else {
             assert(!"unreachable");
@@ -385,47 +398,47 @@ struct LightData {
 };
 
 const std::vector<Vertex> vertices = {
-        {{0.5f, -0.5f, 0.5f},
-         {1.0f, 0.0f, 0.0f},
-         {1.0f, 0.0f},
-         {0.0f, 0.0f, 0.0f, 0.0f},
-         {1.0f, 0.0f, 0.0f, 0.0f}},
-        {{0.5f, -0.5f, -0.5f},
-         {0.0f, 1.0f, 0.0f},
-         {0.0f, 0.0f},
-         {0.0f, 0.0f, 0.0f, 0.0f},
-         {1.0f, 0.0f, 0.0f, 0.0f}},
-        {{0.5f, 0.5f, 0.5f},
-         {0.0f, 0.0f, 1.0f},
-         {0.0f, 1.0f},
-         {0.0f, 0.0f, 0.0f, 0.0f},
-         {1.0f, 0.0f, 0.0f, 0.0f}},
-        {{0.5f, 0.5f, -0.5f},
-         {1.0f, 1.0f, 1.0f},
-         {1.0f, 1.0f},
-         {0.0f, 0.0f, 0.0f, 0.0f},
-         {1.0f, 0.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.5f},
+     {1.0f, 0.0f, 0.0f},
+     {1.0f, 0.0f},
+     {0.0f, 0.0f, 0.0f, 0.0f},
+     {1.0f, 0.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f, -0.5f},
+     {0.0f, 1.0f, 0.0f},
+     {0.0f, 0.0f},
+     {0.0f, 0.0f, 0.0f, 0.0f},
+     {1.0f, 0.0f, 0.0f, 0.0f}},
+    {{0.5f, 0.5f, 0.5f},
+     {0.0f, 0.0f, 1.0f},
+     {0.0f, 1.0f},
+     {0.0f, 0.0f, 0.0f, 0.0f},
+     {1.0f, 0.0f, 0.0f, 0.0f}},
+    {{0.5f, 0.5f, -0.5f},
+     {1.0f, 1.0f, 1.0f},
+     {1.0f, 1.0f},
+     {0.0f, 0.0f, 0.0f, 0.0f},
+     {1.0f, 0.0f, 0.0f, 0.0f}},
 
-        {{-0.5f, -0.5f, 0.5f},
-         {1.0f, 0.0f, 0.0f},
-         {1.0f, 0.0f},
-         {0.0f, 0.0f, 0.0f, 0.0f},
-         {1.0f, 0.0f, 0.0f, 0.0f}},
-        {{-0.5f, -0.5f, -0.5f},
-         {0.0f, 1.0f, 0.0f},
-         {0.0f, 0.0f},
-         {0.0f, 0.0f, 0.0f, 0.0f},
-         {1.0f, 0.0f, 0.0f, 0.0f}},
-        {{-0.5f, 0.5f, 0.5f},
-         {0.0f, 0.0f, 1.0f},
-         {0.0f, 1.0f},
-         {0.0f, 0.0f, 0.0f, 0.0f},
-         {1.0f, 0.0f, 0.0f, 0.0f}},
-        {{-0.5f, 0.5f, -0.5f},
-         {1.0f, 1.0f, 1.0f},
-         {1.0f, 1.0f},
-         {0.0f, 0.0f, 0.0f, 0.0f},
-         {1.0f, 0.0f, 0.0f, 0.0f}},
+    {{-0.5f, -0.5f, 0.5f},
+     {1.0f, 0.0f, 0.0f},
+     {1.0f, 0.0f},
+     {0.0f, 0.0f, 0.0f, 0.0f},
+     {1.0f, 0.0f, 0.0f, 0.0f}},
+    {{-0.5f, -0.5f, -0.5f},
+     {0.0f, 1.0f, 0.0f},
+     {0.0f, 0.0f},
+     {0.0f, 0.0f, 0.0f, 0.0f},
+     {1.0f, 0.0f, 0.0f, 0.0f}},
+    {{-0.5f, 0.5f, 0.5f},
+     {0.0f, 0.0f, 1.0f},
+     {0.0f, 1.0f},
+     {0.0f, 0.0f, 0.0f, 0.0f},
+     {1.0f, 0.0f, 0.0f, 0.0f}},
+    {{-0.5f, 0.5f, -0.5f},
+     {1.0f, 1.0f, 1.0f},
+     {1.0f, 1.0f},
+     {0.0f, 0.0f, 0.0f, 0.0f},
+     {1.0f, 0.0f, 0.0f, 0.0f}},
 };
 
 const std::vector<uint16_t> indices = {4, 2, 0, 2, 7, 3, 6, 5, 7, 1, 7, 5,
@@ -434,7 +447,7 @@ const std::vector<uint16_t> indices = {4, 2, 0, 2, 7, 3, 6, 5, 7, 1, 7, 5,
 
 const std::vector<uint16_t> hudIndices = {0, 1, 2, 2, 1, 3, 4, 5, 6, 6, 5, 7};
 
-class CVulkanRenderer : public IRenderer {
+class CVulkanRenderer: public IRenderer {
 public:
     float previousTime = 0;
     float accumulator = 0;
@@ -445,8 +458,8 @@ public:
     std::vector<ecs::Texture> texture_load_data_;
     std::vector<ecs::Texture> hudTexture_load_data_;
     std::vector<ecs::components::transform> transform_data_;
-    std::vector<const char *> pathsArray_;
-    core::vector<const char *> pathsGLTF_;
+    std::vector<const char*> pathsArray_;
+    core::vector<const char*> pathsGLTF_;
     std::vector<std::vector<core::Vertex>> aVertices_;
     // wavefront.obj indices
     std::vector<std::vector<uint32_t>> aIndices_;
@@ -460,24 +473,24 @@ public:
     float fYaw = -90.0f;
     float fPitch = 0.0f;
 
-    const char *vertShaderMain_ =
-            "assets/shaders/vk_shaders/mainRendererShaders/vert.spv";
-    const char *fragShaderMain_ =
-            "assets/shaders/vk_shaders/mainRendererShaders/frag.spv";
+    const char* vertShaderMain_ =
+        "assets/shaders/vk_shaders/mainRendererShaders/vert.spv";
+    const char* fragShaderMain_ =
+        "assets/shaders/vk_shaders/mainRendererShaders/frag.spv";
 
-    const char *vertShaderFlatShadowMap =
-            "assets/shaders/vk_shaders/flatShadowMapShaders/"
-            "vertFlatShadowMap.spv";
-    const char *fragShaderDirectionalLightShadowMap =
-            "assets/shaders/vk_shaders/flatShadowMapShaders/"
-            "fragFlatShadowMap.spv";
+    const char* vertShaderFlatShadowMap =
+        "assets/shaders/vk_shaders/flatShadowMapShaders/"
+        "vertFlatShadowMap.spv";
+    const char* fragShaderDirectionalLightShadowMap =
+        "assets/shaders/vk_shaders/flatShadowMapShaders/"
+        "fragFlatShadowMap.spv";
 
-    const char *vertShaderCubeShadowMap =
-            "assets/shaders/vk_shaders/cubeShadowMapShaders/"
-            "vertCubeShadowMap.spv";
-    const char *fragShaderCubeShadowMap =
-            "assets/shaders/vk_shaders/cubeShadowMapShaders/"
-            "fragCubeShadowMap.spv";
+    const char* vertShaderCubeShadowMap =
+        "assets/shaders/vk_shaders/cubeShadowMapShaders/"
+        "vertCubeShadowMap.spv";
+    const char* fragShaderCubeShadowMap =
+        "assets/shaders/vk_shaders/cubeShadowMapShaders/"
+        "fragCubeShadowMap.spv";
 
     unsigned int texturePool_;
 
@@ -501,13 +514,17 @@ public:
     void draw() override;
     void loadWavefrontObj() override;
     void EnlargeFrameAccumulator(float value) override;
-    void SetTextureData(std::vector<ecs::Texture> &_texture_data) override;
-    void SetMeshData(std::vector<const char *> _pathsArray,
-                     core::vector<const char *> pathsGLTF) override;
+    void SetTextureData(std::vector<ecs::Texture>& _texture_data) override;
+    void SetMeshData(
+        std::vector<const char*> _pathsArray,
+        core::vector<const char*> pathsGLTF
+    ) override;
     void SetViewMatrix(mat4 _viewMatrix) override;
     void SetProjectionMatrix(mat4 _projectionMatrix) override;
-    void SetViewMatrix(ecs::components::transform &_Player,
-                       ecs::components::beholder &cameraComponent);
+    void SetViewMatrix(
+        ecs::components::transform& _Player,
+        ecs::components::beholder& cameraComponent
+    );
     void SetProjectionMatrix();
     void run() override;
 
@@ -571,7 +588,7 @@ private:
     std::vector<VkDescriptorSet> shadowMapDirectionalLightDescriptorSets;
     std::vector<VkBuffer> shadowMapDirectionalLightModelMatrixUniformBuffers;
     std::vector<VkDeviceMemory>
-            shadowMapDirectionalLightModelMatrixUniformBuffersMemory;
+        shadowMapDirectionalLightModelMatrixUniformBuffersMemory;
 
     // For test only
     mat4 dirLightSpaceMatrix[DIRECTIONAL_LIGHTS_NUMBER];
@@ -589,7 +606,7 @@ private:
     std::vector<VkDescriptorSet> shadowMapPointLightDataDescriptorSets;
     std::vector<VkBuffer> shadowMapPointLightModelMatrixUniformBuffers;
     std::vector<VkDeviceMemory>
-            shadowMapPointLightModelMatrixUniformBuffersMemory;
+        shadowMapPointLightModelMatrixUniformBuffersMemory;
     std::vector<VkBuffer> shadowMapPointLightDataUniformBuffers;
     std::vector<VkDeviceMemory> shadowMapPointLightDataUniformBuffersMemory;
 
@@ -602,7 +619,7 @@ private:
     std::vector<VkDescriptorSet> shadowMapSpotLightDescriptorSets;
     std::vector<VkBuffer> shadowMapSpotLightModelMatrixUniformBuffers;
     std::vector<VkDeviceMemory>
-            shadowMapSpotLightModelMatrixUniformBuffersMemory;
+        shadowMapSpotLightModelMatrixUniformBuffersMemory;
 
     core::vector<mat4> shadowMapBasisMatrices;
     std::vector<VkDescriptorSet> shadowMapMatrixUboDescriptorSets;
@@ -696,7 +713,8 @@ private:
     void cleanup();
     void createInstance();
     void populateDebugMessengerCreateInfo(
-            VkDebugUtilsMessengerCreateInfoEXT &createInfo);
+        VkDebugUtilsMessengerCreateInfoEXT& createInfo
+    );
     void setupDebugMessenger();
     void createSurface();
     void pickPhysicalDevice();
@@ -707,21 +725,26 @@ private:
     void createDirectionalLightShadowMapRenderPass();
     void createSpotLightShadowMapRenderPass();
     void createPointLightShadowMapRenderPass();
-    void createDescriptorSetLayout(core::vector<Descriptor> &descriptors);
-    void createGraphicsPipeline(Pipeline &pipeline, VkRenderPass &renderPass);
-    void createRenderPassFramebuffers(std::vector<VkImageView> &attachments,
-                                      VkRenderPass &renderPass_,
-                                      VkFramebuffer &swapChainFramebuffer,
-                                      uint32_t width, uint32_t height);
+    void createDescriptorSetLayout(core::vector<Descriptor>& descriptors);
+    void createGraphicsPipeline(Pipeline& pipeline, VkRenderPass& renderPass);
+    void createRenderPassFramebuffers(
+        std::vector<VkImageView>& attachments,
+        VkRenderPass& renderPass_,
+        VkFramebuffer& swapChainFramebuffer,
+        uint32_t width,
+        uint32_t height
+    );
     void createFramebuffers();
-    void createCommandPool(VkCommandPool &commandPool);
+    void createCommandPool(VkCommandPool& commandPool);
     void createDepthResources();
     void createDirectionalLightShadowMapDepthResources();
     void createSpotLightShadowMapDepthResources();
     void createPointLightShadowMapDepthResources();
-    VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates,
-                                 VkImageTiling tiling,
-                                 VkFormatFeatureFlags features);
+    VkFormat findSupportedFormat(
+        const std::vector<VkFormat>& candidates,
+        VkImageTiling tiling,
+        VkFormatFeatureFlags features
+    );
     VkFormat findDepthFormat();
     bool hasStencilComponent(VkFormat format);
     void createTextureImageView();
@@ -732,113 +755,167 @@ private:
     void createSpotLightShadowMapTextureSamplers();
     void createPointLightShadowMapTextureSamplers();
     void createRenderPassShadowMapTextureSamplers(
-            VkSampler &shadowMapTextureSampler);
-    VkImageView createImageView(VK_Image image, uint32_t baseArrayLayers,
-                                uint32_t layerCount);
-    void createImage(VK_Image &image);
-    void transitionImageLayout(VkImage image, VkImageLayout oldLayout,
-                               VkImageLayout newLayout);
-    void transitionShadowMapImageLayout(VkImage image, VkImageLayout oldLayout,
-                                        VkImageLayout newLayout);
-    void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width,
-                           uint32_t height);
-    void createVertexBuffer(VkBuffer &_vertexBuffer,
-                            VkDeviceMemory &_vertexBufferMemory,
-                            const std::vector<Vertex> &_vertices);
-    void createIndexBuffer(VkBuffer &_indexBuffer,
-                           VkDeviceMemory &_indexBufferMemory,
-                           const std::vector<uint32_t> &_indices);
+        VkSampler& shadowMapTextureSampler
+    );
+    VkImageView createImageView(
+        VK_Image image,
+        uint32_t baseArrayLayers,
+        uint32_t layerCount
+    );
+    void createImage(VK_Image& image);
+    void transitionImageLayout(
+        VkImage image,
+        VkImageLayout oldLayout,
+        VkImageLayout newLayout
+    );
+    void transitionShadowMapImageLayout(
+        VkImage image,
+        VkImageLayout oldLayout,
+        VkImageLayout newLayout
+    );
+    void copyBufferToImage(
+        VkBuffer buffer,
+        VkImage image,
+        uint32_t width,
+        uint32_t height
+    );
+    void createVertexBuffer(
+        VkBuffer& _vertexBuffer,
+        VkDeviceMemory& _vertexBufferMemory,
+        const std::vector<Vertex>& _vertices
+    );
+    void createIndexBuffer(
+        VkBuffer& _indexBuffer,
+        VkDeviceMemory& _indexBufferMemory,
+        const std::vector<uint32_t>& _indices
+    );
     void createMainRenderUniformBuffers();
     void createMainRenderDescriptorPool();
     void createDirectionalLightShadowMapDescriptorSets();
     void createSpotLightShadowMapDescriptorSets();
     void createPointLightShadowMapDescriptorSets();
     void createMainRenderDescriptorSets();
-    void updateSamplersDescriptorSets(uint32_t diffuse_id,
-                                      uint32_t specular_id);
+    void updateSamplersDescriptorSets(uint32_t diffuse_id, uint32_t specular_id);
     void updateDirectionalLightShadowMapDescriptorSets();
     void updateSpotLightShadowMapDescriptorSets();
     void updatePointLightShadowMapDescriptorSets();
     void updateDescriptorSets();
-    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
-                      VkMemoryPropertyFlags properties, VkBuffer &buffer,
-                      VkDeviceMemory &bufferMemory);
-    VkCommandBuffer beginSingleTimeCommands(VkCommandPool &commandPool);
-    void endSingleTimeCommands(VkCommandPool &commandPool,
-                               VkCommandBuffer &commandBuffer);
+    void createBuffer(
+        VkDeviceSize size,
+        VkBufferUsageFlags usage,
+        VkMemoryPropertyFlags properties,
+        VkBuffer& buffer,
+        VkDeviceMemory& bufferMemory
+    );
+    VkCommandBuffer beginSingleTimeCommands(VkCommandPool& commandPool);
+    void endSingleTimeCommands(
+        VkCommandPool& commandPool,
+        VkCommandBuffer& commandBuffer
+    );
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-    uint32_t findMemoryType(uint32_t typeFilter,
-                            VkMemoryPropertyFlags properties);
-    void createCommandBuffers(VkCommandPool &commandPool,
-                              std::vector<VkCommandBuffer> &commandBuffers);
-    void recordCommandBuffer(VkCommandBuffer &commandBuffer,
-                             uint32_t imageIndex);
-    void createSyncObjects(std::vector<VkSemaphore> &imageAvailableSemaphores,
-                           std::vector<VkSemaphore> &renderFinishedSemaphores,
-                           std::vector<VkFence> &inFlightFences);
+    uint32_t findMemoryType(
+        uint32_t typeFilter,
+        VkMemoryPropertyFlags properties
+    );
+    void createCommandBuffers(
+        VkCommandPool& commandPool,
+        std::vector<VkCommandBuffer>& commandBuffers
+    );
+    void recordCommandBuffer(
+        VkCommandBuffer& commandBuffer,
+        uint32_t imageIndex
+    );
+    void createSyncObjects(
+        std::vector<VkSemaphore>& imageAvailableSemaphores,
+        std::vector<VkSemaphore>& renderFinishedSemaphores,
+        std::vector<VkFence>& inFlightFences
+    );
     void updateDirectionalLightSpaceMatrixShadowMapUBO(
-            ecs::components::directionalLight *directionalLightComponent,
-            uint32_t currentLight);
+        ecs::components::directionalLight* directionalLightComponent,
+        uint32_t currentLight
+    );
     void updateDirectionalLightShadowMapMatrixUBO(
-            uint32_t currentImage,
-            ecs::components::transform *_transformComponent,
-            uint32_t currentLight, u32 meshID);
+        uint32_t currentImage,
+        ecs::components::transform* _transformComponent,
+        uint32_t currentLight,
+        u32 meshID
+    );
     void updateSpotLightSpaceMatrixShadowMapUBO(
-            ecs::components::spotLight *spotLightComponent,
-            uint32_t currentLight);
+        ecs::components::spotLight* spotLightComponent,
+        uint32_t currentLight
+    );
     void updateSpotLightShadowMapMatrixUBO(
-            uint32_t currentImage,
-            ecs::components::transform *_transformComponent,
-            uint32_t currentLight, u32 meshID);
+        uint32_t currentImage,
+        ecs::components::transform* _transformComponent,
+        uint32_t currentLight,
+        u32 meshID
+    );
     void updatePointLightShadowMapMatrixUBO(
-            uint32_t currentImage,
-            ecs::components::transform *_transformComponent,
-            ecs::components::pointLight *pointLightComponent, uint32_t layer,
-            unsigned int meshID);
+        uint32_t currentImage,
+        ecs::components::transform* _transformComponent,
+        ecs::components::pointLight* pointLightComponent,
+        uint32_t layer,
+        unsigned int meshID
+    );
     void updatePointLightShadowMapDataUBO(
-            uint32_t currentImage,
-            ecs::components::pointLight *pointLightComponent, float farPlane);
-    void
-    updateMatrixUniformBuffer(uint32_t currentImage, uint32_t offset,
-                              ecs::components::transform *_transformComponent,
-                              unsigned int meshID,
-                              ecs::components::material *materialComponent);
+        uint32_t currentImage,
+        ecs::components::pointLight* pointLightComponent,
+        float farPlane
+    );
+    void updateMatrixUniformBuffer(
+        uint32_t currentImage,
+        uint32_t offset,
+        ecs::components::transform* _transformComponent,
+        unsigned int meshID,
+        ecs::components::material* materialComponent
+    );
     void updateViewPositionUniformBuffer(
-            uint32_t currentImage,
-            ecs::components::transform *transformComponent);
+        uint32_t currentImage,
+        ecs::components::transform* transformComponent
+    );
     void updateDirSpaceMatrix(uint32_t currentImage);
     void mainRenderDrawFrame();
     void directionalLightShadowMapDrawFrame();
     void spotLightShadowMapDrawFrame();
     void pointLightShadowMapDrawFrame();
-    void directionalLightRecordCommandBuffer(VkCommandBuffer &commandBuffer,
-                                             uint32_t imageIndex);
-    void spotLightRecordCommandBuffer(VkCommandBuffer &commandBuffer,
-                                      uint32_t imageIndex);
-    void pointLightRecordCommandBuffer(VkCommandBuffer &commandBuffer,
-                                       uint32_t imageIndex);
-    VkShaderModule createShaderModule(const std::vector<char> &code);
+    void directionalLightRecordCommandBuffer(
+        VkCommandBuffer& commandBuffer,
+        uint32_t imageIndex
+    );
+    void spotLightRecordCommandBuffer(
+        VkCommandBuffer& commandBuffer,
+        uint32_t imageIndex
+    );
+    void pointLightRecordCommandBuffer(
+        VkCommandBuffer& commandBuffer,
+        uint32_t imageIndex
+    );
+    VkShaderModule createShaderModule(const std::vector<char>& code);
     VkSurfaceFormatKHR chooseSwapSurfaceFormat(
-            const std::vector<VkSurfaceFormatKHR> &availableFormats);
+        const std::vector<VkSurfaceFormatKHR>& availableFormats
+    );
     VkPresentModeKHR chooseSwapPresentMode(
-            const std::vector<VkPresentModeKHR> &availablePresentModes);
-    VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
+        const std::vector<VkPresentModeKHR>& availablePresentModes
+    );
+    VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
     SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
     bool isDeviceSuitable(VkPhysicalDevice device);
     bool checkDeviceExtensionSupport(VkPhysicalDevice device);
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
-    std::vector<const char *> getRequiredExtensions();
+    std::vector<const char*> getRequiredExtensions();
     bool checkValidationLayerSupport();
-    static std::vector<char> readFile(const std::string &filename);
-    static VKAPI_ATTR VkBool32 VKAPI_CALL
-    debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                  VkDebugUtilsMessageTypeFlagsEXT messageType,
-                  const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
-                  void *pUserData);
-    [[nodiscard]] mat4 *
-    updateAnimationFrames(ecs::components::transform *_transformComponent,
-                          unsigned int meshID);
-    mat4 computeModelMatrix(ecs::components::transform *_transformComponent);
+    static std::vector<char> readFile(const std::string& filename);
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+        VkDebugUtilsMessageTypeFlagsEXT messageType,
+        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+        void* pUserData
+    );
+    [[nodiscard]] mat4* updateAnimationFrames(
+        ecs::components::transform* _transformComponent,
+        unsigned int meshID
+    );
+    mat4 computeModelMatrix(ecs::components::transform* _transformComponent);
     void setImageDebugObjectName(VK_Image image);
     void setDebugObjectNames();
 };

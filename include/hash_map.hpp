@@ -14,10 +14,9 @@ template<typename T>
 struct Node {
     std::string key_;
     T value_;
-    Node *next_ = nullptr;
+    Node* next_ = nullptr;
 
-    Node(const char *_key) : key_(_key) {
-    }
+    Node(const char* _key) : key_(_key) {}
 };
 
 template<typename S>
@@ -25,58 +24,58 @@ class HashMap {
     unsigned int capacity_ = 10;
 
 public:
-    Node<S> **hashMap_ = nullptr;
+    Node<S>** hashMap_ = nullptr;
 
     HashMap() {
-        hashMap_ = new Node<S> *[capacity_];
+        hashMap_ = new Node<S>*[capacity_];
 
         for (unsigned int i = 0; i < capacity_; ++i) {
             hashMap_[i] = nullptr;
         }
     }
 
-    HashMap(const HashMap<S> &_map) {
+    HashMap(const HashMap<S>& _map) {
         capacity_ = _map.capacity_;
-        hashMap_ = new Node<S> *[capacity_];
+        hashMap_ = new Node<S>*[capacity_];
 
         for (unsigned int i = 0; i < capacity_; ++i) {
             hashMap_[i] = nullptr;
         }
 
         for (unsigned int i = 0; i < capacity_; ++i) {
-            Node<S> *currentNode = _map.hashMap_[i];
+            Node<S>* currentNode = _map.hashMap_[i];
 
             while (currentNode != nullptr) {
                 unsigned int hash = HashFunction(currentNode->key_.c_str());
                 Link(hashMap_[hash], currentNode->key_.c_str()) =
-                        currentNode->value_;
+                    currentNode->value_;
 
                 currentNode = currentNode->next_;
             }
         }
     }
 
-    void operator=(const HashMap<S> &_map) {
+    void operator=(const HashMap<S>& _map) {
         capacity_ = _map.capacity_;
-        hashMap_ = new Node<S> *[capacity_];
+        hashMap_ = new Node<S>*[capacity_];
 
         for (int i = 0; i < capacity_; ++i) {
             hashMap_[i] = nullptr;
         }
 
         for (int i = 0; i < capacity_; ++i) {
-            Node<S> *currentNode = _map.hashMap_[i];
+            Node<S>* currentNode = _map.hashMap_[i];
             while (currentNode != nullptr) {
                 unsigned int hash = HashFunction(currentNode->key_.c_str());
                 Link(hashMap_[hash], currentNode->key_.c_str()) =
-                        currentNode->value_;
+                    currentNode->value_;
 
                 currentNode = currentNode->next_;
             }
         }
     }
 
-    S &operator[](const char *_key) {
+    S& operator[](const char* _key) {
         unsigned int hash = HashFunction(_key);
 
         if (hash >= capacity_) {
@@ -86,9 +85,9 @@ public:
         return Link(hashMap_[hash], _key);
     }
 
-    bool Contain(const char *_key) {
+    bool Contain(const char* _key) {
         unsigned int hash = HashFunction(_key);
-        Node<S> *node = hashMap_[hash];
+        Node<S>* node = hashMap_[hash];
 
         while (node != nullptr) {
             if (node->key_ == _key) {
@@ -103,9 +102,9 @@ public:
 
     ~HashMap() {
         for (unsigned int i = 0; i < capacity_; ++i) {
-            Node<S> *node = hashMap_[i];
+            Node<S>* node = hashMap_[i];
             while (node != nullptr) {
-                Node<S> *nodeTemp = node;
+                Node<S>* nodeTemp = node;
                 node = node->next_;
                 delete nodeTemp;
             }
@@ -114,7 +113,7 @@ public:
         hashMap_ = nullptr;
     }
 
-    bool SearchKey(const char *key_) {
+    bool SearchKey(const char* key_) {
         for (int i = 0; i < capacity_; ++i) {
             if (hashMap_[i] != nullptr && hashMap_[i]->key_ == key_) {
                 return true;
@@ -129,7 +128,7 @@ public:
     }
 
 private:
-    S &Link(Node<S> *&_node, const char *_key) {
+    S& Link(Node<S>*& _node, const char* _key) {
         if (_node == nullptr) {
             _node = new Node<S>(_key);
             return _node->value_;
@@ -142,7 +141,7 @@ private:
         }
     }
 
-    unsigned int HashFunction(const char *_key) {
+    unsigned int HashFunction(const char* _key) {
         unsigned int sum = 0;
         unsigned int counter = 0;
         while (_key[counter] != '\0') {
@@ -158,7 +157,7 @@ private:
         unsigned int reminder = _hash % 10;
         capacity_ = _hash + (10 - reminder);
 
-        Node<S> **temp = new Node<S> *[capacity_];
+        Node<S>** temp = new Node<S>*[capacity_];
 
         for (unsigned int i = 0; i < capacity_; ++i) {
             temp[i] = hashMap_[i];

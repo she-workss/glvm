@@ -6,18 +6,17 @@
 #include "system_manager.hpp"
 
 namespace GLVM::ecs {
-CSystemManager *CSystemManager::pInstance_ = nullptr;
+CSystemManager* CSystemManager::pInstance_ = nullptr;
 std::mutex CSystemManager::Mutex_;
 
-CSystemManager::CSystemManager() {
-}
+CSystemManager::CSystemManager() {}
 
 CSystemManager::~CSystemManager() {
     delete pInstance_;
     pInstance_ = nullptr;
 }
 
-CSystemManager *CSystemManager::GetInstance() {
+CSystemManager* CSystemManager::GetInstance() {
     std::lock_guard<std::mutex> lock(Mutex_);
     if (pInstance_ == nullptr) {
         pInstance_ = new CSystemManager();
@@ -25,7 +24,7 @@ CSystemManager *CSystemManager::GetInstance() {
     return pInstance_;
 }
 
-void CSystemManager::ActivateSystem(ISystem *_System) {
+void CSystemManager::ActivateSystem(ISystem* _System) {
     tSystemContainer.Push(_System);
     ++s_iSystem_ID;
 }

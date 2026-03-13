@@ -32,7 +32,7 @@ typedef unsigned int Entity;
 
 namespace GLVM::ecs {
 class ComponentManager {
-    static ComponentManager *pInstance_;
+    static ComponentManager* pInstance_;
     static std::mutex Mutex_;
     unsigned int numberOfBaseComponents;
 
@@ -52,17 +52,17 @@ class ComponentManager {
         existComponentContainerFlag = true;
 
         // Create component container of current type.
-        core::vector<componentType> *componentContainer =
-                new core::vector<componentType>;
+        core::vector<componentType>* componentContainer =
+            new core::vector<componentType>;
 
         worldComponentsContainer.Push(componentContainer);
         // Create ID's component container.
-        core::vector<Entity> *sparseEntitiesMapToComponents =
-                new core::vector<Entity>;
+        core::vector<Entity>* sparseEntitiesMapToComponents =
+            new core::vector<Entity>;
         worldSparseEntitiesMapToComponents.Push(sparseEntitiesMapToComponents);
         // Create ID's component container.
-        core::vector<Entity> *denseEntitiesMapToComponents =
-                new core::vector<Entity>;
+        core::vector<Entity>* denseEntitiesMapToComponents =
+            new core::vector<Entity>;
         worldDenseComponentsMapToEntities.Push(denseEntitiesMapToComponents);
         componentsTypes.Push(typeid(componentType).name());
         ++componentsContainerID;
@@ -73,38 +73,41 @@ public:
     inline static unsigned int componentsContainerID = 0;
 
     // Contains all local containers for different types of components.
-    core::vector<core::IContainer *> worldComponentsContainer;
+    core::vector<core::IContainer*> worldComponentsContainer;
 
     // Contains all local container with IDs for different types of components.
-    core::vector<core::vector<Entity> *> worldSparseEntitiesMapToComponents;
+    core::vector<core::vector<Entity>*> worldSparseEntitiesMapToComponents;
 
-    core::vector<core::vector<Entity> *> worldDenseComponentsMapToEntities;
+    core::vector<core::vector<Entity>*> worldDenseComponentsMapToEntities;
 
-    core::vector<const char *> componentsTypes;
+    core::vector<const char*> componentsTypes;
 
     // Dont need to make cope because of singleton property.
-    ComponentManager(ComponentManager &componentManager) = delete;
+    ComponentManager(ComponentManager& componentManager) = delete;
 
     // Dont need assignment operator because of singleton property.
-    void operator=(const ComponentManager &componentManager) = delete;
+    void operator=(const ComponentManager& componentManager) = delete;
 
     // It possibly to get only one instance of this class with this method.
-    static ComponentManager *GetInstance();
+    static ComponentManager* GetInstance();
 
     template<typename componentType>
-    void CreateComponent(const Entity &entity) {
+    void CreateComponent(const Entity& entity) {
         // Index for world components and world ID's containers.
         unsigned int localContainerID = 0;
         componentType Component;
         localContainerID = CreateComponentContainer<componentType>();
 
-        core::vector<Entity> &sparse = *static_cast<core::vector<Entity> *>(
-                worldSparseEntitiesMapToComponents[localContainerID]);
-        core::vector<Entity> &dense = *static_cast<core::vector<Entity> *>(
-                worldDenseComponentsMapToEntities[localContainerID]);
-        core::vector<componentType> &components =
-                *static_cast<core::vector<componentType> *>(
-                        worldComponentsContainer[localContainerID]);
+        core::vector<Entity>& sparse = *static_cast<core::vector<Entity>*>(
+            worldSparseEntitiesMapToComponents[localContainerID]
+        );
+        core::vector<Entity>& dense = *static_cast<core::vector<Entity>*>(
+            worldDenseComponentsMapToEntities[localContainerID]
+        );
+        core::vector<componentType>& components =
+            *static_cast<core::vector<componentType>*>(
+                worldComponentsContainer[localContainerID]
+            );
         if (checkAvailability(sparse, dense, entity)) {
             return;
         }
@@ -120,12 +123,15 @@ public:
         components.Push(Component);
     }
 
-    bool checkAvailability(core::vector<Entity> &sparse,
-                           core::vector<Entity> &dense, Entity entity);
+    bool checkAvailability(
+        core::vector<Entity>& sparse,
+        core::vector<Entity>& dense,
+        Entity entity
+    );
 
     // Allow to give a various components to chosen entity.
     template<typename componentType1, typename componentType2, typename... Args>
-    void CreateComponent(Entity &entity) {
+    void CreateComponent(Entity& entity) {
         CreateComponent<componentType2, Args...>(entity);
         CreateComponent<componentType1>(entity);
     }
@@ -134,9 +140,10 @@ public:
     core::vector<Entity> collectLinkedEntities() {
         numberOfBaseComponents = 0;
         unsigned int firstComponentArrayIndex =
-                CreateComponentContainer<componentType>();
-        core::vector<Entity> &dense = *static_cast<core::vector<Entity> *>(
-                worldDenseComponentsMapToEntities[firstComponentArrayIndex]);
+            CreateComponentContainer<componentType>();
+        core::vector<Entity>& dense = *static_cast<core::vector<Entity>*>(
+            worldDenseComponentsMapToEntities[firstComponentArrayIndex]
+        );
 
         if (dense.GetSize() > 0) {
             ++numberOfBaseComponents;
@@ -162,13 +169,16 @@ public:
         for (unsigned int j = 0; j < baseSubSetEntities.GetSize(); ++j) {
             numberOfComponentArrays = 0;
             for (unsigned int i = 0;
-                 i < worldDenseComponentsMapToEntities.GetSize(); ++i) {
-                core::vector<Entity> &sparse =
-                        *static_cast<core::vector<Entity> *>(
-                                worldSparseEntitiesMapToComponents[i]);
-                core::vector<Entity> &dense =
-                        *static_cast<core::vector<Entity> *>(
-                                worldDenseComponentsMapToEntities[i]);
+                 i < worldDenseComponentsMapToEntities.GetSize();
+                 ++i) {
+                core::vector<Entity>& sparse =
+                    *static_cast<core::vector<Entity>*>(
+                        worldSparseEntitiesMapToComponents[i]
+                    );
+                core::vector<Entity>& dense =
+                    *static_cast<core::vector<Entity>*>(
+                        worldDenseComponentsMapToEntities[i]
+                    );
 
                 if (checkAvailability(sparse, dense, baseSubSetEntities[j])) {
                     ++numberOfComponentArrays;
@@ -192,27 +202,32 @@ public:
     template<typename componentType>
     bool multiCheckAvailabilityBase(Entity entity) {
         unsigned int componentArrayIndex =
-                CreateComponentContainer<componentType>();
-        core::vector<Entity> &sparse = *static_cast<core::vector<Entity> *>(
-                worldSparseEntitiesMapToComponents[componentArrayIndex]);
-        core::vector<Entity> &dense = *static_cast<core::vector<Entity> *>(
-                worldDenseComponentsMapToEntities[componentArrayIndex]);
+            CreateComponentContainer<componentType>();
+        core::vector<Entity>& sparse = *static_cast<core::vector<Entity>*>(
+            worldSparseEntitiesMapToComponents[componentArrayIndex]
+        );
+        core::vector<Entity>& dense = *static_cast<core::vector<Entity>*>(
+            worldDenseComponentsMapToEntities[componentArrayIndex]
+        );
 
         return checkAvailability(sparse, dense, entity);
     }
 
     template<typename componentType>
-    componentType *GetComponent(const Entity &entity) {
+    componentType* GetComponent(const Entity& entity) {
         unsigned int localContainerID;
         localContainerID = CreateComponentContainer<componentType>();
 
-        core::vector<Entity> &sparse = *static_cast<core::vector<Entity> *>(
-                worldSparseEntitiesMapToComponents[localContainerID]);
-        core::vector<Entity> &dense = *static_cast<core::vector<Entity> *>(
-                worldDenseComponentsMapToEntities[localContainerID]);
-        core::vector<componentType> &components =
-                *static_cast<core::vector<componentType> *>(
-                        worldComponentsContainer[localContainerID]);
+        core::vector<Entity>& sparse = *static_cast<core::vector<Entity>*>(
+            worldSparseEntitiesMapToComponents[localContainerID]
+        );
+        core::vector<Entity>& dense = *static_cast<core::vector<Entity>*>(
+            worldDenseComponentsMapToEntities[localContainerID]
+        );
+        core::vector<componentType>& components =
+            *static_cast<core::vector<componentType>*>(
+                worldComponentsContainer[localContainerID]
+            );
 
         if (checkAvailability(sparse, dense, entity)) {
             Entity componentIndex = sparse[entity];
@@ -226,74 +241,77 @@ public:
     // work with component without indices for that component in ordered
     // container.
     template<typename componentType>
-    void RemoveComponent(Entity &entity) {
+    void RemoveComponent(Entity& entity) {
         unsigned int localContainerID;
         localContainerID = CreateComponentContainer<componentType>();
 
-        core::vector<Entity> &sparse = *static_cast<core::vector<Entity> *>(
-                worldSparseEntitiesMapToComponents[localContainerID]);
-        core::vector<Entity> &dense = *static_cast<core::vector<Entity> *>(
-                worldDenseComponentsMapToEntities[localContainerID]);
-        core::vector<componentType> &components =
-                *static_cast<core::vector<componentType> *>(
-                        worldComponentsContainer[localContainerID]);
+        core::vector<Entity>& sparse = *static_cast<core::vector<Entity>*>(
+            worldSparseEntitiesMapToComponents[localContainerID]
+        );
+        core::vector<Entity>& dense = *static_cast<core::vector<Entity>*>(
+            worldDenseComponentsMapToEntities[localContainerID]
+        );
+        core::vector<componentType>& components =
+            *static_cast<core::vector<componentType>*>(
+                worldComponentsContainer[localContainerID]
+            );
 
         if (checkAvailability(sparse, dense, entity)) {
             assert(dense.GetSize() == components.GetSize());
             Entity indexInDenseOfRemovableEntity = sparse[entity];
             Entity indexInSparseOfSwapableEntity = dense.GetHead();
-            const componentType &componentFromLastIndex = components.GetHead();
+            const componentType& componentFromLastIndex = components.GetHead();
             dense[indexInDenseOfRemovableEntity] =
-                    indexInSparseOfSwapableEntity;
+                indexInSparseOfSwapableEntity;
             dense.Pop();
             components[indexInDenseOfRemovableEntity] = componentFromLastIndex;
             components.Pop();
             sparse[indexInSparseOfSwapableEntity] =
-                    indexInDenseOfRemovableEntity;
+                indexInDenseOfRemovableEntity;
         }
     }
 
-    void RemoveAllComponents(Entity &entity) {
+    void RemoveAllComponents(Entity& entity) {
         // TODO: DYNAMIC CAST THAT CAN RETURN 0 IF CANT CAST
         for (unsigned int i = 0; i < worldComponentsContainer.GetSize(); ++i) {
             if (componentsTypes[i] == typeid(components::transform).name()) {
                 RemoveComponent<components::transform>(entity);
-            } else if (componentsTypes[i] ==
-                       typeid(components::beholder).name()) {
+            } else if (componentsTypes[i]
+                       == typeid(components::beholder).name()) {
                 RemoveComponent<components::beholder>(entity);
-            } else if (componentsTypes[i] ==
-                       typeid(components::animation).name()) {
+            } else if (componentsTypes[i]
+                       == typeid(components::animation).name()) {
                 RemoveComponent<components::animation>(entity);
-            } else if (componentsTypes[i] ==
-                       typeid(components::collider).name()) {
+            } else if (componentsTypes[i]
+                       == typeid(components::collider).name()) {
                 RemoveComponent<components::collider>(entity);
-            } else if (componentsTypes[i] ==
-                       typeid(components::directionalLight).name()) {
+            } else if (componentsTypes[i]
+                       == typeid(components::directionalLight).name()) {
                 RemoveComponent<components::directionalLight>(entity);
-            } else if (componentsTypes[i] ==
-                       typeid(components::pointLight).name()) {
+            } else if (componentsTypes[i]
+                       == typeid(components::pointLight).name()) {
                 RemoveComponent<components::pointLight>(entity);
-            } else if (componentsTypes[i] ==
-                       typeid(components::spotLight).name()) {
+            } else if (componentsTypes[i]
+                       == typeid(components::spotLight).name()) {
                 RemoveComponent<components::spotLight>(entity);
             } else if (componentsTypes[i] == typeid(components::event).name()) {
                 RemoveComponent<components::event>(entity);
-            } else if (componentsTypes[i] ==
-                       typeid(components::material).name()) {
+            } else if (componentsTypes[i]
+                       == typeid(components::material).name()) {
                 RemoveComponent<components::material>(entity);
             } else if (componentsTypes[i] == typeid(components::move).name()) {
                 RemoveComponent<components::move>(entity);
             } else if (componentsTypes[i] == typeid(components::mesh).name()) {
                 RemoveComponent<components::mesh>(entity);
-            } else if (componentsTypes[i] ==
-                       typeid(GLVM::ecs::components::controller).name()) {
+            } else if (componentsTypes[i]
+                       == typeid(GLVM::ecs::components::controller).name()) {
                 RemoveComponent<GLVM::ecs::components::controller>(entity);
-            } else if (componentsTypes[i] ==
-                       typeid(GAME_MECHANICS::ECS::components::attack).name()) {
-                RemoveComponent<GAME_MECHANICS::ECS::components::attack>(
-                        entity);
-            } else if (componentsTypes[i] ==
-                       typeid(components::projectile).name()) {
+            } else if (componentsTypes[i]
+                       == typeid(GAME_MECHANICS::ECS::components::attack)
+                              .name()) {
+                RemoveComponent<GAME_MECHANICS::ECS::components::attack>(entity);
+            } else if (componentsTypes[i]
+                       == typeid(components::projectile).name()) {
                 RemoveComponent<components::projectile>(entity);
             } else {
                 continue;
@@ -305,26 +323,27 @@ public:
 
     template<typename componentType>
     core::VectorIterator<componentType> GetComponentContainerTest() {
-        core::vector<componentType> *componentVector =
-                static_cast<core::vector<componentType> *>(
-                        worldComponentsContainer
-                                [CreateComponentContainer<componentType>()]);
+        core::vector<componentType>* componentVector = static_cast<
+            core::vector<componentType>*>(
+            worldComponentsContainer[CreateComponentContainer<componentType>()]
+        );
         core::VectorIterator<componentType> iterator(*componentVector);
         return iterator;
     }
 
     template<typename componentType>
-    core::vector<componentType> *GetComponentContainer() {
-        return static_cast<core::vector<componentType> *>(
-                worldComponentsContainer
-                        [CreateComponentContainer<componentType>()]);
+    core::vector<componentType>* GetComponentContainer() {
+        return static_cast<core::vector<componentType>*>(
+            worldComponentsContainer[CreateComponentContainer<componentType>()]
+        );
     }
 
     template<typename componentType>
-    core::vector<Entity> *GetEntityContainer() {
-        return static_cast<core::vector<Entity> *>(
-                worldDenseComponentsMapToEntities
-                        [CreateComponentContainer<componentType>()]);
+    core::vector<Entity>* GetEntityContainer() {
+        return static_cast<core::vector<Entity>*>(
+            worldDenseComponentsMapToEntities
+                [CreateComponentContainer<componentType>()]
+        );
     }
 };
 

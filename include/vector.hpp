@@ -18,12 +18,12 @@ template<class T>
 class vector;
 
 template<class T>
-class VectorIterator : public Iterator<T> {
-    T *begin;
-    T *end;
+class VectorIterator: public Iterator<T> {
+    T* begin;
+    T* end;
 
 public:
-    VectorIterator(vector<T> &vector) {
+    VectorIterator(vector<T>& vector) {
         begin = vector.GetVectorContainer();
         end = vector.GetVectorContainer() + (vector.GetSize() - 1);
     }
@@ -41,48 +41,48 @@ public:
         return end >= begin;
     }
 
-    T &Current() override {
+    T& Current() override {
         return *begin;
     }
 
-    T &Last() override {
+    T& Last() override {
         return *end;
     }
 };
 
 template<class T>
-class vector : public IContainer {
+class vector: public IContainer {
     unsigned int size = 0;
     unsigned int capacity = 0;
     static constexpr int expander = 10;
-    unsigned char *rowInnerData = nullptr;
+    unsigned char* rowInnerData = nullptr;
 
 public:
     vector() = default;
-    vector(const vector<T> &_vector);
+    vector(const vector<T>& _vector);
     ~vector() override;
     void Push(T item);
     void Pop();
-    void Swap(T &firstElement, T &secondElement);
-    VectorIterator<T> Find(T &element);
+    void Swap(T& firstElement, T& secondElement);
+    VectorIterator<T> Find(T& element);
     void Resize(const unsigned int index);
     void Remove(unsigned int index);
     void RemoveFirstItem();
-    T &GetFirstItem();
-    T &GetHead();
-    T *GetVectorContainer();
+    T& GetFirstItem();
+    T& GetHead();
+    T* GetVectorContainer();
     [[nodiscard]] unsigned int GetSize() const;
     int GetCapacity();
-    const T &operator[](const unsigned int _iIndex) const;
-    T &operator[](const unsigned int _iIndex);
+    const T& operator[](const unsigned int _iIndex) const;
+    T& operator[](const unsigned int _iIndex);
     void clear();
-    vector &operator=(const vector<T> &_vector);
-    bool operator==(const char *string_);
+    vector& operator=(const vector<T>& _vector);
+    bool operator==(const char* string_);
     bool empty();
 };
 
 template<class T>
-bool vector<T>::operator==(const char *string_) {
+bool vector<T>::operator==(const char* string_) {
     char tempSymbol = '2';
     unsigned int strSize = 0;
     while (tempSymbol != '\0') {
@@ -91,7 +91,7 @@ bool vector<T>::operator==(const char *string_) {
     }
 
     for (unsigned int i = 0; i < size; ++i) {
-        T &element = *(T *)&rowInnerData[i * sizeof(T)];
+        T& element = *(T*)&rowInnerData[i * sizeof(T)];
         if (element == string_[i]) {
             continue;
         } else {
@@ -103,13 +103,13 @@ bool vector<T>::operator==(const char *string_) {
 }
 
 template<class T>
-vector<T> &vector<T>::operator=(const vector<T> &_vector) {
+vector<T>& vector<T>::operator=(const vector<T>& _vector) {
     if (this == &_vector) {
         return *this;
     }
 
     for (unsigned int j = 0; j < this->size; ++j) {
-        T &destinationElement = *(T *)&this->rowInnerData[j * sizeof(T)];
+        T& destinationElement = *(T*)&this->rowInnerData[j * sizeof(T)];
         destinationElement.~T();
     }
 
@@ -120,20 +120,20 @@ vector<T> &vector<T>::operator=(const vector<T> &_vector) {
     this->rowInnerData = new unsigned char[capacity * sizeof(T)];
 
     for (unsigned int i = 0; i < _vector.size; ++i) {
-        T &sourceElement = *(T *)&_vector.rowInnerData[i * sizeof(T)];
+        T& sourceElement = *(T*)&_vector.rowInnerData[i * sizeof(T)];
         new (&rowInnerData[i * sizeof(T)]) T(sourceElement);
     }
     return *this;
 }
 
 template<class T>
-vector<T>::vector(const vector<T> &_vector) {
+vector<T>::vector(const vector<T>& _vector) {
     size = _vector.size;
     capacity = _vector.size;
     this->rowInnerData = new unsigned char[capacity * sizeof(T)];
 
     for (unsigned int i = 0; i < _vector.size; ++i) {
-        T &sourceElement = *(T *)&_vector.rowInnerData[i * sizeof(T)];
+        T& sourceElement = *(T*)&_vector.rowInnerData[i * sizeof(T)];
         new (&rowInnerData[i * sizeof(T)]) T(sourceElement);
     }
 }
@@ -141,7 +141,7 @@ vector<T>::vector(const vector<T> &_vector) {
 template<class T>
 vector<T>::~vector() {
     for (unsigned int i = 0; i < size; ++i) {
-        T &element = *(T *)&rowInnerData[i * sizeof(T)];
+        T& element = *(T*)&rowInnerData[i * sizeof(T)];
         element.~T();
     }
     delete[] rowInnerData;
@@ -152,10 +152,10 @@ vector<T>::~vector() {
 template<class T>
 void vector<T>::Push(T item) {
     if (size == capacity) {
-        unsigned char *aTemp_Vector_Container =
-                new unsigned char[(capacity + expander) * sizeof(T)];
+        unsigned char* aTemp_Vector_Container =
+            new unsigned char[(capacity + expander) * sizeof(T)];
         for (unsigned int i = 0; i < size; ++i) {
-            T &element = *(T *)&rowInnerData[i * sizeof(T)];
+            T& element = *(T*)&rowInnerData[i * sizeof(T)];
             new (&aTemp_Vector_Container[i * sizeof(T)]) T(element);
             element.~T();
         }
@@ -176,13 +176,13 @@ void vector<T>::Pop() {
         return;
     }
 
-    T &element = *(T *)&rowInnerData[(size - 1) * sizeof(T)];
+    T& element = *(T*)&rowInnerData[(size - 1) * sizeof(T)];
     element.~T();
     --size;
 }
 
 template<class T>
-void vector<T>::Swap(T &firstElement, T &secondElement) {
+void vector<T>::Swap(T& firstElement, T& secondElement) {
     if (size < 1) {
         return;
     }
@@ -197,7 +197,7 @@ void vector<T>::Swap(T &firstElement, T &secondElement) {
 }
 
 template<class T>
-VectorIterator<T> vector<T>::Find(T &element) {
+VectorIterator<T> vector<T>::Find(T& element) {
     VectorIterator<T> iterator(*this);
     if (!iterator.ValidStatus()) {
         return iterator;
@@ -217,17 +217,17 @@ template<typename T>
 void vector<T>::Resize(const unsigned int index) {
     if (index < size) {
         for (unsigned int j = index; j < size; ++j) {
-            (*(T *)&rowInnerData[j * sizeof(T)]).~T();
+            (*(T*)&rowInnerData[j * sizeof(T)]).~T();
         }
 
         size = index;
     } else if (index > size) {
         if (index > capacity) {
-            unsigned char *aTemp_Vector_Container_ =
-                    new unsigned char[index * sizeof(T)];
+            unsigned char* aTemp_Vector_Container_ =
+                new unsigned char[index * sizeof(T)];
 
             for (unsigned int j = 0; j < size; ++j) {
-                T &element = *(T *)&rowInnerData[j * sizeof(T)];
+                T& element = *(T*)&rowInnerData[j * sizeof(T)];
                 new (&aTemp_Vector_Container_[j * sizeof(T)]) T(element);
                 element.~T();
             }
@@ -252,8 +252,8 @@ void vector<T>::Remove(unsigned int index) {
     }
 
     for (unsigned int j = index; j < size - 1; ++j) {
-        T &element = *(T *)&rowInnerData[(j + 1) * sizeof(T)];
-        T &previousElement = *(T *)&rowInnerData[j * sizeof(T)];
+        T& element = *(T*)&rowInnerData[(j + 1) * sizeof(T)];
+        T& previousElement = *(T*)&rowInnerData[j * sizeof(T)];
         previousElement.~T();
         new (&rowInnerData[j * sizeof(T)]) T(element);
     }
@@ -266,9 +266,9 @@ void vector<T>::RemoveFirstItem() {
         return;
     }
 
-    unsigned char *aTemp_Vector_Container = new unsigned char[size * sizeof(T)];
+    unsigned char* aTemp_Vector_Container = new unsigned char[size * sizeof(T)];
     for (unsigned int i = 0; i < size; ++i) {
-        T &element = *(T *)&rowInnerData[i * sizeof(T)];
+        T& element = *(T*)&rowInnerData[i * sizeof(T)];
         new (&aTemp_Vector_Container[i * sizeof(T)]) T(element);
         element.~T();
     }
@@ -279,24 +279,24 @@ void vector<T>::RemoveFirstItem() {
     --size;
     rowInnerData = new unsigned char[size * sizeof(T)];
     for (unsigned int i = 0; i < size; ++i) {
-        T &sourceElement = *(T *)&aTemp_Vector_Container[(i + 1) * sizeof(T)];
+        T& sourceElement = *(T*)&aTemp_Vector_Container[(i + 1) * sizeof(T)];
         new (&rowInnerData[i * sizeof(T)]) T(sourceElement);
     }
 }
 
 template<class T>
-T &vector<T>::GetFirstItem() {
-    return *(T *)&rowInnerData[0];
+T& vector<T>::GetFirstItem() {
+    return *(T*)&rowInnerData[0];
 }
 
 template<class T>
-T &vector<T>::GetHead() {
-    return *(T *)&rowInnerData[(size - 1) * sizeof(T)];
+T& vector<T>::GetHead() {
+    return *(T*)&rowInnerData[(size - 1) * sizeof(T)];
 }
 
 template<class T>
-T *vector<T>::GetVectorContainer() {
-    return (T *)rowInnerData;
+T* vector<T>::GetVectorContainer() {
+    return (T*)rowInnerData;
 }
 
 template<typename T>
@@ -308,13 +308,15 @@ template<typename T>
 int vector<T>::GetCapacity() {
     return capacity;
 }
+
 template<typename T>
-const T &vector<T>::operator[](const unsigned int _iIndex) const {
-    return reinterpret_cast<const T *>(rowInnerData)[_iIndex];
+const T& vector<T>::operator[](const unsigned int _iIndex) const {
+    return reinterpret_cast<const T*>(rowInnerData)[_iIndex];
 }
+
 template<typename T>
-T &vector<T>::operator[](const unsigned int _iIndex) {
-    return reinterpret_cast<T *>(rowInnerData)[_iIndex];
+T& vector<T>::operator[](const unsigned int _iIndex) {
+    return reinterpret_cast<T*>(rowInnerData)[_iIndex];
 }
 
 template<typename T>
@@ -323,7 +325,7 @@ void vector<T>::clear() {
         return;
     }
     for (unsigned int i = 0; i < size; ++i) {
-        T &element = *(T *)&rowInnerData[i * sizeof(T)];
+        T& element = *(T*)&rowInnerData[i * sizeof(T)];
         element.~T();
     }
     size = 0;

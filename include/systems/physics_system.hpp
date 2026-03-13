@@ -15,16 +15,16 @@
 #include "vector.hpp"
 
 namespace GLVM::ecs {
-class CPhysicsSystem : public ISystem {
+class CPhysicsSystem: public ISystem {
 public:
     float fAcceleration_of_Gravity_;
     float fDelta_Time_;
-    float &gravity;
-    core::CStack &Input_Stack_;
+    float& gravity;
+    core::CStack& Input_Stack_;
 
-    CPhysicsSystem(float &gravity_, core::CStack &_input_Stack)
-        : gravity(gravity_), Input_Stack_(_input_Stack) {
-    }
+    CPhysicsSystem(float& gravity_, core::CStack& _input_Stack) :
+        gravity(gravity_),
+        Input_Stack_(_input_Stack) {}
 
     // Set Y-axis of transform component of backtracking entity to upper Y-axis
     // of ground entity.
@@ -35,7 +35,11 @@ public:
     // backtracking entity had gravity component for call Gravity function.
     void Update() override;
 
-    void Repel(components::transform &_transform_Component, float &_fDelta_Time,
-               components::beholder &_view_Component, core::CEvent &_event);
+    void Repel(
+        components::transform& _transform_Component,
+        float& _fDelta_Time,
+        components::beholder& _view_Component,
+        core::CEvent& _event
+    );
 };
 } // namespace GLVM::ecs

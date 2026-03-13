@@ -19,12 +19,12 @@ struct Texture {
     unsigned int vkAvailableInnerId_ = 0;
     unsigned int vkInnerIdLimit_ = 10;
 
-    const char *path_to_image;
+    const char* path_to_image;
     std::vector<Entity> entitiesOwnsThisTypeOfTexture_;
     unsigned int id_;
     unsigned int iWidth_;
     unsigned int iHeight_;
     unsigned int dat_length_;
-    unsigned char *u_iData_;
+    unsigned char* u_iData_;
 };
 } // namespace GLVM::ecs

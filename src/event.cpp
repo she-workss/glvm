@@ -4,13 +4,13 @@
 // License: http://opensource.org/licenses/MIT
 
 #include "event.hpp"
+
 #include "events_stack.hpp"
 
 namespace GLVM::core {
-CEvent::CEvent() {
-}
+CEvent::CEvent() {}
 
-EEvents &CEvent::GetEvent() {
+EEvents& CEvent::GetEvent() {
     return eEvent_;
 }
 

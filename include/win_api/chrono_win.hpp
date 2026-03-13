@@ -9,7 +9,7 @@
 #include <windows.h>
 
 namespace GLVM::Time {
-class CTimerWin : public IChrono {
+class CTimerWin: public IChrono {
     __int64 i64Freq_;
     __int64 i64Start_;
     __int64 i64Now_;

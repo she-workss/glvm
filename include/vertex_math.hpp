@@ -24,8 +24,12 @@ public:
         }
     }
 
-    Matrix(Vector<T, var> _vector1, Vector<T, var> _vector2,
-           Vector<T, var> _vector3, Vector<T, var> _vector4) {
+    Matrix(
+        Vector<T, var> _vector1,
+        Vector<T, var> _vector2,
+        Vector<T, var> _vector3,
+        Vector<T, var> _vector4
+    ) {
         m_matrix[0][0] = _vector1[0];
         m_matrix[0][1] = _vector1[1];
         m_matrix[0][2] = _vector1[2];
@@ -75,11 +79,11 @@ public:
 
     Matrix<T, var> operator+(Matrix matrix);
     Matrix<T, var> operator*(T scalar);
-    Matrix<T, var> operator*(Matrix &matrix);
-    T *operator[](const int index);
-    const T *operator[](const int index) const;
+    Matrix<T, var> operator*(Matrix& matrix);
+    T* operator[](const int index);
+    const T* operator[](const int index) const;
     template<class T2, int var2>
-    Vector<T2, var2> operator*(Vector<T2, var2> &vector);
+    Vector<T2, var2> operator*(Vector<T2, var2>& vector);
 };
 
 typedef Vector<float, 1> vec1;
@@ -117,13 +121,13 @@ Matrix<T, var> Matrix<T, var>::operator*(T scalar) {
 }
 
 template<class T, int var>
-Matrix<T, var> Matrix<T, var>::operator*(Matrix &matrix) {
+Matrix<T, var> Matrix<T, var>::operator*(Matrix& matrix) {
     Matrix<T, var> tempMatrix;
     for (int i = 0; i < var; ++i) {
         for (int j = 0; j < var; ++j) {
             for (int n = 0; n < var; ++n) {
                 tempMatrix.m_matrix[i][j] +=
-                        m_matrix[i][n] * matrix.m_matrix[n][j];
+                    m_matrix[i][n] * matrix.m_matrix[n][j];
             }
         }
     }
@@ -131,18 +135,20 @@ Matrix<T, var> Matrix<T, var>::operator*(Matrix &matrix) {
 }
 
 template<class T, int var>
-T *Matrix<T, var>::operator[](const int index) {
+T* Matrix<T, var>::operator[](const int index) {
     return m_matrix[index];
 }
 
 template<class T, int var>
-const T *Matrix<T, var>::operator[](const int index) const {
+const T* Matrix<T, var>::operator[](const int index) const {
     return m_matrix[index];
 }
 
 template<int var2>
-std::ostream &operator<<(std::ostream &ostream,
-                         const Matrix<float, var2> &matrix) {
+std::ostream& operator<<(
+    std::ostream& ostream,
+    const Matrix<float, var2>& matrix
+) {
     for (int i = 0; i < var2; ++i) {
         ostream << std::endl;
         for (int j = 0; j < var2; ++j) {
@@ -154,7 +160,7 @@ std::ostream &operator<<(std::ostream &ostream,
 
 template<class T, int var>
 template<class T2, int var2>
-Vector<T2, var2> Matrix<T, var>::operator*(Vector<T2, var2> &vector) {
+Vector<T2, var2> Matrix<T, var>::operator*(Vector<T2, var2>& vector) {
     static_assert(var == var2, "Size error");
     Vector<T2, var2> tempVector;
     for (int i = 0; i < var2; ++i) {
@@ -178,10 +184,10 @@ public:
         }
     }
 
-    T2 &operator[](const int index);
-    const T2 &operator[](const int index) const;
+    T2& operator[](const int index);
+    const T2& operator[](const int index) const;
     template<class T, int var>
-    Vector<T2, var2> operator*(const Matrix<T, var> &matrix);
+    Vector<T2, var2> operator*(const Matrix<T, var>& matrix);
     Vector<T2, var2> operator*(Vector<T2, var2> _vector);
     Vector<T2, var2> operator*=(Vector<T2, var2> _vector);
     Vector<T2, var2> operator-(Vector<T2, var2> _vector);
@@ -195,13 +201,14 @@ public:
 
 template<class T2, int var2>
 T2 Vector<T2, var2>::Length() const {
-    return std::sqrt(m_vector[0] * m_vector[0] + m_vector[1] * m_vector[1] +
-                     m_vector[2] * m_vector[2]);
+    return std::sqrt(
+        m_vector[0] * m_vector[0] + m_vector[1] * m_vector[1]
+        + m_vector[2] * m_vector[2]
+    );
 }
 
 template<class T2, int var2>
-std::ostream &operator<<(std::ostream &ostream,
-                         const Vector<T2, var2> &vector) {
+std::ostream& operator<<(std::ostream& ostream, const Vector<T2, var2>& vector) {
     ostream << "x: " << vector[0] << " y: " << vector[1] << " z: " << vector[2]
             << " w: " << vector[3] << " length: " << vector.Length();
     return ostream;
@@ -218,18 +225,18 @@ Vector<T2, var2> Vector<T2, var2>::operator-() {
 }
 
 template<class T2, int var2>
-T2 &Vector<T2, var2>::operator[](const int index) {
+T2& Vector<T2, var2>::operator[](const int index) {
     return m_vector[index];
 }
 
 template<class T2, int var2>
-const T2 &Vector<T2, var2>::operator[](const int index) const {
+const T2& Vector<T2, var2>::operator[](const int index) const {
     return m_vector[index];
 }
 
 template<class T2, int var2>
 template<class T, int var>
-Vector<T2, var2> Vector<T2, var2>::operator*(const Matrix<T, var> &matrix) {
+Vector<T2, var2> Vector<T2, var2>::operator*(const Matrix<T, var>& matrix) {
     static_assert(var == var2, "Size error");
     Vector<T2, var2> tempVector;
     for (int i = 0; i < var2; ++i) {
@@ -360,15 +367,19 @@ Matrix<T, var> RotateZ(Matrix<T, var> matrix, float angle) {
 
 template<typename T>
 Vector<T, 3> Cross(Vector<T, 3> _vector1, Vector<T, 3> _vector2) {
-    return Vector<T, 3>(_vector1[1] * _vector2[2] - _vector1[2] * _vector2[1],
-                        _vector1[2] * _vector2[0] - _vector1[0] * _vector2[2],
-                        _vector1[0] * _vector2[1] - _vector1[1] * _vector2[0]);
+    return Vector<T, 3>(
+        _vector1[1] * _vector2[2] - _vector1[2] * _vector2[1],
+        _vector1[2] * _vector2[0] - _vector1[0] * _vector2[2],
+        _vector1[0] * _vector2[1] - _vector1[1] * _vector2[0]
+    );
 }
 
 template<typename T>
 T Dot(Vector<T, 3> _vector1, Vector<T, 3> _vector2) {
-    return (_vector1[0] * _vector2[0] + _vector1[1] * _vector2[1] +
-            _vector1[2] * _vector2[2]);
+    return (
+        _vector1[0] * _vector2[0] + _vector1[1] * _vector2[1]
+        + _vector1[2] * _vector2[2]
+    );
 }
 
 template<typename T>
@@ -381,8 +392,9 @@ T VectorLength(Vector<T, 3> _vector1, Vector<T, 3> _vector2) {
 
 template<typename T>
 T VecLength(Vector<T, 3> vector) {
-    return std::sqrt(vector[0] * vector[0] + vector[1] * vector[1] +
-                     vector[2] * vector[2]);
+    return std::sqrt(
+        vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2]
+    );
 }
 
 template<typename T>
@@ -391,8 +403,10 @@ Vector<T, 3> Normalize(Vector<T, 3> _vector) {
         return vec3 {0.0f, 0.0f, 0.0f};
     }
 
-    float range = std::sqrt(_vector[0] * _vector[0] + _vector[1] * _vector[1] +
-                            _vector[2] * _vector[2]);
+    float range = std::sqrt(
+        _vector[0] * _vector[0] + _vector[1] * _vector[1]
+        + _vector[2] * _vector[2]
+    );
     for (int l = 0; l < 3; ++l) {
         _vector[l] = _vector[l] / range;
     }
@@ -424,8 +438,8 @@ Matrix<T, 4> GLVM_perspectiveRH_NO(T fov, T aspect, T near_plane, T far_plane) {
     Result[1][1] = static_cast<T>(1) / (tanHalfFov);
     Result[2][2] = -(far_plane - near_plane) / (far_plane - near_plane);
     Result[2][3] = -static_cast<T>(1);
-    Result[3][2] = -(static_cast<T>(2) * far_plane * near_plane) /
-                   (far_plane - near_plane);
+    Result[3][2] = -(static_cast<T>(2) * far_plane * near_plane)
+        / (far_plane - near_plane);
     return Result;
 }
 
@@ -435,8 +449,7 @@ Matrix<T, 4> Perspective(T fov, T aspect, T near_plane, T far_plane) {
 }
 
 template<typename T>
-Matrix<T, 4> lookAtRH(Vector<T, 3> _eye, Vector<T, 3> _center,
-                      Vector<T, 3> _up) {
+Matrix<T, 4> lookAtRH(Vector<T, 3> _eye, Vector<T, 3> _center, Vector<T, 3> _up) {
     Vector<T, 3> f = (Normalize(_center - _eye));
     Vector<T, 3> s = (Normalize(Cross(f, _up)));
     Vector<T, 3> u = (Cross(s, f));
@@ -458,8 +471,7 @@ Matrix<T, 4> lookAtRH(Vector<T, 3> _eye, Vector<T, 3> _center,
 }
 
 template<typename T>
-Matrix<T, 4> lookAtLH(Vector<T, 3> _eye, Vector<T, 3> _center,
-                      Vector<T, 3> _up) {
+Matrix<T, 4> lookAtLH(Vector<T, 3> _eye, Vector<T, 3> _center, Vector<T, 3> _up) {
     Vector<T, 3> f(Normalize(_center - _eye));
     Vector<T, 3> s(Normalize(Cross(_up, f)));
     Vector<T, 3> u(Cross(f, s));
@@ -481,14 +493,16 @@ Matrix<T, 4> lookAtLH(Vector<T, 3> _eye, Vector<T, 3> _center,
 }
 
 template<typename T>
-Matrix<T, 4> LookAtMain(Vector<T, 3> _eye, Vector<T, 3> _center,
-                        Vector<T, 3> _up) {
+Matrix<T, 4> LookAtMain(
+    Vector<T, 3> _eye,
+    Vector<T, 3> _center,
+    Vector<T, 3> _up
+) {
     return lookAtRH<T>(_eye, _center, _up);
 }
 
 template<typename T>
-Matrix<T, 4> FPSview(Vector<T, 3> _eye, Vector<T, 3> _center,
-                     Vector<T, 3> _up) {
+Matrix<T, 4> FPSview(Vector<T, 3> _eye, Vector<T, 3> _center, Vector<T, 3> _up) {
     Vector<T, 3> f(Normalize(_center - _eye));
     Vector<T, 3> s(Normalize(Cross(f, _up)));
     Vector<T, 3> u(Cross(s, f));
@@ -527,16 +541,28 @@ Matrix<T, 4> FPS_View_RH(Vector<T, 3> _eye, float _pitch, float _yaw) {
     float fSin_Yaw = std::sin(_yaw);
 
     Vector<T, 3> x_axis(fCos_Yaw, 0, -fSin_Yaw);
-    Vector<T, 3> y_axis(fSin_Yaw * fSin_Pitch, fCos_Pitch,
-                        fCos_Yaw * fSin_Pitch);
-    Vector<T, 3> z_axis(fSin_Yaw * fCos_Pitch, -fSin_Pitch,
-                        fCos_Pitch * fCos_Yaw);
+    Vector<T, 3> y_axis(
+        fSin_Yaw * fSin_Pitch,
+        fCos_Pitch,
+        fCos_Yaw * fSin_Pitch
+    );
+    Vector<T, 3> z_axis(
+        fSin_Yaw * fCos_Pitch,
+        -fSin_Pitch,
+        fCos_Pitch * fCos_Yaw
+    );
 
-    Matrix<T, 4> tView(Vector<T, 4>(x_axis[0], y_axis[0], z_axis[0], 0),
-                       Vector<T, 4>(x_axis[1], y_axis[1], z_axis[1], 0),
-                       Vector<T, 4>(x_axis[2], y_axis[2], z_axis[2], 0),
-                       Vector<T, 4>(-Dot(x_axis, _eye), -Dot(y_axis, _eye),
-                                    -Dot(z_axis, _eye), 1));
+    Matrix<T, 4> tView(
+        Vector<T, 4>(x_axis[0], y_axis[0], z_axis[0], 0),
+        Vector<T, 4>(x_axis[1], y_axis[1], z_axis[1], 0),
+        Vector<T, 4>(x_axis[2], y_axis[2], z_axis[2], 0),
+        Vector<T, 4>(
+            -Dot(x_axis, _eye),
+            -Dot(y_axis, _eye),
+            -Dot(z_axis, _eye),
+            1
+        )
+    );
 
     return tView;
 }
@@ -546,35 +572,32 @@ Matrix<T, var> Rotate(Vector<T, vec_size> vector, float angle) {
     vector = (Normalize(vector));
     Matrix<T, var> tempMatrix(1.0f);
     // Transposed rotate matrix.
-    tempMatrix[0][0] =
-            std::cos(angle) +
-            (vector[0] * vector[0]) * (static_cast<T>(1) - std::cos(angle));
+    tempMatrix[0][0] = std::cos(angle)
+        + (vector[0] * vector[0]) * (static_cast<T>(1) - std::cos(angle));
     tempMatrix[1][0] =
-            vector[0] * vector[1] * (static_cast<T>(1) - std::cos(angle)) -
-            vector[2] * std::sin(angle);
+        vector[0] * vector[1] * (static_cast<T>(1) - std::cos(angle))
+        - vector[2] * std::sin(angle);
     tempMatrix[2][0] =
-            vector[0] * vector[2] * (static_cast<T>(1) - std::cos(angle)) +
-            vector[1] * std::sin(angle);
+        vector[0] * vector[2] * (static_cast<T>(1) - std::cos(angle))
+        + vector[1] * std::sin(angle);
     tempMatrix[3][0] = static_cast<T>(0);
     tempMatrix[0][1] =
-            vector[1] * vector[0] * (static_cast<T>(1) - std::cos(angle)) +
-            vector[2] * std::sin(angle);
-    tempMatrix[1][1] =
-            std::cos(angle) +
-            (vector[1] * vector[1]) * (static_cast<T>(1) - std::cos(angle));
+        vector[1] * vector[0] * (static_cast<T>(1) - std::cos(angle))
+        + vector[2] * std::sin(angle);
+    tempMatrix[1][1] = std::cos(angle)
+        + (vector[1] * vector[1]) * (static_cast<T>(1) - std::cos(angle));
     tempMatrix[2][1] =
-            vector[1] * vector[2] * (static_cast<T>(1) - std::cos(angle)) -
-            vector[0] * std::sin(angle);
+        vector[1] * vector[2] * (static_cast<T>(1) - std::cos(angle))
+        - vector[0] * std::sin(angle);
     tempMatrix[3][1] = static_cast<T>(0);
     tempMatrix[0][2] =
-            vector[2] * vector[0] * (static_cast<T>(1) - std::cos(angle)) -
-            vector[1] * std::sin(angle);
+        vector[2] * vector[0] * (static_cast<T>(1) - std::cos(angle))
+        - vector[1] * std::sin(angle);
     tempMatrix[1][2] =
-            vector[2] * vector[1] * (static_cast<T>(1) - std::cos(angle)) +
-            vector[0] * std::sin(angle);
-    tempMatrix[2][2] =
-            std::cos(angle) +
-            (vector[2] * vector[2]) * (static_cast<T>(1) - std::cos(angle));
+        vector[2] * vector[1] * (static_cast<T>(1) - std::cos(angle))
+        + vector[0] * std::sin(angle);
+    tempMatrix[2][2] = std::cos(angle)
+        + (vector[2] * vector[2]) * (static_cast<T>(1) - std::cos(angle));
     tempMatrix[3][2] = static_cast<T>(0);
     tempMatrix[0][3] = static_cast<T>(0);
     tempMatrix[1][3] = static_cast<T>(0);
@@ -594,8 +617,14 @@ Matrix<T, var> Ortho(float w, float h, float zn, float zf) {
 }
 
 template<class T>
-Matrix<T, 4> orthoRH_ZO(T left, T right, T bottom, T top, T near_plane,
-                        T far_plane) {
+Matrix<T, 4> orthoRH_ZO(
+    T left,
+    T right,
+    T bottom,
+    T top,
+    T near_plane,
+    T far_plane
+) {
     Matrix<float, 4> tempMatrix(1);
     tempMatrix[0][0] = static_cast<T>(2) / (right - left);
     tempMatrix[1][1] = static_cast<T>(2) / (top - bottom);
@@ -608,8 +637,14 @@ Matrix<T, 4> orthoRH_ZO(T left, T right, T bottom, T top, T near_plane,
 }
 
 template<class T>
-Matrix<T, 4> orthoLH_NO(T left, T right, T bottom, T top, T near_plane,
-                        T far_plane) {
+Matrix<T, 4> orthoLH_NO(
+    T left,
+    T right,
+    T bottom,
+    T top,
+    T near_plane,
+    T far_plane
+) {
     Matrix<float, 4> tempMatrix(1);
     tempMatrix[0][0] = static_cast<T>(2) / (right - left);
     tempMatrix[1][1] = static_cast<T>(2) / (top - bottom);
@@ -622,8 +657,7 @@ Matrix<T, 4> orthoLH_NO(T left, T right, T bottom, T top, T near_plane,
 }
 
 template<class T>
-Matrix<T, 4> ortho(T left, T right, T bottom, T top, T near_plane,
-                   T far_plane) {
+Matrix<T, 4> ortho(T left, T right, T bottom, T top, T near_plane, T far_plane) {
     return orthoRH_ZO<T>(left, right, bottom, top, near_plane, far_plane);
 }
 
@@ -650,8 +684,8 @@ Matrix<T, var> perspectiveLH_NO(T fov, T aspect, T near_plane, T far_plane) {
     tempMatrix[1][1] = static_cast<T>(1) / tanHalfFov;
     tempMatrix[2][2] = -(far_plane + near_plane) / (far_plane - near_plane);
     tempMatrix[2][3] = -static_cast<T>(1);
-    tempMatrix[3][2] = -(static_cast<T>(2) * far_plane * near_plane) /
-                       (far_plane - near_plane);
+    tempMatrix[3][2] = -(static_cast<T>(2) * far_plane * near_plane)
+        / (far_plane - near_plane);
 
     return tempMatrix;
 }
@@ -673,8 +707,10 @@ struct Quaternion {
     float w, x, y, z;
 };
 
-inline std::ostream &operator<<(std::ostream &ostream,
-                                const Quaternion &quaternion) {
+inline std::ostream& operator<<(
+    std::ostream& ostream,
+    const Quaternion& quaternion
+) {
     ostream << "w: " << quaternion.w << " x: " << quaternion.x
             << " y: " << quaternion.y << " z: " << quaternion.z;
 
@@ -700,8 +736,10 @@ inline Quaternion multiplyQuaternion(Quaternion a, Quaternion b) {
 }
 
 inline float normQuaternion(Quaternion quaternion) {
-    return sqrt(quaternion.w * quaternion.w + quaternion.x * quaternion.x +
-                quaternion.y * quaternion.y + quaternion.z * quaternion.z);
+    return sqrt(
+        quaternion.w * quaternion.w + quaternion.x * quaternion.x
+        + quaternion.y * quaternion.y + quaternion.z * quaternion.z
+    );
 }
 
 inline Quaternion normalizeQuaternion(Quaternion quaternion) {
@@ -751,32 +789,32 @@ Matrix<T, var> rotateQuaternion(Quaternion quaternion) {
     quaternion = normalizeQuaternion(quaternion);
 
     result[0][0] =
-            1 - 2 * (quaternion.y * quaternion.y + quaternion.z * quaternion.z);
+        1 - 2 * (quaternion.y * quaternion.y + quaternion.z * quaternion.z);
     result[0][1] =
-            2 * (quaternion.x * quaternion.y - quaternion.z * quaternion.w);
+        2 * (quaternion.x * quaternion.y - quaternion.z * quaternion.w);
     result[0][2] =
-            2 * (quaternion.x * quaternion.z + quaternion.y * quaternion.w);
+        2 * (quaternion.x * quaternion.z + quaternion.y * quaternion.w);
 
     result[1][0] =
-            2 * (quaternion.x * quaternion.y + quaternion.z * quaternion.w);
+        2 * (quaternion.x * quaternion.y + quaternion.z * quaternion.w);
     result[1][1] =
-            1 - 2 * (quaternion.x * quaternion.x + quaternion.z * quaternion.z);
+        1 - 2 * (quaternion.x * quaternion.x + quaternion.z * quaternion.z);
     result[1][2] =
-            2 * (quaternion.y * quaternion.z - quaternion.x * quaternion.w);
+        2 * (quaternion.y * quaternion.z - quaternion.x * quaternion.w);
 
     result[2][0] =
-            2 * (quaternion.x * quaternion.z - quaternion.y * quaternion.w);
+        2 * (quaternion.x * quaternion.z - quaternion.y * quaternion.w);
     result[2][1] =
-            2 * (quaternion.y * quaternion.z + quaternion.x * quaternion.w);
+        2 * (quaternion.y * quaternion.z + quaternion.x * quaternion.w);
     result[2][2] =
-            1 - 2 * (quaternion.x * quaternion.x + quaternion.y * quaternion.y);
+        1 - 2 * (quaternion.x * quaternion.x + quaternion.y * quaternion.y);
 
     result[0][0] =
-            2 * (quaternion.w * quaternion.w + quaternion.x * quaternion.x) - 1;
+        2 * (quaternion.w * quaternion.w + quaternion.x * quaternion.x) - 1;
     result[0][1] =
-            2 * (quaternion.x * quaternion.y - quaternion.w * quaternion.z);
+        2 * (quaternion.x * quaternion.y - quaternion.w * quaternion.z);
     result[0][2] =
-            2 * (quaternion.x * quaternion.z + quaternion.w * quaternion.y);
+        2 * (quaternion.x * quaternion.z + quaternion.w * quaternion.y);
 
     result[3][3] = 1.0f;
 

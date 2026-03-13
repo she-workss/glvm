@@ -4,6 +4,7 @@
 // License: http://opensource.org/licenses/MIT
 
 #include "systems/camera_system.hpp"
+
 #include "components/transform_component.hpp"
 #include "components/view_component.hpp"
 #include "vertex_math.hpp"
@@ -12,23 +13,25 @@ namespace GLVM::ecs {
 void CCameraSystem::Update() {
     namespace cm = GLVM::ecs::components;
 
-    ComponentManager *componentManager =
-            GLVM::ecs::ComponentManager::GetInstance();
+    ComponentManager* componentManager =
+        GLVM::ecs::ComponentManager::GetInstance();
     core::vector<Entity> linkedEntities =
-            componentManager->collectLinkedEntities<cm::beholder>();
+        componentManager->collectLinkedEntities<cm::beholder>();
     unsigned int linkedEntitiesVectorSize = linkedEntities.GetSize();
     for (unsigned int i = 0; i < linkedEntitiesVectorSize; ++i) {
         Entity currentEntity = linkedEntities[i];
-        cm::beholder *beholderComponent =
-                componentManager->GetComponent<cm::beholder>(currentEntity);
-        cm::transform *transformComponent =
-                componentManager->GetComponent<cm::transform>(currentEntity);
+        cm::beholder* beholderComponent =
+            componentManager->GetComponent<cm::beholder>(currentEntity);
+        cm::transform* transformComponent =
+            componentManager->GetComponent<cm::transform>(currentEntity);
         SetViewMatrix(*transformComponent, *beholderComponent);
     }
 }
 
-void CCameraSystem::SetViewMatrix(components::transform &_Player,
-                                  components::beholder &cameraComponent) {
+void CCameraSystem::SetViewMatrix(
+    components::transform& _Player,
+    components::beholder& cameraComponent
+) {
     Matrix<float, 4> tView_Matrix(1.0f);
     const float kSensitivity = 0.1f;
 
@@ -53,14 +56,16 @@ void CCameraSystem::SetViewMatrix(components::transform &_Player,
     front[2] = std::sin(Radians(fYaw)) * std::cos(Radians(fPitch));
     cameraComponent.forward = Normalize(front);
 
-    tView_Matrix = LookAtMain(_Player.tPosition,
-                              _Player.tPosition + cameraComponent.forward,
-                              cameraComponent.up);
+    tView_Matrix = LookAtMain(
+        _Player.tPosition,
+        _Player.tPosition + cameraComponent.forward,
+        cameraComponent.up
+    );
     SetProjectionMatrix();
 }
 
 void CCameraSystem::SetProjectionMatrix() {
-    tProjection_Matrix = Perspective(Radians(90.0f), (float)1920 / (float)1080,
-                                     1.0f, 100.0f);
+    tProjection_Matrix =
+        Perspective(Radians(90.0f), (float)1920 / (float)1080, 1.0f, 100.0f);
 }
 } // namespace GLVM::ecs

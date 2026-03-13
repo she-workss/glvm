@@ -20,25 +20,43 @@
 #include <mutex>
 
 namespace GLVM::ecs {
-class CCollisionSystem : public ISystem {
+class CCollisionSystem: public ISystem {
 public:
     float fDelta_Time_;
     float gravity;
-    core::CStack &Input_Stack_;
+    core::CStack& Input_Stack_;
 
-    CCollisionSystem(core::CStack &_input_Stack) : Input_Stack_(_input_Stack) {
-    }
-    void Repel(components::transform &_transform_Component,
-               components::move &_move_Component, float &_fDelta_Time,
-               components::beholder &_view_Component, core::CEvent &_event);
-    bool Gravity(components::transform &_transform_Component,
-                 components::event &_event_Component);
-    bool BoxCollider(vec3 backtrackingPosition, vec3 comparedPosition,
-                     float backtrackingScale, float comparedScale);
+    CCollisionSystem(core::CStack& _input_Stack) : Input_Stack_(_input_Stack) {}
+
+    void Repel(
+        components::transform& _transform_Component,
+        components::move& _move_Component,
+        float& _fDelta_Time,
+        components::beholder& _view_Component,
+        core::CEvent& _event
+    );
+    bool Gravity(
+        components::transform& _transform_Component,
+        components::event& _event_Component
+    );
+    bool BoxCollider(
+        vec3 backtrackingPosition,
+        vec3 comparedPosition,
+        float backtrackingScale,
+        float comparedScale
+    );
     void Update() override;
-    bool UpperActorCheck(vec3 backtrackingPosition, vec3 comparedPosition,
-                         float backtrackingScale, float comparedScale);
-    bool RayCast(vec3 rayCasterPosition, vec3 receiverPosition,
-                 float rayCasterScale, float receiverScale);
+    bool UpperActorCheck(
+        vec3 backtrackingPosition,
+        vec3 comparedPosition,
+        float backtrackingScale,
+        float comparedScale
+    );
+    bool RayCast(
+        vec3 rayCasterPosition,
+        vec3 receiverPosition,
+        float rayCasterScale,
+        float receiverScale
+    );
 };
 } // namespace GLVM::ecs

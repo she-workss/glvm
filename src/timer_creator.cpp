@@ -14,7 +14,7 @@
 #endif
 
 namespace GLVM::Time {
-IChrono *CTimerCreator::Create() {
+auto CTimerCreator::Create() -> IChrono* {
 #ifdef __linux__
     return new CTimerX;
 #endif

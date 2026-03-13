@@ -7,7 +7,6 @@
 namespace GLVM::core {
 class IContainer {
 public:
-    virtual ~IContainer() {
-    }
+    virtual ~IContainer() {}
 };
 } // namespace GLVM::core

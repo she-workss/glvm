@@ -4,19 +4,19 @@
 // License: http://opensource.org/licenses/MIT
 
 #include "entity_manager.hpp"
+
 #include "component_manager.hpp"
 #include "vector.hpp"
 
 namespace GLVM::ecs {
-EntityManager *EntityManager::pInstance_ = nullptr;
+EntityManager* EntityManager::pInstance_ = nullptr;
 std::mutex EntityManager::Mutex_;
 
-EntityManager::EntityManager() {
-}
-EntityManager::~EntityManager() {
-}
+EntityManager::EntityManager() {}
 
-EntityManager *EntityManager::GetInstance() {
+EntityManager::~EntityManager() {}
+
+EntityManager* EntityManager::GetInstance() {
     std::lock_guard<std::mutex> lock(Mutex_);
     if (pInstance_ == nullptr) {
         pInstance_ = new EntityManager();
@@ -42,8 +42,10 @@ EntityManager *EntityManager::GetInstance() {
 
 // Dont need to delete real component in this method. Because systems dont work
 // with component without indices for that component in ordered container.
-void EntityManager::RemoveEntity(Entity_ID &_Entity_ID,
-                                 ComponentManager *_ComponentManager) {
+void EntityManager::RemoveEntity(
+    Entity_ID& _Entity_ID,
+    ComponentManager* _ComponentManager
+) {
     _ComponentManager->RemoveAllComponents(_Entity_ID);
     tActive_Entity_Registry_[_Entity_ID] = k_iUint_Max;
     tRemoved_Entity_Registry_.Push(_Entity_ID);

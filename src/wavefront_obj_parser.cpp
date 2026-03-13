@@ -4,45 +4,47 @@
 // License: http://opensource.org/licenses/MIT
 
 #include "wavefront_obj_parser.hpp"
+
 #include "vector.hpp"
 
 #include <chrono>
 #include <iterator>
 
 namespace GLVM::core {
-CWaveFrontObjParser::CWaveFrontObjParser() {
-}
+CWaveFrontObjParser::CWaveFrontObjParser() = default;
 
-const GLVM::core::vector<SVertex> &
-CWaveFrontObjParser::getCoordinateVertices() const {
+auto CWaveFrontObjParser::getCoordinateVertices() const
+    -> const GLVM::core::vector<SVertex>& {
     return coordinateVertices_;
 }
-const GLVM::core::vector<SVertex> &
-CWaveFrontObjParser::getTextureVertices() const {
+
+auto CWaveFrontObjParser::getTextureVertices() const
+    -> const GLVM::core::vector<SVertex>& {
     return textureVertices_;
 }
-const GLVM::core::vector<SVertex> &CWaveFrontObjParser::getNormals() const {
+
+auto CWaveFrontObjParser::getNormals() const
+    -> const GLVM::core::vector<SVertex>& {
     return normals_;
 }
-const GLVM::core::vector<SFace> &CWaveFrontObjParser::getFaces() const {
+
+auto CWaveFrontObjParser::getFaces() const -> const GLVM::core::vector<SFace>& {
     return faces_;
 }
 
-void CWaveFrontObjParser::ReadFile(const char *_filePath) {
-    const char *_pWavefrontObjFile = _filePath;
-    std::ifstream WavefrontObjFileInputStream;
-    std::stringstream WavefrontObjFileOutputStream;
-
-    WavefrontObjFileInputStream.open(_pWavefrontObjFile);
-    if (WavefrontObjFileInputStream.good()) {
-
-        WavefrontObjFileOutputStream << WavefrontObjFileInputStream.rdbuf();
-        WavefrontObjFileInputStream.close();
-        sWavefrontObjFileData = WavefrontObjFileOutputStream.str();
+void CWaveFrontObjParser::ReadFile(const char* file_path) {
+    const char* p_wavefront_obj_file = file_path;
+    std::ifstream wavefront_obj_file_input_stream;
+    std::stringstream wavefront_obj_file_output_stream;
+    wavefront_obj_file_input_stream.open(p_wavefront_obj_file);
+    if (wavefront_obj_file_input_stream.good()) {
+        wavefront_obj_file_output_stream
+            << wavefront_obj_file_input_stream.rdbuf();
+        wavefront_obj_file_input_stream.close();
+        sWavefrontObjFileData = wavefront_obj_file_output_stream.str();
     } else {
         return;
     }
-
     pWavefrontObjFileData = sWavefrontObjFileData.c_str();
 }
 
@@ -52,7 +54,7 @@ void CWaveFrontObjParser::ParseFile() {
     }
     while (pWavefrontObjFileData[uiCounter] != '\0') {
         GLVM::core::vector<vector<char>> line =
-                Split(pWavefrontObjFileData, ' ', '\n', uiCounter);
+            Split(pWavefrontObjFileData, ' ', '\n', uiCounter);
 
         if (line[0] == "v") {
             SVertex vertex = ParseVertices(line);
@@ -73,153 +75,155 @@ void CWaveFrontObjParser::ParseFile() {
     }
 }
 
-GLVM::core::vector<vector<char>>
-CWaveFrontObjParser::Split(const char *_pWaveFrontObjFileData,
-                           const char _separator, const char _exitSymbol,
-                           unsigned int &_uiCounter) {
-    GLVM::core::vector<vector<char>> wordsContainer;
+auto CWaveFrontObjParser::Split(
+    const char* p_wave_front_obj_file_data,
+    const char separator,
+    const char exit_symbol,
+    unsigned int& ui_counter
+) -> GLVM::core::vector<vector<char>> {
+    GLVM::core::vector<vector<char>> words_container;
     unsigned int outerIndex = 0;
-    wordsContainer.Push({});
+    words_container.Push({});
 
-    for (;; ++_uiCounter) {
-        if (_pWaveFrontObjFileData[_uiCounter] == '#') {
-            while (_pWaveFrontObjFileData[_uiCounter] != '\n') {
-                ++_uiCounter;
+    for (;; ++ui_counter) {
+        if (p_wave_front_obj_file_data[ui_counter] == '#') {
+            while (p_wave_front_obj_file_data[ui_counter] != '\n') {
+                ++ui_counter;
             }
             continue;
         }
-        if (_pWaveFrontObjFileData[_uiCounter] == _separator) {
-            wordsContainer[outerIndex].Push('\0');
-            wordsContainer.Push({});
+        if (p_wave_front_obj_file_data[ui_counter] == separator) {
+            words_container[outerIndex].Push('\0');
+            words_container.Push({});
             ++outerIndex;
             continue;
         }
-        if (_pWaveFrontObjFileData[_uiCounter] == _exitSymbol) {
-            ++_uiCounter;
-            wordsContainer[outerIndex].Push('\0');
-            return wordsContainer;
+        if (p_wave_front_obj_file_data[ui_counter] == exit_symbol) {
+            ++ui_counter;
+            words_container[outerIndex].Push('\0');
+            return words_container;
         }
-        wordsContainer[outerIndex].Push(_pWaveFrontObjFileData[_uiCounter]);
+        words_container[outerIndex].Push(p_wave_front_obj_file_data[ui_counter]);
     }
 }
 
-SVertex CWaveFrontObjParser::ParseVertices(
-        GLVM::core::vector<vector<char>> _wordsContainer) {
-    SVertex vertex;
-    unsigned int uiVertexIndex = 0;
+auto CWaveFrontObjParser::ParseVertices(
+    GLVM::core::vector<vector<char>> words_container
+) -> SVertex {
+    SVertex vertex {};
+    unsigned int ui_vertex_index = 0;
 
-    unsigned int uiWordsContainerSize = _wordsContainer.GetSize();
-    for (unsigned int i = 1; i < uiWordsContainerSize; ++i) {
-        float floatNumber = ParseFloating(_wordsContainer[i]);
-        vertex[uiVertexIndex++] = floatNumber;
+    unsigned int ui_words_container_size = words_container.GetSize();
+    for (unsigned int i = 1; i < ui_words_container_size; ++i) {
+        float float_number = ParseFloating(words_container[i]);
+        vertex[ui_vertex_index++] = float_number;
     }
 
     return vertex;
 }
 
-SFace CWaveFrontObjParser::ParseFaces(
-        GLVM::core::vector<vector<char>> _wordsContainer) {
+auto CWaveFrontObjParser::ParseFaces(
+    GLVM::core::vector<vector<char>> words_container
+) -> SFace {
     SFace face;
-    GLVM::core::vector<vector<char>> wordsInnerContainer;
+    GLVM::core::vector<vector<char>> words_inner_container;
     GLVM::core::vector<char> word;
 
-    unsigned int uiWordsContainerSize = _wordsContainer.GetSize();
+    unsigned int ui_words_container_size = words_container.GetSize();
 
-    for (unsigned int i = 1; i < uiWordsContainerSize; ++i) {
+    for (unsigned int i = 1; i < ui_words_container_size; ++i) {
         unsigned int counter = 0;
-        wordsInnerContainer = Split(_wordsContainer[i].GetVectorContainer(),
-                                    '/', '\0', counter);
+        words_inner_container =
+            Split(words_container[i].GetVectorContainer(), '/', '\0', counter);
 
-        for (unsigned int j = 0; j < wordsInnerContainer.GetSize(); ++j) {
+        for (unsigned int j = 0; j < words_inner_container.GetSize(); ++j) {
+            word = words_inner_container[j];
+            int i_value = ParseInteger(word);
 
-            word = wordsInnerContainer[j];
-            int iValue = ParseInteger(word);
-
-            face[j].Push(iValue);
+            face[j].Push(i_value);
         }
     }
     return face;
 }
 
-int CWaveFrontObjParser::ParseInteger(GLVM::core::vector<char> _word) {
-    GLVM::core::vector<int> baseContainer;
+auto CWaveFrontObjParser::ParseInteger(GLVM::core::vector<char> word) -> int {
+    GLVM::core::vector<int> base_container;
 
-    for (unsigned int i = 0; i < _word.GetSize() - 1; ++i) {
-        baseContainer.Push(_word[i] - 48);
+    for (unsigned int i = 0; i < word.GetSize() - 1; ++i) {
+        base_container.Push(word[i] - 48);
     }
 
-    int iResult = 0;
-    bool negateFlag = false;
+    int i_result = 0;
+    bool negate_flag = false;
 
-    unsigned int baseContainerSize = baseContainer.GetSize();
-    for (unsigned int i = 0; i < baseContainerSize; ++i) {
-        if (negateFlag && i == 0) {
-            continue;
-        } else if (baseContainer[i] == -5 && i == 0) {
+    unsigned int base_container_size = base_container.GetSize();
+    for (unsigned int i = 0; i < base_container_size; ++i) {
+        if ((negate_flag && i == 0) || (base_container[i] == -5 && i == 0)) {
             continue;
         }
 
-        iResult += baseContainer[i] * std::pow(10, (baseContainerSize - 1) - i);
+        i_result +=
+            base_container[i] * std::pow(10, (base_container_size - 1) - i);
     }
 
-    return iResult;
+    return i_result;
 }
 
-float CWaveFrontObjParser::ParseFloating(GLVM::core::vector<char> _word) {
-    GLVM::core::vector<int> baseContainer;
+auto CWaveFrontObjParser::ParseFloating(GLVM::core::vector<char> word)
+    -> float {
+    GLVM::core::vector<int> base_container;
 
-    for (unsigned int i = 0; i < _word.GetSize() - 1; ++i) {
-        baseContainer.Push(_word[i] - 48);
+    for (unsigned int i = 0; i < word.GetSize() - 1; ++i) {
+        base_container.Push(word[i] - 48);
     }
 
-    int integerPart = 0;
-    float floatingPart = 0;
-    GLVM::core::vector<int> integerPartContainer;
-    GLVM::core::vector<int> floatingPartContainer;
-    bool dotFlag = false;
-    bool negateFlag = false;
-    unsigned int baseContainerSize = baseContainer.GetSize();
+    int integer_part = 0;
+    float floating_part = 0;
+    GLVM::core::vector<int> integer_part_container;
+    GLVM::core::vector<int> floating_part_container;
+    bool dot_flag = false;
+    bool negate_flag = false;
+    unsigned int base_container_size = base_container.GetSize();
 
-    if (baseContainer[0] == -3) {
-        negateFlag = true;
+    if (base_container[0] == -3) {
+        negate_flag = true;
     }
 
-    for (unsigned int i = 0; i < baseContainerSize; ++i) {
-        if (negateFlag && i == 0) {
-            continue;
-        } else if (baseContainer[i] == -5 && i == 0) {
-            continue;
-        } else if (baseContainer[i] == -2) {
-            dotFlag = true;
+    for (unsigned int i = 0; i < base_container_size; ++i) {
+        if (base_container[i] == -2) {
+            dot_flag = true;
+        }
+        if ((negate_flag && i == 0) || base_container[i] == -2
+            || (base_container[i] == -5 && i == 0)) {
             continue;
         }
-
-        if (baseContainer[i] >= 0 && baseContainer[i] <= 9) {
-            if (dotFlag) {
-                floatingPartContainer.Push(baseContainer[i]);
+        if (base_container[i] >= 0 && base_container[i] <= 9) {
+            if (dot_flag) {
+                floating_part_container.Push(base_container[i]);
             } else {
-                integerPartContainer.Push(baseContainer[i]);
+                integer_part_container.Push(base_container[i]);
             }
         } else {
             return NAN;
         }
     }
 
-    unsigned int integerPartContainerSize = integerPartContainer.GetSize();
-    for (unsigned int i = 0; i < integerPartContainerSize; ++i) {
-        integerPart += integerPartContainer[i] *
-                       std::pow(10, (integerPartContainerSize - 1) - i);
+    unsigned int integer_part_container_size = integer_part_container.GetSize();
+    for (unsigned int i = 0; i < integer_part_container_size; ++i) {
+        integer_part += integer_part_container[i]
+            * std::pow(10, (integer_part_container_size - 1) - i);
     }
 
-    unsigned int floatingPartContainerSize = floatingPartContainer.GetSize();
-    for (unsigned int i = 0; i < floatingPartContainerSize; ++i) {
-        floatingPart += floatingPartContainer[i] / std::pow(10, i + 1);
+    unsigned int floating_part_container_size =
+        floating_part_container.GetSize();
+    for (unsigned int i = 0; i < floating_part_container_size; ++i) {
+        floating_part += floating_part_container[i] / std::pow(10, i + 1);
     }
 
     float result = 0;
-    result = (float)(integerPart + floatingPart);
+    result = (float)(integer_part + floating_part);
 
-    if (negateFlag) {
+    if (negate_flag) {
         result *= -1.0f;
     }
 

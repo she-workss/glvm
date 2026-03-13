@@ -15,7 +15,7 @@ class CStack {
     EEvents aStack_[iStack_Range_] = {};
 
 public:
-    void Push(const EEvents &_Event) {
+    void Push(const EEvents& _Event) {
         for (int i = 0; i < iHead_; ++i) {
             if (aStack_[i] == _Event) {
                 return;
@@ -31,11 +31,11 @@ public:
         ++iHead_;
     }
 
-    EEvents &Pop() {
+    EEvents& Pop() {
         return aStack_[iHead_ - 1];
     }
 
-    void Remove(const EEvents &_Event) {
+    void Remove(const EEvents& _Event) {
         EEvents aTemp_Stack[iStack_Range_] = {};
         bool removeFlag = false;
         int n = 0;
@@ -61,7 +61,7 @@ public:
     }
 
     // TODO: Delete all this if's with CheckEvent function
-    void ControlInput(CEvent &_eEvent) {
+    void ControlInput(CEvent& _eEvent) {
         if (!(SearchElement(_eEvent.GetEvent()) == eEmpty)) {
             return;
         }
@@ -120,7 +120,7 @@ public:
         return eEmpty;
     }
 
-    EEvents &operator[](int _iIndex) {
+    EEvents& operator[](int _iIndex) {
         return aStack_[_iIndex];
     }
 

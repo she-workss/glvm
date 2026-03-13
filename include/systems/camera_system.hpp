@@ -11,7 +11,7 @@
 #include "vertex_math.hpp"
 
 namespace GLVM::ecs {
-class CCameraSystem : public ISystem {
+class CCameraSystem: public ISystem {
 public:
     Matrix<float, 4> tProjection_Matrix {1.0f};
 
@@ -23,8 +23,10 @@ public:
     bool bFirst_Mouse = true;
 
     void Update() override;
-    void SetViewMatrix(components::transform &_Player,
-                       components::beholder &_view_Component);
+    void SetViewMatrix(
+        components::transform& _Player,
+        components::beholder& _view_Component
+    );
     void SetProjectionMatrix();
 };
 } // namespace GLVM::ecs

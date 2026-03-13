@@ -11,26 +11,26 @@
 #include <mutex>
 #include <vector>
 
-typedef unsigned int Entity_ID;
-typedef unsigned int Texture_ID;
+using EntityId = unsigned int;
+using TextureId = unsigned int;
 
 namespace GLVM::ecs {
 class TextureManager {
-    static TextureManager *pInstance_;
-    static std::mutex Mutex_;
+    static TextureManager* p_instance;
+    static std::mutex mutex;
 
-    std::vector<Texture> textureVector_;
+    std::vector<Texture> texture_vector;
 
 public:
     TextureManager();
 
-    void SetTextureVector(std::vector<Texture> _textureVector);
+    void SetTextureVector(std::vector<Texture> texture_vector);
     // It possibly to get only one instance of this class with this method.
-    static TextureManager *GetInstance();
-    static TextureManager *GetHUDInstance();
-    void BindTexture(Entity_ID _entityID, Texture_ID _textureID);
-    void LoadTextureData(GLVM::ecs::Texture &_Texture);
-    std::vector<Texture> &GetTextureVector();
-    void UnbindTexture(components::material _textureComponent, Entity _entity);
+    static auto GetInstance() -> TextureManager*;
+    static auto GetHUDInstance() -> TextureManager*;
+    void BindTexture(EntityId entity_id, TextureId texture_id);
+    void LoadTextureData(GLVM::ecs::Texture& texture);
+    auto GetTextureVector() -> std::vector<Texture>&;
+    void unbind_texture(components::material texture_component, Entity entity);
 };
 } // namespace GLVM::ecs

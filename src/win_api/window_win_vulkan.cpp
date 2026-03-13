@@ -4,6 +4,7 @@
 // License: http://opensource.org/licenses/MIT
 
 #include "win_api/window_win_vulkan.hpp"
+
 #include "event.hpp"
 
 #include <iostream>
@@ -17,7 +18,7 @@
 
 namespace GLVM::core {
 WindowWinVulkan::WindowWinVulkan() {
-    const char *_title = "Window class";
+    const char* _title = "Window class";
     int _width = 1920, _height = 1080;
     // Register the window class for the main window.
     window_Class_.style = 0;
@@ -40,22 +41,29 @@ WindowWinVulkan::WindowWinVulkan() {
     AdjustWindowRect(&rect, style, FALSE);
     // Create the main window.
     pModern_Window_ = CreateWindowA(
-            "Window class", _title, style, CW_USEDEFAULT, CW_USEDEFAULT,
-            rect.right - rect.left, rect.bottom - rect.top, (HWND)NULL,
-            (HMENU)NULL, NULL, (LPVOID)NULL);
+        "Window class",
+        _title,
+        style,
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
+        rect.right - rect.left,
+        rect.bottom - rect.top,
+        (HWND)NULL,
+        (HMENU)NULL,
+        NULL,
+        (LPVOID)NULL
+    );
     // Show the window and paint its contents.
     ShowWindow(pModern_Window_, SW_SHOWDEFAULT);
     UpdateWindow(pModern_Window_);
     SetCursorPos(0, 0);
 }
 
-void WindowWinVulkan::SwapBuffers() {
-}
+void WindowWinVulkan::SwapBuffers() {}
 
-void WindowWinVulkan::ClearDisplay() {
-}
+void WindowWinVulkan::ClearDisplay() {}
 
-bool WindowWinVulkan::HandleEvent(CEvent &_Event) {
+bool WindowWinVulkan::HandleEvent(CEvent& _Event) {
     // Create message struct object.
     MSG msg;
 
@@ -76,18 +84,23 @@ void WindowWinVulkan::Close() {
 HWND WindowWinVulkan::GetClassicWindowHWND() {
     return pClassic_Window_;
 }
+
 HWND WindowWinVulkan::GetModernWindowHWND() {
     return pModern_Window_;
 }
 
-void WindowWinVulkan::CursorLock(int _x_position, int _y_position,
-                                 int *_x_offset, int *_y_offset) {
+void WindowWinVulkan::CursorLock(
+    int _x_position,
+    int _y_position,
+    int* _x_offset,
+    int* _y_offset
+) {
     POINT point_position {960, 540};
     ClientToScreen(pModern_Window_, &point_position);
 
     // Solve a problem with endlessly growing numbers in the start game run.
-    if (_x_position > 1911 || _x_position < 0 || _y_position > 1052 ||
-        _y_position < 0) {
+    if (_x_position > 1911 || _x_position < 0 || _y_position > 1052
+        || _y_position < 0) {
         return;
     }
 
@@ -109,10 +122,13 @@ void WindowWinVulkan::CursorLock(int _x_position, int _y_position,
 }
 
 // Callback method for events handling.
-LRESULT CALLBACK WindowWinVulkan::MainWndProc(HWND _pHwnd, UINT _pMsg,
-                                              WPARAM _pWParam,
-                                              LPARAM _pLParam) {
-    CEvent *pEvent = (CEvent *)GetWindowLongPtrW(_pHwnd, GWLP_USERDATA);
+LRESULT CALLBACK WindowWinVulkan::MainWndProc(
+    HWND _pHwnd,
+    UINT _pMsg,
+    WPARAM _pWParam,
+    LPARAM _pLParam
+) {
+    CEvent* pEvent = (CEvent*)GetWindowLongPtrW(_pHwnd, GWLP_USERDATA);
 
     int iMouse_Position_X, iMouse_Position_Y;
     switch (_pMsg) {

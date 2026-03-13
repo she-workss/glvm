@@ -1,0 +1,27 @@
+CompileFlags:
+  CompilationDatabase: build/debug
+  Add:
+    - "-std=c++26"
+    - "-Icrates/rusty/include"
+    - "-Icrates/cevy/include"
+    - "-Icrates/cevy_ecs/include"
+    - "-Icrates/cevy_render/include"
+  Remove:
+    - "-fmodules-ts"
+    - "-fmodule-mapper=*"
+    - "-fdeps-format=*"
+    - "-fdeps-file=*"
+    - "-fmodule-output=*"
+    - "-fdiagnostics-color=*"
+    - "-MD"
+    - "-MT*"
+    - "-MF*"
+
+Index:
+  Background: Build
+
+Diagnostics:
+  UnusedIncludes: None
+  ClangTidy:
+    Remove:
+      - misc-include-cleaner

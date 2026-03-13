@@ -6,20 +6,30 @@
 #include "unix_api/window_x_vulkan.hpp"
 
 #include <X11/Xlib.h>
-
 #include <iostream>
 
 namespace GLVM::core {
 WindowXVulkan::WindowXVulkan() {
     pDisp_ = XOpenDisplay(NULL);
     Root_Window_ = DefaultRootWindow(pDisp_);
-    Set_Window_Attributes_.event_mask =
-            KeyPressMask | KeyReleaseMask | PointerMotionMask |
-            StructureNotifyMask | ButtonPressMask | ButtonReleaseMask;
+    Set_Window_Attributes_.event_mask = KeyPressMask | KeyReleaseMask
+        | PointerMotionMask | StructureNotifyMask | ButtonPressMask
+        | ButtonReleaseMask;
 
-    Win_ = XCreateWindow(pDisp_, Root_Window_, 0, 0, 1920, 1080, 0,
-                         CopyFromParent, InputOutput, CopyFromParent,
-                         CWEventMask, &Set_Window_Attributes_);
+    Win_ = XCreateWindow(
+        pDisp_,
+        Root_Window_,
+        0,
+        0,
+        1920,
+        1080,
+        0,
+        CopyFromParent,
+        InputOutput,
+        CopyFromParent,
+        CWEventMask,
+        &Set_Window_Attributes_
+    );
     // Show_the_window
     XMapWindow(pDisp_, Win_);
     XWarpPointer(pDisp_, None, Win_, 0, 0, 0, 0, 0, 0);
@@ -31,8 +41,15 @@ WindowXVulkan::WindowXVulkan() {
     black.red = black.green = black.blue = 0;
 
     bitmapNoData = XCreateBitmapFromData(pDisp_, Win_, noData, 8, 8);
-    invisibleCursor = XCreatePixmapCursor(pDisp_, bitmapNoData, bitmapNoData,
-                                          &black, &black, 0, 0);
+    invisibleCursor = XCreatePixmapCursor(
+        pDisp_,
+        bitmapNoData,
+        bitmapNoData,
+        &black,
+        &black,
+        0,
+        0
+    );
     XDefineCursor(pDisp_, Win_, invisibleCursor);
 
     XFreeCursor(pDisp_, invisibleCursor);
@@ -46,12 +63,17 @@ WindowXVulkan::~WindowXVulkan() = default;
 Window WindowXVulkan::GetWindow() {
     return Win_;
 }
-Display *WindowXVulkan::GetDisplay() {
+
+Display* WindowXVulkan::GetDisplay() {
     return pDisp_;
 }
 
-void WindowXVulkan::CursorLock(int _x_position, int _y_position, int *_x_offset,
-                               int *_y_offset) {
+void WindowXVulkan::CursorLock(
+    int _x_position,
+    int _y_position,
+    int* _x_offset,
+    int* _y_offset
+) {
     int iOffset_X = 0, iOffset_Y = 0;
     iOffset_X = _x_position - 960;
     iOffset_Y = _y_position - 540;
@@ -69,13 +91,11 @@ void WindowXVulkan::CursorLock(int _x_position, int _y_position, int *_x_offset,
     XFlush(pDisp_);
 }
 
-void WindowXVulkan::SwapBuffers() {
-}
+void WindowXVulkan::SwapBuffers() {}
 
-void WindowXVulkan::ClearDisplay() {
-}
+void WindowXVulkan::ClearDisplay() {}
 
-bool WindowXVulkan::HandleEvent(CEvent &_Event) {
+bool WindowXVulkan::HandleEvent(CEvent& _Event) {
     XEvent uXEvent;
 
     while (XPending(pDisp_)) {
@@ -92,9 +112,17 @@ bool WindowXVulkan::HandleEvent(CEvent &_Event) {
                 _Event.mousePointerPosition.position_Y = motion.y;
             case MapNotify:
                 // Link mouse cursor to specified window
-                XGrabPointer(pDisp_, Win_, True, PointerMotionMask,
-                             GrabModeAsync, GrabModeAsync, Win_, None,
-                             CurrentTime);
+                XGrabPointer(
+                    pDisp_,
+                    Win_,
+                    True,
+                    PointerMotionMask,
+                    GrabModeAsync,
+                    GrabModeAsync,
+                    Win_,
+                    None,
+                    CurrentTime
+                );
                 break;
             case ButtonPress:
                 uiMouse_Button = uXEvent.xbutton.button;
@@ -143,9 +171,9 @@ bool WindowXVulkan::HandleEvent(CEvent &_Event) {
                     XEvent uXNext_Event;
                     XPeekEvent(pDisp_, &uXNext_Event);
 
-                    if (uXNext_Event.type == KeyPress &&
-                        uXNext_Event.xkey.time == uXEvent.xkey.time &&
-                        uXNext_Event.xkey.keycode == uXEvent.xkey.keycode) {
+                    if (uXNext_Event.type == KeyPress
+                        && uXNext_Event.xkey.time == uXEvent.xkey.time
+                        && uXNext_Event.xkey.keycode == uXEvent.xkey.keycode) {
                         // Key wasn't actually released
                         XNextEvent(pDisp_, &uXNext_Event);
                         continue;

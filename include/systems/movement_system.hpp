@@ -19,17 +19,19 @@
 #include "vertex_math.hpp"
 
 namespace GLVM::ecs {
-class CMovementSystem : public ISystem {
+class CMovementSystem: public ISystem {
 public:
     float deltaFrameTime;
     float gravity;
-    core::CStack &inputStack;
+    core::CStack& inputStack;
 
-    CMovementSystem(core::CStack &inputStack);
+    CMovementSystem(core::CStack& inputStack);
 
     void Update();
-    Vector<float, 3> CalculateVectorRL(components::beholder &beholder);
-    Vector<float, 3> CalculateVectorFB(components::beholder &beholder,
-                                       core::CEvent &event);
+    Vector<float, 3> CalculateVectorRL(components::beholder& beholder);
+    Vector<float, 3> CalculateVectorFB(
+        components::beholder& beholder,
+        core::CEvent& event
+    );
 };
 } // namespace GLVM::ecs

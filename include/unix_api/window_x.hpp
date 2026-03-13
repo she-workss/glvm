@@ -10,20 +10,24 @@
 
 namespace GLVM::Core {
 
-class CWindowX : public IWindow {
-    Display *pDisp_;
+class CWindowX: public IWindow {
+    Display* pDisp_;
     Window Win_;
     int iNum_Fbc_ = 0;
-    GLXContext (*pGLXCreateContextAttribsARB_)(Display *, GLXFBConfig,
-                                               GLXContext, Bool,
-                                               const int *) = 0;
+    GLXContext (*pGLXCreateContextAttribsARB_)(
+        Display*,
+        GLXFBConfig,
+        GLXContext,
+        Bool,
+        const int*
+    ) = 0;
     GLXContext Context_;
     XWindowAttributes GWindow_Attributes_;
     Window Root_Window_;
     XSetWindowAttributes Set_Window_Attributes_;
     Colormap Color_Map_;
-    XVisualInfo *pVisual_;
-    GLXFBConfig *pFbc_;
+    XVisualInfo* pVisual_;
+    GLXFBConfig* pFbc_;
     GLXDrawable Drawable;
 
 public:
@@ -31,12 +35,16 @@ public:
     ~CWindowX();
 
     Window GetWindow();
-    Display *GetDisplay();
-    void CursorLock(int _x_position, int _y_position, int *_x_offset,
-                    int *_y_offset) override;
+    Display* GetDisplay();
+    void CursorLock(
+        int _x_position,
+        int _y_position,
+        int* _x_offset,
+        int* _y_offset
+    ) override;
     void SwapBuffers() override;
     void ClearDisplay() override;
-    bool HandleEvent(CEvent &_Event) override;
+    bool HandleEvent(CEvent& _Event) override;
     void Close() override;
 };
 } // namespace GLVM::Core

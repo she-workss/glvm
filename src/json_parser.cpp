@@ -4,6 +4,7 @@
 // License: http://opensource.org/licenses/MIT
 
 #include "json_parser.hpp"
+
 #include "stack.hpp"
 #include "vector.hpp"
 
@@ -14,14 +15,13 @@
 
 namespace GLVM::Core {
 
-void CJsonParser::ReadFile(const char *_filePath) {
-    const char *_pJsonFilePath = _filePath;
+void CJsonParser::ReadFile(const char* _filePath) {
+    const char* _pJsonFilePath = _filePath;
     std::ifstream jsonFileInputStream;
     std::stringstream jsonFileOutputStream;
 
     jsonFileInputStream.open(_pJsonFilePath);
     if (jsonFileInputStream.good()) {
-
         jsonFileOutputStream << jsonFileInputStream.rdbuf();
         jsonFileInputStream.close();
         sJsonFileData_ = jsonFileOutputStream.str();
@@ -51,14 +51,15 @@ void CJsonParser::Parse() {
 
             if (keyFlag) {
                 JsonValue jsonString(bufferString_);
-                (*stackOfJsonValues_.GetHead()
-                          ->value.object)[lastKey_.c_str()] = jsonString;
+                (
+                    *stackOfJsonValues_.GetHead()->value.object
+                )[lastKey_.c_str()] = jsonString;
             } else {
                 JsonValue jsonString(bufferString_);
                 stackOfJsonValues_.GetHead()->value.array->Push(jsonString);
             }
-        } else if ((currentChar_ >= '0' && currentChar_ <= '9') ||
-                   currentChar_ == '+' || currentChar_ == '-') {
+        } else if ((currentChar_ >= '0' && currentChar_ <= '9')
+                   || currentChar_ == '+' || currentChar_ == '-') {
             bufferString_ = NumberAsStringParse();
             core::vector<char> vector = StringToVectorOfChars(bufferString_);
             double fNumber = 0.0f;
@@ -68,8 +69,9 @@ void CJsonParser::Parse() {
 
                 if (keyFlag) {
                     JsonValue jsonFloat(fNumber);
-                    (*stackOfJsonValues_.GetHead()
-                              ->value.object)[lastKey_.c_str()] = jsonFloat;
+                    (
+                        *stackOfJsonValues_.GetHead()->value.object
+                    )[lastKey_.c_str()] = jsonFloat;
                 } else {
                     JsonValue jsonFloat(fNumber);
                     stackOfJsonValues_.GetHead()->value.array->Push(jsonFloat);
@@ -79,23 +81,25 @@ void CJsonParser::Parse() {
 
                 if (keyFlag) {
                     JsonValue jsonInt(iNumber);
-                    (*stackOfJsonValues_.GetHead()
-                              ->value.object)[lastKey_.c_str()] = jsonInt;
+                    (
+                        *stackOfJsonValues_.GetHead()->value.object
+                    )[lastKey_.c_str()] = jsonInt;
                 } else {
                     JsonValue jsonInt(iNumber);
                     stackOfJsonValues_.GetHead()->value.array->Push(jsonInt);
                 }
             }
 
-        } else if (currentChar_ == 't' || currentChar_ == 'f' ||
-                   currentChar_ == 'n') {
+        } else if (currentChar_ == 't' || currentChar_ == 'f'
+                   || currentChar_ == 'n') {
             std::string boolOrNullString = BoolOrNullParse();
 
             if (boolOrNullString == "true") {
                 if (keyFlag) {
                     JsonValue jsonTrue(true);
-                    (*stackOfJsonValues_.GetHead()
-                              ->value.object)[lastKey_.c_str()] = jsonTrue;
+                    (
+                        *stackOfJsonValues_.GetHead()->value.object
+                    )[lastKey_.c_str()] = jsonTrue;
                 } else {
                     JsonValue jsonTrue(true);
                     stackOfJsonValues_.GetHead()->value.array->Push(jsonTrue);
@@ -103,8 +107,9 @@ void CJsonParser::Parse() {
             } else if (boolOrNullString == "false") {
                 if (keyFlag) {
                     JsonValue jsonFalse(false);
-                    (*stackOfJsonValues_.GetHead()
-                              ->value.object)[lastKey_.c_str()] = jsonFalse;
+                    (
+                        *stackOfJsonValues_.GetHead()->value.object
+                    )[lastKey_.c_str()] = jsonFalse;
                 } else {
                     JsonValue jsonFalse(false);
                     stackOfJsonValues_.GetHead()->value.array->Push(jsonFalse);
@@ -114,8 +119,9 @@ void CJsonParser::Parse() {
                     JsonValue jsonNull;
                     jsonNull.type = JSON_NULL;
                     jsonNull.value.null = NULL;
-                    (*stackOfJsonValues_.GetHead()
-                              ->value.object)[lastKey_.c_str()] = jsonNull;
+                    (
+                        *stackOfJsonValues_.GetHead()->value.object
+                    )[lastKey_.c_str()] = jsonNull;
                 } else {
                     JsonValue jsonNull;
                     jsonNull.type = JSON_NULL;
@@ -130,16 +136,18 @@ void CJsonParser::Parse() {
                 stackOfJsonValues_.Push(root_);
             } else if (keyFlag) {
                 JsonValue jsonObject = CreateJsonHashMap();
-                (*stackOfJsonValues_.GetHead()
-                          ->value.object)[lastKey_.c_str()] = jsonObject;
-                stackOfJsonValues_.Push(
-                        &(*stackOfJsonValues_.GetHead()
-                                   ->value.object)[lastKey_.c_str()]);
+                (
+                    *stackOfJsonValues_.GetHead()->value.object
+                )[lastKey_.c_str()] = jsonObject;
+                stackOfJsonValues_.Push(&(
+                    *stackOfJsonValues_.GetHead()->value.object
+                )[lastKey_.c_str()]);
             } else if (!keyFlag) {
                 JsonValue jsonObject = CreateJsonHashMap();
                 stackOfJsonValues_.GetHead()->value.array->Push(jsonObject);
                 stackOfJsonValues_.Push(
-                        &stackOfJsonValues_.GetHead()->value.array->GetHead());
+                    &stackOfJsonValues_.GetHead()->value.array->GetHead()
+                );
             }
 
             keyFlag = true;
@@ -150,23 +158,25 @@ void CJsonParser::Parse() {
                 stackOfJsonValues_.Push(root_);
             } else if (keyFlag) {
                 JsonValue jsonArray = CreateJsonArray();
-                (*stackOfJsonValues_.GetHead()
-                          ->value.object)[lastKey_.c_str()] = jsonArray;
-                stackOfJsonValues_.Push(
-                        &(*stackOfJsonValues_.GetHead()
-                                   ->value.object)[lastKey_.c_str()]);
+                (
+                    *stackOfJsonValues_.GetHead()->value.object
+                )[lastKey_.c_str()] = jsonArray;
+                stackOfJsonValues_.Push(&(
+                    *stackOfJsonValues_.GetHead()->value.object
+                )[lastKey_.c_str()]);
             } else if (!keyFlag) {
                 JsonValue jsonArray = CreateJsonArray();
                 stackOfJsonValues_.GetHead()->value.array->Push(jsonArray);
                 stackOfJsonValues_.Push(
-                        &stackOfJsonValues_.GetHead()->value.array->GetHead());
+                    &stackOfJsonValues_.GetHead()->value.array->GetHead()
+                );
             }
 
             keyFlag = false;
         } else if (currentChar_ == '}') {
             stackOfJsonValues_.Pop();
-            if (stackOfJsonValues_.GetSize() &&
-                stackOfJsonValues_.GetHead()->type == JSON_OBJECT) {
+            if (stackOfJsonValues_.GetSize()
+                && stackOfJsonValues_.GetHead()->type == JSON_OBJECT) {
                 keyFlag = true;
             } else {
                 keyFlag = false;
@@ -174,8 +184,8 @@ void CJsonParser::Parse() {
 
         } else if (currentChar_ == ']') {
             stackOfJsonValues_.Pop();
-            if (stackOfJsonValues_.GetSize() &&
-                stackOfJsonValues_.GetHead()->type == JSON_OBJECT) {
+            if (stackOfJsonValues_.GetSize()
+                && stackOfJsonValues_.GetHead()->type == JSON_OBJECT) {
                 keyFlag = true;
             } else {
                 keyFlag = false;
@@ -227,8 +237,8 @@ std::string CJsonParser::NumberAsStringParse() {
     std::string numberAsString = "";
     while (1) {
         currentChar_ = pJsonFileData_[globalFileCounter_];
-        if ((currentChar_ >= '0' && currentChar_ <= '9') ||
-            currentChar_ == '+' || currentChar_ == '-' || currentChar_ == 'e') {
+        if ((currentChar_ >= '0' && currentChar_ <= '9') || currentChar_ == '+'
+            || currentChar_ == '-' || currentChar_ == 'e') {
             numberAsString.push_back(currentChar_);
             ++globalFileCounter_;
         } else if (currentChar_ == '.') {
@@ -357,13 +367,13 @@ double CJsonParser::ParseFloating(core::vector<char> _word) {
     unsigned int ePartContainerSize = ePartContainer.GetSize();
     for (unsigned int i = 0; i < ePartContainerSize; ++i) {
         eNumber +=
-                ePartContainer[i] * std::pow(10, (ePartContainerSize - 1) - i);
+            ePartContainer[i] * std::pow(10, (ePartContainerSize - 1) - i);
     }
 
     unsigned int integerPartContainerSize = integerPartContainer.GetSize();
     for (unsigned int i = 0; i < integerPartContainerSize; ++i) {
-        integerPart += integerPartContainer[i] *
-                       std::pow(10, (integerPartContainerSize - 1) - i);
+        integerPart += integerPartContainer[i]
+            * std::pow(10, (integerPartContainerSize - 1) - i);
     }
 
     unsigned int floatingPartContainerSize = floatingPartContainer.GetSize();
@@ -390,12 +400,17 @@ double CJsonParser::ParseFloating(core::vector<char> _word) {
 }
 
 void CJsonParser::SearchInJsonArray(
-        core::vector<JsonValue> *arrayValue, const char *key_,
-        core::vector<JsonValue> &resultVector) const {
+    core::vector<JsonValue>* arrayValue,
+    const char* key_,
+    core::vector<JsonValue>& resultVector
+) const {
     for (unsigned int i = 0; i < arrayValue->GetSize(); ++i) {
         if ((*arrayValue)[i].type == JSON_OBJECT) {
-            SearchInJsonObject((*arrayValue)[i].value.object, key_,
-                               resultVector);
+            SearchInJsonObject(
+                (*arrayValue)[i].value.object,
+                key_,
+                resultVector
+            );
         }
 
         if ((*arrayValue)[i].type == JSON_ARRAY) {
@@ -405,11 +420,13 @@ void CJsonParser::SearchInJsonArray(
 }
 
 void CJsonParser::SearchInJsonObject(
-        HashMap<JsonValue> *mapValue, const char *key_,
-        core::vector<JsonValue> &resultVector) const {
+    HashMap<JsonValue>* mapValue,
+    const char* key_,
+    core::vector<JsonValue>& resultVector
+) const {
     for (unsigned int i = 0; i < mapValue->GetCapacity(); ++i) {
         if (mapValue->hashMap_[i] != nullptr) {
-            Node<JsonValue> *current = mapValue->hashMap_[i];
+            Node<JsonValue>* current = mapValue->hashMap_[i];
             while (current != nullptr) {
                 std::string searchKey = key_;
                 std::string currentKey = current->key_;
@@ -418,13 +435,19 @@ void CJsonParser::SearchInJsonObject(
                 }
 
                 if (current->value_.type == JSON_OBJECT) {
-                    SearchInJsonObject(current->value_.value.object, key_,
-                                       resultVector);
+                    SearchInJsonObject(
+                        current->value_.value.object,
+                        key_,
+                        resultVector
+                    );
                 }
 
                 if (current->value_.type == JSON_ARRAY) {
-                    SearchInJsonArray(current->value_.value.array, key_,
-                                      resultVector);
+                    SearchInJsonArray(
+                        current->value_.value.array,
+                        key_,
+                        resultVector
+                    );
                 }
 
                 current = current->next_;
@@ -433,101 +456,108 @@ void CJsonParser::SearchInJsonObject(
     }
 }
 
-core::vector<JsonValue> CJsonParser::Search(const char *key_) const {
+core::vector<JsonValue> CJsonParser::Search(const char* key_) const {
     core::vector<JsonValue> resultVector;
     SearchInJsonObject(root_->value.object, key_, resultVector);
     return resultVector;
 }
 
 void CJsonParser::LoadGLTF(
-        const char *pathsGLTF_, std::vector<float> &aVertexes_,
-        std::vector<uint32_t> &aIndices_,
-        core::vector<core::vector<mat4>> &jointMatricesPerMesh,
-        core::vector<float> &frames, bool &noAnimations) {
+    const char* pathsGLTF_,
+    std::vector<float>& aVertexes_,
+    std::vector<uint32_t>& aIndices_,
+    core::vector<core::vector<mat4>>& jointMatricesPerMesh,
+    core::vector<float>& frames,
+    bool& noAnimations
+) {
     ReadFile(pathsGLTF_);
     Parse();
 
-    Core::JsonValue *gltf = GetRoot();
+    Core::JsonValue* gltf = GetRoot();
     std::string binary_path = *(*gltf)["buffers"][0]["uri"].value.string;
     int full_byte_size = (*gltf)["buffers"][0]["byteLength"].value.iNumber;
     ;
     std::ifstream in_stream;
     in_stream.open("assets/gltf/" + binary_path, std::ios::binary);
-    char *buffer = new char[full_byte_size];
+    char* buffer = new char[full_byte_size];
     in_stream.read(buffer, full_byte_size);
     in_stream.close();
 
     int indices_index =
-            (*gltf)["meshes"][0]["primitives"][0]["indices"].value.iNumber;
+        (*gltf)["meshes"][0]["primitives"][0]["indices"].value.iNumber;
     int indices_buffer_view_index =
-            (*gltf)["accessors"][indices_index]["bufferView"].value.iNumber;
+        (*gltf)["accessors"][indices_index]["bufferView"].value.iNumber;
     int indices_byte_length =
-            (*gltf)["bufferViews"][indices_buffer_view_index]["byteLength"]
-                    .value.iNumber;
+        (*gltf)["bufferViews"][indices_buffer_view_index]["byteLength"]
+            .value.iNumber;
     int indices_byte_offset =
-            (*gltf)["bufferViews"][indices_buffer_view_index]["byteOffset"]
-                    .value.iNumber;
+        (*gltf)["bufferViews"][indices_buffer_view_index]["byteOffset"]
+            .value.iNumber;
 
     core::vector<unsigned int> indices;
     for (int i = indices_byte_offset;
-         i < indices_byte_offset + indices_byte_length; i += 2) {
-        indices.Push(reinterpret_cast<unsigned short &>(buffer[i]));
+         i < indices_byte_offset + indices_byte_length;
+         i += 2) {
+        indices.Push(reinterpret_cast<unsigned short&>(buffer[i]));
     }
 
     int vertices_position_index =
-            (*gltf)["meshes"][0]["primitives"][0]["attributes"]["POSITION"]
-                    .value.iNumber;
+        (*gltf)["meshes"][0]["primitives"][0]["attributes"]["POSITION"]
+            .value.iNumber;
     int vertices_buffer_view_index =
-            (*gltf)["accessors"][vertices_position_index]["bufferView"]
-                    .value.iNumber;
+        (*gltf)["accessors"][vertices_position_index]["bufferView"]
+            .value.iNumber;
     int vertices_byte_length =
-            (*gltf)["bufferViews"][vertices_buffer_view_index]["byteLength"]
-                    .value.iNumber;
+        (*gltf)["bufferViews"][vertices_buffer_view_index]["byteLength"]
+            .value.iNumber;
     int vertices_byte_offset =
-            (*gltf)["bufferViews"][vertices_buffer_view_index]["byteOffset"]
-                    .value.iNumber;
+        (*gltf)["bufferViews"][vertices_buffer_view_index]["byteOffset"]
+            .value.iNumber;
 
     core::vector<float> vertices_position;
     for (int i = vertices_byte_offset;
-         i < vertices_byte_offset + vertices_byte_length; i += 4) {
-        vertices_position.Push(reinterpret_cast<float &>(buffer[i]));
+         i < vertices_byte_offset + vertices_byte_length;
+         i += 4) {
+        vertices_position.Push(reinterpret_cast<float&>(buffer[i]));
     }
 
     int texture_coordinates_index =
-            (*gltf)["meshes"][0]["primitives"][0]["attributes"]["TEXCOORD_0"]
-                    .value.iNumber;
+        (*gltf)["meshes"][0]["primitives"][0]["attributes"]["TEXCOORD_0"]
+            .value.iNumber;
     int texture_buffer_view_index =
-            (*gltf)["accessors"][texture_coordinates_index]["bufferView"]
-                    .value.iNumber;
+        (*gltf)["accessors"][texture_coordinates_index]["bufferView"]
+            .value.iNumber;
     int texture_byte_length =
-            (*gltf)["bufferViews"][texture_buffer_view_index]["byteLength"]
-                    .value.iNumber;
+        (*gltf)["bufferViews"][texture_buffer_view_index]["byteLength"]
+            .value.iNumber;
     int texture_byte_offset =
-            (*gltf)["bufferViews"][texture_buffer_view_index]["byteOffset"]
-                    .value.iNumber;
+        (*gltf)["bufferViews"][texture_buffer_view_index]["byteOffset"]
+            .value.iNumber;
 
     core::vector<float> texture_coordinates;
     for (int i = texture_byte_offset;
-         i < texture_byte_offset + texture_byte_length; i += 4) {
-        texture_coordinates.Push(reinterpret_cast<float &>(buffer[i]));
+         i < texture_byte_offset + texture_byte_length;
+         i += 4) {
+        texture_coordinates.Push(reinterpret_cast<float&>(buffer[i]));
     }
 
     int normals_index =
-            (*gltf)["meshes"][0]["primitives"][0]["attributes"]["NORMAL"]
-                    .value.iNumber;
+        (*gltf)["meshes"][0]["primitives"][0]["attributes"]["NORMAL"]
+            .value.iNumber;
     int normals_buffer_view_index =
-            (*gltf)["accessors"][normals_index]["bufferView"].value.iNumber;
+        (*gltf)["accessors"][normals_index]["bufferView"].value.iNumber;
     int normals_byte_length =
-            (*gltf)["bufferViews"][normals_buffer_view_index]["byteLength"]
-                    .value.iNumber;
+        (*gltf)["bufferViews"][normals_buffer_view_index]["byteLength"]
+            .value.iNumber;
     int normals_byte_offset =
-            (*gltf)["bufferViews"][normals_buffer_view_index]["byteOffset"]
-                    .value.iNumber;
+        (*gltf)["bufferViews"][normals_buffer_view_index]["byteOffset"]
+            .value.iNumber;
 
     core::vector<float> normals;
     for (int i = normals_byte_offset;
-         i < normals_byte_offset + normals_byte_length; i += 4) {
-        normals.Push(reinterpret_cast<float &>(buffer[i]));
+         i < normals_byte_offset + normals_byte_length;
+         i += 4) {
+        normals.Push(reinterpret_cast<float&>(buffer[i]));
     }
 
     core::vector<Core::JsonValue> skins = Search("skins");
@@ -630,20 +660,20 @@ void CJsonParser::LoadGLTF(
         }
 
         unsigned int inverseBindMatricesIndex =
-                (*gltf)["skins"][0]["inverseBindMatrices"].value.iNumber;
+            (*gltf)["skins"][0]["inverseBindMatrices"].value.iNumber;
         unsigned int bufferView =
-                (*gltf)["accessors"][inverseBindMatricesIndex]["bufferView"]
-                        .value.iNumber;
+            (*gltf)["accessors"][inverseBindMatricesIndex]["bufferView"]
+                .value.iNumber;
         unsigned int byteLengthInverseBindMatrices =
-                (*gltf)["bufferViews"][bufferView]["byteLength"].value.iNumber;
+            (*gltf)["bufferViews"][bufferView]["byteLength"].value.iNumber;
         unsigned int byteOffsetInverseBindMatrices =
-                (*gltf)["bufferViews"][bufferView]["byteOffset"].value.iNumber;
+            (*gltf)["bufferViews"][bufferView]["byteOffset"].value.iNumber;
 
         core::vector<float> inverseBindMatricesData;
         for (unsigned int i = byteOffsetInverseBindMatrices;
              i < byteOffsetInverseBindMatrices + byteLengthInverseBindMatrices;
              i += 4) {
-            inverseBindMatricesData.Push(reinterpret_cast<float &>(buffer[i]));
+            inverseBindMatricesData.Push(reinterpret_cast<float&>(buffer[i]));
         }
 
         mat4 inverseBindMatrix(0.0f);
@@ -651,7 +681,7 @@ void CJsonParser::LoadGLTF(
             for (unsigned int g = 0; g < 4; ++g) {
                 for (unsigned int j = 0; j < 4; ++j) {
                     inverseBindMatrix[g][j] =
-                            inverseBindMatricesData[n * 16 + g * 4 + j];
+                        inverseBindMatricesData[n * 16 + g * 4 + j];
                 }
             }
 
@@ -659,37 +689,39 @@ void CJsonParser::LoadGLTF(
         }
 
         unsigned int joints_index =
-                (*gltf)["meshes"][0]["primitives"][0]["attributes"]["JOINTS_0"]
-                        .value.iNumber;
+            (*gltf)["meshes"][0]["primitives"][0]["attributes"]["JOINTS_0"]
+                .value.iNumber;
         unsigned int joints_buffer_view_index =
-                (*gltf)["accessors"][joints_index]["bufferView"].value.iNumber;
+            (*gltf)["accessors"][joints_index]["bufferView"].value.iNumber;
         unsigned int joints_byte_length =
-                (*gltf)["bufferViews"][joints_buffer_view_index]["byteLength"]
-                        .value.iNumber;
+            (*gltf)["bufferViews"][joints_buffer_view_index]["byteLength"]
+                .value.iNumber;
         unsigned int joints_byte_offset =
-                (*gltf)["bufferViews"][joints_buffer_view_index]["byteOffset"]
-                        .value.iNumber;
+            (*gltf)["bufferViews"][joints_buffer_view_index]["byteOffset"]
+                .value.iNumber;
 
         for (unsigned int i = joints_byte_offset;
-             i < joints_byte_offset + joints_byte_length; ++i) {
-            jointsIndices.Push(reinterpret_cast<char &>(buffer[i]));
+             i < joints_byte_offset + joints_byte_length;
+             ++i) {
+            jointsIndices.Push(reinterpret_cast<char&>(buffer[i]));
         }
 
         unsigned int weights_index =
-                (*gltf)["meshes"][0]["primitives"][0]["attributes"]["WEIGHTS_0"]
-                        .value.iNumber;
+            (*gltf)["meshes"][0]["primitives"][0]["attributes"]["WEIGHTS_0"]
+                .value.iNumber;
         unsigned int weights_buffer_view_index =
-                (*gltf)["accessors"][weights_index]["bufferView"].value.iNumber;
+            (*gltf)["accessors"][weights_index]["bufferView"].value.iNumber;
         unsigned int weights_byte_length =
-                (*gltf)["bufferViews"][weights_buffer_view_index]["byteLength"]
-                        .value.iNumber;
+            (*gltf)["bufferViews"][weights_buffer_view_index]["byteLength"]
+                .value.iNumber;
         unsigned int weights_byte_offset =
-                (*gltf)["bufferViews"][weights_buffer_view_index]["byteOffset"]
-                        .value.iNumber;
+            (*gltf)["bufferViews"][weights_buffer_view_index]["byteOffset"]
+                .value.iNumber;
 
         for (unsigned int i = weights_byte_offset;
-             i < weights_byte_offset + weights_byte_length; i += 4) {
-            weightsContainer.Push(reinterpret_cast<float &>(buffer[i]));
+             i < weights_byte_offset + weights_byte_length;
+             i += 4) {
+            weightsContainer.Push(reinterpret_cast<float&>(buffer[i]));
         }
     } else {
         noAnimations = true;
@@ -734,32 +766,33 @@ void CJsonParser::LoadGLTF(
 
         for (unsigned int i = 0; i < translationSamplerIndices.GetSize(); ++i) {
             translationInputs.Push(
-                    samplers[translationSamplerIndices[i]]["input"]
-                            .value.iNumber);
+                samplers[translationSamplerIndices[i]]["input"].value.iNumber
+            );
         }
 
         for (unsigned int i = 0; i < translationSamplerIndices.GetSize(); ++i) {
             translationOutputs.Push(
-                    samplers[translationSamplerIndices[i]]["output"]
-                            .value.iNumber);
+                samplers[translationSamplerIndices[i]]["output"].value.iNumber
+            );
         }
 
         core::vector<core::vector<float>> frameInputsTranslation;
         for (unsigned int i = 0; i < translationInputs.GetSize(); ++i) {
             unsigned int frameBufferViewIndex =
-                    (*gltf)["accessors"][translationInputs[i]]["bufferView"]
-                            .value.iNumber;
+                (*gltf)["accessors"][translationInputs[i]]["bufferView"]
+                    .value.iNumber;
             unsigned int frameByteLength =
-                    (*gltf)["bufferViews"][frameBufferViewIndex]["byteLength"]
-                            .value.iNumber;
+                (*gltf)["bufferViews"][frameBufferViewIndex]["byteLength"]
+                    .value.iNumber;
             unsigned int frameByteOffset =
-                    (*gltf)["bufferViews"][frameBufferViewIndex]["byteOffset"]
-                            .value.iNumber;
+                (*gltf)["bufferViews"][frameBufferViewIndex]["byteOffset"]
+                    .value.iNumber;
 
             core::vector<float> temp;
             for (unsigned int i = frameByteOffset;
-                 i < frameByteOffset + frameByteLength; i += 4) {
-                temp.Push(reinterpret_cast<float &>(buffer[i]));
+                 i < frameByteOffset + frameByteLength;
+                 i += 4) {
+                temp.Push(reinterpret_cast<float&>(buffer[i]));
             }
 
             frameInputsTranslation.Push(temp);
@@ -768,19 +801,20 @@ void CJsonParser::LoadGLTF(
         core::vector<core::vector<float>> translations;
         for (unsigned int i = 0; i < translationOutputs.GetSize(); ++i) {
             unsigned int outputBufferViewIndex =
-                    (*gltf)["accessors"][translationOutputs[i]]["bufferView"]
-                            .value.iNumber;
+                (*gltf)["accessors"][translationOutputs[i]]["bufferView"]
+                    .value.iNumber;
             unsigned int outputByteLength =
-                    (*gltf)["bufferViews"][outputBufferViewIndex]["byteLength"]
-                            .value.iNumber;
+                (*gltf)["bufferViews"][outputBufferViewIndex]["byteLength"]
+                    .value.iNumber;
             unsigned int outputByteOffset =
-                    (*gltf)["bufferViews"][outputBufferViewIndex]["byteOffset"]
-                            .value.iNumber;
+                (*gltf)["bufferViews"][outputBufferViewIndex]["byteOffset"]
+                    .value.iNumber;
 
             core::vector<float> temp;
             for (unsigned int i = outputByteOffset;
-                 i < outputByteOffset + outputByteLength; i += 4) {
-                temp.Push(reinterpret_cast<float &>(buffer[i]));
+                 i < outputByteOffset + outputByteLength;
+                 i += 4) {
+                temp.Push(reinterpret_cast<float&>(buffer[i]));
             }
 
             translations.Push(temp);
@@ -791,30 +825,33 @@ void CJsonParser::LoadGLTF(
 
         for (unsigned int i = 0; i < rotationSamplerIndices.GetSize(); ++i) {
             rotationInputs.Push(
-                    samplers[rotationSamplerIndices[i]]["input"].value.iNumber);
+                samplers[rotationSamplerIndices[i]]["input"].value.iNumber
+            );
         }
 
         for (unsigned int i = 0; i < rotationSamplerIndices.GetSize(); ++i) {
-            rotationOutputs.Push(samplers[rotationSamplerIndices[i]]["output"]
-                                         .value.iNumber);
+            rotationOutputs.Push(
+                samplers[rotationSamplerIndices[i]]["output"].value.iNumber
+            );
         }
 
         core::vector<core::vector<float>> frameInputsRotation;
         for (unsigned int i = 0; i < rotationInputs.GetSize(); ++i) {
             unsigned int frameBufferViewIndex =
-                    (*gltf)["accessors"][rotationInputs[i]]["bufferView"]
-                            .value.iNumber;
+                (*gltf)["accessors"][rotationInputs[i]]["bufferView"]
+                    .value.iNumber;
             unsigned int frameByteLength =
-                    (*gltf)["bufferViews"][frameBufferViewIndex]["byteLength"]
-                            .value.iNumber;
+                (*gltf)["bufferViews"][frameBufferViewIndex]["byteLength"]
+                    .value.iNumber;
             unsigned int frameByteOffset =
-                    (*gltf)["bufferViews"][frameBufferViewIndex]["byteOffset"]
-                            .value.iNumber;
+                (*gltf)["bufferViews"][frameBufferViewIndex]["byteOffset"]
+                    .value.iNumber;
 
             core::vector<float> temp;
             for (unsigned int i = frameByteOffset;
-                 i < frameByteOffset + frameByteLength; i += 4) {
-                temp.Push(reinterpret_cast<float &>(buffer[i]));
+                 i < frameByteOffset + frameByteLength;
+                 i += 4) {
+                temp.Push(reinterpret_cast<float&>(buffer[i]));
             }
 
             frameInputsRotation.Push(temp);
@@ -823,19 +860,20 @@ void CJsonParser::LoadGLTF(
         core::vector<core::vector<float>> rotations;
         for (unsigned int i = 0; i < rotationOutputs.GetSize(); ++i) {
             unsigned int outputBufferViewIndex =
-                    (*gltf)["accessors"][rotationOutputs[i]]["bufferView"]
-                            .value.iNumber;
+                (*gltf)["accessors"][rotationOutputs[i]]["bufferView"]
+                    .value.iNumber;
             unsigned int outputByteLength =
-                    (*gltf)["bufferViews"][outputBufferViewIndex]["byteLength"]
-                            .value.iNumber;
+                (*gltf)["bufferViews"][outputBufferViewIndex]["byteLength"]
+                    .value.iNumber;
             unsigned int outputByteOffset =
-                    (*gltf)["bufferViews"][outputBufferViewIndex]["byteOffset"]
-                            .value.iNumber;
+                (*gltf)["bufferViews"][outputBufferViewIndex]["byteOffset"]
+                    .value.iNumber;
 
             core::vector<float> temp;
             for (unsigned int i = outputByteOffset;
-                 i < outputByteOffset + outputByteLength; i += 4) {
-                temp.Push(reinterpret_cast<float &>(buffer[i]));
+                 i < outputByteOffset + outputByteLength;
+                 i += 4) {
+                temp.Push(reinterpret_cast<float&>(buffer[i]));
             }
 
             rotations.Push(temp);
@@ -846,30 +884,32 @@ void CJsonParser::LoadGLTF(
 
         for (unsigned int i = 0; i < scaleSamplerIndices.GetSize(); ++i) {
             scaleInputs.Push(
-                    samplers[scaleSamplerIndices[i]]["input"].value.iNumber);
+                samplers[scaleSamplerIndices[i]]["input"].value.iNumber
+            );
         }
 
         for (unsigned int i = 0; i < scaleSamplerIndices.GetSize(); ++i) {
             scaleOutputs.Push(
-                    samplers[scaleSamplerIndices[i]]["output"].value.iNumber);
+                samplers[scaleSamplerIndices[i]]["output"].value.iNumber
+            );
         }
 
         core::vector<core::vector<float>> frameInputsScale;
         for (unsigned int i = 0; i < scaleInputs.GetSize(); ++i) {
             unsigned int frameBufferViewIndex =
-                    (*gltf)["accessors"][scaleInputs[i]]["bufferView"]
-                            .value.iNumber;
+                (*gltf)["accessors"][scaleInputs[i]]["bufferView"].value.iNumber;
             unsigned int frameByteLength =
-                    (*gltf)["bufferViews"][frameBufferViewIndex]["byteLength"]
-                            .value.iNumber;
+                (*gltf)["bufferViews"][frameBufferViewIndex]["byteLength"]
+                    .value.iNumber;
             unsigned int frameByteOffset =
-                    (*gltf)["bufferViews"][frameBufferViewIndex]["byteOffset"]
-                            .value.iNumber;
+                (*gltf)["bufferViews"][frameBufferViewIndex]["byteOffset"]
+                    .value.iNumber;
 
             core::vector<float> temp;
             for (unsigned int i = frameByteOffset;
-                 i < frameByteOffset + frameByteLength; i += 4) {
-                temp.Push(reinterpret_cast<float &>(buffer[i]));
+                 i < frameByteOffset + frameByteLength;
+                 i += 4) {
+                temp.Push(reinterpret_cast<float&>(buffer[i]));
             }
 
             frameInputsScale.Push(temp);
@@ -878,19 +918,20 @@ void CJsonParser::LoadGLTF(
         core::vector<core::vector<float>> scales;
         for (unsigned int i = 0; i < scaleOutputs.GetSize(); ++i) {
             unsigned int outputBufferViewIndex =
-                    (*gltf)["accessors"][scaleOutputs[i]]["bufferView"]
-                            .value.iNumber;
+                (*gltf)["accessors"][scaleOutputs[i]]["bufferView"]
+                    .value.iNumber;
             unsigned int outputByteLength =
-                    (*gltf)["bufferViews"][outputBufferViewIndex]["byteLength"]
-                            .value.iNumber;
+                (*gltf)["bufferViews"][outputBufferViewIndex]["byteLength"]
+                    .value.iNumber;
             unsigned int outputByteOffset =
-                    (*gltf)["bufferViews"][outputBufferViewIndex]["byteOffset"]
-                            .value.iNumber;
+                (*gltf)["bufferViews"][outputBufferViewIndex]["byteOffset"]
+                    .value.iNumber;
 
             core::vector<float> temp;
             for (unsigned int i = outputByteOffset;
-                 i < outputByteOffset + outputByteLength; i += 4) {
-                temp.Push(reinterpret_cast<float &>(buffer[i]));
+                 i < outputByteOffset + outputByteLength;
+                 i += 4) {
+                temp.Push(reinterpret_cast<float&>(buffer[i]));
             }
 
             scales.Push(temp);
@@ -928,8 +969,13 @@ void CJsonParser::LoadGLTF(
             node_stack.push(currentNode);
 
             core::stack<u32> deepness_stack;
-            traversalBones(children, joints, node_stack, deepness_stack,
-                           nodes_bones);
+            traversalBones(
+                children,
+                joints,
+                node_stack,
+                deepness_stack,
+                nodes_bones
+            );
 
             for (unsigned int e = 0; e < nodes_bones.GetSize(); ++e) {
                 joints_bones.Push(nodes_bones[e]);
@@ -951,7 +997,7 @@ void CJsonParser::LoadGLTF(
                 mat4 frameScale(1.0f);
                 for (unsigned int q = 0; q < 3; ++q) {
                     frameTranslation[3][q] =
-                            boneAllFrameTranslations[i * 3 + q];
+                        boneAllFrameTranslations[i * 3 + q];
                     if (scales.GetSize() > 0) {
                         frameScale[q][q] = boneAllFrameScales[i * 3 + q];
                     }
@@ -965,13 +1011,14 @@ void CJsonParser::LoadGLTF(
                 frameRotationQuaternion.w = boneAllFrameRotations[i * 4 + 3];
 
                 frameRotation =
-                        rotateQuaternion<float, 4>(frameRotationQuaternion);
+                    rotateQuaternion<float, 4>(frameRotationQuaternion);
                 frameRotation.SelfTensorTranspose();
 
                 mat4 globalTransformNodeMatrix =
-                        frameScale * frameRotation * frameTranslation;
+                    frameScale * frameRotation * frameTranslation;
                 globalAllFrameNodeMatrixAccumulator.Push(
-                        globalTransformNodeMatrix);
+                    globalTransformNodeMatrix
+                );
             }
             jointMatricesAccumulator.Push(globalAllFrameNodeMatrixAccumulator);
         }
@@ -985,12 +1032,13 @@ void CJsonParser::LoadGLTF(
                 for (unsigned int b = 0; b < joints_bones[j].GetSize() - 1;
                      ++b) {
                     rootTransform =
-                            jointMatricesAccumulator[joints_bones[j][b]][i] *
-                            rootTransform;
+                        jointMatricesAccumulator[joints_bones[j][b]][i]
+                        * rootTransform;
                 }
-                globalAllFrameNodeMatrix.Push(inverseBindMatrixSet[j] *
-                                              jointMatricesAccumulator[j][i] *
-                                              rootTransform);
+                globalAllFrameNodeMatrix.Push(
+                    inverseBindMatrixSet[j] * jointMatricesAccumulator[j][i]
+                    * rootTransform
+                );
             }
             jointMatrices.Push(globalAllFrameNodeMatrix);
         }
@@ -1001,7 +1049,8 @@ void CJsonParser::LoadGLTF(
             for (int i = 0; i < unitMatricesSize; ++i) {
                 core::vector<mat4> globalAllFrameNodeMatrix;
                 for (unsigned int j = 0;
-                     j < frameInputsTranslation[0].GetSize(); ++j) {
+                     j < frameInputsTranslation[0].GetSize();
+                     ++j) {
                     mat4 unitMatrix(1.0f);
                     globalAllFrameNodeMatrix.Push(unitMatrix);
                 }
@@ -1018,9 +1067,11 @@ void CJsonParser::LoadGLTF(
 
         unsigned int index = indices[i] * 3;
         if (index + 2 < vertices_position.GetSize()) {
-            vec3 position = {vertices_position[index],
-                             vertices_position[index + 1],
-                             vertices_position[index + 2]};
+            vec3 position = {
+                vertices_position[index],
+                vertices_position[index + 1],
+                vertices_position[index + 2]
+            };
 
             aVertexes_.push_back(position[0]);
             aVertexes_.push_back(position[1]);
@@ -1028,8 +1079,8 @@ void CJsonParser::LoadGLTF(
         }
 
         if (index + 2 < normals.GetSize()) {
-            vec3 normal = {normals[index], normals[index + 1],
-                           normals[index + 2]};
+            vec3 normal =
+                {normals[index], normals[index + 1], normals[index + 2]};
 
             aVertexes_.push_back(normal[0]);
             aVertexes_.push_back(normal[1]);
@@ -1062,11 +1113,13 @@ void CJsonParser::LoadGLTF(
     buffer = nullptr;
 }
 
-void CJsonParser::traversalBones(core::vector<core::vector<int>> children,
-                                 Core::JsonValue joints,
-                                 core::stack<u32> node_stack,
-                                 core::stack<u32> deepness_stack,
-                                 core::vector<core::vector<u32>> &result) {
+void CJsonParser::traversalBones(
+    core::vector<core::vector<int>> children,
+    Core::JsonValue joints,
+    core::stack<u32> node_stack,
+    core::stack<u32> deepness_stack,
+    core::vector<core::vector<u32>>& result
+) {
     u32 topJointIndex = 0;
     if (!node_stack.empty()) {
         topJointIndex = getJointIndex(joints, node_stack.top());
@@ -1083,17 +1136,16 @@ void CJsonParser::traversalBones(core::vector<core::vector<int>> children,
 
     u32 nextNodeIndex = 0;
     if (!children[topJointIndex].empty()) {
-        if (deepness_stack.top() > 0 &&
-            deepness_stack.top() == children[topJointIndex].GetSize()) {
+        if (deepness_stack.top() > 0
+            && deepness_stack.top() == children[topJointIndex].GetSize()) {
             deepness_stack.pop();
             node_stack.pop();
-            traversalBones(children, joints, node_stack, deepness_stack,
-                           result);
+            traversalBones(children, joints, node_stack, deepness_stack, result);
             return;
         }
 
-        if (deepness_stack.top() > 0 &&
-            deepness_stack.top() < children[topJointIndex].GetSize()) {
+        if (deepness_stack.top() > 0
+            && deepness_stack.top() < children[topJointIndex].GetSize()) {
             nextNodeIndex = children[topJointIndex][deepness_stack.top()];
             node_stack.push(nextNodeIndex);
 
@@ -1104,8 +1156,7 @@ void CJsonParser::traversalBones(core::vector<core::vector<int>> children,
             }
 
             ++deepness_stack.top();
-            traversalBones(children, joints, node_stack, deepness_stack,
-                           result);
+            traversalBones(children, joints, node_stack, deepness_stack, result);
             return;
         } else {
             core::vector<u32> current_node_indices;
@@ -1119,8 +1170,7 @@ void CJsonParser::traversalBones(core::vector<core::vector<int>> children,
             nextNodeIndex = children[topJointIndex][deepness_stack.top()];
             node_stack.push(nextNodeIndex);
             ++deepness_stack.top();
-            traversalBones(children, joints, node_stack, deepness_stack,
-                           result);
+            traversalBones(children, joints, node_stack, deepness_stack, result);
             return;
         }
     } else {
@@ -1140,7 +1190,8 @@ void CJsonParser::traversalBones(core::vector<core::vector<int>> children,
 }
 
 core::vector<core::vector<unsigned int>> CJsonParser::makeRenderJointsIndices(
-        core::vector<core::vector<unsigned int>> &input) {
+    core::vector<core::vector<unsigned int>>& input
+) {
     core::vector<core::vector<unsigned int>> result;
 
     bool accumulatorFlag = false;
@@ -1173,8 +1224,9 @@ core::vector<core::vector<unsigned int>> CJsonParser::makeRenderJointsIndices(
 }
 
 bool CJsonParser::containsElemnt(
-        core::vector<core::vector<unsigned int>> container,
-        unsigned int element) {
+    core::vector<core::vector<unsigned int>> container,
+    unsigned int element
+) {
     bool flag = false;
 
     for (unsigned int i = 0; i < container.GetSize(); ++i) {

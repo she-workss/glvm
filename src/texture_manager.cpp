@@ -4,35 +4,37 @@
 // License: http://opensource.org/licenses/MIT
 
 #include "texture_manager.hpp"
+
 #include "components/material_component.hpp"
 #include "texture.hpp"
 
 #include <iostream>
 
 namespace GLVM::ecs {
-TextureManager *TextureManager::pInstance_ = nullptr;
-std::mutex TextureManager::Mutex_;
+TextureManager* TextureManager::p_instance = nullptr;
+std::mutex TextureManager::mutex;
 
 TextureManager::TextureManager() = default;
 
-void TextureManager::BindTexture(Entity_ID _entityID, Texture_ID _textureID) {
-    textureVector_[_textureID].entitiesOwnsThisTypeOfTexture_.push_back(
-            _entityID);
+void TextureManager::BindTexture(EntityId entity_id, TextureId texture_id) {
+    texture_vector[texture_id].entitiesOwnsThisTypeOfTexture_.push_back(
+        entity_id
+    );
 }
 
-TextureManager *TextureManager::GetInstance() {
-    std::lock_guard<std::mutex> lock(Mutex_);
-    if (pInstance_ == nullptr) {
-        pInstance_ = new TextureManager();
+auto TextureManager::GetInstance() -> TextureManager* {
+    std::lock_guard<std::mutex> lock(mutex);
+    if (p_instance == nullptr) {
+        p_instance = new TextureManager();
     }
-    return pInstance_;
+    return p_instance;
 }
 
 void TextureManager::SetTextureVector(std::vector<Texture> _textureVector) {
-    textureVector_ = _textureVector;
+    texture_vector = _textureVector;
 }
 
-std::vector<Texture> &TextureManager::GetTextureVector() {
-    return textureVector_;
+std::vector<Texture>& TextureManager::GetTextureVector() {
+    return texture_vector;
 }
 } // namespace GLVM::ecs

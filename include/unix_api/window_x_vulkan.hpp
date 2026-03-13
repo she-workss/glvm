@@ -10,26 +10,30 @@
 #include <X11/Xlib.h>
 
 namespace GLVM::core {
-class WindowXVulkan : public IWindow {
+class WindowXVulkan: public IWindow {
     XWindowAttributes GWindow_Attributes_;
     Window Root_Window_;
     XSetWindowAttributes Set_Window_Attributes_;
 
 public:
-    Display *pDisp_;
+    Display* pDisp_;
     Window Win_;
-    CStack *Input_Stack_;
+    CStack* Input_Stack_;
 
     WindowXVulkan();
     ~WindowXVulkan();
 
     Window GetWindow();
-    Display *GetDisplay();
-    void CursorLock(int _x_position, int _y_position, int *_x_offset,
-                    int *_y_offset) override;
+    Display* GetDisplay();
+    void CursorLock(
+        int _x_position,
+        int _y_position,
+        int* _x_offset,
+        int* _y_offset
+    ) override;
     void SwapBuffers() override;
     void ClearDisplay() override;
-    bool HandleEvent(CEvent &_Event) override;
+    bool HandleEvent(CEvent& _Event) override;
     void Close() override;
 };
 } // namespace GLVM::core

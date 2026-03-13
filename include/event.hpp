@@ -55,7 +55,7 @@ public:
     bool nextEventFlag = false;
 
     CEvent();
-    EEvents &GetEvent();
+    EEvents& GetEvent();
     void SetEvent(EEvents _eEvent);
     void SetNextEvent(EEvents _eEvent);
     EEvents GetNextEvent();

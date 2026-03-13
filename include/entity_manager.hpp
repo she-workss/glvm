@@ -11,7 +11,7 @@ typedef unsigned int Entity_ID;
 
 namespace GLVM::ecs {
 class EntityManager {
-    static EntityManager *pInstance_;
+    static EntityManager* pInstance_;
     static std::mutex Mutex_;
 
     inline static Entity_ID u_iID = 0;
@@ -23,17 +23,19 @@ class EntityManager {
 
 public: // TODO: Delete me
     // Dont need to make cope because of singleton property.
-    EntityManager(EntityManager &_entity_Manager) = delete;
+    EntityManager(EntityManager& _entity_Manager) = delete;
 
     // Dont need assignment operator because of singleton property.
-    void operator=(const EntityManager &_entity_Manager) = delete;
+    void operator=(const EntityManager& _entity_Manager) = delete;
 
     // It possibly to get only one instance of this class with this method.
-    static EntityManager *GetInstance();
+    static EntityManager* GetInstance();
 
     [[nodiscard]] Entity_ID CreateEntity();
 
-    void RemoveEntity(Entity_ID &_Entity_ID,
-                      ComponentManager *_ComponentManager);
+    void RemoveEntity(
+        Entity_ID& _Entity_ID,
+        ComponentManager* _ComponentManager
+    );
 };
 } // namespace GLVM::ecs
