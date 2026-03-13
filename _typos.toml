@@ -1,0 +1,4 @@
+[files]
+extend-exclude = ["cmake/CPM.cmake", "build/"]
+
+[default.extend-words]

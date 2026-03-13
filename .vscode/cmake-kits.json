@@ -1,0 +1,41 @@
+[
+    {
+        "name": "GCC",
+        "compilers": {
+            "C": "gcc",
+            "CXX": "g++"
+        },
+        "preferredGenerator": {
+            "name": "Ninja"
+        },
+        "environmentVariables": {
+            "CMAKE_BUILD_PARALLEL_LEVEL": "8"
+        }
+    },
+    {
+        "name": "Clang",
+        "compilers": {
+            "C": "clang",
+            "CXX": "clang++"
+        },
+        "preferredGenerator": {
+            "name": "Ninja"
+        },
+        "environmentVariables": {
+            "CMAKE_BUILD_PARALLEL_LEVEL": "8"
+        }
+    },
+    {
+        "name": "MSVC",
+        "compilers": {
+            "C": "cl",
+            "CXX": "cl"
+        },
+        "preferredGenerator": {
+            "name": "Ninja"
+        },
+        "environmentVariables": {
+            "CMAKE_BUILD_PARALLEL_LEVEL": "8"
+        }
+    }
+]

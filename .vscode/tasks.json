@@ -1,0 +1,184 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        // Configure tasks:
+        {
+            "label": "Configure Debug",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--preset",
+                "debug"
+            ],
+            "group": "build",
+            "problemMatcher": [],
+            "detail": "Configure debug build"
+        },
+        {
+            "label": "Configure Release",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--preset",
+                "release"
+            ],
+            "group": "build",
+            "problemMatcher": [],
+            "detail": "Configure release build"
+        },
+        // Build tasks:
+        {
+            "label": "Build Debug",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "--preset",
+                "debug"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "dependsOn": [
+                "Configure Debug"
+            ],
+            "detail": "Build debug configuration"
+        },
+        {
+            "label": "Build Release",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "--preset",
+                "release"
+            ],
+            "group": "build",
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "dependsOn": [
+                "Configure Release"
+            ],
+            "detail": "Build release configuration"
+        },
+        // Clean tasks:
+        {
+            "label": "Clean All",
+            "type": "shell",
+            "command": "rm",
+            "args": [
+                "-rf",
+                "build"
+            ],
+            "windows": {
+                "command": "cmd",
+                "args": [
+                    "/c",
+                    "rmdir",
+                    "/s",
+                    "/q",
+                    "build"
+                ]
+            },
+            "group": "build",
+            "problemMatcher": [],
+            "detail": "Remove entire build directory"
+        },
+        // Test tasks:
+        {
+            "label": "Test Debug",
+            "type": "shell",
+            "command": "ctest",
+            "args": [
+                "--preset",
+                "debug",
+                "--output-on-failure",
+                "--parallel"
+            ],
+            "group": "test",
+            "problemMatcher": [],
+            "dependsOn": [
+                "Build Debug"
+            ],
+            "detail": "Run all tests in debug mode"
+        },
+        {
+            "label": "Test Release",
+            "type": "shell",
+            "command": "ctest",
+            "args": [
+                "--preset",
+                "release"
+            ],
+            "group": "test",
+            "problemMatcher": [],
+            "dependsOn": [
+                "Build Release"
+            ],
+            "detail": "Run all tests in release mode"
+        },
+        // Run tasks:
+        {
+            "label": "Example: hello_world",
+            "type": "shell",
+            "command": "${workspaceFolder}/build/debug/examples/hello_world",
+            "windows": {
+                "command": "${workspaceFolder}/build/debug/examples/hello_world"
+            },
+            "group": "none",
+            "problemMatcher": [],
+            "dependsOn": [
+                "Build Debug"
+            ],
+            "detail": "Run hello_world example"
+        },
+        // Benchmark tasks:
+        {
+            "label": "Bench: ecs",
+            "type": "shell",
+            "command": "${workspaceFolder}/build/release/benches/ecs",
+            "windows": {
+                "command": "${workspaceFolder}/build/release/benches/ecs"
+            },
+            "args": [
+                "--benchmark_color=true"
+            ],
+            "group": "test",
+            "problemMatcher": [],
+            "dependsOn": [
+                "Build Release"
+            ],
+            "detail": "Run ECS benchmarks"
+        },
+        // Workflow tasks:
+        {
+            "label": "Full Debug Workflow",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--workflow",
+                "dfull"
+            ],
+            "group": "build",
+            "problemMatcher": [],
+            "detail": "Configure, build and test debug in one command"
+        },
+        {
+            "label": "Full Release Workflow",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--workflow",
+                "rfull"
+            ],
+            "group": "build",
+            "problemMatcher": [],
+            "detail": "Configure, build and test release in one command"
+        }
+    ]
+}

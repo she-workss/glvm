@@ -1,10 +1,9 @@
 {
     "recommendations": [
-        "streetsidesoftware.code-spell-checker",
-        "vadimcn.vscode-lldb",
-        "webfreak.debug",
-        "streetsidesoftware.code-spell-checker-russian",
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-vscode.cmake-tools",
         "ms-vscode.cpptools",
-        "ms-vscode.cmake-tools"
+        "streetsidesoftware.code-spell-checker",
+        "vadimcn.vscode-lldb"
     ]
 }
