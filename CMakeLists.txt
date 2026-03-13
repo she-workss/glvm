@@ -25,10 +25,10 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   link_libraries(stdc++exp)
 endif()
 
-# # Create `cppcheck` directory in each build directory to store cppcheck reports
+# # # Create `cppcheck` directory in each build directory to store cppcheck reports
 # file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/cppcheck)
 
-# # Show Cppcheck status
+# # # Show Cppcheck status
 # find_program(cppcheck NAMES cppcheck)
 # message(STATUS "Cppcheck: ${cppcheck}")
 
@@ -53,47 +53,47 @@ if((CMAKE_CXX_COMPILER_ID MATCHES "GNU") OR
   (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
   set(CXX_FLAGS
     -O2
-    # -march=native
     -Wall
-    -Wnrvo
-    -Wdangling-reference
-    -Wtemplate-id-cdtor
     -Wcast-align
     -Wcast-qual
     -Wconversion
     -Wctor-dtor-privacy
+    -Wdangling-reference
     -Wenum-compare
     -Wextra
-    # -Werror
     -Wfloat-equal
     -Wnon-virtual-dtor
+    -Wnrvo
     -Wold-style-cast
     -Woverloaded-virtual
     -Wpedantic
     -Wredundant-decls
     -Wsign-conversion
     -Wsign-promo
+    -Wtemplate-id-cdtor
     # -fanalyzer
+    # -march=native
+    # -Werror
   )
 
   set(C_FLAGS
+    -fanalyzer
     -O2
-    # -march=native
     -Wall
-    -Wnrvo
-    -Wdangling-reference
-    -Wtemplate-id-cdtor
     -Wcast-align
     -Wcast-qual
     -Wconversion
+    -Wdangling-reference
     -Wenum-compare
-    # -Werror
     -Wextra
     -Wfloat-equal
+    -Wnrvo
     -Wpedantic
     -Wredundant-decls
     -Wsign-conversion
-    # -fanalyzer
+    -Wtemplate-id-cdtor
+    # -march=native
+    # -Werror
   )
 
   add_compile_options(
