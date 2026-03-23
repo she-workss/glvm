@@ -17,6 +17,7 @@ Checks:
   ,readability-*\
   ,-bugprone-easily-swappable-parameters\
   ,-cppcoreguidelines-avoid-magic-numbers\
+  ,-cppcoreguidelines-non-private-member-variables-in-classes\
   ,-cppcoreguidelines-pro-bounds-constant-array-index\
   ,-google-build-using-namespace\
   ,-hicpp-uppercase-literal-suffix\

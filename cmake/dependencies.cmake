@@ -1,0 +1,23 @@
+include(cmake/CPM.cmake)
+# https://github.com/cpm-cmake/CPM.cmake?tab=readme-ov-file#package-lock
+CPMUsePackageLock(package-lock.cmake)
+
+if(GLVM_BUILD_TESTS)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND NOT APPLE AND NOT WIN32)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+  endif()
+  CPMAddPackage("gh:google/googletest#v1.17.0")
+endif()
+
+if(GLVM_BUILD_BENCHES)
+  set(BENCHMARK_ENABLE_TESTING OFF)
+  set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
+  set(BENCHMARK_ENABLE_INSTALL OFF)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND NOT APPLE AND NOT WIN32)
+    set(BENCHMARK_USE_LIBCXX ON)
+  endif()
+  set(CMAKE_MESSAGE_LOG_LEVEL_BACKUP ${CMAKE_MESSAGE_LOG_LEVEL})
+  set(CMAKE_MESSAGE_LOG_LEVEL WARNING)
+  CPMAddPackage("gh:google/benchmark#v1.9.5")
+  set(CMAKE_MESSAGE_LOG_LEVEL ${CMAKE_MESSAGE_LOG_LEVEL_BACKUP})
+endif()

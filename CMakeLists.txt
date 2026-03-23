@@ -1,7 +1,8 @@
+# [package]
 cmake_minimum_required(VERSION 3.28)
-project(GLVM
+project(glvm_cpp
   VERSION 0.1.0
-  DESCRIPTION "GLVM Engine"
+  DESCRIPTION "GLVM Game Engine in C++26"
   LANGUAGES C CXX
 )
 
@@ -12,10 +13,10 @@ if(MSVC)
   )
   set(CMAKE_CXX_STANDARD_REQUIRED OFF)
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
-  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-std=c++20>)
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-std=c++23>)
   set(CMAKE_CXX_STANDARD_REQUIRED OFF)
 else()
-  set(CMAKE_CXX_STANDARD 20)
+  set(CMAKE_CXX_STANDARD 23)
 endif()
 
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -25,151 +26,131 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   link_libraries(stdc++exp)
 endif()
 
-# # # Create `cppcheck` directory in each build directory to store cppcheck reports
-# file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/cppcheck)
+option(GLVM_BUILD_DOCS "Build API documentation with Doxygen" ${PROJECT_IS_TOP_LEVEL})
+option(GLVM_BUILD_TESTS "Build GLVM tests" ${PROJECT_IS_TOP_LEVEL})
+option(GLVM_BUILD_EXAMPLES "Build GLVM examples" ${PROJECT_IS_TOP_LEVEL})
+option(GLVM_BUILD_BENCHES "Build GLVM benchmarks" ${PROJECT_IS_TOP_LEVEL})
+option(GLVM_UNITY_BUILD "Enable unity builds" ${PROJECT_IS_TOP_LEVEL})
 
-# # # Show Cppcheck status
-# find_program(cppcheck NAMES cppcheck)
-# message(STATUS "Cppcheck: ${cppcheck}")
+# Like .cargo/config.toml
+include(cmake/config.cmake)
 
-# # Enable Cppcheck flags
-# if(NOT(cppcheck MATCHES "NOTFOUND"))
-#     set(CMAKE_CXX_CPPCHECK "${cppcheck}"
-#         "--platform=native"
-#         "--enable=all"
-#         "--inconclusive"
-#         "--inline-suppr"
-#         "--cppcheck-build-dir=${CMAKE_BINARY_DIR}/cppcheck"
-#         "--quiet"
-#         "--suppress=missingIncludeSystem"
-#         "--suppress=unmatchedSuppression"
-#         "--suppress=unusedFunction"
-#         "--template='{file}:{line}: {severity}: {message}\\n{code}'"
-#         "--template-location='{file}:{line}: note: {info}\\n{code}'")
+# [dependencies]
+include(cmake/dependencies.cmake)
+
+# [docs]
+include(cmake/docs.cmake)
+
+# [workspace]
+include(cmake/workspace.cmake)
+
+# [tests]
+include(cmake/tests.cmake)
+
+# [examples]
+include(cmake/examples.cmake)
+
+# [benches]
+include(cmake/benches.cmake)
+
+# # # # Create `cppcheck` directory in each build directory to store cppcheck reports
+# # file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/cppcheck)
+
+# # # # Show Cppcheck status
+# # find_program(cppcheck NAMES cppcheck)
+# # message(STATUS "Cppcheck: ${cppcheck}")
+
+# # # Enable Cppcheck flags
+# # if(NOT(cppcheck MATCHES "NOTFOUND"))
+# #     set(CMAKE_CXX_CPPCHECK "${cppcheck}"
+# #         "--platform=native"
+# #         "--enable=all"
+# #         "--inconclusive"
+# #         "--inline-suppr"
+# #         "--cppcheck-build-dir=${CMAKE_BINARY_DIR}/cppcheck"
+# #         "--quiet"
+# #         "--suppress=missingIncludeSystem"
+# #         "--suppress=unmatchedSuppression"
+# #         "--suppress=unusedFunction"
+# #         "--template='{file}:{line}: {severity}: {message}\\n{code}'"
+# #         "--template-location='{file}:{line}: note: {info}\\n{code}'")
+# # endif()
+
+# # Setup all compilation flags
+# if((CMAKE_CXX_COMPILER_ID MATCHES "GNU") OR
+#   (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+#   set(CXX_FLAGS
+#     -O2
+#     -Wall
+#     -Wcast-align
+#     -Wcast-qual
+#     -Wconversion
+#     -Wctor-dtor-privacy
+#     -Wdangling-reference
+#     -Wenum-compare
+#     -Wextra
+#     -Wfloat-equal
+#     -Wnon-virtual-dtor
+#     -Wnrvo
+#     -Wold-style-cast
+#     -Woverloaded-virtual
+#     -Wpedantic
+#     -Wredundant-decls
+#     -Wsign-conversion
+#     -Wsign-promo
+#     -Wtemplate-id-cdtor
+#     # -fanalyzer
+#     # -march=native
+#     # -Werror
+#   )
+
+#   set(C_FLAGS
+#     -fanalyzer
+#     -O2
+#     -Wall
+#     -Wcast-align
+#     -Wcast-qual
+#     -Wconversion
+#     -Wdangling-reference
+#     -Wenum-compare
+#     -Wextra
+#     -Wfloat-equal
+#     -Wnrvo
+#     -Wpedantic
+#     -Wredundant-decls
+#     -Wsign-conversion
+#     -Wtemplate-id-cdtor
+#     # -march=native
+#     # -Werror
+#   )
+
+#   add_compile_options(
+#     "$<$<COMPILE_LANGUAGE:C>:${C_FLAGS}>"
+#     "$<$<COMPILE_LANGUAGE:CXX>:${CXX_FLAGS}>"
+#   )
+# elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+#   add_compile_options(/W4 /WX)
 # endif()
 
-# Setup all compilation flags
-if((CMAKE_CXX_COMPILER_ID MATCHES "GNU") OR
-  (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
-  set(CXX_FLAGS
-    -O2
-    -Wall
-    -Wcast-align
-    -Wcast-qual
-    -Wconversion
-    -Wctor-dtor-privacy
-    -Wdangling-reference
-    -Wenum-compare
-    -Wextra
-    -Wfloat-equal
-    -Wnon-virtual-dtor
-    -Wnrvo
-    -Wold-style-cast
-    -Woverloaded-virtual
-    -Wpedantic
-    -Wredundant-decls
-    -Wsign-conversion
-    -Wsign-promo
-    -Wtemplate-id-cdtor
-    # -fanalyzer
-    # -march=native
-    # -Werror
-  )
+# # Strip binary
+# set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -s")
+# set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
 
-  set(C_FLAGS
-    -fanalyzer
-    -O2
-    -Wall
-    -Wcast-align
-    -Wcast-qual
-    -Wconversion
-    -Wdangling-reference
-    -Wenum-compare
-    -Wextra
-    -Wfloat-equal
-    -Wnrvo
-    -Wpedantic
-    -Wredundant-decls
-    -Wsign-conversion
-    -Wtemplate-id-cdtor
-    # -march=native
-    # -Werror
-  )
+# # Enable LTO
+# include(CheckIPOSupported)
+# check_ipo_supported(RESULT supported OUTPUT error)
 
-  add_compile_options(
-    "$<$<COMPILE_LANGUAGE:C>:${C_FLAGS}>"
-    "$<$<COMPILE_LANGUAGE:CXX>:${CXX_FLAGS}>"
-  )
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-  add_compile_options(/W4 /WX)
-endif()
+# if(supported)
+#   set_property(TARGET glvm PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+# else()
+#   message(STATUS "IPO/LTO not supported: <${error}>")
+# endif()
 
-# Strip binary
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -s")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
-
-# Sanitize options
-if(CMAKE_BUILD_TYPE MATCHES Debug)
-  add_compile_options(-fsanitize=null -fno-omit-frame-pointer)
-endif()
-
-# Include directories
-include_directories(include)
-include_directories(assets/textures)
-
-# Find packages
-find_package(Vulkan REQUIRED)
-
-# Define the executable
-add_executable(glvm
-  assets/textures/glvm.cpp
-  assets/textures/sample1.cpp
-  assets/textures/sample2.cpp
-  src/component_manager.cpp
-  src/engine.cpp
-  src/engine_main.cpp
-  src/entity_manager.cpp
-  src/event.cpp
-  src/graphic_api/vulkan.cpp
-  src/json_parser.cpp
-  src/mesh_manager.cpp
-  src/sound_engine_factory.cpp
-  src/system_manager.cpp
-  src/systems/camera_system.cpp
-  src/systems/collision_system.cpp
-  src/systems/movement_system.cpp
-  src/systems/physics_system.cpp
-  src/systems/projectile_system.cpp
-  src/texture_manager.cpp
-  src/timer_creator.cpp
-  src/wavefront_obj_parser.cpp
-  src/win_api/chrono_win.cpp
-  src/win_api/sound_engine_waveform.cpp
-  src/win_api/window_win_vulkan.cpp
-)
-
-# Enable LTO
-include(CheckIPOSupported)
-check_ipo_supported(RESULT supported OUTPUT error)
-
-if(supported)
-  set_property(TARGET glvm PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
-else()
-  message(STATUS "IPO/LTO not supported: <${error}>")
-endif()
-
-# Link libraries
-target_link_libraries(glvm
-  gdi32
-  winmm
-  ${Vulkan_LIBRARY}
-)
-
-# Additional linker flags
-target_link_options(glvm PRIVATE
-  -static
-  -static-libgcc
-  -static-libstdc++
-  -static-libgcc
-  -static-libstdc++
-)
+# # Additional linker flags
+# target_link_options(glvm PRIVATE
+#   -static
+#   -static-libgcc
+#   -static-libstdc++
+#   -static-libgcc
+#   -static-libstdc++
+# )

@@ -2,8 +2,12 @@ CompileFlags:
   CompilationDatabase: build/debug
   Add:
     - "-std=c++20"
-    - "-Iinclude"
+    - "-Icrates/rusty/include"
+    - "-Icrates/glvm/include"
+    - "-Icrates/game/include"
   Remove:
+    - "-fmodules-ts"
+    - "-fmodule-mapper=*"
     - "-fdeps-format=*"
     - "-fdeps-file=*"
     - "-fmodule-output=*"

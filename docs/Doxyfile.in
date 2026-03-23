@@ -1,0 +1,89 @@
+# Project
+PROJECT_NAME           = "@PROJECT_NAME@"
+PROJECT_NUMBER         = "v@PROJECT_VERSION@"
+PROJECT_BRIEF          = "GLVM Game Engine in C++26"
+OUTPUT_DIRECTORY       = "@DOXYGEN_OUTPUT_DIR@"
+
+# Input
+INPUT                  = @DOXYGEN_INPUT@
+RECURSIVE              = YES
+FILE_PATTERNS          = *.md *.c *.h *.cpp *.hpp
+STRIP_FROM_PATH        = @CMAKE_SOURCE_DIR@
+STRIP_FROM_INC_PATH    = @DOXYGEN_STRIP_INC@
+USE_MDFILE_AS_MAINPAGE = @CMAKE_SOURCE_DIR@/README.md
+EXAMPLE_PATH           = @CMAKE_SOURCE_DIR@/examples
+EXAMPLE_PATTERNS       = *.cpp
+EXAMPLE_RECURSIVE      = YES
+
+# Build
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+SORT_MEMBER_DOCS       = YES
+SORT_BRIEF_DOCS        = YES
+GENERATE_TODOLIST      = YES
+GENERATE_BUGLIST       = YES
+MARKDOWN_SUPPORT       = YES
+AUTOLINK_SUPPORT       = YES
+JAVADOC_AUTOBRIEF      = YES
+QT_AUTOBRIEF           = YES
+
+# Warnings
+QUIET                  = YES
+WARN_IF_UNDOCUMENTED   = NO
+WARN_IF_DOC_ERROR      = YES
+
+# C++
+BUILTIN_STL_SUPPORT    = YES
+EXTENSION_MAPPING      = c=C h=C cpp=C++ hpp=C++
+
+# Preprocessor
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = NO
+PREDEFINED             = @DOXYGEN_PREDEFINED@
+
+# HTML - doxygen-awesome-css
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+HTML_HEADER            = @DOXYGEN_HEADER_FILE@
+HTML_FOOTER            = @DOXYGEN_FOOTER_FILE@
+
+HTML_EXTRA_STYLESHEET  = @DOXYGEN_AWESOME_DIR@/doxygen-awesome.css \
+                         @DOXYGEN_AWESOME_DIR@/doxygen-awesome-sidebar-only.css \
+                         @DOXYGEN_AWESOME_DIR@/doxygen-awesome-sidebar-only-darkmode-toggle.css
+
+HTML_EXTRA_FILES       = @DOXYGEN_AWESOME_DIR@/doxygen-awesome-darkmode-toggle.js \
+                         @DOXYGEN_AWESOME_DIR@/doxygen-awesome-fragment-copy-button.js \
+                         @DOXYGEN_AWESOME_DIR@/doxygen-awesome-paragraph-link.js \
+                         @DOXYGEN_AWESOME_DIR@/doxygen-awesome-interactive-toc.js
+
+HTML_COLORSTYLE        = LIGHT
+GENERATE_TREEVIEW      = YES
+FULL_SIDEBAR           = NO
+DISABLE_INDEX          = NO
+HTML_DYNAMIC_MENUS     = YES
+HTML_DYNAMIC_SECTIONS  = YES
+
+# Source browsing
+SOURCE_BROWSER         = YES
+VERBATIM_HEADERS       = YES
+REFERENCED_BY_RELATION = YES
+REFERENCES_RELATION    = YES
+
+# Graphs (Graphviz)
+HAVE_DOT               = @DOXYGEN_HAVE_DOT@
+DOT_IMAGE_FORMAT       = svg
+INTERACTIVE_SVG        = YES
+CLASS_GRAPH            = YES
+COLLABORATION_GRAPH    = NO
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
+
+# Disabled outputs
+GENERATE_LATEX         = NO
+GENERATE_XML           = NO
+GENERATE_MAN           = NO
+GENERATE_RTF           = NO
+GENERATE_DOCBOOK       = NO
