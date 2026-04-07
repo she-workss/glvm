@@ -40,8 +40,8 @@ CWindowX::CWindowX() {
         Root_Window_,
         0,
         0,
-        1920,
-        1080,
+        2880,
+        1800,
         0,
         CopyFromParent,
         InputOutput,
@@ -94,7 +94,7 @@ void CWindowX::CursorLock(
     int* _y_offset
 ) {
     // Solve a problem with endlessly growing numbers in the start game run.
-    if (_x_position > 1920 || _x_position < 0 || _y_position > 1080
+    if (_x_position > 2880 || _x_position < 0 || _y_position > 1800
         || _y_position < 0) {
         return;
     }

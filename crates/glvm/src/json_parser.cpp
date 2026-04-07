@@ -478,7 +478,7 @@ void CJsonParser::LoadGLTF(
     int full_byte_size = (*gltf)["buffers"][0]["byteLength"].value.iNumber;
     ;
     std::ifstream in_stream;
-    in_stream.open("assets/gltf/" + binary_path, std::ios::binary);
+    in_stream.open("../../../assets/gltf/" + binary_path, std::ios::binary);
     char* buffer = new char[full_byte_size];
     in_stream.read(buffer, full_byte_size);
     in_stream.close();

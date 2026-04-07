@@ -86,7 +86,6 @@ const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
-#define NDEBUG
 const std::vector<const char*> validationLayers = {
     "VK_LAYER_KHRONOS_validation"
 };
@@ -474,22 +473,22 @@ public:
     float fPitch = 0.0f;
 
     const char* vertShaderMain_ =
-        "assets/shaders/vk_shaders/mainRendererShaders/vert.spv";
+        "../../../assets/shaders/vk_shaders/mainRendererShaders/vert.spv";
     const char* fragShaderMain_ =
-        "assets/shaders/vk_shaders/mainRendererShaders/frag.spv";
+        "../../../assets/shaders/vk_shaders/mainRendererShaders/frag.spv";
 
     const char* vertShaderFlatShadowMap =
-        "assets/shaders/vk_shaders/flatShadowMapShaders/"
+        "../../../assets/shaders/vk_shaders/flatShadowMapShaders/"
         "vertFlatShadowMap.spv";
     const char* fragShaderDirectionalLightShadowMap =
-        "assets/shaders/vk_shaders/flatShadowMapShaders/"
+        "../../../assets/shaders/vk_shaders/flatShadowMapShaders/"
         "fragFlatShadowMap.spv";
 
     const char* vertShaderCubeShadowMap =
-        "assets/shaders/vk_shaders/cubeShadowMapShaders/"
+        "../../../assets/shaders/vk_shaders/cubeShadowMapShaders/"
         "vertCubeShadowMap.spv";
     const char* fragShaderCubeShadowMap =
-        "assets/shaders/vk_shaders/cubeShadowMapShaders/"
+        "../../../assets/shaders/vk_shaders/cubeShadowMapShaders/"
         "fragCubeShadowMap.spv";
 
     unsigned int texturePool_;

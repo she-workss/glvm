@@ -66,6 +66,6 @@ void CCameraSystem::SetViewMatrix(
 
 void CCameraSystem::SetProjectionMatrix() {
     tProjection_Matrix =
-        Perspective(Radians(90.0f), (float)1920 / (float)1080, 1.0f, 100.0f);
+        Perspective(Radians(90.0f), (float)2880 / (float)1800, 1.0f, 100.0f);
 }
 } // namespace GLVM::ecs

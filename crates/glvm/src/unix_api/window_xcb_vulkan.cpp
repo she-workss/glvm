@@ -47,8 +47,8 @@ WindowXCBVulkan::WindowXCBVulkan() {
         screen->root, // Parent window
         0,
         0, // x, y
-        1920,
-        1080, // width, height
+        2880,
+        1800, // width, height
         10, // Border width
         XCB_WINDOW_CLASS_INPUT_OUTPUT, // Class
         screen->root_visual, // Visual

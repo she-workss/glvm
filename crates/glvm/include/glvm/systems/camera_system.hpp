@@ -18,8 +18,8 @@ public:
     // Mouse parameters.
     float fYaw = -90.0f;
     float fPitch = 0.0f;
-    float fLast_X = 1920.0f / 2.0f;
-    float fLast_Y = 1080.0f / 2.0f;
+    float fLast_X = 2880.0f / 2.0f;
+    float fLast_Y = 1800.0f / 2.0f;
     bool bFirst_Mouse = true;
 
     void Update() override;

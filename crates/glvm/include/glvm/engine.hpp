@@ -74,14 +74,14 @@ public:
     void EventQueueFlush();
     void RenderVulkan();
     ecs::TextureHandle LoadTextureFromFile(const char* path_to_texture);
-    ecs::TextureHandle LoadTextureFromAddress(
+    ecs::TextureHandle load_texture_from_address(
         unsigned int iWidth,
         unsigned int iHeight,
         unsigned int dat_length,
         unsigned char* u_iData
     );
-    ecs::components::MeshHandle LoadMeshFromFile_OBJ(const char* _pathToMesh);
-    ecs::components::MeshHandle LoadMeshFromFile_GLTF(const char* pathToMesh);
+    ecs::components::MeshHandle load_obj(const char* _pathToMesh);
+    ecs::components::MeshHandle load_gltf(const char* pathToMesh);
     void FPScounter();
     void GameKill();
 };

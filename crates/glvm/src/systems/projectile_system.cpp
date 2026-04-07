@@ -124,7 +124,7 @@ void CProjectileSystem::CalculateProjectile(
             cm::pointLight>(uiEntity_Projectile);
 
     core::Sound::CSoundSample* pSound_Sample = new core::Sound::CSoundSample();
-    pSound_Sample->kPath_to_File_ = "assets/sounds/pistol.wav";
+    pSound_Sample->kPath_to_File_ = "../../../assets/sounds/pistol.wav";
     pSound_Sample->uiDuration_ = 5;
     pSound_Sample->uiRate_ = 22050;
     soundEngine->GetSoundContainer().Push(pSound_Sample);

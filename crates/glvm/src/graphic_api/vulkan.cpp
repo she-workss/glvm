@@ -286,7 +286,7 @@ void CVulkanRenderer::SetViewMatrix(
 
 void CVulkanRenderer::SetProjectionMatrix() {
     mat4 tProjection_Matrix =
-        Perspective(Radians(90.0f), (float)1920 / (float)1080, 0.1f, 100.0f);
+        Perspective(Radians(90.0f), (float)2880 / (float)1800, 0.1f, 100.0f);
     projectionMatrix = tProjection_Matrix;
     projectionMatrix[1][1] *= -1.0f;
 }

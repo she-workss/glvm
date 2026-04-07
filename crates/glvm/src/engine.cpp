@@ -150,7 +150,7 @@ ecs::TextureHandle Engine::LoadTextureFromFile(const char* path_to_texture) {
     return textureHandle;
 }
 
-ecs::TextureHandle Engine::LoadTextureFromAddress(
+ecs::TextureHandle Engine::load_texture_from_address(
     unsigned int iWidth,
     unsigned int iHeight,
     unsigned int dat_length,
@@ -170,9 +170,7 @@ ecs::TextureHandle Engine::LoadTextureFromAddress(
     return textureHandle;
 }
 
-ecs::components::MeshHandle Engine::LoadMeshFromFile_OBJ(
-    const char* _pathToMesh
-) {
+ecs::components::MeshHandle Engine::load_obj(const char* _pathToMesh) {
     ecs::components::MeshHandle meshHandle;
     meshHandle.id = meshID;
     pathsArray_.push_back(_pathToMesh);
@@ -182,9 +180,7 @@ ecs::components::MeshHandle Engine::LoadMeshFromFile_OBJ(
     return meshHandle;
 }
 
-ecs::components::MeshHandle Engine::LoadMeshFromFile_GLTF(
-    const char* pathToMesh
-) {
+ecs::components::MeshHandle Engine::load_gltf(const char* pathToMesh) {
     ecs::components::MeshHandle meshHandle;
     meshHandle.id = meshID;
     pathsGLTF_.Push(pathToMesh);
