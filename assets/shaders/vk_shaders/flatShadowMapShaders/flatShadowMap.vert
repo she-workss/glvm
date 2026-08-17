@@ -3,10 +3,12 @@
 // #extension GL_ARB_separate_shader_objects : enable
 // #extension GL_ARB_shading_language_420pack : enable
 
+#define MAX_JOINTS_NUMBER 128
+
 layout(set = 0, binding = 0) uniform UniformBufferObject {
     mat4 model;
     mat4 lightSpace;
-	mat4 jointMatrices[18];
+	mat4 jointMatrices[MAX_JOINTS_NUMBER];
 } ubo;
 
 layout(location = 0) in vec3 inPosition;

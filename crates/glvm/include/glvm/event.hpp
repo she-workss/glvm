@@ -2,11 +2,19 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-#pragma once
+
+#ifndef EVENT_HPP
+#define EVENT_HPP
+
+// #include "Stack.hpp"
 
 namespace GLVM::core {
 
 class CStack;
+
+/*! \enum EEvents
+    \brief Realise event event types.
+*/
 
 enum EEvents {
     eDEFAULT,
@@ -20,6 +28,8 @@ enum EEvents {
     eATACK,
     eSPAWN,
     eJUMP,
+    eINVENTORY,
+    eINVENTORY_RELEASE,
     eMOVE_FORWARD,
     eMOVE_BACKWARD,
     eMOVE_LEFT,
@@ -46,6 +56,10 @@ struct SMousePointerPosition {
     float yaw;
 };
 
+/*! \class Event
+    \brief Realise event game system.
+*/
+
 class CEvent {
     EEvents eEvent_;
     EEvents nextEvent;
@@ -60,6 +74,10 @@ public:
     void SetNextEvent(EEvents _eEvent);
     EEvents GetNextEvent();
     void SetLastEvent(CStack _Stack);
+
+    bool isLeftMouseButtonReleased = true;
 };
 
 } // namespace GLVM::core
+
+#endif

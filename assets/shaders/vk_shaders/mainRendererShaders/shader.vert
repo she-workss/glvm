@@ -2,21 +2,22 @@
 
 #extension GL_EXT_debug_printf : enable
 
-#define SPOT_LIGHT_SPACE_MATRIX_CONTAINER_SIZE 2
-#define DIRECTIONAL_LIGHT_SPACE_MATRIX_CONTAINER_SIZE 2
+#define MAX_JOINTS_NUMBER 128
+#define SPOT_LIGHT_SPACE_MATRIX_CONTAINER_SIZE 8
+#define DIRECTIONAL_LIGHT_SPACE_MATRIX_CONTAINER_SIZE 4
 
 layout(set = 0, binding = 0) uniform UniformBufferObject {
     mat4 model;
     mat4 view;
     mat4 proj;
-	mat4 jointMatrices[18];
+	mat4 jointMatrices[MAX_JOINTS_NUMBER];
 
 	vec3      ambient;
     float     shininess;
 
 	mat4 spotSpaceMatrix[SPOT_LIGHT_SPACE_MATRIX_CONTAINER_SIZE];
 	int spotLightsNumber;
-
+	
 	mat4 dirSpaceMatrix[DIRECTIONAL_LIGHT_SPACE_MATRIX_CONTAINER_SIZE];
 	int directionalLightsNumber;
 } ubo;
@@ -45,7 +46,7 @@ layout(location = 2) out vec2 outFragmentTextureCoordinate;
 // layout(set = 1, binding = 0) uniform TestDirLightSpaceMatrixUBO {
 // 	mat4 spotSpaceMatrix[SPOT_LIGHT_SPACE_MATRIX_CONTAINER_SIZE];
 // 	int spotLightsNumber;
-
+	
 // 	mat4 dirSpaceMatrix[DIRECTIONAL_LIGHT_SPACE_MATRIX_CONTAINER_SIZE];
 // 	int directionalLightsNumber;
 // } spaceMat;
@@ -68,23 +69,32 @@ void main() {
 	}
 
 	vec4 worldPosition = ubo.model * skinMatrix * vec4(inPosition, 1.0);
-
+	
 	vs_out.fragmentPosition = worldPosition.xyz;
 //	vs_out.normal = transpose(inverse(mat3(ubo.model))) * vec3(skinMatrix * vec4(inNormal, 1.0));
 	vs_out.normal = mat3(transpose(inverse(ubo.model * skinMatrix))) * inNormal;
 	vs_out.textureCoords = inTextureCoordinate;
-	for (int i = 0; i < ubo.directionalLightsNumber; ++i)
+	for (int i = 0; i < ubo.directionalLightsNumber; ++i) 
 		vs_out.fragmentPositionDirectionalLightSpace[i] = ubo.dirSpaceMatrix[i] * worldPosition;
-
-	for (int i = 0; i < ubo.spotLightsNumber; ++i)
+	
+	for (int i = 0; i < ubo.spotLightsNumber; ++i) 
 		vs_out.fragmentPositionSpotLightSpace[i] = ubo.spotSpaceMatrix[i] * worldPosition;
 
 	vs_out.ambient = ubo.ambient;
 	vs_out.shininess = ubo.shininess;
 
+	// mat4 projMatrix = mat4(
+	// 	1.0, 0.0, 0.0, 0.0,
+	// 	0.0, -1.0, 0.0, 0.0,
+	// 	0.0, 0.0, 1.0, 0.0,
+	// 	0.0, 0.0, 0.0, 1.0
+	// 	);
+
+
     gl_Position = ubo.proj * ubo.view * worldPosition;
 //	gl_Position = worldPosition * ubo.model * ubo.view * ubo.proj;
 	outFragmentPosition = worldPosition.xyz;
+//	outFragmentPosition = mat3(ubo.proj * ubo.view) * worldPosition.xyz;
     outFragmentNormal = inNormal;
     outFragmentTextureCoordinate = inTextureCoordinate;
 }

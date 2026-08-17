@@ -9,7 +9,7 @@
             "program": "${workspaceFolder}/build/debug/examples/hello_world",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/build/debug/examples/",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",

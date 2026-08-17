@@ -6,7 +6,7 @@ if(GLVM_BUILD_TESTS)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND NOT APPLE AND NOT WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
   endif()
-  CPMAddPackage("gh:google/googletest#v1.17.0")
+  CPMAddPackage("gh:google/googletest#v1.18.0")
 endif()
 
 if(GLVM_BUILD_BENCHES)

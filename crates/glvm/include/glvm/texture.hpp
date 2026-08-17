@@ -2,7 +2,9 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-#pragma once
+
+#ifndef TEXTURE
+#define TEXTURE
 
 #include <cstdint>
 #include <vector>
@@ -15,16 +17,19 @@ struct TextureHandle {
 };
 
 struct Texture {
-    // This field using to choose specific instance of texture image in Vulkan.
-    unsigned int vkAvailableInnerId_ = 0;
+    unsigned int vkAvailableInnerId_ =
+        0; ///< This field using to choose specific instance of texture image in
+           ///< Vulkan.
     unsigned int vkInnerIdLimit_ = 10;
 
-    const char* path_to_image;
-    std::vector<Entity> entitiesOwnsThisTypeOfTexture_;
-    unsigned int id_;
-    unsigned int iWidth_;
-    unsigned int iHeight_;
-    unsigned int dat_length_;
-    unsigned char* u_iData_;
+    const char* path_to_image = "";
+    std::vector<Entity> entitiesOwnsThisTypeOfTexture_ = {};
+    unsigned int id_ = 0;
+    unsigned int iWidth_ = 0;
+    unsigned int iHeight_ = 0;
+    unsigned int dat_length_ = 0;
+    unsigned char* u_iData_ = 0;
 };
 } // namespace GLVM::ecs
+
+#endif

@@ -3,9 +3,9 @@
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
 
-#include "glvm/event.hpp"
+#include "glvm/Event.hpp"
 
-#include "glvm/events_stack.hpp"
+#include "glvm/EventsStack.hpp"
 
 namespace GLVM::core {
 CEvent::CEvent() {}

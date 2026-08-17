@@ -2,7 +2,9 @@
 // Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
 // <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
 // License: http://opensource.org/licenses/MIT
-#pragma once
+
+#ifndef I_ITERATOR
+#define I_ITERATOR
 
 namespace GLVM::core {
 template<class T>
@@ -16,3 +18,5 @@ public:
     virtual T& Last() = 0;
 };
 } // namespace GLVM::core
+
+#endif
