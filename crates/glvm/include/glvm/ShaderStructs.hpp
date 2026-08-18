@@ -6,7 +6,8 @@
 #include <stdint.h>
 
 namespace GLVM::core {
-#define SHADOW_MAP_SIZE 640
+#define SHADOW_MAP_SIZE 1024
+#define FLAT_SHADOW_MAP_SIZE 2048
 
 #define VK_DEBUG_IMAGE_SET_RED "\x1b[31mVULKAN DEBUG IMAGE\x1b[0m"
 #define VK_DEBUG_DESCRIPTOR_SET_RED "\x1b[31mVULKAN DEBUG DESCRIPTOR SET\x1b[0m"

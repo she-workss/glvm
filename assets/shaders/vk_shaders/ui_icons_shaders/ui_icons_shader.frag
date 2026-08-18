@@ -9,6 +9,6 @@ layout(location = 0) out vec4 outColor;
 void main()
 {
 	vec4 color = vec4(texture(inventoryTexture, inFragmentTextureCoordinate));
-	
+
 	outColor = color;
 }

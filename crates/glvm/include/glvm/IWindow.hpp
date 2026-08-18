@@ -12,6 +12,8 @@ namespace GLVM::core {
 
 class IWindow {
 public:
+    bool isFocused = true; ///< Window keyboard focus, updated by each backend
+
     virtual ~IWindow() = default;
 
     virtual void SwapBuffers() = 0;

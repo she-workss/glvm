@@ -27,10 +27,11 @@ WindowXVulkan::WindowXVulkan() {
     Root_Window_ = DefaultRootWindow(pDisp_);
     Set_Window_Attributes_.event_mask = KeyPressMask | KeyReleaseMask
         | PointerMotionMask | StructureNotifyMask | ButtonPressMask
-        | ButtonReleaseMask;
+        | ButtonReleaseMask | FocusChangeMask;
 
-    width = 1920;
-    height = 1080;
+    const int screenNumber = XDefaultScreen(pDisp_);
+    width = DisplayWidth(pDisp_, screenNumber);
+    height = DisplayHeight(pDisp_, screenNumber);
     Win_ = XCreateWindow(
         pDisp_,
         Root_Window_,
@@ -92,25 +93,17 @@ void WindowXVulkan::CursorLock(
     int* _x_offset,
     int* _y_offset
 ) {
-    ///< Solve a problem with endlessly growing numbers in the start game run.
-    // if(_x_position > 1920 || _x_position < 0 || _y_position > 1080 ||
-    // _y_position < 0)
-    //     return;
-
     int iOffset_X = 0, iOffset_Y = 0;
-    iOffset_X = _x_position - 960;
-    iOffset_Y = _y_position - 540;
+    iOffset_X = _x_position - (int)(width / 2);
+    iOffset_Y = _y_position - (int)(height / 2);
 
     *_x_offset += iOffset_X;
     *_y_offset -= iOffset_Y;
 
-    if (*_y_offset > 890) {
-        *_y_offset = 890;
-    } else if (*_y_offset < -890) {
-        *_y_offset = -890;
-    }
+    ///< Pitch is limited by angle in Engine::SetViewMatrix(), so this offset
+    ///< may accumulate freely; no pixel clamp here (resolution-independent).
 
-    XWarpPointer(pDisp_, None, Win_, 0, 0, 0, 0, 960, 540);
+    XWarpPointer(pDisp_, None, Win_, 0, 0, 0, 0, (int)(width / 2), (int)(height / 2));
     XFlush(pDisp_);
 }
 
@@ -151,6 +144,24 @@ bool WindowXVulkan::HandleEvent(CEvent& _Event) {
                     None,
                     CurrentTime
                 );
+                break;
+            case FocusIn:
+                isFocused = true;
+                XGrabPointer(
+                    pDisp_,
+                    Win_,
+                    True,
+                    PointerMotionMask,
+                    GrabModeAsync,
+                    GrabModeAsync,
+                    Win_,
+                    None,
+                    CurrentTime
+                );
+                break;
+            case FocusOut:
+                isFocused = false;
+                XUngrabPointer(pDisp_, CurrentTime);
                 break;
             case ButtonPress:
                 uiMouse_Button = uXEvent.xbutton.button;

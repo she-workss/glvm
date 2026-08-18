@@ -70,6 +70,25 @@ void World::removeEntity(entity entity_) {
     id id_ = getId(entity_);
     EntityLocation& location = entityLocations[id_];
 
+    /// Remove entity from spatial grid cells it occupies, otherwise stale
+    /// references crash collision/physics on later frames.
+    if (location.gridCellCounter > 0) {
+        for (u8 i = 0; i < location.gridCellCounter; ++i) {
+            u32 z = location.gridCellIndicies[i][0];
+            u32 y = location.gridCellIndicies[i][1];
+            u32 x = location.gridCellIndicies[i][2];
+            core::vector<u32>& chunkEntities =
+                spatialGrid.grid[z][y][x].entities;
+            for (u32 k = 0; k < chunkEntities.GetSize(); ++k) {
+                if (chunkEntities[k] == entity_) {
+                    chunkEntities.Remove(k);
+                    break;
+                }
+            }
+        }
+        location.gridCellCounter = 0;
+    }
+
     Archetype* arch = location.arch;
     uint32_t index = location.index;
 

@@ -1,8 +1,8 @@
 #version 450
 
 void main()
-{             
-	gl_FragDepth = gl_FragCoord.z;
+{
+	// gl_FragDepth = gl_FragCoord.z;
 }
 
 // layout(set = 1, binding = 1) uniform sampler2D texSampler;
@@ -30,12 +30,12 @@ void main()
 // layout(set = 2, binding = 2) uniform MaterialUBO {
 //     vec3      ambient;
 //     float     shininess;
-// } material; 
+// } material;
 
 // struct DirectionalLight {
 // 	vec3 position;
 // 	vec3 direction;
-  
+
 //     vec3 ambient;
 //     vec3 diffuse;
 //     vec3 specular;
@@ -116,7 +116,7 @@ void main()
 // 	// float differece = max(dot(fragmentNormal, lightDirection), 0.0);
 
 // 	// vec3 diffuse = differece * pointLights.pointLightsArray[0].ambient;
-	
+
 // 	// outColor = vec4(diffuse, 1.0);
 // }
 
@@ -167,7 +167,7 @@ void main()
 // 	float specularComponent = pow(max(dot(viewDirection, reflectDirection), 0.0f), material.shininess);
 // 	// attenuation
 // 	float distance    = length(light.position - fragmentPosition);
-// 	float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance)); 
+// 	float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
 // 	// spotlight intensity
 //     float theta     = dot(lightDirection, normalize(-light.direction));
 // 	float epsilon   = light.cutOff - light.outerCutOff;
@@ -179,6 +179,6 @@ void main()
 // //	ambient  *= attenuation * intensity;
 //     diffuse  *= attenuation * intensity;
 //     specular *= attenuation * intensity;
-	
+
 //     return (diffuse);
 // }

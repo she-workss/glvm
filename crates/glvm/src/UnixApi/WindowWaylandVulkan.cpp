@@ -202,8 +202,8 @@ void WindowWaylandVulkan::CursorLock(
 
     static int flag = 0;
     if (flag == 0) {
-        *_x_offset = -960;
-        *_y_offset = -540;
+        *_x_offset = -((int)width / 2);
+        *_y_offset = -((int)height / 2);
         ++flag;
     } else {
         *_x_offset = _x_position;
@@ -437,19 +437,25 @@ void keyboard_keymap(
 ) {}
 
 void keyboard_enter(
-    [[maybe_unused]] void* data,
+    void* data,
     [[maybe_unused]] struct wl_keyboard* keyboard,
     [[maybe_unused]] uint32_t serial,
     [[maybe_unused]] struct wl_surface* surface,
     [[maybe_unused]] struct wl_array* keys
-) {}
+) {
+    WindowWaylandVulkan* waylandWindow = (WindowWaylandVulkan*)data;
+    waylandWindow->isFocused = true;
+}
 
 void keyboard_leave(
-    [[maybe_unused]] void* data,
+    void* data,
     [[maybe_unused]] struct wl_keyboard* keyboard,
     [[maybe_unused]] uint32_t serial,
     [[maybe_unused]] struct wl_surface* surface
-) {}
+) {
+    WindowWaylandVulkan* waylandWindow = (WindowWaylandVulkan*)data;
+    waylandWindow->isFocused = false;
+}
 
 void keyboard_key(
     [[maybe_unused]] void* data,
@@ -769,6 +775,39 @@ void seat_name(
     [[maybe_unused]] const char* name
 ) {}
 
+static void output_geometry(
+    [[maybe_unused]] void* data,
+    [[maybe_unused]] struct wl_output* output,
+    [[maybe_unused]] int32_t x,
+    [[maybe_unused]] int32_t y,
+    [[maybe_unused]] int32_t physical_width,
+    [[maybe_unused]] int32_t physical_height,
+    [[maybe_unused]] int32_t subpixel,
+    [[maybe_unused]] const char* make,
+    [[maybe_unused]] const char* model,
+    [[maybe_unused]] int32_t transform
+) {}
+
+static void output_mode(
+    void* data,
+    [[maybe_unused]] struct wl_output* output,
+    uint32_t flags,
+    int32_t width,
+    int32_t height,
+    [[maybe_unused]] int32_t refresh
+) {
+    if (flags & WL_OUTPUT_MODE_CURRENT) {
+        WindowWaylandVulkan* waylandWindow = (WindowWaylandVulkan*)data;
+        waylandWindow->width = width;
+        waylandWindow->height = height;
+    }
+}
+
+static void output_done(
+    [[maybe_unused]] void* data,
+    [[maybe_unused]] struct wl_output* output
+) {}
+
 void registry_global(
     [[maybe_unused]] void* data,
     struct wl_registry* registry,
@@ -821,6 +860,13 @@ void registry_global(
             &windowWaylandVulkan.seat_lintener,
             data
         );
+    } else if (!strcmp(interface, wl_output_interface.name)) {
+        struct wl_output* output = (wl_output*)wl_registry_bind(
+            registry, name, &wl_output_interface, 1
+        );
+        wl_output_add_listener(
+            output, &windowWaylandVulkan.output_listener, data
+        );
     }
 }
 
@@ -831,8 +877,6 @@ void registry_global_remove(
 ) {}
 
 WindowWaylandVulkan* initializeWaylandWindow() {
-    windowWaylandVulkan.previous_X = 960;
-    windowWaylandVulkan.previous_Y = 540;
     windowWaylandVulkan.xdg_toplevel_listener = {
         .configure = xdg_toplevel_configure,
         .close = xdg_toplevel_close,
@@ -849,6 +893,11 @@ WindowWaylandVulkan* initializeWaylandWindow() {
         .done = new_frame
     };
     windowWaylandVulkan.shell_listener = {.ping = shell_ping};
+    windowWaylandVulkan.output_listener = {
+        .geometry = output_geometry,
+        .mode = output_mode,
+        .done = output_done
+    };
     windowWaylandVulkan.keyboard_listener = {
         .keymap = keyboard_keymap,
         .enter = keyboard_enter,

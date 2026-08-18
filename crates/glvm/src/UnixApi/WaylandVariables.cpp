@@ -19,8 +19,6 @@
 // struct zwp_relative_pointer_manager_v1* relative_pointer_manager = NULL;
 // struct zwp_relative_pointer_v1* relative_pointer = NULL;
 // void* pixels;
-// uint16_t width = 1920;
-// uint16_t height = 1080;
 // uint8_t  constant_byte = 0;
 // uint8_t  close_xdg_toplevel;
 // struct wl_display*  display;

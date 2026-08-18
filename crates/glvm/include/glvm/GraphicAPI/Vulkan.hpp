@@ -92,9 +92,6 @@
 #endif
 
 namespace GLVM::core {
-const uint32_t WIDTH = 800;
-const uint32_t HEIGHT = 600;
-
 const int MAX_FRAMES_IN_FLIGHT = 2;
 // #define NDEBUG
 const std::vector<const char*> validationLayers = {
@@ -171,7 +168,7 @@ public:
     core::vector<core::vector<core::vector<mat4>>> jointMatricesPerMesh;
     core::vector<core::vector<float>> frames;
     bool isInventoryOpened = false;
-    vec3 forward;
+    vec3 forward = {0.0f, 0.0f, -1.0f};
     float hud_screen_x = 0.0f;
     float hud_screen_y;
 
@@ -194,8 +191,7 @@ public:
     float current_Y = 0.0f;
     float prev_X = 0.0f;
     float current_X = 0.0f;
-    float aspectRate = 0.0f; ///< Multiplier of current aspect rate. For full hd
-                             ///< this must be 1920 / 1080
+    float aspectRate = 0.0f; ///< Window aspect ratio, updated on resize
     int dragedItemEntity;
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
@@ -330,6 +326,8 @@ public:
 
     std::vector<VK_Image> textureImages;
     VkSampler textureSampler;
+    VkSampler shadowMapSampler;
+    uint32_t frameCounter = 0;
 
     std::vector<VkBuffer> vertexBufferContainer;
     std::vector<VkDeviceMemory> vertexBufferMemoryContainer;
@@ -472,6 +470,7 @@ public:
     bool hasStencilComponent(VkFormat format);
     void createTextureImageView();
     void createTextureSampler();
+    void createShadowMapSampler();
     VkImageView createImageView(
         VK_Image image,
         uint32_t baseArrayLayers,

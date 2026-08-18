@@ -37,20 +37,12 @@
 #include <map>
 #include <random>
 
+using namespace GLVM;
+namespace cm = GLVM::ecs::components;
+namespace pga = GLVM::core::pga;
+namespace arch = GLVM::ecs::arch;
+
 int main() {
-    // GLVM::core::pga::plane plane;
-    // GLVM::core::pga::point point = !plane;
-    // std::cout << point.w << std::endl;
-    // auto a = !plane;
-    // std::cout << typeid(a).name() << std::endl;
-    // std::cout << point.y << std::endl;
-    // std::cout << !plane.x << std::endl;
-
-    using namespace GLVM;
-    namespace cm = GLVM::ecs::components;
-    namespace pga = GLVM::core::pga;
-    namespace arch = GLVM::ecs::arch;
-
     [[maybe_unused]] pga::plane plane0 = {2.1f, 3.5f, 4.2f, 3.87f};
     [[maybe_unused]] pga::plane plane1 = {3.17f, 10.20f, 7.832f, 3.87f};
     [[maybe_unused]] pga::point point0 = {1.5f, 2.77f, 6.55f, 8.99f};
@@ -61,17 +53,12 @@ int main() {
         {5.723, 10.234, 3.343, 0.344, 234.123, 77.345};
     [[maybe_unused]] pga::rline rline0 = {21.87, 25.053, 63.234};
     [[maybe_unused]] pga::rline rline1 = {15.723, 510.234, 73.343};
-
-    //	std::cout << (line0 ^ plane0) << std::endl;
     std::cout << (point0 * point1) << std::endl;
-
     ecs::EntityManager* EntityManager = ecs::EntityManager::GetInstance();
     ecs::ComponentManager* ComponentManager =
         ecs::ComponentManager::GetInstance();
-
     arch::ArchetypeEntityManager* archEntityManager =
         arch::ArchetypeEntityManager::getInstance();
-
     core::Engine* GLVM = core::Engine::GetInstance();
     // [[maybe_unused]] cm::MeshHandle cubeHandle_OBJ =
     //     GLVM->LoadMeshFromFile_OBJ("../../../assets/obj/cube.obj");
@@ -184,29 +171,13 @@ int main() {
     // GLVM->LoadTextureFromFile("../textures/data/container2.png");
     // [[maybe_unused]] ecs::TextureHandle container2SpecularTextureHandle =
     // GLVM->LoadTextureFromFile("../textures/data/container2_specular.png");
-
-    // while(1) {
-    // 	core::UDP_ServerLinux serverLinux;
-    // 	char* buffer = serverLinux.receive();
-    // 	printf("Message from client: %s\n", buffer);
-    // 	// for ( int i = 0; i < 1024; ++i ) {
-    // 	// 	if ( buffer[i] == '\n' )
-    // 	// 		break;
-
-    // 	// }
-
-    // 	serverLinux.response();
-    // }
-
     arch::entity player = archEntityManager->createEntity();
-    //	std::cout << "player: " << ecs::arch::getId(player) << std::endl;
     arch::world.addEntityToArchetype(player, arch::world.archetypes[1]);
     arch::EntityLocation playerLocation =
         arch::world.entityLocations[arch::getId(player)];
     arch::PlayerArchetype* playerArch =
         static_cast<arch::PlayerArchetype*>(playerLocation.arch);
     const uint32_t playerIndex = playerLocation.index;
-
     playerArch->transforms[playerIndex] = {
         .position = {15.0f, 15.0f, 15.0f},
         .scale = 1.0f
@@ -227,12 +198,10 @@ int main() {
         .ambient = {0.05f, 0.05f, 0.0f},
         .shininess = 128.0f * 0.078125f
     };
-
     std::random_device rd;
     std::map<int, int> hist;
     std::mt19937 mersenne(rd());
     std::uniform_int_distribution<int> dist(0, 3);
-
     for (u32 i = 0; i < 5; ++i) {
         arch::entity enemy = archEntityManager->createEntity();
         arch::world.addEntityToArchetype(enemy, arch::world.archetypes[2]);
@@ -241,7 +210,6 @@ int main() {
         arch::EnemyArchetype* enemyArch =
             static_cast<arch::EnemyArchetype*>(enemyLocation.arch);
         const uint32_t enemyIndex = enemyLocation.index;
-
         unsigned int random = dist(mersenne);
         vec3 randomDirection = {};
         switch (random) {
@@ -258,7 +226,6 @@ int main() {
                 randomDirection = vec3(0.0f, 0.0f, -3.0f, 0.0);
                 break;
         }
-
         enemyArch->transforms[enemyIndex] = {
             .position = {vec3((float)i * 5, 3.0f, -3.0f) + randomDirection},
             .scale = 1.0f
@@ -268,7 +235,6 @@ int main() {
         enemyArch->enemies[enemyIndex] = {.detectRadius = 10.0f};
         enemyArch->health[enemyIndex] = {.maxHealth = 100, .currentHealth = 100};
         cm::font* enemyFontComponent = &enemyArch->fonts[enemyIndex];
-
         if (i < 3) {
             enemyFontComponent->font_string.Push('1');
         } else if (i < 6) {
@@ -295,7 +261,6 @@ int main() {
             .shininess = 32.0f * 0.078125f
         };
     }
-
     for (u32 i = 0; i < 5; ++i) {
         arch::entity cube = archEntityManager->createEntity();
         std::cout << "Cube: " << arch::getId(cube) << std::endl;
@@ -321,7 +286,6 @@ int main() {
         };
         cubeArch->fonts[cubeIndex].font_string.Push('R');
     }
-
     arch::entity crosshair = archEntityManager->createEntity();
     arch::world.addEntityToArchetype(crosshair, arch::world.archetypes[5]);
     arch::EntityLocation crosshairLocation =
@@ -362,11 +326,8 @@ int main() {
         .ambient = {0.05f, 0.05f, 0.05f},
         .shininess = 128.0f * 0.078125f
     };
-
     for (unsigned int i = 0; i < 5; ++i) {
         arch::entity item = archEntityManager->createEntity();
-        //		std::cout << "item: " << ecs::arch::getId(item) << " i: " << i
-        //<< std::endl;
         arch::world.addEntityToArchetype(item, arch::world.archetypes[7]);
         arch::EntityLocation itemLocation =
             arch::world.entityLocations[arch::getId(item)];
@@ -386,7 +347,6 @@ int main() {
         } else {
             itemArch->meshes[itemIndex].handle = hyperCubeHandle_GLTF;
         }
-
         itemArch->materials[itemIndex] = {
             .diffuseTextureID_ = container2Texturehandle,
             .specularTextureID_ = container2SpecularTextureHandle,
@@ -394,7 +354,6 @@ int main() {
             .shininess = 128.0f * 0.078125f
         };
     }
-
     arch::entity directionalLight = archEntityManager->createEntity();
     arch::world.addEntityToArchetype(
         directionalLight,
@@ -426,7 +385,6 @@ int main() {
         .ambient = {0.05f, 0.05f, 0.0f},
         .shininess = 128.0f * 0.078125f
     };
-
     arch::entity pointLight = archEntityManager->createEntity();
     arch::world.addEntityToArchetype(pointLight, arch::world.archetypes[9]);
     arch::EntityLocation pointLightLocation =
@@ -454,7 +412,6 @@ int main() {
         .ambient = {0.05f, 0.05f, 0.0f},
         .shininess = 128.0f * 0.078125f
     };
-
     arch::entity spotLight = archEntityManager->createEntity();
     arch::world.addEntityToArchetype(spotLight, arch::world.archetypes[10]);
     arch::EntityLocation spotLightLocation =
@@ -483,18 +440,11 @@ int main() {
         .diffuseTextureID_ = grayTextureHandle,
         .specularTextureID_ = grayTextureHandle
     };
-
-    ///< Game rendering loop
-    //	Glvm->GameLoop(GLVM::core::OPENGL_RENDERER);
     std::cout << "ARCHETYPES NUMBER: " << arch::world.archetypes.GetSize()
               << std::endl;
     GLVM->GameLoop();
-
     GLVM->GameKill();
-
     delete EntityManager;
     delete ComponentManager;
     delete GLVM;
-
-    return 0;
 }

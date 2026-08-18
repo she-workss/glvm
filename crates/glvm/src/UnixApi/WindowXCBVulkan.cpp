@@ -33,6 +33,9 @@ WindowXCBVulkan::WindowXCBVulkan() {
     xcb_screen_iterator_t iterator = xcb_setup_roots_iterator(setup);
     screen = iterator.data;
 
+    width = screen->width_in_pixels;
+    height = screen->height_in_pixels;
+
     key_symbols = xcb_key_symbols_alloc(connection);
     assert(key_symbols != NULL);
 
@@ -43,7 +46,8 @@ WindowXCBVulkan::WindowXCBVulkan() {
     event_flags[1] = XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE
         | XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE
         | XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_POINTER_MOTION
-        | XCB_EVENT_MASK_ENTER_WINDOW | XCB_EVENT_MASK_LEAVE_WINDOW;
+        | XCB_EVENT_MASK_ENTER_WINDOW | XCB_EVENT_MASK_LEAVE_WINDOW
+        | XCB_EVENT_MASK_FOCUS_CHANGE;
     //		event_flags[2] = cursor;
 
     /// Create window
@@ -55,8 +59,8 @@ WindowXCBVulkan::WindowXCBVulkan() {
         screen->root, ///< Parent window
         0,
         0, ///< x, y
-        1920,
-        1080, ///< width, height
+        width,
+        height, ///< width, height
         10, ///< Border width
         XCB_WINDOW_CLASS_INPUT_OUTPUT, ///< Class
         screen->root_visual, ///< Visual
@@ -341,6 +345,25 @@ bool WindowXCBVulkan::HandleEvent([[maybe_unused]] CEvent& _Event) {
                 // expose_event->event_y);
                 break;
             }
+            case XCB_FOCUS_IN:
+                isFocused = true;
+                xcb_grab_pointer(
+                    connection,
+                    1,
+                    window,
+                    XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_BUTTON_PRESS,
+                    XCB_GRAB_MODE_ASYNC,
+                    XCB_GRAB_MODE_ASYNC,
+                    window,
+                    XCB_NONE,
+                    XCB_CURRENT_TIME
+                );
+                break;
+            case XCB_FOCUS_OUT:
+                isFocused = false;
+                xcb_ungrab_pointer(connection, XCB_CURRENT_TIME);
+                xcb_flush(connection);
+                break;
             // case XCB_LEAVE_NOTIFY: {
             // 	xcb_leave_notify_event_t *expose_event =
             // (xcb_leave_notify_event_t *)generic_event;
@@ -495,8 +518,8 @@ void WindowXCBVulkan::CursorLock(
     [[maybe_unused]] int* _y_offset
 ) {
     int iOffset_X = 0, iOffset_Y = 0;
-    iOffset_X = _x_position - 960;
-    iOffset_Y = _y_position - 540;
+    iOffset_X = _x_position - (int)(width / 2);
+    iOffset_Y = _y_position - (int)(height / 2);
 
     *_x_offset += iOffset_X;
     *_y_offset -= iOffset_Y;
@@ -506,7 +529,10 @@ void WindowXCBVulkan::CursorLock(
     // else if(*_y_offset < -890)
     //     *_y_offset = -890;
 
-    xcb_warp_pointer(connection, XCB_NONE, window, 0, 0, 0, 0, 960, 540);
+    xcb_warp_pointer(
+        connection, XCB_NONE, window, 0, 0, 0, 0, (int)(width / 2),
+        (int)(height / 2)
+    );
     xcb_flush(connection);
 };
 } // namespace GLVM::core

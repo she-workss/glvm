@@ -94,8 +94,7 @@ public:
     bool isLeftMouseButtonPressed;
     float mouseOffsetX = 0;
     float mouseOffsetY = 0;
-    float aspectRate = 1.778; ///< Multiplier of current aspect rate. For full
-                              ///< hd this must be 1920 / 1080
+    float aspectRate = 0.0f; ///< Window aspect ratio, set by engine each frame
     arch::Archetype* cachedCrosshairArchetype;
     arch::Archetype* cachedInventoryArchetype;
 };

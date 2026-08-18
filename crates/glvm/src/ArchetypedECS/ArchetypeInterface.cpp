@@ -204,6 +204,7 @@ entity Archetype::removeEntity(uint32_t index) {
                     static_cast<tagComponents::levelChunkTagComponent*>(
                         components[componentId]
                     )[last];
+                break;
             case ComponentsIndices::PROJECTILE_TAG_COMPONENT:
                 static_cast<tagComponents::projectileTagComponent*>(
                     components[componentId]

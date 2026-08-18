@@ -36,13 +36,16 @@ public:
         components::move* movesView = nullptr;
         components::rigidBody* rigidBodiesView = nullptr;
         components::colliderFlags* colliderFlagsView = nullptr;
+        components::collider* collidersView = nullptr;
+        components::mesh* meshesView = nullptr;
     } componentsView;
 
     arch::componentMask requiredMask =
         (1ul << arch::ComponentsIndices::TRANSFORM_COMPONENT)
         | (1ul << arch::ComponentsIndices::MOVE_COMPONENT)
         | (1ul << arch::ComponentsIndices::RIGID_BODY_COMPONENT)
-        | (1ul << arch::ComponentsIndices::COLLIDER_COMPONENT);
+        | (1ul << arch::ComponentsIndices::COLLIDER_COMPONENT)
+        | (1ul << arch::ComponentsIndices::MESH_COMPONENT);
 
     CPhysicsSystem(float& gravity_, core::CStack& _input_Stack) :
         gravity(gravity_),

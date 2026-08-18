@@ -41,8 +41,6 @@ struct WindowWaylandVulkan: IWindow {
     ) override;
 
     //		CStack           * Input_Stack_;
-    int previous_X = 960;
-    int previous_Y = 540;
     bool hideAndLockPointer = false;
     // int previous_X = 0;
     // int previous_Y = 0;
@@ -55,6 +53,7 @@ struct WindowWaylandVulkan: IWindow {
     struct wl_pointer_listener pointer_listener;
     struct wl_seat_listener seat_lintener;
     struct wl_registry_listener registry_listener;
+    struct wl_output_listener output_listener;
 
     struct wl_surface* wl_surface;
     struct wl_compositor* compositor;
@@ -71,8 +70,8 @@ struct WindowWaylandVulkan: IWindow {
     struct zwp_relative_pointer_manager_v1* relative_pointer_manager;
     struct zwp_relative_pointer_v1* relative_pointer;
     void* pixels;
-    uint16_t width = 1920;
-    uint16_t height = 1080;
+    uint16_t width = 0;
+    uint16_t height = 0;
     uint8_t constant_byte = 0;
     uint8_t close_xdg_toplevel;
     struct wl_display* display;

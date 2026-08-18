@@ -49,5 +49,3 @@ void main() {
 
 	gl_Position = ubo.spaceMatrix * worldPosition;
 }
-
-

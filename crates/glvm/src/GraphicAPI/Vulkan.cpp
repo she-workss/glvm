@@ -37,6 +37,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <exception>
 #include <string>
@@ -167,11 +168,13 @@ void CVulkanRenderer::recreateSwapChain() {
 #ifdef VK_USE_PLATFORM_XCB_KHR
     Window->configureWindow();
 #endif
-    aspectRate = (float)Window->width / (float)Window->height;
 
     cleanupSwapChain();
 
     createSwapChain();
+    Window->width = swapChainExtent.width;
+    Window->height = swapChainExtent.height;
+    aspectRate = (float)Window->width / (float)Window->height;
     createImageViews();
     createDepthResources();
     createDirectionalLightShadowMapDepthResources();
@@ -335,6 +338,7 @@ void CVulkanRenderer::initVulkan() {
     createTextureImage();
     createTextureImageView();
     createTextureSampler();
+    createShadowMapSampler();
     initializeVertexBuffersWithWavefrontData();
     initializeVertexBuffersWithGLTFData();
     initializeVertexBuffersWithFontData();
@@ -639,6 +643,7 @@ void CVulkanRenderer::cleanup() {
     }
 
     vkDestroySampler(device, textureSampler, nullptr);
+    vkDestroySampler(device, shadowMapSampler, nullptr);
     for (unsigned int i = 0; i < textureImages.size(); ++i) {
         vkDestroySampler(device, textureImages[i].sampler, nullptr);
         for (unsigned int j = 0; j < textureImages[i].views.size(); ++j) {
@@ -1157,7 +1162,25 @@ void CVulkanRenderer::createGraphicsPipeline() {
         rasterizer.rasterizerDiscardEnable = VK_FALSE;
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
         rasterizer.lineWidth = 1.0f;
-        rasterizer.cullMode = 0;
+        bool isShadowMapPipeline = graphicsPipelineCounter
+                == SpecificPipeline::DIRECTIONAL_LIGHT_PIPELINE
+            || graphicsPipelineCounter == SpecificPipeline::SPOT_LIGHT_PIPELINE
+            || graphicsPipelineCounter
+                == SpecificPipeline::POINT_LIGHT_PIPELINE;
+        // meshes are CW-wound; main pass keeps outer faces (cull "front"),
+        // shadow pass keeps far-side faces (cull "back") so objects do not
+        // self-shadow
+        if (isShadowMapPipeline) {
+            rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+        } else if (
+            graphicsPipelineCounter == SpecificPipeline::MAIN_RENDER_PIPELINE
+        ) {
+            rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
+        } else {
+            // 2D/UI pipelines (HUD, crosshair, fonts, SDF) draw screen-space
+            // quads; culling them makes the sprites disappear
+            rasterizer.cullMode = VK_CULL_MODE_NONE;
+        }
         rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterizer.depthBiasEnable = VK_FALSE;
 
@@ -1312,8 +1335,8 @@ void CVulkanRenderer::createFramebuffers() {
             directionalLightsRenderAttachments,
             renderPasses[SpecificPipeline::DIRECTIONAL_LIGHT_PIPELINE],
             directionalLightShadowMapFrameBuffers[i],
-            swapChainExtent.width,
-            swapChainExtent.height
+            FLAT_SHADOW_MAP_SIZE,
+            FLAT_SHADOW_MAP_SIZE
         );
     }
 
@@ -1337,8 +1360,8 @@ void CVulkanRenderer::createFramebuffers() {
             spotLightsRenderAttachments,
             renderPasses[SpecificPipeline::SPOT_LIGHT_PIPELINE],
             spotLightShadowMapFrameBuffers[i],
-            swapChainExtent.width,
-            swapChainExtent.height
+            FLAT_SHADOW_MAP_SIZE,
+            FLAT_SHADOW_MAP_SIZE
         );
     }
 
@@ -1453,8 +1476,8 @@ void CVulkanRenderer::createDirectionalLightShadowMapDepthResources() {
             .format = findDepthFormat(),
             .tiling = VK_IMAGE_TILING_OPTIMAL,
             .arrayLayers = 1,
-            .width = swapChainExtent.width,
-            .height = swapChainExtent.height,
+            .width = FLAT_SHADOW_MAP_SIZE,
+            .height = FLAT_SHADOW_MAP_SIZE,
         };
 
         createImage(depthImage);
@@ -1530,8 +1553,8 @@ void CVulkanRenderer::createSpotLightShadowMapDepthResources() {
             .format = findDepthFormat(),
             .tiling = VK_IMAGE_TILING_OPTIMAL,
             .arrayLayers = 1,
-            .width = swapChainExtent.width,
-            .height = swapChainExtent.height,
+            .width = FLAT_SHADOW_MAP_SIZE,
+            .height = FLAT_SHADOW_MAP_SIZE,
         };
 
         createImage(depthImage);
@@ -1777,6 +1800,26 @@ void CVulkanRenderer::createTextureSampler() {
     if (vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler)
         != VK_SUCCESS) {
         throw std::runtime_error("failed to create texture sampler!");
+    }
+}
+
+void CVulkanRenderer::createShadowMapSampler() {
+    VkSamplerCreateInfo samplerInfo {};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = VK_FILTER_LINEAR;
+    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable = VK_FALSE;
+    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+
+    if (vkCreateSampler(device, &samplerInfo, nullptr, &shadowMapSampler)
+        != VK_SUCCESS) {
+        throw std::runtime_error("failed to create shadow map sampler!");
     }
 }
 
@@ -2284,7 +2327,7 @@ void CVulkanRenderer::updateLightDataDescriptorSets(
                                      .GPUImage,
                             VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
                             imageViewIndex,
-                            textureSampler
+                            shadowMapSampler
                         );
                 }
                 descriptorWrites[j].pImageInfo =
@@ -2384,6 +2427,7 @@ void CVulkanRenderer::createDescriptorImageInfo(
 }
 
 void CVulkanRenderer::createMainRenderDescriptorSets() {
+    vkResetDescriptorPool(device, descriptorPool, 0);
     for (unsigned int pipelineCounter = 0;
          pipelineCounter < SpecificPipeline::PIPELINES_NUMBER;
          ++pipelineCounter) {
@@ -3048,7 +3092,7 @@ void CVulkanRenderer::uiIconsRecordCommandBuffer(
         RenderItem item = items[i];
         unsigned int uiVertexId = item.meshID;
         unsigned int diffuseTexureID = item.diffuseTexureID;
-        unsigned int uboIndex = currentFrame * MAX_FRAMES_IN_FLIGHT + i;
+        unsigned int uboIndex = currentFrame * items.GetSize() + i;
 
         updateUBO_IconsUI(uboIndex, i);
         const unsigned int linkedDescriptorSetID =
@@ -4122,10 +4166,13 @@ void CVulkanRenderer::mainRenderDrawFrame() {
     for (uint32_t directionalLightCounter = 0;
          directionalLightCounter < directionalLights.GetSize();
          ++directionalLightCounter) {
+        VkExtent2D flatShadowMapExtent;
+        flatShadowMapExtent.width = FLAT_SHADOW_MAP_SIZE;
+        flatShadowMapExtent.height = FLAT_SHADOW_MAP_SIZE;
         executeSecondaryCommandBuffer(
             renderPasses[SpecificPipeline::DIRECTIONAL_LIGHT_PIPELINE],
             directionalLightShadowMapFrameBuffers[directionalLightCounter],
-            swapChainExtent,
+            flatShadowMapExtent,
             mainRenderCommandBuffers[currentFrame],
             directionalLightSecondaryCommandBuffers
                 [currentFrame * directionalLightNumber + directionalLightCounter]
@@ -4133,10 +4180,13 @@ void CVulkanRenderer::mainRenderDrawFrame() {
     }
     for (uint32_t spotLightCounter = 0; spotLightCounter < spotLights.GetSize();
          ++spotLightCounter) {
+        VkExtent2D flatShadowMapExtent;
+        flatShadowMapExtent.width = FLAT_SHADOW_MAP_SIZE;
+        flatShadowMapExtent.height = FLAT_SHADOW_MAP_SIZE;
         executeSecondaryCommandBuffer(
             renderPasses[SpecificPipeline::SPOT_LIGHT_PIPELINE],
             spotLightShadowMapFrameBuffers[spotLightCounter],
-            swapChainExtent,
+            flatShadowMapExtent,
             mainRenderCommandBuffers[currentFrame],
             spotLightSecondaryCommandBuffers
                 [currentFrame * spotLightNumber + spotLightCounter]
@@ -4224,6 +4274,10 @@ void CVulkanRenderer::mainRenderDrawFrame() {
     presentInfo.pImageIndices = &imageIndex;
 
     result = vkQueuePresentKHR(presentQueue, &presentInfo);
+
+    if (frameCounter == 10) {
+        vkDeviceWaitIdle(device);
+    }
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR
         || framebufferResized) {
@@ -4424,8 +4478,8 @@ void CVulkanRenderer::directionalLightRecordCoomandBuffer(
         // VK_SUBPASS_CONTENTS_INLINE);
 
         VkViewport shadowMapViewPort;
-        shadowMapViewPort.height = swapChainExtent.height;
-        shadowMapViewPort.width = swapChainExtent.width;
+        shadowMapViewPort.height = FLAT_SHADOW_MAP_SIZE;
+        shadowMapViewPort.width = FLAT_SHADOW_MAP_SIZE;
         shadowMapViewPort.minDepth = 0.0f;
         shadowMapViewPort.maxDepth = 1.0f;
         shadowMapViewPort.x = 0;
@@ -4433,8 +4487,8 @@ void CVulkanRenderer::directionalLightRecordCoomandBuffer(
         vkCmdSetViewport(commandBuffer, 0, 1, &shadowMapViewPort);
 
         VkRect2D shadowMapScissor;
-        shadowMapScissor.extent.width = swapChainExtent.width;
-        shadowMapScissor.extent.height = swapChainExtent.height;
+        shadowMapScissor.extent.width = FLAT_SHADOW_MAP_SIZE;
+        shadowMapScissor.extent.height = FLAT_SHADOW_MAP_SIZE;
         shadowMapScissor.offset.x = 0;
         shadowMapScissor.offset.y = 0;
         vkCmdSetScissor(commandBuffer, 0, 1, &shadowMapScissor);
@@ -4453,7 +4507,6 @@ void CVulkanRenderer::directionalLightRecordCoomandBuffer(
              ++actorCounter) {
             RenderActor actor = actors[actorCounter];
             unsigned int meshId = actor.meshID;
-
             unsigned int uboDirectionalLightIndex = directionalLightNumber
                     * actorsNumber * directionalLightCurrentFrame
                 + actorsNumber * directionalLightCounter + actorCounter;
@@ -4565,8 +4618,8 @@ void CVulkanRenderer::spotLightRecordCommandBuffer(
         // &spotLightShadowMapRenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         VkViewport spotLightShadowMapViewPort;
-        spotLightShadowMapViewPort.height = swapChainExtent.height;
-        spotLightShadowMapViewPort.width = swapChainExtent.width;
+        spotLightShadowMapViewPort.height = FLAT_SHADOW_MAP_SIZE;
+        spotLightShadowMapViewPort.width = FLAT_SHADOW_MAP_SIZE;
         spotLightShadowMapViewPort.minDepth = 0.0f;
         spotLightShadowMapViewPort.maxDepth = 1.0f;
         spotLightShadowMapViewPort.x = 0;
@@ -4574,8 +4627,8 @@ void CVulkanRenderer::spotLightRecordCommandBuffer(
         vkCmdSetViewport(commandBuffer, 0, 1, &spotLightShadowMapViewPort);
 
         VkRect2D spotLightShadowMapScissor;
-        spotLightShadowMapScissor.extent.width = swapChainExtent.width;
-        spotLightShadowMapScissor.extent.height = swapChainExtent.height;
+        spotLightShadowMapScissor.extent.width = FLAT_SHADOW_MAP_SIZE;
+        spotLightShadowMapScissor.extent.height = FLAT_SHADOW_MAP_SIZE;
         spotLightShadowMapScissor.offset.x = 0;
         spotLightShadowMapScissor.offset.y = 0;
         vkCmdSetScissor(commandBuffer, 0, 1, &spotLightShadowMapScissor);

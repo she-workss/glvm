@@ -30,6 +30,7 @@
 #include "glvm/Vector.hpp"
 #include "glvm/VertexMath.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <sys/types.h>
 
@@ -128,34 +129,34 @@ void CCollisionSystem::Update() {
                 const vec3 minEntityPosition = entityBoxCornerBoundPoints[0];
                 const vec3 maxEntityPosition = entityBoxCornerBoundPoints[1];
 
-                const u32 indexMinX =
-                    (minEntityPosition[0] + chunkHalfWidth) / chunkSize;
-                const u32 indexMinY =
-                    (minEntityPosition[1] + chunkHalfHeight) / chunkSize;
-                const u32 indexMinZ =
-                    (minEntityPosition[2] + chunkHalfDepth) / chunkSize;
+                int indexMinX =
+                    (int)((minEntityPosition[0] + chunkHalfWidth) / chunkSize);
+                int indexMinY =
+                    (int)((minEntityPosition[1] + chunkHalfHeight) / chunkSize);
+                int indexMinZ =
+                    (int)((minEntityPosition[2] + chunkHalfDepth) / chunkSize);
 
-                const u32 indexMaxX =
-                    (maxEntityPosition[0] + chunkHalfWidth) / chunkSize;
-                const u32 indexMaxY =
-                    (maxEntityPosition[1] + chunkHalfHeight) / chunkSize;
-                const u32 indexMaxZ =
-                    (maxEntityPosition[2] + chunkHalfDepth) / chunkSize;
+                int indexMaxX =
+                    (int)((maxEntityPosition[0] + chunkHalfWidth) / chunkSize);
+                int indexMaxY =
+                    (int)((maxEntityPosition[1] + chunkHalfHeight) / chunkSize);
+                int indexMaxZ =
+                    (int)((maxEntityPosition[2] + chunkHalfDepth) / chunkSize);
 
-                assert(
-                    indexMinX <= indexMaxX && indexMinY <= indexMaxY
-                    && indexMinZ <= indexMaxZ
-                );
-                assert(
-                    indexMinX < spatialGrid.width
-                    && indexMinY < spatialGrid.height
-                    && indexMinZ < spatialGrid.depth
-                );
-                assert(
-                    indexMaxX < spatialGrid.width
-                    && indexMaxY < spatialGrid.height
-                    && indexMaxZ < spatialGrid.depth
-                );
+                // entity can legitimately leave the fixed-size world grid —
+                // clamp to nearest edge cell instead of crashing
+                indexMinX =
+                    std::clamp(indexMinX, 0, (int)spatialGrid.width - 1);
+                indexMinY =
+                    std::clamp(indexMinY, 0, (int)spatialGrid.height - 1);
+                indexMinZ =
+                    std::clamp(indexMinZ, 0, (int)spatialGrid.depth - 1);
+                indexMaxX =
+                    std::clamp(indexMaxX, 0, (int)spatialGrid.width - 1);
+                indexMaxY =
+                    std::clamp(indexMaxY, 0, (int)spatialGrid.height - 1);
+                indexMaxZ =
+                    std::clamp(indexMaxZ, 0, (int)spatialGrid.depth - 1);
 
                 for (u32 i2 = indexMinZ; i2 <= indexMaxZ; ++i2) {
                     for (u32 i3 = indexMinY; i3 <= indexMaxY; ++i3) {
@@ -189,6 +190,11 @@ void CCollisionSystem::Update() {
                         comparedEntityLocation.index;
 
                     components::MeshHandle comparedEntityMeshHandle;
+                    if (comparedEntityLocation.arch == nullptr) {
+                        /// entity was removed from the world but a stale
+                        /// reference survived in the grid, skip it
+                        continue;
+                    }
                     if (arch::matchesRequiredMask(
                             comparedEntityLocation.arch->mask,
                             requiredMask
@@ -268,7 +274,7 @@ void CCollisionSystem::Update() {
                             backtrackingEntityMeshHandle,
                             comparedEntityMeshHandle
                         );
-                    }
+}
 
                     if (upperActorCheckFlag && boxColliderFlag) {
                         uint8_t groudCollisionTurnOnMask =

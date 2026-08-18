@@ -45,10 +45,15 @@ class WindowWinVulkan: public IWindow {
     HGLRC pModern_Context_;
     HWND pModern_Window_;
 
+    int previous_X = 0; ///< Cursor-lock baseline: the cursor's actual position
+                        ///< after the last warp (not the computed center).
+    int previous_Y = 0;
+
 public:
+    static WindowWinVulkan* instance;
     CStack* Input_Stack_;
-    uint32_t width = 1920;
-    uint32_t height = 1080;
+    uint32_t width = GetSystemMetrics(SM_CXSCREEN);
+    uint32_t height = GetSystemMetrics(SM_CYSCREEN);
     WindowWinVulkan();
 
     void SwapBuffers() override;

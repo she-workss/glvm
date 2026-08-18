@@ -14,11 +14,15 @@
 #define VK_S 0x53
 #define VK_A 0x41
 #define VK_D 0x44
+#define VK_I 0x49
 
 namespace GLVM::core {
+WindowWinVulkan* WindowWinVulkan::instance = nullptr;
+
 WindowWinVulkan::WindowWinVulkan() {
+    instance = this;
     const char* _title = "Window class";
-    int _width = 1920, _height = 1080;
+    int _width = width, _height = height;
 
     // Register the window class for the main window.
     window_Class_.style = 0;
@@ -35,7 +39,8 @@ WindowWinVulkan::WindowWinVulkan() {
 
     RegisterClassA(&window_Class_);
 
-    DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
+    DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX
+        | WS_MAXIMIZEBOX | WS_THICKFRAME;
 
     RECT rect;
     SetRect(&rect, 0, 0, _width, _height);
@@ -98,30 +103,56 @@ void WindowWinVulkan::CursorLock(
     int* _x_offset,
     int* _y_offset
 ) {
-    POINT point_position {960, 540};
+    RECT clientRect;
+    GetClientRect(pModern_Window_, &clientRect);
+    const int centerX = clientRect.right / 2;
+    const int centerY = clientRect.bottom / 2;
+    POINT point_position {centerX, centerY};
     ClientToScreen(pModern_Window_, &point_position);
 
     ///< Solve a problem with endlessly growing numbers in the start game run.
-    if (_x_position > 1911 || _x_position < 0 || _y_position > 1052
-        || _y_position < 0) {
+    if (_x_position > clientRect.right || _x_position < 0
+        || _y_position > clientRect.bottom || _y_position < 0) {
         return;
     }
 
     int iOffset_X = 0, iOffset_Y = 0;
-    iOffset_X = _x_position - 960;
-    iOffset_Y = _y_position - 540;
+    iOffset_X = _x_position - previous_X;
+    iOffset_Y = _y_position - previous_Y;
+    previous_X = _x_position;
+    previous_Y = _y_position;
 
-    *_x_offset += iOffset_X;
-    *_y_offset -= iOffset_Y;
-
-    if (*_y_offset > 890) {
-        *_y_offset = 890;
-    } else if (*_y_offset < -890) {
-        *_y_offset = -890;
+    ///< The per-frame delta is measured against the cursor's actual position
+    ///< after the previous warp, not against the computed center: the two can
+    ///< differ by a few pixels (DPI rounding), and accumulating that constant
+    ///< error would slowly drift the view until it hits the pitch clamp below.
+    ///<
+    ///< A >250px jump between frames is a cursor teleport, not mouse
+    ///< movement: discard it so the camera doesn't snap toward the new
+    ///< position (startup, refocus, stale sample after the warp, and the
+    ///< first sample after the inventory closes - the cursor was free while
+    ///< the inventory was open).
+    if (iOffset_X > 250 || iOffset_X < -250 || iOffset_Y > 250
+        || iOffset_Y < -250) {
+        ///< Discard the sample, just re-warp to the center.
+    } else {
+        *_x_offset += iOffset_X;
+        *_y_offset -= iOffset_Y;
     }
+
+    ///< Pitch is limited by angle in Engine::SetViewMatrix(), so this offset
+    ///< may accumulate freely; no pixel clamp here (resolution-independent).
 
     SetCursorPos(point_position.x, point_position.y);
     SetCursor(NULL);
+
+    ///< Baseline for the next frame: where the cursor actually ended up after
+    ///< the warp (matches what the next WM_MOUSEMOVE will report).
+    POINT actual_position;
+    GetCursorPos(&actual_position);
+    ScreenToClient(pModern_Window_, &actual_position);
+    previous_X = actual_position.x;
+    previous_Y = actual_position.y;
 }
 
 //}
@@ -158,8 +189,21 @@ LRESULT CALLBACK WindowWinVulkan::MainWndProc(
             pEvent->SetEvent(EEvents::eMOUSE_LEFT_BUTTON);
             return 0;
 
+        case WM_SETFOCUS:
+            if (WindowWinVulkan::instance) {
+                WindowWinVulkan::instance->isFocused = true;
+            }
+            return 0;
+
+        case WM_KILLFOCUS:
+            if (WindowWinVulkan::instance) {
+                WindowWinVulkan::instance->isFocused = false;
+            }
+            return 0;
+
         case WM_LBUTTONUP:
             pEvent->SetEvent(EEvents::eMOUSE_LEFT_BUTTON_RELEASE);
+            pEvent->isLeftMouseButtonReleased = true;
             return 0;
 
         case WM_MOUSEMOVE:
@@ -200,6 +244,10 @@ LRESULT CALLBACK WindowWinVulkan::MainWndProc(
 
                 case VK_SPACE:
                     pEvent->SetEvent(EEvents::eJUMP);
+                    break;
+
+                case VK_I:
+                    pEvent->SetEvent(EEvents::eINVENTORY);
                     break;
 
                 case VK_UP:
@@ -254,6 +302,11 @@ LRESULT CALLBACK WindowWinVulkan::MainWndProc(
 
                 case VK_SPACE:
                     pEvent->SetEvent(EEvents::eKEYRELEASE_JUMP);
+                    break;
+
+                case VK_I:
+                    pEvent->SetEvent(EEvents::eINVENTORY_RELEASE);
+                    break;
 
                 case VK_UP:
                     break;

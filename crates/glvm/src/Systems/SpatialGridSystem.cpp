@@ -9,6 +9,8 @@
 #include "glvm/Common/CommonFunctions.hpp"
 #include "glvm/Vector.hpp"
 
+#include <algorithm>
+
 namespace GLVM::ecs {
 void SpatialGridSystem::Update() {
     namespace arch = GLVM::ecs::arch;
@@ -48,12 +50,20 @@ void SpatialGridSystem::Update() {
             }
 
             if (entityLocation.gridCellCounter > 0) {
-                for (u32 i2 = 0; i2 < entityLocation.maxGridCellNumber; ++i2) {
+                for (u32 i2 = 0; i2 < entityLocation.gridCellCounter; ++i2) {
                     u32 z = entityLocation.gridCellIndicies[i2][0];
                     u32 y = entityLocation.gridCellIndicies[i2][1];
                     u32 x = entityLocation.gridCellIndicies[i2][2];
-                    u32 cellEntityIndex = entityLocation.cellEntityIndices[i2];
-                    spatialGrid.grid[z][y][x].entities.Remove(cellEntityIndex);
+                    core::vector<u32>& chunkEntities =
+                        spatialGrid.grid[z][y][x].entities;
+                    // remove by value: the recorded index can be stale after
+                    // other removals shifted the cell's vector
+                    for (u32 i3 = 0; i3 < chunkEntities.GetSize(); ++i3) {
+                        if (chunkEntities[i3] == entity) {
+                            chunkEntities.Remove(i3);
+                            break;
+                        }
+                    }
                 }
                 entityLocation.gridCellCounter = 0;
             }
@@ -78,32 +88,29 @@ void SpatialGridSystem::Update() {
             const vec3 minEntityPosition = entityBoxCornerBoundPoints[0];
             const vec3 maxEntityPosition = entityBoxCornerBoundPoints[1];
 
-            const u32 indexMinX =
-                (minEntityPosition[0] + halfWidth) / chunkSize;
-            const u32 indexMinY =
-                (minEntityPosition[1] + halfHeight) / chunkSize;
-            const u32 indexMinZ =
-                (minEntityPosition[2] + halfDepth) / chunkSize;
+            int indexMinX =
+                (int)((minEntityPosition[0] + halfWidth) / chunkSize);
+            int indexMinY =
+                (int)((minEntityPosition[1] + halfHeight) / chunkSize);
+            int indexMinZ =
+                (int)((minEntityPosition[2] + halfDepth) / chunkSize);
 
-            const u32 indexMaxX =
-                (maxEntityPosition[0] + halfWidth) / chunkSize;
-            const u32 indexMaxY =
-                (maxEntityPosition[1] + halfHeight) / chunkSize;
-            const u32 indexMaxZ =
-                (maxEntityPosition[2] + halfDepth) / chunkSize;
+            int indexMaxX =
+                (int)((maxEntityPosition[0] + halfWidth) / chunkSize);
+            int indexMaxY =
+                (int)((maxEntityPosition[1] + halfHeight) / chunkSize);
+            int indexMaxZ =
+                (int)((maxEntityPosition[2] + halfDepth) / chunkSize);
 
-            assert(
-                indexMinX <= indexMaxX && indexMinY <= indexMaxY
-                && indexMinZ <= indexMaxZ
-            );
-            assert(
-                indexMinX < spatialGrid.width && indexMinY < spatialGrid.height
-                && indexMinZ < spatialGrid.depth
-            );
-            assert(
-                indexMaxX < spatialGrid.width && indexMaxY < spatialGrid.height
-                && indexMaxZ < spatialGrid.depth
-            );
+            // entity can legitimately leave the fixed-size world grid (fell
+            // off the world edge, projectile flew away) — clamp to nearest
+            // edge cell instead of crashing
+            indexMinX = std::clamp(indexMinX, 0, (int)spatialGrid.width - 1);
+            indexMinY = std::clamp(indexMinY, 0, (int)spatialGrid.height - 1);
+            indexMinZ = std::clamp(indexMinZ, 0, (int)spatialGrid.depth - 1);
+            indexMaxX = std::clamp(indexMaxX, 0, (int)spatialGrid.width - 1);
+            indexMaxY = std::clamp(indexMaxY, 0, (int)spatialGrid.height - 1);
+            indexMaxZ = std::clamp(indexMaxZ, 0, (int)spatialGrid.depth - 1);
 
             for (u32 i2 = indexMinZ; i2 <= indexMaxZ; ++i2) {
                 for (u32 i3 = indexMinY; i3 <= indexMaxY; ++i3) {

@@ -5,7 +5,7 @@ layout (triangle_strip, max_vertices=18) out;
 layout(location = 3) uniform UniformBufferLightSpace {
 	mat4 shadowMatrices[6];
 };
-										 
+
 layout(location = 4) out vec4 fragmentPosition; ///< FragmentPosition from GS (output per emitvertex)
 
 void main()
@@ -22,4 +22,3 @@ void main()
 		EndPrimitive();
 	}
 }
-															

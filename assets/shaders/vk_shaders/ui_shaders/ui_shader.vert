@@ -22,7 +22,7 @@ void main()
 		0.0, 0.0, 1.0, 0.0,
 		0.0, 0.0, 0.0, 1.0
 		);
-	
+
 	outFragmentTextureCoordinate = inTextureCoordinate;
 	outColor = ui_ubo.color;
 	gl_Position = ui_ubo.model * scaleMatrix * vec4(inPosition, 1.0);

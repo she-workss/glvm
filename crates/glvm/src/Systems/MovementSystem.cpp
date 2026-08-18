@@ -121,10 +121,10 @@ void CMovementSystem::Update() {
                 ->components[arch::ComponentsIndices::ITEM_COMPONENT];
 
         for (uint32_t i1 = 0; i1 < currentArch->entityCount; ++i1) {
-            // const arch::entity entity = currentArch->entities[i1];
-            // ecs::arch::EntityLocation entityLocation =
-            // ecs::arch::world.entityLocations[ecs::arch::getId( entity )];
-            // entityLocation.isDirty = true;
+            const arch::entity entity = currentArch->entities[i1];
+            ecs::arch::EntityLocation& entityLocation =
+                ecs::arch::world.entityLocations[ecs::arch::getId(entity)];
+            entityLocation.isDirty = true;
 
             if (componentsView.items && !componentsView.items[i1].isActor) {
                 continue;

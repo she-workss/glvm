@@ -310,31 +310,66 @@ void Engine::RenderVulkan() {
             isLeftMouseButtonPressed = false;
         }
 
-        if ((Input_Stack_.SearchElement(EEvents::eINVENTORY))
-            == EEvents::eINVENTORY) {
+        bool inventoryKeyPressed =
+            (Input_Stack_.SearchElement(EEvents::eINVENTORY)
+             == EEvents::eINVENTORY);
+        if (inventoryKeyPressed && !isInventoryKeyHeld) {
             vulkanRenderer->isInventoryOpened =
                 !vulkanRenderer->isInventoryOpened;
-            Input_Stack_.Remove(EEvents::eINVENTORY);
             if (vulkanRenderer->isInventoryOpened) {
                 pSystem_Manager->DeactivateSystem(
                     ecs::DeactivatedSystems::DEACTIVATED_MOVEMENT_SYSTEM
                 );
+                hud_screen_x = 0.0f;
+                hud_screen_y = 0.0f;
             } else {
                 pSystem_Manager->ReturnSystemToActivatedState(
                     ecs::DeactivatedSystems::DEACTIVATED_MOVEMENT_SYSTEM
                 );
             }
-            //				bGame_Loop_Active = false;
         }
+        isInventoryKeyHeld = inventoryKeyPressed;
+        //				bGame_Loop_Active = false;
         // }
         g_eEvent.SetLastEvent(Input_Stack_);
 
-        vulkanRenderer->Window->CursorLock(
-            g_eEvent.mousePointerPosition.position_X,
-            g_eEvent.mousePointerPosition.position_Y,
-            &g_eEvent.mousePointerPosition.offset_X,
-            &g_eEvent.mousePointerPosition.offset_Y
-        );
+#ifndef VK_USE_PLATFORM_WAYLAND_KHR
+        if (!vulkanRenderer->isInventoryOpened
+            && vulkanRenderer->Window->isFocused) {
+            vulkanRenderer->Window->CursorLock(
+                g_eEvent.mousePointerPosition.position_X,
+                g_eEvent.mousePointerPosition.position_Y,
+                &g_eEvent.mousePointerPosition.offset_X,
+                &g_eEvent.mousePointerPosition.offset_Y
+            );
+        }
+
+        if (wasInventoryOpened && !vulkanRenderer->isInventoryOpened) {
+            ///< Cursor was free while the inventory was open; reset the mouse
+            ///< state so the first locked sample doesn't feed a fake delta to
+            ///< the camera. WindowWinVulkan::CursorLock also discards the
+            ///< >250px teleport on its own.
+            g_eEvent.mousePointerPosition.offset_X = 0;
+            g_eEvent.mousePointerPosition.offset_Y = 0;
+            vulkanRenderer->prev_X = 0.0f;
+            vulkanRenderer->prev_Y = 0.0f;
+            vulkanRenderer->current_X = 0.0f;
+            vulkanRenderer->current_Y = 0.0f;
+            movementSystem->prev_X = 0.0f;
+            previousMouseOffsetX = 0.0f;
+            previousMouseOffsetY = 0.0f;
+        }
+        wasInventoryOpened = vulkanRenderer->isInventoryOpened;
+#else
+        if (vulkanRenderer->Window->isFocused) {
+            vulkanRenderer->Window->CursorLock(
+                g_eEvent.mousePointerPosition.position_X,
+                g_eEvent.mousePointerPosition.position_Y,
+                &g_eEvent.mousePointerPosition.offset_X,
+                &g_eEvent.mousePointerPosition.offset_Y
+            );
+        }
+#endif
 
         computeHudScreeenCoordinates();
         // std::cout << "lmb released " << g_eEvent.isLeftMouseButtonReleased <<
@@ -362,6 +397,7 @@ void Engine::RenderVulkan() {
         physicsSystem->fAcceleration_of_Gravity_ += (deltaFrameTime / 20);
         physicsSystem->gravity = gravity;
         inventorySystem->isInventoryOpened = vulkanRenderer->isInventoryOpened;
+        inventorySystem->aspectRate = vulkanRenderer->aspectRate;
         inventorySystem->isLeftMouseButtonReleased =
             &g_eEvent.isLeftMouseButtonReleased;
         inventorySystem->isLeftMouseButtonPressed = isLeftMouseButtonPressed;
@@ -502,14 +538,16 @@ void Engine::SetViewMatrix() {
                 (float)g_eEvent.mousePointerPosition.offset_Y;
             float delta_x = 0.0f;
             float delta_y = 0.0f;
+            if (!vulkanRenderer->isInventoryOpened) {
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-            delta_x = vulkanRenderer->current_X;
-            delta_y = vulkanRenderer->current_Y;
+                delta_x = vulkanRenderer->current_X;
+                delta_y = vulkanRenderer->current_Y;
 #else
-            delta_x = vulkanRenderer->current_X - vulkanRenderer->prev_X;
-            delta_y = vulkanRenderer->current_Y - vulkanRenderer->prev_Y;
-            delta_y *= -1.0f;
+                delta_x = vulkanRenderer->current_X - vulkanRenderer->prev_X;
+                delta_y = vulkanRenderer->current_Y - vulkanRenderer->prev_Y;
+                delta_y *= -1.0f;
 #endif
+            }
             // delta_x *= kSensitivity;
             // delta_y *= kSensitivity;
 
@@ -535,7 +573,7 @@ void Engine::SetViewMatrix() {
                 /// (or 3D) space.
                 float rotationAngle =
                     sqrt(delta_y * delta_y + delta_x * delta_x);
-                constexpr float angleScale = 0.1f;
+                constexpr float angleScale = 0.05f;
                 rotationAngle = Radians(rotationAngle * angleScale);
                 constexpr float quatAngleCorrection =
                     0.5f; /// Quaternions need devision by 2
@@ -562,7 +600,7 @@ void Engine::SetViewMatrix() {
                 // forward[1] = appliedRotationQuat.y;
                 // forward[2] = appliedRotationQuat.z;
                 pga::point appliedRotationPoint =
-                    exp(rotationAngle * quatAngleCorrection,
+                    exp(rotationAngle,
                         pga::rline {
                             .rx = -rotateAxis.m_vector[0],
                             .ry = -rotateAxis.m_vector[1],
@@ -579,6 +617,17 @@ void Engine::SetViewMatrix() {
                 vulkanRenderer->forward[2] = appliedRotationPoint.z;
             }
             cameraComponent->forward = Normalize(vulkanRenderer->forward);
+            /// Pitch limit by ANGLE, not pixels: independent of screen
+            /// resolution and mouse sensitivity. Keeps the camera off the
+            /// vertical pole, where the view basis Cross(forward, up)
+            /// degenerates and the world starts rolling.
+            constexpr float maxPitchSin = 0.9999996f; /// sin(89.95°)
+            if (cameraComponent->forward[1] > maxPitchSin) {
+                cameraComponent->forward[1] = maxPitchSin;
+            } else if (cameraComponent->forward[1] < -maxPitchSin) {
+                cameraComponent->forward[1] = -maxPitchSin;
+            }
+            cameraComponent->forward = Normalize(cameraComponent->forward);
             _Player->forward = cameraComponent->forward;
             mat4 view = LookAtMain(
                 cameraComponent->Position + _Player->position,
@@ -604,7 +653,7 @@ void Engine::SetViewMatrix() {
 
 void Engine::SetProjectionMatrix() {
     mat4 tProjection_Matrix =
-        Perspective(Radians(90.0f), (float)1920 / (float)1080, 0.1f, 100.0f);
+        Perspective(Radians(90.0f), vulkanRenderer->aspectRate, 0.1f, 100.0f);
     vulkanRenderer->projectionMatrix = tProjection_Matrix;
     vulkanRenderer->projectionMatrix[1][1] *= 1.0f;
 }
@@ -721,7 +770,7 @@ mat4 Engine::updateDirectionalLightSpaceMatrixShadowMapUBO(
 mat4 Engine::updateSpotLightSpaceMatrixShadowMapUBO(
     ecs::components::spotLight* spotLightComponent
 ) {
-    float nearPlaneFlatShadowMap = 5.5f;
+    float nearPlaneFlatShadowMap = 0.5f;
     float farPlaneFlatShadowMap = 100.0f;
     mat4 spotProjectionMatrixLight = Perspective(
         Radians(90.0f),
@@ -931,11 +980,12 @@ mat4 Engine::updateDataHudScreenUBO(
     mat4 model;
     vec3 defaultPosition = vec3(0.0, 0.0, 0.0);
 
+    float hudScreenX = hud_screen_x;
 #ifndef VK_USE_PLATFORM_WAYLAND_KHR
-    hud_screen_x = -hud_screen_x;
+    hudScreenX = -hud_screen_x;
 #endif
 
-    cursorTransform->position[0] = hud_screen_x;
+    cursorTransform->position[0] = hudScreenX;
     cursorTransform->position[1] = -hud_screen_y;
     //		std::cout << "cursor scale: " << cursorTransform->fScale << std::endl;
 
@@ -951,7 +1001,7 @@ mat4 Engine::updateDataHudScreenUBO(
         model[2][2] = cursorTransform->scale;
         model[3][3] = 1.0f;
     } else {
-        defaultPosition[0] = hud_screen_x;
+        defaultPosition[0] = hudScreenX;
         defaultPosition[1] = -hud_screen_y;
 
         model[3][0] = defaultPosition[0];
@@ -2162,15 +2212,29 @@ mat4 Engine::computeModelMatrix(
 
 void Engine::computeHudScreeenCoordinates() {
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-    hud_screen_y -= g_eEvent.mousePointerPosition.offset_Y / 1080.0f;
-    hud_screen_x += g_eEvent.mousePointerPosition.offset_X / 1920.0f;
+    hud_screen_y -= g_eEvent.mousePointerPosition.offset_Y
+        / (float)vulkanRenderer->Window->height;
+    hud_screen_x += g_eEvent.mousePointerPosition.offset_X
+        / (float)vulkanRenderer->Window->width;
 #else
-    hud_screen_y -=
-        (previousMouseOffsetY - g_eEvent.mousePointerPosition.offset_Y)
-        / 1080.0f;
-    hud_screen_x +=
-        (previousMouseOffsetX - g_eEvent.mousePointerPosition.offset_X)
-        / 1920.0f;
+    if (vulkanRenderer->isInventoryOpened) {
+        ///< Cursor is free while the inventory is open: track its real
+        ///< position instead of the locked-mouse offsets.
+        hud_screen_x = 1.0f
+            - g_eEvent.mousePointerPosition.position_X
+                / ((float)vulkanRenderer->Window->width / 2.0f);
+        hud_screen_y =
+            -(g_eEvent.mousePointerPosition.position_Y
+                  / ((float)vulkanRenderer->Window->height / 2.0f)
+              - 1.0f);
+    } else {
+        hud_screen_y -=
+            (previousMouseOffsetY - g_eEvent.mousePointerPosition.offset_Y)
+            / (float)vulkanRenderer->Window->height;
+        hud_screen_x +=
+            (previousMouseOffsetX - g_eEvent.mousePointerPosition.offset_X)
+            / (float)vulkanRenderer->Window->width;
+    }
     previousMouseOffsetX = g_eEvent.mousePointerPosition.offset_X;
     previousMouseOffsetY = g_eEvent.mousePointerPosition.offset_Y;
 #endif
