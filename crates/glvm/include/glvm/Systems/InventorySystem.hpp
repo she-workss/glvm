@@ -1,5 +1,4 @@
-#ifndef INVENTORY_SYSTEM_HPP
-#define INVENTORY_SYSTEM_HPP
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchECS_Types.hpp"
 #include "glvm/ArchetypeECS/ArchECS_Utils.hpp"
@@ -13,7 +12,7 @@
 
 #include <print>
 
-namespace GLVM::ecs {
+namespace glvm::ecs {
 class InventorySystem: public ecs::ISystem {
 public:
     uint32_t crosshairArchetypesNumber = 0;
@@ -94,10 +93,9 @@ public:
     bool isLeftMouseButtonPressed;
     float mouseOffsetX = 0;
     float mouseOffsetY = 0;
-    float aspectRate = 0.0f; ///< Window aspect ratio, set by engine each frame
+    // Window aspect ratio, set by engine each frame.
+    float aspectRate = 0.0f;
     arch::Archetype* cachedCrosshairArchetype;
     arch::Archetype* cachedInventoryArchetype;
 };
-} // namespace GLVM::ecs
-
-#endif
+} // namespace glvm::ecs

@@ -1,10 +1,4 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef VULKAN_RENDERER_HG
-#define VULKAN_RENDERER_HG
+#pragma once
 
 #include "glvm/ComponentManager.hpp"
 #include "glvm/Components/FontComponent.hpp"
@@ -14,6 +8,7 @@
 #include "glvm/Components/TextureComponent.hpp"
 #include "glvm/Components/TransformComponent.hpp"
 #include "glvm/Globals.hpp"
+#include "glvm/GraphicAPI/ImGuiOverlay.hpp"
 #include "glvm/GraphicAPI/RenderConfig.hpp"
 #include "glvm/GraphicAPI/VkBuilders.hpp"
 #include "glvm/GraphicAPI/VkDebugUtils.hpp"
@@ -91,9 +86,8 @@
 
 #endif
 
-namespace GLVM::core {
+namespace glvm::core {
 const int MAX_FRAMES_IN_FLIGHT = 2;
-// #define NDEBUG
 const std::vector<const char*> validationLayers = {
     "VK_LAYER_KHRONOS_validation"
 };
@@ -146,8 +140,8 @@ public:
                         '8',  '9',  '.', ',', '"', '"', '\'', '\'', '"', '"',
                         '\'', '\'', '?', '!', '_', '$', '(',  ')',  '+', '-',
                         '/',  ':',  ';', '<', '>', '=', '[',  ']',  '\\'};
-    const std::vector<Vertex>
-        padding[128]; ///< FIXME: Some gabage here that needs maybe for aligh
+    // FIXME: Some garbage here that needs maybe for align.
+    const std::vector<Vertex> padding[128];
     const std::vector<uint32_t> symbol_g_indices = {0, 1, 2, 2, 1, 3};
     std::chrono::steady_clock::time_point startTime;
 
@@ -158,21 +152,24 @@ public:
     std::vector<std::vector<uint32_t>> levelGeneratedIndices;
 
     std::vector<core::vector<core::Vertex>> aVertices_;
-    std::vector<std::vector<uint32_t>> aIndices_; ///< wavefront.obj indices
-    std::vector<std::vector<float>> aVertexesTemp_; ///< gltf indices
-    std::vector<float> highest_gltf_Y; /// highest gltf y
-    MeshAxisLimitingValues
-        meshAxisLimitingValues; /// keep axis liniting values for every exis per
-                                /// mesh in current iteration while initializing
-                                /// wavefrontobj and gltf
+    // Wavefront .obj indices.
+    std::vector<std::vector<uint32_t>> aIndices_;
+    // GLTF indices.
+    std::vector<std::vector<float>> aVertexesTemp_;
+    // highest GLTF y.
+    std::vector<float> highest_gltf_Y;
+    // Keep axis limiting values for every axis per mesh in current iteration
+    // while initializing Wavefront .obj and GLTF.
+    MeshAxisLimitingValues meshAxisLimitingValues;
     core::vector<core::vector<core::vector<mat4>>> jointMatricesPerMesh;
     core::vector<core::vector<float>> frames;
     bool isInventoryOpened = false;
+    bool isCursorReleased = false;
     vec3 forward = {0.0f, 0.0f, -1.0f};
     float hud_screen_x = 0.0f;
     float hud_screen_y;
 
-    unsigned int entities[32]; ///<
+    unsigned int entities[32];
     core::vector<RenderActor> actors;
     core::vector<RenderDirectionalLight> directionalLights;
     core::vector<RenderSpotLight> spotLights;
@@ -191,24 +188,27 @@ public:
     float current_Y = 0.0f;
     float prev_X = 0.0f;
     float current_X = 0.0f;
-    float aspectRate = 0.0f; ///< Window aspect ratio, updated on resize
+    // Window aspect ratio, updated on resize.
+    float aspectRate = 0.0f;
     int dragedItemEntity;
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-    GLVM::core::WindowWaylandVulkan* Window;
+    glvm::core::WindowWaylandVulkan* Window;
 #endif
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
-    GLVM::core::WindowXCBVulkan* Window = nullptr;
+    glvm::core::WindowXCBVulkan* Window = nullptr;
 #endif
 
 #ifdef VK_USE_PLATFORM_XLIB_KHR
-    GLVM::core::WindowXVulkan* Window;
+    glvm::core::WindowXVulkan* Window;
 #endif
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    GLVM::core::WindowWinVulkan* Window;
+    glvm::core::WindowWinVulkan* Window;
 #endif
+
+    ImGuiOverlay* imguiOverlay = nullptr;
 
     CVulkanRenderer();
     ~CVulkanRenderer();
@@ -290,24 +290,18 @@ public:
     std::vector<VkCommandPool> secondaryBuffersCommandPools;
     VkCommandPool virtualTexturesCommandPool;
 
-    /// Main pipeline depth.
+    // Main pipeline depth.
     VkImage mainDepthPipelineImage;
     VkDeviceMemory mainDepthPipelineImageMemory;
     VkImageView mainDepthImageView;
 
-    /// Depth varialbes for shadow map.
+    // Depth variables for shadow map.
 public:
     unsigned int directionalLightNumber = 0;
     std::vector<VkFramebuffer> directionalLightShadowMapFrameBuffers;
     VkBuffer shadowMapDirectionalLightModelMatrixUniformBuffer;
     VkDeviceMemory shadowMapDirectionalLightModelMatrixUniformBuffersMemory;
     core::vector<VK_Image> directionalLightTextureImages;
-
-    /*
-    ===================================
-    FOR TEST ONLY!!!
-    ===================================
-    */
 
     mat4 dirLightSpaceMatrix[DIRECTIONAL_LIGHTS_NUMBER];
     mat4 spotLightSpaceMatrix[SPOT_LIGHTS_NUMBER];
@@ -348,28 +342,13 @@ public:
     VkBuffer lightDataUniformBuffer;
     VkDeviceMemory lightDataUniformBuffersMemory;
 
-    // VkDescriptorImageInfo
-    // directionalLightsImageInfo[DIRECTIONAL_LIGHTS_NUMBER];
-    // VkDescriptorImageInfo pointLightsImageInfo[POINT_LIGHTS_NUMBER];
-    // VkDescriptorImageInfo spotLightsImageInfo[SPOT_LIGHTS_NUMBER];
-
     VkDescriptorPool descriptorPool;
     const unsigned int matrixUboDescriptorsNumber = 500;
     const unsigned int hudUboDescriptorNumber = 500;
     const unsigned int fontUboDescriptorNumber = 128;
     const unsigned int hudScreenUboDescriptorNumber = 32;
     const unsigned int uiUboDescriptorsNumber = 64;
-    //		const unsigned int uiIconsDescriptorsNumber = 64;
     [[maybe_unused]] const unsigned int virtualTexturesDescriptorsNumber = 64;
-    //		unsigned int viewPositionUboDescriptorsNumber = 0;
-    //		const unsigned int directionalLightUboDescriptorsNumber =
-    // matrixUboDescriptorsNumber * 4;        ///< 4 - maximum number of
-    // directional lights 		const unsigned int
-    // pointLightUboDescriptorsNumber = matrixUboDescriptorsNumber * 32 * 6;
-    // ///< 32 - maximum number of point lights, 6 - number of layers for cube
-    // shadow map 		const unsigned int spotLightUboDescriptorsNumber =
-    // matrixUboDescriptorsNumber * 8; ///< 8 - maximum number of spot lights
-
     std::vector<VkCommandBuffer> directionalLightCommandBuffers;
     std::vector<VkCommandBuffer> spotLightCommandBuffers;
     std::vector<VkCommandBuffer> pointLightCommandBuffers;
@@ -381,37 +360,37 @@ public:
     std::vector<VkCommandBuffer> pointLightSecondaryCommandBuffers;
     std::vector<VkCommandBuffer> virtualTexturesCommandBuffers;
 
-    /// Main render pipe line sync objects
+    // Main render pipeline sync objects.
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
 
-    /// Hud render pipe line sync objects
+    // Hud render pipeline sync objects.
     std::vector<VkSemaphore> hudImageAvailableSemaphores;
     std::vector<VkSemaphore> hudRenderFinishedSemaphores;
     std::vector<VkFence> hudInFlightFences;
 
-    /// Font render pipe line sync objects
+    // Font render pipeline sync objects.
     std::vector<VkSemaphore> fontImageAvailableSemaphores;
     std::vector<VkSemaphore> fontRenderFinishedSemaphores;
     std::vector<VkFence> fontInFlightFences;
 
-    /// Directional light shadow map sync objects
+    // Directional light shadow map sync objects.
     std::vector<VkSemaphore> directionalLightShadowMapImageAvailableSemaphores;
     std::vector<VkSemaphore> directionalLightShadowMapRenderFinishedSemaphores;
     std::vector<VkFence> directionalLightShadowMapInFlightFences;
 
-    /// Spot light shadow map sync objects
+    // Spotlight shadow map sync objects.
     std::vector<VkSemaphore> spotLightShadowMapImageAvailableSemaphores;
     std::vector<VkSemaphore> spotLightShadowMapRenderFinishedSemaphores;
     std::vector<VkFence> spotLightShadowMapInFlightFences;
 
-    /// Point light shadow map sync objects
+    // Point light shadow map sync objects.
     std::vector<VkSemaphore> pointLightShadowMapImageAvailableSemaphores;
     std::vector<VkSemaphore> pointLightShadowMapRenderFinishedSemaphores;
     std::vector<VkFence> pointLightShadowMapInFlightFences;
 
-    /// Virtual textures pipeline sync objects
+    // Virtual textures pipeline sync objects.
     std::vector<VkSemaphore> virtualTexturesImageAvailableSemaphores;
     std::vector<VkSemaphore> virtualTexturesRenderFinishedSemaphores;
     std::vector<VkFence> virtualTexturesInFlightFences;
@@ -686,6 +665,4 @@ public:
     void clearVK_Image(VK_Image* textureImages);
 };
 
-}; // namespace GLVM::core
-
-#endif
+}; // namespace glvm::core

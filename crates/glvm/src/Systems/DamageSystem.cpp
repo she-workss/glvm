@@ -1,8 +1,3 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
 #include "glvm/Systems/DamageSystem.hpp"
 
 #include "glvm/ArchetypeECS/ArchECS_Types.hpp"
@@ -15,9 +10,9 @@
 #include "glvm/Components/AttackComponent.hpp"
 #include "glvm/Components/FontComponent.hpp"
 
-namespace GLVM::ecs {
+namespace glvm::ecs {
 void DamageSystem::Update() {
-    namespace cm = GLVM::ecs::components;
+    namespace cm = glvm::ecs::components;
 
     cachedAttackableArchetypesNumber = 0;
     arch::world.searchCacheArchetypes(
@@ -39,7 +34,6 @@ void DamageSystem::Update() {
                 arch->components[arch::ComponentsIndices::FONT_COMPONENT];
 
         for (unsigned int i = 0; i < arch->entityCount; ++i) {
-            //				unsigned int entity = linkedEntities[i];
             arch::entity entity = arch->entities[i];
             if (&componentsView.attackableHealth[i] != nullptr
                 && &componentsView.attackableAttacks[i] != nullptr) {
@@ -48,17 +42,9 @@ void DamageSystem::Update() {
                 cm::attack& attackComponent =
                     componentsView.attackableAttacks[i];
 
-                //					std::cout << "damage: " <<
-                // attackComponent.damage << std::endl;
                 healthComponent.currentHealth -= attackComponent.damage;
                 attackComponent.damage = 0;
-                //					std::cout << "current health: " <<
-                // healthComponent.currentHealth << std::endl;
-                //				componentManager->RemoveComponent<cm::attack>(entity);
                 if (healthComponent.currentHealth <= 0) {
-                    //					std::cout << "remove entity: " << entity
-                    //<< std::endl;
-                    // entityManager->RemoveEntity(entity, componentManager);
                     ecs::arch::ArchetypeEntityManager* archEntityManager =
                         ecs::arch::ArchetypeEntityManager::getInstance();
                     archEntityManager->removeEntity(entity);
@@ -94,15 +80,9 @@ void DamageSystem::Update() {
                 if (fontComponent.removeble) {
                     fontComponent.lifeTime += deltaTime;
                 }
-                //			std::cout << "lifeTime" << fontComponent->lifeTime
-                //<< std::endl;
-                if (fontComponent.lifeTime >= 1.5) {
-                    //				std::cout << "lifetime: " <<
-                    // fontComponent->lifeTime << std::endl;
-                    //					componentManager->RemoveComponent<cm::font>(entity);
-                }
+                if (fontComponent.lifeTime >= 1.5) {}
             }
         }
     }
 }
-} // namespace GLVM::ecs
+} // namespace glvm::ecs

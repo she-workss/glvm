@@ -1,10 +1,4 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef PROJECTILE_SYSTEM
-#define PROJECTILE_SYSTEM
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchECS_Utils.hpp"
 #include "glvm/Archetypes/EnemyArchetype.hpp"
@@ -31,7 +25,7 @@
 
 #include <cstdint>
 
-namespace GLVM::ecs {
+namespace glvm::ecs {
 template<typename T>
 concept UnitOrEnemy = std::is_same_v<T, arch::PlayerArchetype>
     || std::is_same_v<T, arch::EnemyArchetype>;
@@ -89,11 +83,6 @@ public:
         components::damage* projectileDamage,
         uint32_t entityIndex
     );
-    // void CalculateProjectile(const vec3& projectilePosition,
-    // 						 const vec3& projectileForward,
-    // 						 const ecs::components::MeshHandle& meshHandle,
-    // 						 const components::material& material,
-    // 						 const components::damage& damage);
 };
 
 template<typename T>
@@ -106,6 +95,4 @@ void CProjectileSystem::markAsAttacked(
     arch->attacks[enitityIndex].damage = projectileDamage->maximumDamage;
 }
 
-} // namespace GLVM::ecs
-
-#endif
+} // namespace glvm::ecs

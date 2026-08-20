@@ -1,20 +1,17 @@
-#ifndef ITEM_COMPONENT_HPP
-#define ITEM_COMPONENT_HPP
+#pragma once
 
 #include "glvm/Vector.hpp"
 
-namespace GLVM::ecs::components {
+namespace glvm::ecs::components {
 struct ItemSlotType {
     unsigned int height;
     unsigned int width;
 };
 
 struct item {
-    core::vector<unsigned int> occupiedSlots; ///< Array that contain entities
-                                              ///< with inventorySlotComponent
+    // Array that contain entities with inventorySlotComponent.
+    core::vector<unsigned int> occupiedSlots;
     ItemSlotType itemSlotType;
     bool isActor;
 };
-} // namespace GLVM::ecs::components
-
-#endif
+} // namespace glvm::ecs::components

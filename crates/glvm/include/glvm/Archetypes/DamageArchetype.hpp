@@ -1,5 +1,4 @@
-#ifndef DAMAGE_ARCHETYPE
-#define DAMAGE_ARCHETYPE
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchetypeInterface.hpp"
 #include "glvm/Components/AttackComponent.hpp"
@@ -7,7 +6,7 @@
 #include "glvm/Components/HealthComponent.hpp"
 #include "glvm/Globals.hpp"
 
-namespace GLVM::ecs::arch {
+namespace glvm::ecs::arch {
 constexpr uint32_t DAMAGE_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(components::attack) + sizeof(components::health)
        + sizeof(components::font));
@@ -32,6 +31,4 @@ struct DamageArchetype: Archetype {
         componentCount = 3;
     }
 };
-}; // namespace GLVM::ecs::arch
-
-#endif
+}; // namespace glvm::ecs::arch

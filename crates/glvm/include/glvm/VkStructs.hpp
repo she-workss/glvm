@@ -1,5 +1,4 @@
-#ifndef VK_STRUCTS
-#define VK_STRUCTS
+#pragma once
 
 #include "glvm/ShaderStructs.hpp"
 #include "glvm/WavefrontObjParser.hpp"
@@ -7,7 +6,7 @@
 #include <cfloat>
 #include <vulkan/vulkan_core.h>
 
-namespace GLVM::core {
+namespace glvm::core {
 struct MeshAxisMaxAbsoluteValues {
     float absolute_x = 0.0f;
     float absolute_y = 0.0f;
@@ -83,7 +82,7 @@ struct MeshAxisLimitingValues {
 };
 
 enum DescriptorSetDataLink {
-    /// Pipelines related values
+    // Pipelines related values.
     SHADOW_MAP_DIRECTIONAL_LIGHT,
     SHADOW_MAP_SPOT_LIGHT,
     SHADOW_MAP_POINT_LIGHT,
@@ -102,7 +101,7 @@ enum DescriptorSetDataLink {
     MAIN_RENDER_SPECULAR_SAMPLER,
     MAIN_RENDER_DIFFUSE_SAMPLER,
     SDF_DATA,
-    /// Not related to any pipeline values
+    // Not related to any pipeline values.
     RIDABLE_TEXTURES,
     DESCRIPTOR_CHUNKS_NUMBER
 };
@@ -152,7 +151,8 @@ struct VK_Image {
     uint32_t height = 0;
 };
 
-struct DescriptorBinding { ///< Meta data for descriptor bindings
+// Metadata for descriptor bindings.
+struct DescriptorBinding {
     VkDescriptorType vkType;
     VkShaderStageFlags shaderStageFlag;
     unsigned int binding;
@@ -161,7 +161,8 @@ struct DescriptorBinding { ///< Meta data for descriptor bindings
     VkDeviceSize uboChunkSize;
 };
 
-struct DescriptorSet { ///< Meta data for descriptor sets
+// Metadata for descriptor sets.
+struct DescriptorSet {
     unsigned int actualLinkedDescriptorBindingsNumber;
     unsigned int hostDescriptorNumber;
     VkDescriptorSetLayout setLayout;
@@ -245,9 +246,9 @@ struct Vertex {
         return attributeDescriptions;
     }
 };
-} // namespace GLVM::core
+} // namespace glvm::core
 
-/// Render objects
+// Render objects.
 struct RenderPlayer {
     vec3 position;
     vec3 forward;
@@ -255,7 +256,7 @@ struct RenderPlayer {
 
 struct RenderActor {
     mat4 modelMatrix;
-    GLVM::core::vector<mat4> jointMatrices;
+    glvm::core::vector<mat4> jointMatrices;
     unsigned int meshID;
     unsigned int diffuseTextureIndex;
     unsigned int specularTextureIndex;
@@ -313,7 +314,7 @@ struct RenderHealth {
 
 struct RenderFont {
     vec3 position;
-    GLVM::core::vector<char> font_string;
+    glvm::core::vector<char> font_string;
     float lifeTime;
 };
 
@@ -323,7 +324,7 @@ struct SlotData {
 };
 
 struct RenderInventory {
-    GLVM::core::vector<SlotData> slotData;
+    glvm::core::vector<SlotData> slotData;
     unsigned int inventoryTextureID;
     unsigned int meshID;
     unsigned int row;
@@ -340,5 +341,3 @@ struct RenderCrosshair {
     mat4 model;
     unsigned int meshID;
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef INVENTORY_ARCHETYPE
-#define INVENTORY_ARCHETYPE
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchetypeInterface.hpp"
 #include "glvm/Components/InventoryComponent.hpp"
@@ -8,7 +7,7 @@
 #include "glvm/Components/VertexComponent.hpp"
 #include "glvm/Globals.hpp"
 
-namespace GLVM::ecs::arch {
+namespace glvm::ecs::arch {
 constexpr uint32_t INVENTORY_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(components::transform) + sizeof(components::mesh)
        + sizeof(components::inventory) + sizeof(components::material));
@@ -37,6 +36,4 @@ struct InventoryArchetype: Archetype {
         componentCount = 4;
     }
 };
-}; // namespace GLVM::ecs::arch
-
-#endif
+}; // namespace glvm::ecs::arch

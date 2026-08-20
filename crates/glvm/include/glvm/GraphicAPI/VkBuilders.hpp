@@ -1,12 +1,9 @@
-#ifndef VK_BUILDERS
-#define VK_BUILDERS
+#pragma once
 
 #include "glvm/GraphicAPI/RenderData.hpp"
 
-namespace GLVM::core {
+namespace glvm::core {
 void descriptorSetBuilder();
 void pipelineBuilder();
 void renderPassesBuilder();
-}; // namespace GLVM::core
-
-#endif
+}; // namespace glvm::core

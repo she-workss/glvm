@@ -1,11 +1,4 @@
-#ifdef __linux__
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef WINDOW_X_VULKAN
-#define WINDOW_X_VULKAN
+#pragma once
 
 #include "glvm/EventsStack.hpp"
 #include "glvm/Globals.hpp"
@@ -21,13 +14,11 @@
 #define XKEY_W 0x77
 #define XKEY_SPACE 0x20
 
-namespace GLVM::core {
+namespace glvm::core {
 class WindowXVulkan: public IWindow {
     XWindowAttributes GWindow_Attributes_;
     Window Root_Window_;
     XSetWindowAttributes Set_Window_Attributes_;
-
-    // XWindowAttributes gwa_;
 
 public:
     Display* pDisp_;
@@ -51,8 +42,4 @@ public:
     bool HandleEvent(CEvent& _Event) override;
     void Close() override;
 };
-} // namespace GLVM::core
-
-#endif
-
-#endif
+} // namespace glvm::core

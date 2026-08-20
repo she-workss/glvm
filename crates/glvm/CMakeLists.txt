@@ -15,6 +15,7 @@ add_library(glvm STATIC
   src/GraphicAPI/RenderData.cpp
   src/GraphicAPI/VkBuilders.cpp
   src/GraphicAPI/VkDebugUtils.cpp
+  src/GraphicAPI/ImGuiOverlay.cpp
   src/GraphicAPI/Vulkan.cpp
   src/JsonParser.cpp
   src/MeshManager.cpp
@@ -67,8 +68,13 @@ target_include_directories(glvm
 
 target_link_libraries(glvm
   PUBLIC
-    rusty
+    dwmapi
     gdi32
+    imgui
+    rusty
     winmm
     ${Vulkan_LIBRARY}
 )
+
+# [tests]
+include(cmake/tests.cmake)

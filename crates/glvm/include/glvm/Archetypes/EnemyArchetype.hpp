@@ -1,5 +1,4 @@
-#ifndef ENEMY_ARCHETYPE_HPP
-#define ENEMY_ARCHETYPE_HPP
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchECS_Types.hpp"
 #include "glvm/ArchetypeECS/ArchetypeInterface.hpp"
@@ -19,7 +18,7 @@
 #include "glvm/Components/VertexComponent.hpp"
 #include "glvm/Globals.hpp"
 
-namespace GLVM::ecs::arch {
+namespace glvm::ecs::arch {
 constexpr uint32_t ENEMY_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(components::transform) + sizeof(components::enemy)
        + sizeof(components::state) + sizeof(components::font)
@@ -93,6 +92,4 @@ struct EnemyArchetype: Archetype {
         componentCount = 14;
     }
 };
-}; // namespace GLVM::ecs::arch
-
-#endif
+}; // namespace glvm::ecs::arch

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace GLVM::ecs::arch {
+namespace glvm::ecs::arch {
 ArchetypeEntityManager* ArchetypeEntityManager::pInstance_ = nullptr;
 std::mutex ArchetypeEntityManager::Mutex_;
 
@@ -20,8 +20,8 @@ ArchetypeEntityManager* ArchetypeEntityManager::getInstance() {
 
 [[nodiscard]] entity ArchetypeEntityManager::createEntity() {
     id newId = 0;
-    if (!freeList.empty()) { ///< Check out wether or not free ID in removed
-                             ///< entities registry.
+    // Check out wether or not free ID in removed entities registry.
+    if (!freeList.empty()) {
         newId = freeList.GetHead();
         freeList.Pop();
     } else {
@@ -59,4 +59,4 @@ bool ArchetypeEntityManager::isAlive(entity entity_) const {
 
     return id_ < generations.GetSize() && generations[id_] == getGen(entity_);
 }
-}; // namespace GLVM::ecs::arch
+}; // namespace glvm::ecs::arch

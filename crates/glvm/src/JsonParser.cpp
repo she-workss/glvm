@@ -1,8 +1,3 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
 #include "glvm/JsonParser.hpp"
 
 #include "glvm/Vector.hpp"
@@ -15,7 +10,7 @@
 #include <ostream>
 #include <pthread.h>
 
-namespace GLVM::Core {
+namespace glvm::Core {
 
 void CJsonParser::ReadFile(const char* _filePath) {
     const char* _pJsonFilePath = _filePath;
@@ -318,7 +313,8 @@ double CJsonParser::ParseFloating(core::vector<char> _word) {
     bool dotFlag = false;
     bool negateFlag = false;
     bool eFlag = false;
-    bool eSign = false; ///< false value equal "+" sign;
+    // False value equal "+" sign.
+    bool eSign = false;
     unsigned int baseContainerSize = baseContainer.GetSize();
 
     if (baseContainer[0] == -3) {
@@ -551,11 +547,7 @@ void calculateByteStep(u32 componetType, unsigned int* byteStep) {
     }
 }
 
-/*
-  ===================================================
-  Meta data structs to binary buffer with actual data
-  ===================================================
-*/
+// Metadata structs to binary buffer with actual data.
 struct AccessorMetaData {
     u32 bufferView;
     u32 byteOffset;
@@ -634,9 +626,6 @@ void readBinaryBufferData(
         accessorMetaData.componentType,
         &byteLength
     );
-
-    // u32 bytesLength = bufferViewMetaData.byteLength -
-    // accessorMetaData.byteOffset;
     for (unsigned int i =
              bufferViewMetaData.byteOffset + accessorMetaData.byteOffset;
          i < bufferViewMetaData.byteOffset + accessorMetaData.byteOffset
@@ -770,8 +759,8 @@ void CJsonParser::LoadGLTF(
         joints = (*gltf)["skins"][0]["joints"];
 
         Core::JsonValue nodes = (*gltf)["nodes"];
-        for (unsigned int i = 0; i < joints.value.array->GetSize();
-             ++i) { ///< Loop on joints
+        // Loop on joints.
+        for (unsigned int i = 0; i < joints.value.array->GetSize(); ++i) {
             unsigned int jointIndexMapToNode =
                 (*joints.value.array)[i].value.iNumber;
             Core::JsonValue node = nodes[jointIndexMapToNode];
@@ -821,23 +810,19 @@ void CJsonParser::LoadGLTF(
             }
 
             core::vector<int> local_children;
-            if (node.value.object->Contain(
-                    "children"
-                )) { ///< Coollect children indices
+            // Collect children indices.
+            if (node.value.object->Contain("children")) {
                 Core::JsonValue array = (*node.value.object)["children"];
                 for (unsigned int i = 0; i < array.value.array->GetSize();
                      ++i) {
                     local_children.Push(array[i].value.iNumber);
                 }
-
-                children.Push(
-                    local_children
-                ); ///< Linearly put all children to every root joint
+                // Linearly put all children to every root joint.
+                children.Push(local_children);
             } else {
                 core::vector<int> emptyChildren;
-                children.Push(
-                    emptyChildren
-                ); ///< Put emptry pack of children if can find a one
+                // Put empty pack of children if can find a one.
+                children.Push(emptyChildren);
             }
 
             if (node.value.object->Contain("scale")) {
@@ -864,15 +849,14 @@ void CJsonParser::LoadGLTF(
                 }
             }
 
-            mat4 model =
-                scale * rotation * translation; ///< Compute model matrix
+            // Compute model matrix.
+            mat4 model = scale * rotation * translation;
             globalTransformJointNode.Push(model);
         }
 
+        // Get the inverse bind matrices accessor index.
         const u32 inverseBindMatricesAccessorIndex =
-            (*gltf)["skins"][0]["inverseBindMatrices"]
-                .value
-                .iNumber; ///< Get the inverse bind matrices accessor index
+            (*gltf)["skins"][0]["inverseBindMatrices"].value.iNumber;
         AccessorMetaData inverseBindMatricesAccessorMetaData =
             readAccessorMetaData(gltf, inverseBindMatricesAccessorIndex);
         BufferViewMetaData inveresBindMatricesBufferViewMetaData =
@@ -892,8 +876,9 @@ void CJsonParser::LoadGLTF(
         for (unsigned int n = 0; n < joints.value.array->GetSize(); ++n) {
             for (unsigned int g = 0; g < 4; ++g) {
                 for (unsigned int j = 0; j < 4; ++j) {
-                    inverseBindMatrix[g][j] = inverseBindMatricesData
-                        [n * 16 + g * 4 + j]; ///< Put row float data into mat4
+                    // Put row float data into mat4.
+                    inverseBindMatrix[g][j] =
+                        inverseBindMatricesData[n * 16 + g * 4 + j];
                 }
             }
             inverseBindMatrixSet.Push(inverseBindMatrix);
@@ -1129,7 +1114,7 @@ void CJsonParser::LoadGLTF(
             scales.Push(temp);
         }
 
-        /// Searching for root joins WITH GOAT GOTO OPERATOR!!!
+        // Searching for root joins.
         core::vector<int> rootNodes;
         for (unsigned int s = 0; s < joints.value.array->GetSize(); ++s) {
             int current_joint = (*joints.value.array)[s].value.iNumber;
@@ -1137,18 +1122,14 @@ void CJsonParser::LoadGLTF(
             for (unsigned w = 0; w < children.GetSize(); ++w) {
                 for (unsigned q = 0; q < children[w].GetSize(); ++q) {
                     if (children[w][q] == current_joint) {
-                        goto most_scary_operator_of_all_time; ///< Yes. This is
-                                                              ///< what we all
-                                                              ///< deserve
+                        goto most_scary_operator_of_all_time;
                     }
                 }
             }
-            rootNodes.Push(
-                current_joint
-            ); ///< If we execute this line then this
-               ///< joint index ectualy the root
+            // If we execute this line then this joint index ectualy the root.
+            rootNodes.Push(current_joint);
 
-        most_scary_operator_of_all_time: ///< Not so scary at all. Am i right?
+        most_scary_operator_of_all_time: // Not so scary at all. Am i right?
             continue;
         }
 
@@ -1157,12 +1138,13 @@ void CJsonParser::LoadGLTF(
         }
 
         core::vector<core::vector<unsigned int>> nodesHierarchy;
-        for (unsigned int w = 0; w < rootNodes.GetSize();
-             ++w) { ///< Loop on parent joints
+        // Loop on parent joints.
+        for (unsigned int w = 0; w < rootNodes.GetSize(); ++w) {
             core::vector<core::vector<unsigned int>> nodes_bones;
             unsigned int currentRoot = rootNodes[w];
             core::stack<u32> node_stack;
-            node_stack.push(currentRoot); ///< Start from root joint
+            // Start from root joint.
+            node_stack.push(currentRoot);
 
             core::stack<u32> deepness_stack;
             traversalBones(
@@ -1178,12 +1160,7 @@ void CJsonParser::LoadGLTF(
             }
         }
 
-        /*
-          ================================================================
-          This logic related to joints that has inverseBindMatrices
-          ================================================================
-        */
-
+        // This logic related to joints that has inverseBindMatrices.
         [[maybe_unused]] u32 transformationsMax =
             translations.GetSize() > scales.GetSize()
             ? (translations.GetSize() > rotations.GetSize()
@@ -1235,16 +1212,6 @@ void CJsonParser::LoadGLTF(
             }
         }
 
-        /*
-          ================================================================
-          Mapping joint_index -> channel_index for every TRS-type.
-
-          core::vector<u32> nodesMapTranslations;
-          core::vector<u32> nodesMapRotations;
-          core::vector<u32> nodesMapScales;
-          are required (nodesMap keeps node index).
-          ================================================================
-        */
         core::vector<int> jointToTranslationCh;
         core::vector<int> jointToRotationCh;
         core::vector<int> jointToScaleCh;
@@ -1272,29 +1239,21 @@ void CJsonParser::LoadGLTF(
             }
         }
 
-        /*
-          =======================================================
-          Build animatedNodesMatricesAccumulator indexed
-          by joint-index (0..numJoints-1)
-          =======================================================
-        */
+        // Build animatedNodesMatricesAccumulator indexed by joint-index
+        // (0..numJoints - 1).
         core::vector<core::vector<mat4>> animatedNodesMatricesAccumulator;
         for (unsigned int j = 0; j < numJoints; ++j) {
             int tIdx = jointToTranslationCh[j];
             int rIdx = jointToRotationCh[j];
             int sIdx = jointToScaleCh[j];
 
-            /*
-              ============================================================
-              Local defaults fresh on every joint, for not make possible
-              to collect data from previous iterations.
-              ============================================================
-            */
+            // Local defaults fresh on every joint, for not make possible to
+            // collect data from previous iterations.
             core::vector<float> defaultTranslations;
             core::vector<float> defaultRotations;
             core::vector<float> defaultScales;
 
-            /// Static TRS from node. Using if chennel not exists.
+            // Static TRS from node. Using if chennel not exists.
             i32 nodeIdx = (i32)(*joints.value.array)[j].value.iNumber;
             float sTx = 0.f, sTy = 0.f, sTz = 0.f;
             float sRx = 0.f, sRy = 0.f, sRz = 0.f, sRw = 1.f;
@@ -1356,20 +1315,16 @@ void CJsonParser::LoadGLTF(
             core::vector<float>& boneS =
                 (sIdx >= 0) ? scales[sIdx] : defaultScales;
 
-            /*
-              ===============================================================
-              Chennels can has verious number of frames; framesMax - gloabal
-              maximum. Clamp index to last valid chennel frame, for not run
-              out after vectors bounds.
-              ===============================================================
-            */
+            // Chennels can has verious number of frames; framesMax - gloabal
+            // maximum. Clamp index to last valid chennel frame, for not run out
+            // after vectors bounds.
             const u32 tFrames = boneT.GetSize() / 3;
             const u32 rFrames = boneR.GetSize() / 4;
             const u32 sFrames = boneS.GetSize() / 3;
             core::vector<mat4> perFrameMatrices;
             for (unsigned int i = 0; i < framesMax; ++i) {
                 if (tFrames == 0 || rFrames == 0 || sFrames == 0) {
-                    /// malformed data; skip joint
+                    // Malformed data; skip joint.
                     core::vector<mat4> empty;
                     animatedNodesMatricesAccumulator.Push(empty);
                     continue;
@@ -1400,13 +1355,9 @@ void CJsonParser::LoadGLTF(
             animatedNodesMatricesAccumulator.Push(perFrameMatrices);
         }
 
-        /*
-          =============================================================
-          Final comstruction of joint-matrices.
-          Both arrays indexed by joint-index now,
-          that's why nodesHierarchy[j][b] address accumulator correctly
-          =============================================================
-        */
+        // Final comstruction of joint-matrices. Both arrays indexed by
+        // joint-index now, that's why nodesHierarchy[j][b] address accumulator
+        // correctly.
         for (unsigned int j = 0; j < numJoints; ++j) {
             core::vector<mat4> globalAllFrameNodeMatrix;
             for (unsigned int i = 0; i < framesMax; ++i) {
@@ -1483,19 +1434,6 @@ void CJsonParser::LoadGLTF(
     buffer = nullptr;
 }
 
-/*
-========================================================================================
-@brief Collect all branches on every dipness level and put it in a row
-
-@param children       Contain all children of every root node
-@param joints         Use for access to main array of joints in "skins"
-@param node_stack     Keep all joints in current branch and has most deep as
-last elemnt
-@param deepness_stack Hold current deepness level of child tree in branch as
-element and value of an element is children counter
-========================================================================================
-*/
-
 void CJsonParser::traversalBones(
     core::vector<core::vector<int>> children,
     Core::JsonValue joints,
@@ -1505,42 +1443,38 @@ void CJsonParser::traversalBones(
 ) {
     u32 topJointIndex = 0;
     if (!node_stack.empty()) {
-        topJointIndex = getJointIndex(
-            joints,
-            node_stack.top()
-        ); ///< Pass array of all joints and root joint and return index of root
-           ///< joint in array
+        // Pass array of all joints and root joint and return index of root
+        // joint in array.
+        topJointIndex = getJointIndex(joints, node_stack.top());
     }
 
     if (node_stack.size() > deepness_stack.size()) {
-        u32 firstChild = 0; ///< First 0 level start from
+        // First 0 level start from.
+        u32 firstChild = 0;
         deepness_stack.push(firstChild);
     }
 
-    if (deepness_stack.empty()) { ///< Main exit check
+    // Main exit check.
+    if (deepness_stack.empty()) {
         return;
     }
 
     u32 nextNodeIndex = 0;
-    if (topJointIndex != UINT32_MAX
-        && !children[topJointIndex]
-                .empty()) { ///< Check current root joint has any children.
-                            ///< Children maps linearly with root joint array
-                            ///< index
+    // Check current root joint has any children. Children maps linearly with
+    // root joint array index.
+    if (topJointIndex != UINT32_MAX && !children[topJointIndex].empty()) {
+        // Check if on last child level.
         if (deepness_stack.top() > 0
-            && deepness_stack.top()
-                == children[topJointIndex]
-                       .GetSize()) { ///< Check if on last child level
+            && deepness_stack.top() == children[topJointIndex].GetSize()) {
             deepness_stack.pop();
             node_stack.pop();
             traversalBones(children, joints, node_stack, deepness_stack, result);
             return;
         }
 
+        // Check if not on last child level.
         if (deepness_stack.top() > 0
-            && deepness_stack.top()
-                < children[topJointIndex]
-                      .GetSize()) { ///< Check if not on last child level
+            && deepness_stack.top() < children[topJointIndex].GetSize()) {
             nextNodeIndex = children[topJointIndex][deepness_stack.top()];
             node_stack.push(nextNodeIndex);
 
@@ -1549,10 +1483,6 @@ void CJsonParser::traversalBones(
                 u32 currentJoinIndex = getJointIndex(joints, node_stack[i]);
                 current_node_indices.Push(currentJoinIndex);
             }
-
-            /* result.Push(current_node_indices); */ //< Maybe this line has to
-                                                     // be here
-
             ++deepness_stack.top();
             traversalBones(children, joints, node_stack, deepness_stack, result);
             return;
@@ -1659,4 +1589,4 @@ u32 CJsonParser::getJointIndex(Core::JsonValue joints, i32 searchingIndex) {
 CJsonParser::~CJsonParser() {
     delete root_;
 }
-} // namespace GLVM::Core
+} // namespace glvm::Core

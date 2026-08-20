@@ -14,20 +14,14 @@
 #include <cstdint>
 #include <unistd.h>
 
-namespace GLVM::ecs {
-/*
-  ===========================================
-  This method is trying to search for suitable
-  slots for the given specific type item. It returns
-  true if it finds them and false otherwise.
-  ==========================================
-*/
-
+namespace glvm::ecs {
+// This method is trying to search for suitable slots for the given specific
+// type item. It returns true if it finds them and false otherwise.
 bool ItemSystem::putItem2x2(
     components::inventory* inventoryComponent,
     unsigned int itemEntity
 ) {
-    namespace cm = GLVM::ecs::components;
+    namespace cm = glvm::ecs::components;
 
     bool isSlotFound = false;
     unsigned int row = inventoryComponent->row;
@@ -59,15 +53,11 @@ bool ItemSystem::putItem2x2(
             unsigned int isAllSlotsAvailable = 0;
             for (unsigned int v = 0; v < maybeAvailabeSlots.GetSize(); ++v) {
                 if (maybeAvailabeSlots[v] == UINT_MAX) {
-                    //						std::cout << "inc" << std::endl;
                     ++isAllSlotsAvailable;
                 } else {
-                    //						std::cout << "dec" << std::endl;
                     --isAllSlotsAvailable;
                 }
             }
-            //				std::cout << "all slots: " << isAllSlotsAvailable <<
-            // std::endl;
             if (maybeAvailabeSlots.GetSize() == isAllSlotsAvailable) {
                 for (unsigned int w = 0; w < maybeAvailabeSlots.GetSize();
                      ++w) {
@@ -92,7 +82,7 @@ bool ItemSystem::putItem2x2(
 }
 
 void ItemSystem::Update() {
-    namespace cm = GLVM::ecs::components;
+    namespace cm = glvm::ecs::components;
 
     if (!isInventoryOpened) {
         inventoryArchetypesNumber = 0;
@@ -138,8 +128,6 @@ void ItemSystem::Update() {
                         && componentsView.itemsView[i].isActor) {
                         if (putItem2x2(inventoryComponent, itemEntity)) {
                             componentsView.itemsView[i].isActor = false;
-                            //								componentManager->RemoveComponent<cm::actor>(itemEntity);
-                            //								componentManager->RemoveComponent<cm::rigidBody>(itemEntity);
                         } else {
                             std::cout
                                 << "No suitable slots for that item in inventory"
@@ -178,61 +166,13 @@ void ItemSystem::Update() {
             uint32_t entityItemContaining = archView.itemArchetype->entities[i];
             cm::transform* itemTransformComponent =
                 &componentsView.itemTransformsView[i];
-
-            // bool isCrosshairCollided = false;
-            // for ( unsigned int n = 0; n <
-            // itemColliderComponent->colliders.GetSize(); ++n ) { 	if (
-            // itemColliderComponent->colliders[n] == linkedCrosshairEntities[0]
-            // ) {                ///< Is there a crosshair among the colliders
-            // 		isCrosshairCollided = true;
-            // 		break;
-            // 	}
-            // }
-
-            // if ( itemColliderComponent->wallCollision && isCrosshairCollided
-            // ) { 	itemTransformComponent->position =
-            // crosshairTransformComponent->position;                 ///< Set
-            // crosshair position to draged item
-            // itemColliderComponent->itemDrag = true; 	isItemDraged = true;
-            // }
-
             if (*dragedItemEntity >= 0
                 && *dragedItemEntity == (int)entityItemContaining) {
+                // Set crosshair position to dragged items.
                 itemTransformComponent->position =
-                    crosshairTransformComponent
-                        ->position; ///< Set crosshair position to draged itemx
+                    crosshairTransformComponent->position;
             }
         }
     }
-
-    // if ( mouseOffsetX > 1.0f )
-    // 	mouseOffsetX = 1.0f;
-    // else if ( mouseOffsetX < -1.0f )
-    // 	mouseOffsetX = -1.0f;
-
-    // if ( mouseOffsetY > 1.0f )
-    // 	mouseOffsetY = 1.0f;
-    // else if ( mouseOffsetY < -1.0f )
-    // 	mouseOffsetY = -1.0f;
-
-    // 		if ( isInventoryOpened ) {
-    // 			if ( !isItemDraged && isLeftMouseButtonPressed &&
-    // *isLeftMouseButtonReleased ) { 				std::cout << "Take an item"
-    // << std::endl; 				std::cout << "x: " << mouseOffsetX <<
-    // std::endl; 				std::cout
-    // << "y: " << mouseOffsetY << std::endl;
-    // *isLeftMouseButtonReleased = false; 				isItemDraged = true;
-    // 			}
-
-    // 			if ( isItemDraged ) {
-    // //			std::cout << "highlight item slots" << std::endl;
-    // 			}
-
-    // 			if ( isItemDraged && isLeftMouseButtonPressed &&
-    // *isLeftMouseButtonReleased ) { 				std::cout << "item droped"
-    // << std::endl; 				*isLeftMouseButtonReleased = false;
-    // isItemDraged = false;
-    // 			}
-    // 		}
 }
-} // namespace GLVM::ecs
+} // namespace glvm::ecs

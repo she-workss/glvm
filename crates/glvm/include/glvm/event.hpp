@@ -1,20 +1,8 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
+#pragma once
 
-#ifndef EVENT_HPP
-#define EVENT_HPP
-
-// #include "Stack.hpp"
-
-namespace GLVM::core {
+namespace glvm::core {
 
 class CStack;
-
-/*! \enum EEvents
-    \brief Realise event event types.
-*/
 
 enum EEvents {
     eDEFAULT,
@@ -43,6 +31,7 @@ enum EEvents {
     eMOUSE_LEFT_BUTTON,
     eMOUSE_RIGHT_BUTTON_RELEASE,
     eMOUSE_RIGHT_BUTTON,
+    eCURSOR_RELEASED,
     eGAME_LOOP_KILL,
     eEmpty,
 };
@@ -55,10 +44,6 @@ struct SMousePointerPosition {
     float pitch;
     float yaw;
 };
-
-/*! \class Event
-    \brief Realise event game system.
-*/
 
 class CEvent {
     EEvents eEvent_;
@@ -78,6 +63,4 @@ public:
     bool isLeftMouseButtonReleased = true;
 };
 
-} // namespace GLVM::core
-
-#endif
+} // namespace glvm::core

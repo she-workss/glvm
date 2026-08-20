@@ -1,5 +1,4 @@
-#ifndef POINT_LIGHT_ARCHETYPE
-#define POINT_LIGHT_ARCHETYPE
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchetypeInterface.hpp"
 #include "glvm/Components/MaterialComponent.hpp"
@@ -8,7 +7,7 @@
 #include "glvm/Components/VertexComponent.hpp"
 #include "glvm/Globals.hpp"
 
-namespace GLVM::ecs::arch {
+namespace glvm::ecs::arch {
 constexpr uint32_t POINT_LIGHT_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(components::transform) + sizeof(components::mesh)
        + sizeof(components::material) + sizeof(components::pointLight));
@@ -37,6 +36,4 @@ struct PointLightArchetype: Archetype {
         componentCount = 4;
     }
 };
-}; // namespace GLVM::ecs::arch
-
-#endif
+}; // namespace glvm::ecs::arch

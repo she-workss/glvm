@@ -1,5 +1,4 @@
-#ifndef ITEM_ARCHETYPE
-#define ITEM_ARCHETYPE
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchECS_Types.hpp"
 #include "glvm/ArchetypeECS/ArchetypeInterface.hpp"
@@ -14,7 +13,7 @@
 #include "glvm/Components/VertexComponent.hpp"
 #include "glvm/Globals.hpp"
 
-namespace GLVM::ecs::arch {
+namespace glvm::ecs::arch {
 constexpr uint32_t ITEM_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(components::transform) + sizeof(components::collider)
        + sizeof(components::colliderFlags) + sizeof(components::mesh)
@@ -66,6 +65,4 @@ struct ItemArchetype: Archetype {
         componentCount = 9;
     }
 };
-}; // namespace GLVM::ecs::arch
-
-#endif
+}; // namespace glvm::ecs::arch

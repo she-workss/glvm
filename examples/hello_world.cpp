@@ -1,8 +1,3 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
 #include "glvm/ArchetypeECS/ArchECS_Utils.hpp"
 #include "glvm/ArchetypeECS/ArchECS_World.hpp"
 #include "glvm/Archetypes/CrosshairArchetype.hpp"
@@ -27,7 +22,6 @@
 #include "glvm/Components/TransformComponent.hpp"
 #include "glvm/Components/VertexComponent.hpp"
 #include "glvm/Engine.hpp"
-#include "glvm/Network/UDP_ServerLinux.hpp"
 #include "glvm/PGA.hpp"
 #include "glvm/SpritesData.hpp"
 #include "glvm/Texture.hpp"
@@ -37,164 +31,130 @@
 #include <map>
 #include <random>
 
-using namespace GLVM;
-namespace cm = GLVM::ecs::components;
-namespace pga = GLVM::core::pga;
-namespace arch = GLVM::ecs::arch;
+using namespace glvm;
+namespace pga = glvm::core::pga;
+namespace arch = glvm::ecs::arch;
 
-int main() {
-    [[maybe_unused]] pga::plane plane0 = {2.1f, 3.5f, 4.2f, 3.87f};
-    [[maybe_unused]] pga::plane plane1 = {3.17f, 10.20f, 7.832f, 3.87f};
-    [[maybe_unused]] pga::point point0 = {1.5f, 2.77f, 6.55f, 8.99f};
-    [[maybe_unused]] pga::point point1 = {3.577f, 0.787f, 16.575f, 888.99f};
-    [[maybe_unused]] pga::line line0 =
-        {1.87, 2.053, 6.234, 10.34, 3234.32, 223.43};
-    [[maybe_unused]] pga::line line1 =
-        {5.723, 10.234, 3.343, 0.344, 234.123, 77.345};
-    [[maybe_unused]] pga::rline rline0 = {21.87, 25.053, 63.234};
-    [[maybe_unused]] pga::rline rline1 = {15.723, 510.234, 73.343};
-    std::cout << (point0 * point1) << std::endl;
-    ecs::EntityManager* EntityManager = ecs::EntityManager::GetInstance();
-    ecs::ComponentManager* ComponentManager =
-        ecs::ComponentManager::GetInstance();
-    arch::ArchetypeEntityManager* archEntityManager =
-        arch::ArchetypeEntityManager::getInstance();
-    core::Engine* GLVM = core::Engine::GetInstance();
-    // [[maybe_unused]] cm::MeshHandle cubeHandle_OBJ =
-    //     GLVM->LoadMeshFromFile_OBJ("../../../assets/obj/cube.obj");
-    // [[maybe_unused]] cm::MeshHandle coneHandle_OBJ =
-    //     GLVM->LoadMeshFromFile_OBJ("../../../assets/obj/cone.obj");
-    // [[maybe_unused]] cm::MeshHandle icoSphereHandle_OBJ =
-    //     GLVM->LoadMeshFromFile_OBJ("../../../assets/obj/ico_sphere.obj");
-    // [[maybe_unused]] cm::MeshHandle monkeyHandle_OBJ =
-    //     GLVM->LoadMeshFromFile_OBJ("../../../assets/obj/suzana.obj");
-    // //	[[maybe_unused]] cm::MeshHandle monkeyHandle_OBJ =
-    // // GLVM->LoadMeshFromFile_OBJ("../../../assets/obj/suzana2.obj");
-    // [[maybe_unused]] cm::MeshHandle uvSphereHandle_OBJ =
-    //     GLVM->LoadMeshFromFile_OBJ("../../../assets/obj/uv_sphere.obj");
-    // [[maybe_unused]] cm::MeshHandle torusHandle_OBJ =
-    //     GLVM->LoadMeshFromFile_OBJ("../../../assets/obj/torus.obj");
-    // [[maybe_unused]] cm::MeshHandle pipeHandle_OBJ =
-    //     GLVM->LoadMeshFromFile_OBJ("../../../assets/obj/pipe.obj");
-    [[maybe_unused]] cm::MeshHandle hyperCubeHandle_GLTF =
-        GLVM->LoadMeshFromFile_GLTF("../../../assets/gltf/hyper_cube.gltf");
-    [[maybe_unused]] cm::MeshHandle hyperCubeHandle2_GLTF =
-        GLVM->LoadMeshFromFile_GLTF("../../../assets/gltf/hyper_cube2.gltf");
-    [[maybe_unused]] cm::MeshHandle megaChelHandle_GLTF =
-        GLVM->LoadMeshFromFile_GLTF("../../../assets/gltf/mega_chel.gltf");
-    [[maybe_unused]] cm::MeshHandle simpleCubeHandle_GLTF =
-        GLVM->LoadMeshFromFile_GLTF("../../../assets/gltf/simpleCube2.gltf");
-    [[maybe_unused]] cm::MeshHandle crosshair_001_Handle_GLTF =
-        GLVM->LoadMeshFromFile_GLTF("../../../assets/gltf/crosshair_001.gltf");
-    [[maybe_unused]] cm::MeshHandle inventory_Handle_GLTF =
-        GLVM->LoadMeshFromFile_GLTF("../../../assets/gltf/inventory.gltf");
-    [[maybe_unused]] cm::MeshHandle cyborg_Handle_GLTF =
-        GLVM->LoadMeshFromFile_GLTF("../../../assets/gltf/cyborg11.gltf");
-    //	[[maybe_unused]] cm::MeshHandle robot0_Handle_GLTF =
-    // GLVM->LoadMeshFromFile_GLTF("../../../assets/gltf/robot3.gltf");
-    [[maybe_unused]] cm::MeshHandle robot0_Handle_GLTF =
-        GLVM->LoadMeshFromFile_GLTF("../../../assets/gltf/scene.gltf");
+auto main() -> int {
+    pga::plane plane0 = {.x = 2.1f, .y = 3.5f, .z = 4.2f, .w = 3.87f};
+    pga::plane plane1 = {.x = 3.17f, .y = 10.20f, .z = 7.832f, .w = 3.87f};
+    pga::point point0 = {.x = 1.5f, .y = 2.77f, .z = 6.55f, .w = 8.99f};
+    pga::point point1 = {.x = 3.577f, .y = 0.787f, .z = 16.575f, .w = 888.99f};
+    pga::line line0 = {
+        .rx = 1.87,
+        .ry = 2.053,
+        .rz = 6.234,
+        .ix = 10.34,
+        .iy = 3234.32,
+        .iz = 223.43
+    };
+    pga::line line1 = {
+        .rx = 5.723,
+        .ry = 10.234,
+        .rz = 3.343,
+        .ix = 0.344,
+        .iy = 234.123,
+        .iz = 77.345
+    };
+    pga::rline rline0 = {.rx = 21.87, .ry = 25.053, .rz = 63.234};
+    pga::rline rline1 = {.rx = 15.723, .ry = 510.234, .rz = 73.343};
+    auto* entity_manager = ecs::EntityManager::GetInstance();
+    auto* component_manager = ecs::ComponentManager::GetInstance();
+    auto* arch_entity_manager = arch::ArchetypeEntityManager::getInstance();
+    auto* engine = core::Engine::GetInstance();
+    auto hyper_cube =
+        engine->LoadMeshFromFile_GLTF("../../../assets/gltf/hyper_cube.gltf");
+    auto hyper_cube2 =
+        engine->LoadMeshFromFile_GLTF("../../../assets/gltf/hyper_cube2.gltf");
+    auto mega_chel =
+        engine->LoadMeshFromFile_GLTF("../../../assets/gltf/mega_chel.gltf");
+    auto simple_cube =
+        engine->LoadMeshFromFile_GLTF("../../../assets/gltf/simpleCube2.gltf");
+    auto crosshair_001_handle = engine->LoadMeshFromFile_GLTF(
+        "../../../assets/gltf/crosshair_001.gltf"
+    );
+    auto inventory_handle =
+        engine->LoadMeshFromFile_GLTF("../../../assets/gltf/inventory.gltf");
+    auto cyborg_handle =
+        engine->LoadMeshFromFile_GLTF("../../../assets/gltf/cyborg11.gltf");
+    auto robot0_handle =
+        engine->LoadMeshFromFile_GLTF("../../../assets/gltf/scene.gltf");
 
-    [[maybe_unused]] ecs::TextureHandle chelikTextureHandle =
-        GLVM->LoadTextureFromAddress(128, 96, chelik_dat_len, chelik_dat);
-    [[maybe_unused]] ecs::TextureHandle witchTexturehandle =
-        GLVM->LoadTextureFromAddress(32, 32, witch_dat_len, witch_dat);
-    [[maybe_unused]] ecs::TextureHandle grayTextureHandle =
-        GLVM->LoadTextureFromAddress(32, 32, gray_dat_len, gray_dat);
-    [[maybe_unused]] ecs::TextureHandle container2Texturehandle =
-        GLVM->LoadTextureFromAddress(
-            500,
-            500,
-            container2_dat_len,
-            container2_dat
-        );
-    [[maybe_unused]] ecs::TextureHandle container2SpecularTextureHandle =
-        GLVM->LoadTextureFromAddress(
-            500,
-            500,
-            container2_specular_dat_len,
-            container2_specular_dat
-        );
-    [[maybe_unused]] ecs::TextureHandle crosshairTexturehandle =
-        GLVM->LoadTextureFromAddress(32, 32, Crosshair_dat_len, Crosshair_dat);
-    [[maybe_unused]] ecs::TextureHandle fontAtlasTexturehandle =
-        GLVM->LoadTextureFromAddress(84, 132, fontAtlas_dat_len, fontAtlas_dat);
-    [[maybe_unused]] ecs::TextureHandle inventoryTexturehandle =
-        GLVM->LoadTextureFromAddress(
-            64,
-            64,
-            inventorySlot_dat_len,
-            inventorySlot_dat
-        );
-    [[maybe_unused]] ecs::TextureHandle tilesetTexturehandle =
-        GLVM->LoadTextureFromAddress(512, 512, tileset_dat_len, tileset_dat);
-
+    auto chelik_texture =
+        engine->LoadTextureFromAddress(128, 96, chelik_dat_len, chelik_dat);
+    auto witch_texture =
+        engine->LoadTextureFromAddress(32, 32, witch_dat_len, witch_dat);
+    auto gray_texture =
+        engine->LoadTextureFromAddress(32, 32, gray_dat_len, gray_dat);
+    auto container2 = engine->LoadTextureFromAddress(
+        500,
+        500,
+        container2_dat_len,
+        container2_dat
+    );
+    auto container2_specular_texture = engine->LoadTextureFromAddress(
+        500,
+        500,
+        container2_specular_dat_len,
+        container2_specular_dat
+    );
+    auto crosshair_texture =
+        engine->LoadTextureFromAddress(32, 32, Crosshair_dat_len, Crosshair_dat);
+    auto font_atlas_texture =
+        engine
+            ->LoadTextureFromAddress(84, 132, fontAtlas_dat_len, fontAtlas_dat);
+    auto inventory_texture = engine->LoadTextureFromAddress(
+        64,
+        64,
+        inventorySlot_dat_len,
+        inventorySlot_dat
+    );
+    auto tileset_texture =
+        engine->LoadTextureFromAddress(512, 512, tileset_dat_len, tileset_dat);
     {
-        arch::LevelChunkArchetype* levelChunkArch =
-            new arch::LevelChunkArchetype;
-        arch::PlayerArchetype* playerArch = new arch::PlayerArchetype;
-        arch::EnemyArchetype* enemyArch = new arch::EnemyArchetype;
-        arch::ProjectileArchetype* projectileArch =
-            new arch::ProjectileArchetype;
-        arch::StaticMeshArchetype* staticMeshArch =
-            new arch::StaticMeshArchetype;
-        arch::CrosshairArchetype* crosshairArch = new arch::CrosshairArchetype;
-        arch::InventoryArchetype* inventoryArch = new arch::InventoryArchetype;
-        arch::ItemArchetype* itemArch = new arch::ItemArchetype;
-        arch::DirectionalLightArchetype* directionalLightArch =
-            new arch::DirectionalLightArchetype;
-        arch::PointLightArchetype* pointLightArch =
-            new arch::PointLightArchetype;
-        arch::SpotLightArchetype* spotLightArch = new arch::SpotLightArchetype;
-
-        arch::world.archetypes.Push(levelChunkArch);
-        arch::world.archetypes.Push(playerArch);
-        arch::world.archetypes.Push(enemyArch);
-        arch::world.archetypes.Push(projectileArch);
-        arch::world.archetypes.Push(staticMeshArch);
-        arch::world.archetypes.Push(crosshairArch);
-        arch::world.archetypes.Push(inventoryArch);
-        arch::world.archetypes.Push(itemArch);
-        arch::world.archetypes.Push(directionalLightArch);
-        arch::world.archetypes.Push(pointLightArch);
-        arch::world.archetypes.Push(spotLightArch);
+        auto* level_chunk_arch = new arch::LevelChunkArchetype;
+        auto* player_arch = new arch::PlayerArchetype;
+        auto* enemy_arch = new arch::EnemyArchetype;
+        auto* projectile_arch = new arch::ProjectileArchetype;
+        auto* static_mesh_arch = new arch::StaticMeshArchetype;
+        auto* crosshair_arch = new arch::CrosshairArchetype;
+        auto* inventory_arch = new arch::InventoryArchetype;
+        auto* item_arch = new arch::ItemArchetype;
+        auto* directional_light_arch = new arch::DirectionalLightArchetype;
+        auto* point_light_arch = new arch::PointLightArchetype;
+        auto* spot_light_arch = new arch::SpotLightArchetype;
+        arch::world.archetypes.Push(level_chunk_arch);
+        arch::world.archetypes.Push(player_arch);
+        arch::world.archetypes.Push(enemy_arch);
+        arch::world.archetypes.Push(projectile_arch);
+        arch::world.archetypes.Push(static_mesh_arch);
+        arch::world.archetypes.Push(crosshair_arch);
+        arch::world.archetypes.Push(inventory_arch);
+        arch::world.archetypes.Push(item_arch);
+        arch::world.archetypes.Push(directional_light_arch);
+        arch::world.archetypes.Push(point_light_arch);
+        arch::world.archetypes.Push(spot_light_arch);
     }
-
-    /// Loading method with stb_image
-    // [[maybe_unused]] ecs::TextureHandle chelikTextureHandle =
-    // GLVM->LoadTextureFromFile("../textures/chelik.h");
-    // [[maybe_unused]] ecs::TextureHandle witchTexturehandle =
-    // GLVM->LoadTextureFromFile("../textures/witch.h");
-    // [[maybe_unused]] ecs::TextureHandle grayTextureHandle =
-    // GLVM->LoadTextureFromFile("../textures/data/gray.png");
-    // [[maybe_unused]] ecs::TextureHandle container2Texturehandle =
-    // GLVM->LoadTextureFromFile("../textures/data/container2.png");
-    // [[maybe_unused]] ecs::TextureHandle container2SpecularTextureHandle =
-    // GLVM->LoadTextureFromFile("../textures/data/container2_specular.png");
-    arch::entity player = archEntityManager->createEntity();
+    auto player = arch_entity_manager->createEntity();
     arch::world.addEntityToArchetype(player, arch::world.archetypes[1]);
-    arch::EntityLocation playerLocation =
-        arch::world.entityLocations[arch::getId(player)];
-    arch::PlayerArchetype* playerArch =
-        static_cast<arch::PlayerArchetype*>(playerLocation.arch);
-    const uint32_t playerIndex = playerLocation.index;
-    playerArch->transforms[playerIndex] = {
+    auto player_location = arch::world.entityLocations[arch::getId(player)];
+    auto* player_arch =
+        dynamic_cast<arch::PlayerArchetype*>(player_location.arch);
+    const auto player_index = player_location.index;
+    player_arch->transforms[player_index] = {
         .position = {15.0f, 15.0f, 15.0f},
         .scale = 1.0f
     };
-    playerArch->rigidBodies[playerIndex] = {.fMass_ = 3.0f};
-    playerArch->health[playerIndex] = {.maxHealth = 100, .currentHealth = 100};
-    playerArch->beholders[playerIndex] = {
+    player_arch->rigidBodies[player_index] = {.fMass_ = 3.0f};
+    player_arch->health[player_index] = {.maxHealth = 100, .currentHealth = 100};
+    player_arch->beholders[player_index] = {
         .Position = {0.0f, 2.0f, -3.0f},
         .forward = {0.0f, 0.0f, -1.0f}
     };
-    playerArch->meshes[playerIndex] = {
-        .handle = megaChelHandle_GLTF,
-        .gltf = true
-    };
-    playerArch->materials[playerIndex] = {
-        .diffuseTextureID_ = grayTextureHandle,
-        .specularTextureID_ = grayTextureHandle,
+    player_arch->meshes[player_index] = {.handle = mega_chel, .gltf = true};
+    player_arch->materials[player_index] = {
+        .diffuseTextureID_ = gray_texture,
+        .specularTextureID_ = gray_texture,
         .ambient = {0.05f, 0.05f, 0.0f},
         .shininess = 128.0f * 0.078125f
     };
@@ -202,197 +162,195 @@ int main() {
     std::map<int, int> hist;
     std::mt19937 mersenne(rd());
     std::uniform_int_distribution<int> dist(0, 3);
-    for (u32 i = 0; i < 5; ++i) {
-        arch::entity enemy = archEntityManager->createEntity();
+    for (auto i = 0; i < 5; ++i) {
+        auto enemy = arch_entity_manager->createEntity();
         arch::world.addEntityToArchetype(enemy, arch::world.archetypes[2]);
-        arch::EntityLocation enemyLocation =
-            arch::world.entityLocations[arch::getId(enemy)];
-        arch::EnemyArchetype* enemyArch =
-            static_cast<arch::EnemyArchetype*>(enemyLocation.arch);
-        const uint32_t enemyIndex = enemyLocation.index;
-        unsigned int random = dist(mersenne);
-        vec3 randomDirection = {};
+        auto enemy_location = arch::world.entityLocations[arch::getId(enemy)];
+        auto* enemy_arch =
+            dynamic_cast<arch::EnemyArchetype*>(enemy_location.arch);
+        const auto enemy_index = enemy_location.index;
+        auto random = dist(mersenne);
+        vec3 random_direction = {};
         switch (random) {
             case 0:
-                randomDirection = vec3(3.0f, 0.0f, 0.0f, 0.0);
+                random_direction = vec3(3.0f, 0.0f, 0.0f, 0.0);
                 break;
             case 1:
-                randomDirection = vec3(-3.0f, 0.0f, 0.0f, 0.0);
+                random_direction = vec3(-3.0f, 0.0f, 0.0f, 0.0);
                 break;
             case 2:
-                randomDirection = vec3(0.0f, 0.0f, 3.0f, 0.0);
+                random_direction = vec3(0.0f, 0.0f, 3.0f, 0.0);
                 break;
             case 3:
-                randomDirection = vec3(0.0f, 0.0f, -3.0f, 0.0);
+                random_direction = vec3(0.0f, 0.0f, -3.0f, 0.0);
+                break;
+            default:
                 break;
         }
-        enemyArch->transforms[enemyIndex] = {
-            .position = {vec3((float)i * 5, 3.0f, -3.0f) + randomDirection},
-            .scale = 1.0f
+        enemy_arch->transforms[enemy_index] = {
+            .position =
+                {vec3(static_cast<float>(i) * 5, 3.0f, -3.0f)
+                 + random_direction},
+            .scale = 0.02f
         };
-        enemyArch->states[enemyIndex] = {.state = core::States::ROAMING};
-        enemyArch->rigidBodies[enemyIndex] = {.fMass_ = 0.0f};
-        enemyArch->enemies[enemyIndex] = {.detectRadius = 10.0f};
-        enemyArch->health[enemyIndex] = {.maxHealth = 100, .currentHealth = 100};
-        cm::font* enemyFontComponent = &enemyArch->fonts[enemyIndex];
+        enemy_arch->states[enemy_index] = {.state = core::States::ROAMING};
+        enemy_arch->rigidBodies[enemy_index] = {.fMass_ = 0.0f};
+        enemy_arch->enemies[enemy_index] = {.detectRadius = 10.0f};
+        enemy_arch->health[enemy_index] = {
+            .maxHealth = 100,
+            .currentHealth = 100
+        };
+        auto* enemy_font_component = &enemy_arch->fonts[enemy_index];
         if (i < 3) {
-            enemyFontComponent->font_string.Push('1');
+            enemy_font_component->font_string.Push('1');
         } else if (i < 6) {
-            enemyFontComponent->font_string.Push('1');
-            enemyFontComponent->font_string.Push('0');
+            enemy_font_component->font_string.Push('1');
+            enemy_font_component->font_string.Push('0');
         } else if (i < 10) {
-            enemyFontComponent->font_string.Push('1');
-            enemyFontComponent->font_string.Push('0');
-            enemyFontComponent->font_string.Push('E');
+            enemy_font_component->font_string.Push('1');
+            enemy_font_component->font_string.Push('0');
+            enemy_font_component->font_string.Push('E');
         } else {
-            enemyFontComponent->font_string.Push('J');
-            enemyFontComponent->font_string.Push('r');
+            enemy_font_component->font_string.Push('J');
+            enemy_font_component->font_string.Push('r');
         }
-        enemyFontComponent->lifeTime = 0.0f;
-        enemyFontComponent->removeble = false;
-        enemyArch->meshes[enemyIndex] = {
-            .handle = cyborg_Handle_GLTF,
+        enemy_font_component->lifeTime = 0.0f;
+        enemy_font_component->removeble = false;
+        enemy_arch->meshes[enemy_index] = {
+            .handle = robot0_handle,
             .gltf = true
         };
-        enemyArch->materials[enemyIndex] = {
-            .diffuseTextureID_ = grayTextureHandle,
-            .specularTextureID_ = grayTextureHandle,
+        enemy_arch->materials[enemy_index] = {
+            .diffuseTextureID_ = gray_texture,
+            .specularTextureID_ = gray_texture,
             .ambient = {0.05f, 0.05f, 0.05f},
             .shininess = 32.0f * 0.078125f
         };
     }
-    for (u32 i = 0; i < 5; ++i) {
-        arch::entity cube = archEntityManager->createEntity();
-        std::cout << "Cube: " << arch::getId(cube) << std::endl;
+    for (auto i = 0; i < 5; ++i) {
+        auto cube = arch_entity_manager->createEntity();
         arch::world.addEntityToArchetype(cube, arch::world.archetypes[4]);
-        arch::EntityLocation cubeLocation =
-            arch::world.entityLocations[arch::getId(cube)];
-        arch::StaticMeshArchetype* cubeArch =
-            static_cast<arch::StaticMeshArchetype*>(cubeLocation.arch);
-        const uint32_t cubeIndex = cubeLocation.index;
-        cubeArch->transforms[cubeIndex] = {
-            .position = {7.0f, 2.0f, 10.0f + i * 2.0f},
+        auto cube_location = arch::world.entityLocations[arch::getId(cube)];
+        auto* cube_arch =
+            dynamic_cast<arch::StaticMeshArchetype*>(cube_location.arch);
+        const auto cube_index = cube_location.index;
+        cube_arch->transforms[cube_index] = {
+            .position = {7.0f, 2.0f, 10.0f + (static_cast<float>(i) * 2.0f)},
             .scale = 1.0f
         };
-        cubeArch->meshes[cubeIndex] = {
-            .handle = hyperCubeHandle2_GLTF,
-            .gltf = true
-        };
-        cubeArch->materials[cubeIndex] = {
-            .diffuseTextureID_ = tilesetTexturehandle,
-            .specularTextureID_ = container2SpecularTextureHandle,
+        cube_arch->meshes[cube_index] = {.handle = hyper_cube2, .gltf = true};
+        cube_arch->materials[cube_index] = {
+            .diffuseTextureID_ = tileset_texture,
+            .specularTextureID_ = container2_specular_texture,
             .ambient = {0.05f, 0.05f, 0.05f},
             .shininess = 128.0f * 0.078125f
         };
-        cubeArch->fonts[cubeIndex].font_string.Push('R');
+        cube_arch->fonts[cube_index].font_string.Push('R');
     }
-    arch::entity crosshair = archEntityManager->createEntity();
+    auto crosshair = arch_entity_manager->createEntity();
     arch::world.addEntityToArchetype(crosshair, arch::world.archetypes[5]);
-    arch::EntityLocation crosshairLocation =
+    auto crosshair_location =
         arch::world.entityLocations[arch::getId(crosshair)];
-    arch::CrosshairArchetype* crosshairArch =
-        static_cast<arch::CrosshairArchetype*>(crosshairLocation.arch);
-    const uint32_t crosshairIndex = crosshairLocation.index;
-    crosshairArch->transforms[crosshairIndex] = {.scale = 0.01f};
-    crosshairArch->meshes[crosshairIndex].handle = crosshair_001_Handle_GLTF;
-    crosshairArch->materials[crosshairIndex] = {
-        .diffuseTextureID_ = container2Texturehandle,
-        .specularTextureID_ = container2SpecularTextureHandle,
+    auto* crosshair_arch =
+        dynamic_cast<arch::CrosshairArchetype*>(crosshair_location.arch);
+    const auto crosshair_index = crosshair_location.index;
+    crosshair_arch->transforms[crosshair_index] = {.scale = 0.01f};
+    crosshair_arch->meshes[crosshair_index].handle = crosshair_001_handle;
+    crosshair_arch->materials[crosshair_index] = {
+        .diffuseTextureID_ = container2,
+        .specularTextureID_ = container2_specular_texture,
         .ambient = {0.05f, 0.05f, 0.05f},
         .shininess = 128.0f * 0.078125f
     };
 
-    arch::entity inventory = archEntityManager->createEntity();
+    auto inventory = arch_entity_manager->createEntity();
     arch::world.addEntityToArchetype(inventory, arch::world.archetypes[6]);
-    arch::EntityLocation inventoryLocation =
+    auto inventory_location =
         arch::world.entityLocations[arch::getId(inventory)];
-    arch::InventoryArchetype* inventoryArch =
-        static_cast<arch::InventoryArchetype*>(inventoryLocation.arch);
-    const uint32_t inventoryIndex = inventoryLocation.index;
-    cm::inventory* inventoryComponent =
-        &inventoryArch->invetories[inventoryIndex];
-    inventoryComponent->entityOwner = player;
-    inventoryComponent->slotMeshID = inventory_Handle_GLTF;
-    inventoryComponent->slotScale = 0.05;
-    cm::mesh* inventoryMesh = &inventoryArch->meshes[inventoryIndex];
-    inventoryMesh->gltf = true;
-    inventoryArch->transforms[inventoryIndex] = {
+    auto* inventory_arch =
+        dynamic_cast<arch::InventoryArchetype*>(inventory_location.arch);
+    const auto inventory_index = inventory_location.index;
+    auto* inventory_component = &inventory_arch->invetories[inventory_index];
+    inventory_component->entityOwner = player;
+    inventory_component->slotMeshID = inventory_handle;
+    inventory_component->slotScale = 0.05;
+    auto* inventory_mesh = &inventory_arch->meshes[inventory_index];
+    inventory_mesh->gltf = true;
+    inventory_arch->transforms[inventory_index] = {
         .position = {0.0f, -0.5f, 0.0f},
         .scale = 1.0f
     };
-    inventoryArch->materials[inventoryIndex] = {
-        .diffuseTextureID_ = inventoryTexturehandle,
-        .specularTextureID_ = inventoryTexturehandle,
+    inventory_arch->materials[inventory_index] = {
+        .diffuseTextureID_ = inventory_texture,
+        .specularTextureID_ = inventory_texture,
         .ambient = {0.05f, 0.05f, 0.05f},
         .shininess = 128.0f * 0.078125f
     };
-    for (unsigned int i = 0; i < 5; ++i) {
-        arch::entity item = archEntityManager->createEntity();
+    for (auto i = 0; i < 5; ++i) {
+        arch::entity item = arch_entity_manager->createEntity();
         arch::world.addEntityToArchetype(item, arch::world.archetypes[7]);
-        arch::EntityLocation itemLocation =
+        arch::EntityLocation item_location =
             arch::world.entityLocations[arch::getId(item)];
-        arch::ItemArchetype* itemArch =
-            static_cast<arch::ItemArchetype*>(itemLocation.arch);
-        const uint32_t itemIndex = itemLocation.index;
-        unsigned int row = i + 1;
-        itemArch->items[itemIndex].itemSlotType = {2, row};
-        itemArch->items[itemIndex].isActor = true;
-        itemArch->transforms[itemIndex] = {
-            .position = {3.0f, 5.0f, 10.0f + i * 2.0f},
+        auto* item_arch =
+            dynamic_cast<arch::ItemArchetype*>(item_location.arch);
+        const auto item_index = item_location.index;
+        auto row = i + 1;
+        item_arch->items[item_index].itemSlotType = {
+            .height = 2,
+            .width = static_cast<unsigned int>(row)
+        };
+        item_arch->items[item_index].isActor = true;
+        item_arch->transforms[item_index] = {
+            .position = {3.0f, 5.0f, 10.0f + (static_cast<float>(i) * 2.0f)},
             .scale = 0.05f
         };
-        itemArch->rigidBodies[itemIndex] = {.fMass_ = 0.0f};
-        if (i % 2 == 0) {
-            itemArch->meshes[itemIndex].handle = hyperCubeHandle_GLTF;
-        } else {
-            itemArch->meshes[itemIndex].handle = hyperCubeHandle_GLTF;
-        }
-        itemArch->materials[itemIndex] = {
-            .diffuseTextureID_ = container2Texturehandle,
-            .specularTextureID_ = container2SpecularTextureHandle,
+        item_arch->rigidBodies[item_index] = {.fMass_ = 0.0f};
+        item_arch->meshes[item_index].handle = hyper_cube;
+        item_arch->materials[item_index] = {
+            .diffuseTextureID_ = container2,
+            .specularTextureID_ = container2_specular_texture,
             .ambient = {0.05f, 0.05f, 0.05f},
             .shininess = 128.0f * 0.078125f
         };
     }
-    arch::entity directionalLight = archEntityManager->createEntity();
+    auto directional_light = arch_entity_manager->createEntity();
     arch::world.addEntityToArchetype(
-        directionalLight,
+        directional_light,
         arch::world.archetypes[8]
     );
-    arch::EntityLocation directionalLightLocation =
-        arch::world.entityLocations[arch::getId(directionalLight)];
-    arch::DirectionalLightArchetype* directionalLightArch =
-        static_cast<arch::DirectionalLightArchetype*>(
-            directionalLightLocation.arch
+    auto directional_light_location =
+        arch::world.entityLocations[arch::getId(directional_light)];
+    auto* directional_light_arch =
+        dynamic_cast<arch::DirectionalLightArchetype*>(
+            directional_light_location.arch
         );
-    const uint32_t directionalLightIndex = directionalLightLocation.index;
-    directionalLightArch->directionalLights[directionalLightIndex] = {
+    const auto directional_light_index = directional_light_location.index;
+    directional_light_arch->directionalLights[directional_light_index] = {
         .position = {0.0f, 25.0f, 15.0f},
         .direction = {1.0f, 10.0f, 0.0f},
         .ambient = {0.05f, 0.05f, 0.05f},
         .diffuse = {0.4f, 0.4f, 0.4f},
         .specular = {1.0f, 1.0f, 1.0f}
     };
-    directionalLightArch->transforms[directionalLightIndex] = {
+    directional_light_arch->transforms[directional_light_index] = {
         .position = {0.0f, 10.0f, -15.0f},
         .scale = 0.1f
     };
-    directionalLightArch->meshes[directionalLightIndex].handle =
-        hyperCubeHandle_GLTF;
-    directionalLightArch->materials[directionalLightIndex] = {
-        .diffuseTextureID_ = container2Texturehandle,
-        .specularTextureID_ = container2Texturehandle,
+    directional_light_arch->meshes[directional_light_index].handle = hyper_cube;
+    directional_light_arch->materials[directional_light_index] = {
+        .diffuseTextureID_ = container2,
+        .specularTextureID_ = container2,
         .ambient = {0.05f, 0.05f, 0.0f},
         .shininess = 128.0f * 0.078125f
     };
-    arch::entity pointLight = archEntityManager->createEntity();
-    arch::world.addEntityToArchetype(pointLight, arch::world.archetypes[9]);
-    arch::EntityLocation pointLightLocation =
-        arch::world.entityLocations[arch::getId(pointLight)];
-    arch::PointLightArchetype* pointLightArch =
-        static_cast<arch::PointLightArchetype*>(pointLightLocation.arch);
-    const uint32_t pointLightIndex = pointLightLocation.index;
-    pointLightArch->pointLights[pointLightIndex] = {
+    auto point_light = arch_entity_manager->createEntity();
+    arch::world.addEntityToArchetype(point_light, arch::world.archetypes[9]);
+    auto point_light_location =
+        arch::world.entityLocations[arch::getId(point_light)];
+    auto* point_light_arch =
+        dynamic_cast<arch::PointLightArchetype*>(point_light_location.arch);
+    const auto point_light_index = point_light_location.index;
+    point_light_arch->pointLights[point_light_index] = {
         .position = {3.0f, 10.0f, 15.0f},
         .ambient = {0.1f, 0.1f, 0.1f},
         .diffuse = {0.8f, 0.8f, 0.8f},
@@ -401,25 +359,25 @@ int main() {
         .linear = 0.09f,
         .quadratic = 0.032f
     };
-    pointLightArch->transforms[pointLightIndex] = {
+    point_light_arch->transforms[point_light_index] = {
         .position = {3.0f, 10.0f, 15.0f},
         .scale = 0.2f
     };
-    pointLightArch->meshes[pointLightIndex].handle = hyperCubeHandle_GLTF;
-    pointLightArch->materials[pointLightIndex] = {
-        .diffuseTextureID_ = container2Texturehandle,
-        .specularTextureID_ = container2Texturehandle,
+    point_light_arch->meshes[point_light_index].handle = hyper_cube;
+    point_light_arch->materials[point_light_index] = {
+        .diffuseTextureID_ = container2,
+        .specularTextureID_ = container2,
         .ambient = {0.05f, 0.05f, 0.0f},
         .shininess = 128.0f * 0.078125f
     };
-    arch::entity spotLight = archEntityManager->createEntity();
-    arch::world.addEntityToArchetype(spotLight, arch::world.archetypes[10]);
-    arch::EntityLocation spotLightLocation =
-        arch::world.entityLocations[arch::getId(spotLight)];
-    arch::SpotLightArchetype* spotLightArch =
-        static_cast<arch::SpotLightArchetype*>(spotLightLocation.arch);
-    const uint32_t spotLightIndex = spotLightLocation.index;
-    spotLightArch->spotLights[spotLightIndex] = {
+    auto spot_light = arch_entity_manager->createEntity();
+    arch::world.addEntityToArchetype(spot_light, arch::world.archetypes[10]);
+    auto spot_light_location =
+        arch::world.entityLocations[arch::getId(spot_light)];
+    auto* spot_light_arch =
+        dynamic_cast<arch::SpotLightArchetype*>(spot_light_location.arch);
+    const auto spot_light_index = spot_light_location.index;
+    spot_light_arch->spotLights[spot_light_index] = {
         .position = {1.0f, 12.0f, 5.0f},
         .direction = {0.0f, -1.0f, 2.0f},
         .cutOff = 32.5f,
@@ -431,20 +389,18 @@ int main() {
         .linear = 0.09f,
         .quadratic = 0.032f
     };
-    spotLightArch->transforms[spotLightIndex] = {
+    spot_light_arch->transforms[spot_light_index] = {
         .position = {1.0f, 12.0f, 5.0f},
         .scale = 0.2f
     };
-    spotLightArch->meshes[spotLightIndex].handle = simpleCubeHandle_GLTF;
-    spotLightArch->materials[spotLightIndex] = {
-        .diffuseTextureID_ = grayTextureHandle,
-        .specularTextureID_ = grayTextureHandle
+    spot_light_arch->meshes[spot_light_index].handle = simple_cube;
+    spot_light_arch->materials[spot_light_index] = {
+        .diffuseTextureID_ = gray_texture,
+        .specularTextureID_ = gray_texture
     };
-    std::cout << "ARCHETYPES NUMBER: " << arch::world.archetypes.GetSize()
-              << std::endl;
-    GLVM->GameLoop();
-    GLVM->GameKill();
-    delete EntityManager;
-    delete ComponentManager;
-    delete GLVM;
+    engine->GameLoop();
+    engine->GameKill();
+    delete entity_manager;
+    delete component_manager;
+    delete engine;
 }

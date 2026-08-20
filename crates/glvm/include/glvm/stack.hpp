@@ -1,14 +1,8 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef CLASSIC_STACK
-#define CLASSIC_STACK
+#pragma once
 
 #include <assert.h>
 
-namespace GLVM::core {
+namespace glvm::core {
 
 template<class T>
 class stack {
@@ -114,6 +108,4 @@ public:
     }
 };
 
-} // namespace GLVM::core
-
-#endif
+} // namespace glvm::core

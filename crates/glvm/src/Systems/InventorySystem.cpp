@@ -16,10 +16,10 @@
 
 #include <cstdint>
 
-namespace GLVM::ecs {
+namespace glvm::ecs {
 void InventorySystem::Update() {
     if (isInventoryOpened) {
-        namespace cm = GLVM::ecs::components;
+        namespace cm = glvm::ecs::components;
 
         crosshairArchetypesNumber = 0;
         arch::world.searchCacheArchetypes(
@@ -69,8 +69,9 @@ void InventorySystem::Update() {
                 ? inventoryComponent->slotScale
                 : inventoryComponent->slotScale * 0.5f;
 
+            // Take an item from inventory.
             if (*isItemDraged < 0 && isLeftMouseButtonPressed
-                && *isLeftMouseButtonReleased) { ///< Take an item from inventory
+                && *isLeftMouseButtonReleased) {
                 if (checkCrosshairInventoryIntersection(
                         crosshairTransformComponent,
                         inventoryTransformComponent,
@@ -89,9 +90,8 @@ void InventorySystem::Update() {
                     const unsigned int column = intersectionSlot.x;
                     const unsigned int entity =
                         inventoryComponent->slots[row][column];
-                    if (entity != UINT_MAX
-                        && entity
-                            >= 0) { ///< Check slot is not empty and hold an item
+                    // Check slot is not empty and hold an item.
+                    if (entity != UINT_MAX && entity >= 0) {
                         arch::EntityLocation itemLocation =
                             arch::world.entityLocations[arch::getId(entity)];
                         arch::ItemArchetype* itemArch =
@@ -109,14 +109,13 @@ void InventorySystem::Update() {
                                 unsigned int col_index =
                                     itemComponent->occupiedSlots[i]
                                     % inventoryComponent->col;
-
+                                // Need to free all slots that hold an item.
                                 inventoryComponent->slots[row_index][col_index] =
-                                    UINT_MAX; ///< Need to free all slots that
-                                              ///< hold an item
+                                    UINT_MAX;
                             }
                         }
-                        *isItemDraged =
-                            entity; ///< Set curretly draged item entity
+                        // Set currently dragged item entity.
+                        *isItemDraged = entity;
                     }
                 }
                 *isLeftMouseButtonReleased = false;
@@ -169,9 +168,9 @@ void InventorySystem::Update() {
                 }
             }
 
+            // Item drop to inventory, swapped or we just can't place.
             if (*isItemDraged >= 0 && isLeftMouseButtonPressed
-                && *isLeftMouseButtonReleased) { ///< Item drop to inventory,
-                                                 ///< swaped or we just cant place
+                && *isLeftMouseButtonReleased) {
                 int isSwapable = 0;
                 if (checkCrosshairInventoryIntersection(
                         crosshairTransformComponent,
@@ -209,8 +208,8 @@ void InventorySystem::Update() {
                     const int itemWidth = itemComponent->itemSlotType.width;
                     const int itemHeight = itemComponent->itemSlotType.height;
 
-                    if (isSwapable == -1) { ///< Default value. Just drop item
-                                            ///< to all empty slots
+                    // Default value. Just drop item to all empty slots.
+                    if (isSwapable == -1) {
                         itemComponent->occupiedSlots = potentialOccupiedSlots;
                         fillInventorySlots(
                             itemComponent,
@@ -219,9 +218,9 @@ void InventorySystem::Update() {
                             inventoryComponent,
                             *isItemDraged
                         );
-                    } else if (isSwapable > 0) { ///< Swap one item that we
-                                                 ///< draging to another one in
-                                                 ///< inventory
+                        // Swap one item that we dragging to another one in
+                        // inventory.
+                    } else if (isSwapable > 0) {
                         arch::EntityLocation itemLocation =
                             arch::world.entityLocations[arch::getId(isSwapable)];
                         arch::ItemArchetype* itemArch =
@@ -252,15 +251,16 @@ void InventorySystem::Update() {
                     if (isSwapable == -1) {
                         *isLeftMouseButtonReleased = false;
                         *isItemDraged = -1;
-                    } else if (isSwapable == -2) { ///< Already have 2 or more
-                                                   ///< items in potential
-                                                   ///< inventory slots
+                        // Already have 2 or more items in potential inventory
+                        // slots.
+                    } else if (isSwapable == -2) {
                         *isLeftMouseButtonReleased = false;
                     } else {
                         *isLeftMouseButtonReleased = false;
                         *isItemDraged = isSwapable;
                     }
-                } else { ///< Item drop to the ground
+                    // Item drop to the ground.
+                } else {
                     arch::EntityLocation itemLocation =
                         arch::world.entityLocations[arch::getId(*isItemDraged)];
                     arch::ItemArchetype* itemArch =
@@ -271,8 +271,8 @@ void InventorySystem::Update() {
                         &itemArch->transforms[itemIndex];
                     cm::item* item = &itemArch->items[itemIndex];
                     item->isActor = true;
-
-                    const uint32_t player = 0; ///< REMOVE THIS CRINGE
+                    // Remove this cringe.
+                    const uint32_t player = 0;
                     arch::EntityLocation playerLocation =
                         arch::world.entityLocations[arch::getId(player)];
                     arch::PlayerArchetype* playerArch =
@@ -312,19 +312,15 @@ int InventorySystem::determineSwappableStatusAndSlots(
         const int row = intersectionSlot.y;
         const int column = intersectionSlot.x;
 
-        /// Find left-upper pivot slot inventory
+        // Find left-upper pivot slot inventory.
         int rowBasicOffset = 0;
         int columnBasicOffset = 0;
 
-        /*
-          ===============================================
-          Set as pivot point slot in left upper corner.
-          Need to calculate offset for row and column
-          to change it from center. And need to It is
-          necessary to take into account the offset
-          relative to the center for additional correction
-          ===============================================
-        */
+        // Set as pivot point slot in left upper corner.
+        // Need to calculate offset for row and column
+        // to change it from center. And need to It is
+        // necessary to take into account the offset
+        // relative to the center for additional correction.
         columnBasicOffset = calculateBasicOffset(
             itemWidth,
             inventoryTransformComponent->position[0],
@@ -364,7 +360,8 @@ int InventorySystem::determineSwappableStatusAndSlots(
             potentialOccupiedSlots
         );
     } else {
-        return -3; ///< Return -3 as error code means itemComponent is nullptr
+        // Return -3 as error code means itemComponent is nullptr.
+        return -3;
     }
 }
 
@@ -399,8 +396,9 @@ int InventorySystem::determineSwappableField(
     core::vector<unsigned int>& potentialOccupiedSlots
 ) {
     itemComponent->occupiedSlots.clear();
-    int isSwapable = -1; ///< -1: default value. -2: found two entities in
-                         ///< potential slots. Any other value: swapable.
+    // -1: default value. -2: found two entities in potential slots. Any other
+    // value: swappable.
+    int isSwapable = -1;
     for (int i = 0; i < itemHeight; ++i) {
         for (int j = 0; j < itemWidth; ++j) {
             const unsigned int finalRow = pivotRow + i;
@@ -483,4 +481,4 @@ point2D<int> InventorySystem::determineActualIntersectionSlot(
         (int)(y_delta / (inventorySlotScale * aspectRate))
     };
 }
-} // namespace GLVM::ecs
+} // namespace glvm::ecs

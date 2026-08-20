@@ -1,8 +1,5 @@
-#ifndef ACTOR_COMPONENT_HPP
-#define ACTOR_COMPONENT_HPP
+#pragma once
 
-namespace GLVM::ecs::components {
+namespace glvm::ecs::components {
 struct actor {};
-} // namespace GLVM::ecs::components
-
-#endif
+} // namespace glvm::ecs::components

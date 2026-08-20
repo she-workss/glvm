@@ -1,8 +1,3 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
 #include "glvm/GraphicAPI/Vulkan.hpp"
 
 #include "glvm/ComponentManager.hpp"
@@ -28,7 +23,9 @@
 #include "glvm/ShaderStructs.hpp"
 #include "glvm/Texture.hpp"
 #include "glvm/ThreadPool.hpp"
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
 #include "glvm/UnixApi/WindowWaylandVulkan.hpp"
+#endif
 #include "glvm/Vector.hpp"
 #include "glvm/VertexMath.hpp"
 #include "glvm/VkStructs.hpp"
@@ -45,19 +42,24 @@
 #include <vulkan/vulkan_core.h>
 #include <vulkan/vulkan_wayland.h>
 
-namespace GLVM::core {
-CVulkanRenderer::CVulkanRenderer() {}
+namespace glvm::core {
+CVulkanRenderer::CVulkanRenderer() {
+    imguiOverlay = new ImGuiOverlay(*this);
+}
 
 CVulkanRenderer::~CVulkanRenderer() {
     cleanup();
+    delete imguiOverlay;
+    imguiOverlay = nullptr;
 }
 
 void CVulkanRenderer::draw() {
+    imguiOverlay->newFrame();
     mainRenderDrawFrame();
 }
 
 void CVulkanRenderer::SetViewMatrix(mat4 _viewMatrix) {
-    viewMatrix = _viewMatrix; //
+    viewMatrix = _viewMatrix;
 }
 
 void CVulkanRenderer::SetProjectionMatrix(mat4 _projectionMatrix) {
@@ -148,9 +150,6 @@ void CVulkanRenderer::createTextureImage() {
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
         );
-
-        //			GPUDescriptors[descriptorBindingsConfig[readableTextureDescriptorBindingIndex].globalDescriptorOffset
-        //+ i].GPUImage = new VK_Image;
         *GPUDescriptors
              [descriptorBindingsConfig[readableTextureDescriptorBindingIndex]
                   .globalDescriptorOffset
@@ -169,6 +168,7 @@ void CVulkanRenderer::recreateSwapChain() {
     Window->configureWindow();
 #endif
 
+    imguiOverlay->destroySwapChainResources();
     cleanupSwapChain();
 
     createSwapChain();
@@ -182,6 +182,7 @@ void CVulkanRenderer::recreateSwapChain() {
     createPointLightShadowMapDepthResources();
     createFramebuffers();
     createMainRenderDescriptorSets();
+    imguiOverlay->createSwapChainResources();
 }
 
 void CVulkanRenderer::SetMeshData(
@@ -202,11 +203,6 @@ void CVulkanRenderer::run() {
     descriptorSetBuilder();
     pipelineBuilder();
     renderPassesBuilder();
-    for (int i = 0; i < 20; ++i) {
-        //			std::cout << "descriptor offset: " <<
-        // descriptorBindingsConfig[i].globalDescriptorOffset << std::endl;
-    }
-
     renderThreadPool = new ThreadPool(3);
     startTime = std::chrono::steady_clock::now();
 
@@ -235,7 +231,7 @@ void CVulkanRenderer::initWindow() {
 #endif
 
 #ifdef VK_USE_PLATFORM_XLIB_KHR
-    Window = new GLVM::core::WindowXVulkan();
+    Window = new glvm::core::WindowXVulkan();
     createXlibSurfaceInfo.dpy = Window->GetDisplay();
     createXlibSurfaceInfo.window = Window->GetWindow();
     aspectRate = (float)Window->width / (float)Window->height;
@@ -247,7 +243,7 @@ void CVulkanRenderer::initWindow() {
 #endif
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
-    Window = new GLVM::core::WindowXCBVulkan();
+    Window = new glvm::core::WindowXCBVulkan();
     createXcbSurfaceInfo.window = Window->GetWindow();
     createXcbSurfaceInfo.connection = Window->GetConnection();
     aspectRate = (float)Window->width / (float)Window->height;
@@ -258,7 +254,7 @@ void CVulkanRenderer::initWindow() {
 #endif
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    Window = new GLVM::core::WindowWinVulkan();
+    Window = new glvm::core::WindowWinVulkan();
     createWin32SurfaceInfo.hwnd = Window->GetModernWindowHWND();
     aspectRate = (float)Window->width / (float)Window->height;
 
@@ -346,6 +342,7 @@ void CVulkanRenderer::initVulkan() {
     createMainRenderUniformBuffers();
     createMainRenderDescriptorPool();
     createMainRenderDescriptorSets();
+    imguiOverlay->init();
     vkDebugUtils::setDebugObjectNames(
         device,
         vertexBufferContainer,
@@ -355,10 +352,6 @@ void CVulkanRenderer::initVulkan() {
         fontVertexBufferContainer,
         fontIndexBufferContainer
     );
-    // createCommandBuffers(mainRenderCommandPool,
-    // directionalLightCommandBuffers);
-    // createCommandBuffers(mainRenderCommandPool, spotLightCommandBuffers);
-    // createCommandBuffers(mainRenderCommandPool, pointLightCommandBuffers);
     const uint32_t mainRenderCommandBuffersNumber = 1;
     createCommandBuffers(
         mainRenderCommandPool,
@@ -385,15 +378,6 @@ void CVulkanRenderer::initVulkan() {
         pointLightNumber * 6 * 16,
         VK_COMMAND_BUFFER_LEVEL_SECONDARY
     );
-    // createSyncObjects(directionalLightShadowMapImageAvailableSemaphores,
-    // 				  directionalLightShadowMapRenderFinishedSemaphores,
-    // 				  directionalLightShadowMapInFlightFences);
-    // createSyncObjects(spotLightShadowMapImageAvailableSemaphores,
-    // 				  spotLightShadowMapRenderFinishedSemaphores,
-    // 				  spotLightShadowMapInFlightFences);
-    // createSyncObjects(pointLightShadowMapImageAvailableSemaphores,
-    // 				  pointLightShadowMapRenderFinishedSemaphores,
-    // 				  pointLightShadowMapInFlightFences);
     createSyncObjects(
         imageAvailableSemaphores,
         renderFinishedSemaphores,
@@ -508,6 +492,7 @@ void CVulkanRenderer::cleanupSwapChain() {
 
 void CVulkanRenderer::cleanup() {
     cleanupSwapChain();
+    imguiOverlay->shutdown();
 
     for (unsigned int i = 0, j = 0; i < GPUDescriptors.GetSize(); ++j) {
         if (descriptorBindingsConfig[j].vkType
@@ -655,8 +640,6 @@ void CVulkanRenderer::cleanup() {
     }
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
-        //            vkDestroySemaphore(device, renderFinishedSemaphores[i],
-        //            nullptr);
         vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
         vkDestroyFence(device, inFlightFences[i], nullptr);
     }
@@ -834,8 +817,6 @@ void CVulkanRenderer::pickPhysicalDevice() {
         vkGetPhysicalDeviceProperties(device, &prop);
 
         if (isDeviceSuitable(device)) {
-            // std::cout << prop.deviceType << std::endl;
-            // std::cout << prop.deviceName << std::endl;
             physicalDevice = device;
             break;
         }
@@ -960,6 +941,8 @@ void CVulkanRenderer::createSwapChain() {
 
     swapChainImageFormat = surfaceFormat.format;
     swapChainExtent = extent;
+    Window->width = swapChainExtent.width;
+    Window->height = swapChainExtent.height;
 }
 
 void CVulkanRenderer::createImageViews() {
@@ -1032,7 +1015,6 @@ void CVulkanRenderer::createMainRenderPass() {
         renderPassInfo.dependencyCount =
             renderPassConfigs[j].actualSubpassDependencyNumber;
         renderPassInfo.pDependencies = renderPassConfigs[j].subpassDependencies;
-        //			std::cout << "PIPELINE NUMBER: " << j << std::endl;
         if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPasses[j])
             != VK_SUCCESS) {
             throw std::runtime_error("failed to create render pass!");
@@ -1047,16 +1029,10 @@ void CVulkanRenderer::createDescriptorSetLayout() {
         DescriptorSet& descriptorSet =
             descriptorSetsConfig[descriptorSetCounter];
         std::vector<VkDescriptorSetLayoutBinding> bindings;
-        // std::cout << "NEXT DS" << std::endl;
-        // std::cout << "binding count: " <<
-        // descriptorSet.actualLinkedDescriptorBindingsNumber << std::endl;
         for (u32 j = 0; j < descriptorSet.actualLinkedDescriptorBindingsNumber;
              ++j) {
             u32 currentDescriptorBindingID =
                 descriptorSet.descriptorsBindingsIDs[j];
-            //			u32 currentDescriptorBindingID = j;
-            //				std::cout << "DS ID: " << currentDescriptorBindingID
-            //<< std::endl;
             VkDescriptorSetLayoutBinding modelMatrixUboLayout {};
             modelMatrixUboLayout.binding =
                 descriptorBindingsConfig[currentDescriptorBindingID].binding;
@@ -1078,8 +1054,6 @@ void CVulkanRenderer::createDescriptorSetLayout() {
         layoutInfo.flags = 0;
         layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
         layoutInfo.pBindings = bindings.data();
-        //			std::cout << "NUMBER OF BINDINGS: " <<
-        // static_cast<uint32_t>(bindings.size()) << std::endl;
         if (vkCreateDescriptorSetLayout(
                 device,
                 &layoutInfo,
@@ -1102,7 +1076,6 @@ void CVulkanRenderer::createGraphicsPipeline() {
 
         VkShaderModule vertShaderModule;
         VkShaderModule fragShaderModule;
-        //			std::cout << "shader: " << pipeline.vertShader << std::endl;
         if (pipeline.vertShader != nullptr) {
             std::vector<char> vertShaderCode = readFile(pipeline.vertShader);
             vertShaderModule = createShaderModule(vertShaderCode);
@@ -1167,9 +1140,9 @@ void CVulkanRenderer::createGraphicsPipeline() {
             || graphicsPipelineCounter == SpecificPipeline::SPOT_LIGHT_PIPELINE
             || graphicsPipelineCounter
                 == SpecificPipeline::POINT_LIGHT_PIPELINE;
-        // meshes are CW-wound; main pass keeps outer faces (cull "front"),
+        // Meshes are CW-wound; main pass keeps outer faces (cull "front"),
         // shadow pass keeps far-side faces (cull "back") so objects do not
-        // self-shadow
+        // self-shadow.
         if (isShadowMapPipeline) {
             rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
         } else if (
@@ -1178,7 +1151,7 @@ void CVulkanRenderer::createGraphicsPipeline() {
             rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
         } else {
             // 2D/UI pipelines (HUD, crosshair, fonts, SDF) draw screen-space
-            // quads; culling them makes the sprites disappear
+            // quads; culling them makes the sprites disappear.
             rasterizer.cullMode = VK_CULL_MODE_NONE;
         }
         rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
@@ -1228,16 +1201,12 @@ void CVulkanRenderer::createGraphicsPipeline() {
             static_cast<uint32_t>(dynamicStates.size());
         dynamicState.pDynamicStates = dynamicStates.data();
 
-        /*
-          Need to access inside pipeline and take ID for specific descriptor
-          set, then with that ID we got descriptor set and take it's layout
-        */
+        // Need to access inside pipeline and take ID for specific descriptor
+        // set, then with that ID we got descriptor set and take it's layout.
         unsigned int descriptorLayoutsNumber =
             pipeline.actualLinkedDescriptorSetsNumber;
         core::vector<VkDescriptorSetLayout> descriptorSetLayouts;
         for (unsigned i = 0; i < descriptorLayoutsNumber; ++i) {
-            //				std::cout << "ds inside pipeline: " <<
-            // pipeline.linkedDescriptorSetIDs[i] << std::endl;
             descriptorSetLayouts.Push(
                 descriptorSetsConfig[pipeline.linkedDescriptorSetIDs[i]].setLayout
             );
@@ -1300,7 +1269,7 @@ void CVulkanRenderer::createGraphicsPipeline() {
 }
 
 void CVulkanRenderer::createFramebuffers() {
-    /// Main renderer frame buffers initialization
+    // Main renderer frame buffers initialization.
     swapChainFramebuffers.resize(swapChainImageViews.size());
     for (size_t i = 0; i < swapChainImageViews.size(); ++i) {
         std::vector<VkImageView> mainRenderAttachments;
@@ -1316,7 +1285,7 @@ void CVulkanRenderer::createFramebuffers() {
         );
     }
 
-    /// Directional lights shadow map renderer frame buffers initialization
+    // Directional lights shadow map renderer frame buffers initialization.
     unsigned int directionalLightDescriptorBindingIndex =
         descriptorSetsConfig[DescriptorSetDataLink::MAIN_RENDER_LIGHT_DATA_UBO]
             .descriptorsBindingsIDs[1];
@@ -1340,7 +1309,7 @@ void CVulkanRenderer::createFramebuffers() {
         );
     }
 
-    /// Spot lights shadow map renderer frame buffers initialization
+    // Spot lights shadow map renderer frame buffers initialization.
     unsigned int spotLightDescriptorBindingIndex =
         descriptorSetsConfig[DescriptorSetDataLink::MAIN_RENDER_LIGHT_DATA_UBO]
             .descriptorsBindingsIDs[3];
@@ -1365,7 +1334,7 @@ void CVulkanRenderer::createFramebuffers() {
         );
     }
 
-    /// Point lights shadow map renderer frame buffers initialization
+    // Point lights shadow map renderer frame buffers initialization.
     unsigned int descriptorBindingIndex =
         descriptorSetsConfig[DescriptorSetDataLink::MAIN_RENDER_LIGHT_DATA_UBO]
             .descriptorsBindingsIDs[2];
@@ -1640,8 +1609,6 @@ void CVulkanRenderer::createPointLightShadowMapDepthResources() {
             barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
             barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-            //				barrier.newLayout =
-            // VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             barrier.image = depthImage.image;
@@ -2131,11 +2098,6 @@ void CVulkanRenderer::createIndexBuffer(
     vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
 
-// void CVulkanRenderer::createMemoryArenaBuffers(VkBuffer buffer,
-// VkDeviceMemory deviceMemory, VkDeviceSize, 	) {
-
-// }
-
 void CVulkanRenderer::createMainRenderUniformBuffers() {
     for (unsigned int descriptorSetConfigCounter = 0; descriptorSetConfigCounter
          < DescriptorSetDataLink::DESCRIPTOR_CHUNKS_NUMBER;
@@ -2154,12 +2116,6 @@ void CVulkanRenderer::createMainRenderUniformBuffers() {
                     descriptorBindingsConfig[descriptorBindingIndex].uboChunkSize
                     * descriptorSetsConfig[descriptorSetConfigCounter]
                           .hostDescriptorNumber;
-                // std::cout << "ds binding index: " << descriptorBindingIndex
-                // << std::endl; std::cout << "host ds number: " <<
-                // descriptorSetsConfig[descriptorBindingIndex].hostDescriptorNumber
-                // << std::endl; std::cout << "chunk size: " <<
-                // descriptorBindingsConfig[descriptorBindingIndex].uboChunkSize
-                // << std::endl; std::cout << "MEMORY: " << memory << std::endl;
                 createBuffer(
                     memory,
                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -2215,8 +2171,6 @@ void CVulkanRenderer::allocateDescriptorSets(
     allocInfo.descriptorPool = descriptorPool;
     allocInfo.descriptorSetCount = static_cast<uint32_t>(descriptorSetsNumber);
     allocInfo.pSetLayouts = matrixUboLayouts.data();
-
-    //		descriptorSets.Resize(descriptorSetsNumber);
     if (vkAllocateDescriptorSets(
             device,
             &allocInfo,
@@ -2487,7 +2441,6 @@ void CVulkanRenderer::createBuffer(
 
     i32 result = vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory);
     if (result != VK_SUCCESS) {
-        //			std::cout << "result" << result << std::endl;
         throw std::runtime_error("failed to allocate buffer memory!");
     }
 
@@ -2555,10 +2508,6 @@ uint32_t CVulkanRenderer::findMemoryType(
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
 
     for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-        //            if ((typeFilter & (1 << i)) &&
-        //            (memProperties.memoryTypes[i].propertyFlags & properties)
-        //            == properties && memProperties.memoryTypes[i].heapIndex ==
-        //            0) {
         if ((typeFilter & (1 << i))
             && (memProperties.memoryTypes[i].propertyFlags & properties)
                 == properties) {
@@ -2796,13 +2745,6 @@ void CVulkanRenderer::hudRecordCommandBuffer(
 ) {
     VkCommandBufferBeginInfo beginInfo {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-    // if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-    //     throw std::runtime_error("failed to begin recording command buffer!");
-    // }
-
-    //		CreateEndDebugUtilsLabelEXT(instance, commandBuffer);
-
     VkRenderPassBeginInfo renderPassInfo {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = renderPasses[SpecificPipeline::HUD_PIPELINE];
@@ -2889,10 +2831,6 @@ void CVulkanRenderer::hudRecordCommandBuffer(
     }
 
     vkCmdEndRenderPass(commandBuffer);
-
-    // if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-    //     throw std::runtime_error("failed to record command buffer!");
-    // }
 }
 
 void CVulkanRenderer::uiRecordCommandBuffer(
@@ -2901,11 +2839,6 @@ void CVulkanRenderer::uiRecordCommandBuffer(
 ) {
     VkCommandBufferBeginInfo beginInfo {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-    // if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-    //     throw std::runtime_error("failed to begin recording command buffer!");
-    // }
-
     VkRenderPassBeginInfo renderPassInfo {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = renderPasses[SpecificPipeline::UI_PIPELINE];
@@ -3027,10 +2960,6 @@ void CVulkanRenderer::uiRecordCommandBuffer(
     }
 
     vkCmdEndRenderPass(commandBuffer);
-
-    // if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-    //     throw std::runtime_error("failed to record command buffer!");
-    // }
 }
 
 void CVulkanRenderer::uiIconsRecordCommandBuffer(
@@ -3039,13 +2968,6 @@ void CVulkanRenderer::uiIconsRecordCommandBuffer(
 ) {
     VkCommandBufferBeginInfo beginInfo {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-    // if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-    //     throw std::runtime_error("failed to begin recording command buffer!");
-    // }
-
-    //		CreateEndDebugUtilsLabelEXT(instance, commandBuffer);
-
     VkRenderPassBeginInfo renderPassInfo {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass =
@@ -3154,10 +3076,6 @@ void CVulkanRenderer::uiIconsRecordCommandBuffer(
     }
 
     vkCmdEndRenderPass(commandBuffer);
-
-    // if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-    //     throw std::runtime_error("failed to record command buffer!");
-    // }
 }
 
 void CVulkanRenderer::hudScreenRecordCommandBuffer(
@@ -3166,12 +3084,6 @@ void CVulkanRenderer::hudScreenRecordCommandBuffer(
 ) {
     VkCommandBufferBeginInfo beginInfo {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-    // if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-    //     throw std::runtime_error("failed to begin recording command buffer!");
-    // }
-
-    //		CreateEndDebugUtilsLabelEXT(instance, commandBuffer);
 
     VkRenderPassBeginInfo renderPassInfo {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -3275,13 +3187,6 @@ void CVulkanRenderer::sdfRecordCommandBuffer(
 ) {
     VkCommandBufferBeginInfo beginInfo {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-    // if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-    //     throw std::runtime_error("failed to begin recording command buffer!");
-    // }
-
-    //		CreateEndDebugUtilsLabelEXT(instance, commandBuffer);
-
     VkRenderPassBeginInfo renderPassInfo {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = renderPasses[SpecificPipeline::SDF_PIPELINE];
@@ -3356,12 +3261,6 @@ void CVulkanRenderer::sdfRecordCommandBuffer(
             0,
             VK_INDEX_TYPE_UINT32
         );
-
-        //			unsigned int indicesContainerSize =
-        // aIndices_[uiVertexId].size();
-
-        //			vkCmdDrawIndexed(commandBuffer,
-        // static_cast<uint32_t>(indicesContainerSize), 1, 0, 0, 0);
         vkCmdDrawIndexed(commandBuffer, 3, 1, 0, 0, 0);
     }
 
@@ -3378,13 +3277,6 @@ void CVulkanRenderer::fontRecordCommandBuffer(
 ) {
     VkCommandBufferBeginInfo beginInfo {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-    // if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-    //     throw std::runtime_error("failed to begin recording command buffer!");
-    // }
-
-    //		CreateEndDebugUtilsLabelEXT(instance, commandBuffer);
-
     VkRenderPassBeginInfo renderPassInfo {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = renderPasses[SpecificPipeline::FONT_PIPELINE];
@@ -3392,7 +3284,6 @@ void CVulkanRenderer::fontRecordCommandBuffer(
     renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.renderArea.extent.height = swapChainExtent.height;
     renderPassInfo.renderArea.extent.width = swapChainExtent.width;
-
     std::array<VkClearValue, 2> clearValues {};
     clearValues[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
     clearValues[1].depthStencil = {1.0f, 0};
@@ -3425,13 +3316,12 @@ void CVulkanRenderer::fontRecordCommandBuffer(
     scissor.offset = {0, 0};
     scissor.extent = swapChainExtent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-    //		RenderPlayer player = {};
     for (unsigned int playerCounter = 0; playerCounter < players.GetSize();
          ++playerCounter) {
         player = players[playerCounter];
     }
-    unsigned int currentActorMemoryOffset = 0;
+    unsigned int currentActorMemoryOffset =
+        currentFrame * fontUboDescriptorNumber;
     for (unsigned int i = 0; i < fonts.GetSize(); ++i) {
         RenderFont font = fonts[i];
         vec3 playerTragetDirection = font.position - player.position;
@@ -3545,32 +3435,16 @@ void CVulkanRenderer::fontRecordCommandBuffer(
                 0
             );
         }
-        currentActorMemoryOffset +=
-            currentFrame * fontUboDescriptorNumber + font.font_string.GetSize();
+        currentActorMemoryOffset += font.font_string.GetSize();
     }
-    //		}
-
     vkCmdEndRenderPass(commandBuffer);
-
-    // if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-    //     throw std::runtime_error("failed to record command buffer!");
-    // }
 }
 
 void CVulkanRenderer::recordCommandBuffer(
     VkCommandBuffer& commandBuffer,
     uint32_t imageIndex
 ) {
-    // VkCommandBufferBeginInfo beginInfo{};
-    // beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-    // if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-    //     throw std::runtime_error("failed to begin recording command buffer!");
-    // }
-
-    namespace cm = GLVM::ecs::components;
-    //		vkDebugUtils::CreateEndDebugUtilsLabelEXT(instance, commandBuffer);
-
+    namespace cm = glvm::ecs::components;
     VkRenderPassBeginInfo renderPassInfo {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass =
@@ -3585,10 +3459,9 @@ void CVulkanRenderer::recordCommandBuffer(
     }
 
     std::array<VkClearValue, 2> clearValues {};
+    // Player death screen.
     if (players.GetSize() == 0) {
-        clearValues[0].color = {
-            {0.7f, 0.2f, 0.2f, 1.0f}
-        }; ///< Player death screen
+        clearValues[0].color = {{0.7f, 0.2f, 0.2f, 1.0f}};
     } else {
         clearValues[0].color = {{0.2f, 0.2f, 0.2f, 1.0f}};
     }
@@ -3726,13 +3599,7 @@ void CVulkanRenderer::recordCommandBuffer(
             0
         );
     }
-    //		}
-
     vkCmdEndRenderPass(commandBuffer);
-
-    // if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-    //     throw std::runtime_error("failed to record command buffer!");
-    // }
 }
 
 void CVulkanRenderer::createSyncObjects(
@@ -3869,8 +3736,6 @@ void CVulkanRenderer::updatePointLightShadowMapMatrixUBO(
 
     modelMatrixUBO.model = actors[actor].modelMatrix;
 
-    //		projectionMatrixCubeShadowMap[1][1] *= -1;
-
     modelMatrixUBO.lightSpaceMatrix =
         pointLights[currentLight].pointLightSpaceMatrix[layer];
     modelMatrixUBO.farPlane = 100.0f;
@@ -3916,11 +3781,9 @@ void CVulkanRenderer::updateMatrixUniformBuffer(
     modelMatrixUBO.view = viewMatrix;
     modelMatrixUBO.proj = projectionMatrix;
 
-    /// Start of animation logic
     for (unsigned int j = 0; j < MAX_JOINTS_NUMBER; ++j) {
         modelMatrixUBO.jointMatrices[j] = actors[actor].jointMatrices[j];
     }
-    /// End of animation logic
 
     modelMatrixUBO.ambient = actors[actor].ambient;
     modelMatrixUBO.shininess = actors[actor].shininess;
@@ -4036,29 +3899,18 @@ void CVulkanRenderer::updateViewPositionUniformBuffer(
              ++i) {
             for (int j = 0; j < 4; ++j) {
                 int randomTileIndex = distributionTileIndex(mersenne);
-                //				randomTileIndex = 20;
                 indirectTexture[i][j] = randomTileIndex;
-                // if( print )
-                // 	std::cout << "element: " << i * 4 + j << " value: " <<
-                // indirectTexture[i][j] << std::endl;
-
-                // std::cout << "index: " << i * INDIRECT_TEXTURE_WIDTH * 4 + j
-                // * 4 + 3 << std::endl; lightDataUBO.indirectTexture[i *
-                // INDIRECT_TEXTURE_WIDTH * 4 + j * 4 + 3] = randomTileIndex;
-                //				std::cout << "element: " << i *
-                // INDIRECT_TEXTURE_WIDTH + j << " equal: " <<
-                // lightDataUBO.indirectTexture[i * INDIRECT_TEXTURE_WIDTH + j]
-                //<< std::endl;
             }
         }
     }
     print = false;
-    // if( print == true )
-    // 	print = false;
-
     lightDataUBO.tilesetTilesCount = vec2(TILESET_ROW, TILESET_COLUMN);
     lightDataUBO.tilesRaw = 8;
     lightDataUBO.tilesColumn = 8;
+    lightDataUBO.debugShadowMode =
+        imguiOverlay->showShadowMaps ? (imguiOverlay->shadowMapMode + 1) : 0;
+    lightDataUBO.debugShadowLight = imguiOverlay->shadowMapLight;
+    lightDataUBO.shadowsEnabled = imguiOverlay->shadowsEnabled ? 1 : 0;
     for (int i = 0;
          i < INDIRECT_TEXTURE_HEIGHT * INDIRECT_TEXTURE_WIDTH / 4 + 1;
          ++i) {
@@ -4089,7 +3941,7 @@ void CVulkanRenderer::updateViewPositionUniformBuffer(
 }
 
 void CVulkanRenderer::mainRenderDrawFrame() {
-    namespace cm = GLVM::ecs::components;
+    namespace cm = glvm::ecs::components;
     vkWaitForFences(
         device,
         1,
@@ -4099,10 +3951,9 @@ void CVulkanRenderer::mainRenderDrawFrame() {
     );
 
     uint32_t imageIndex;
-    /* vkAcquireNextImageKHR give index of image that WILL BE SOON available for
-       rendering and signal imageAvailablesemaphore when its so. GraphicsQueue
-       waint for this semaphore bacause we pass it in submitInfo.
-     */
+    // vkAcquireNextImageKHR give index of image that WILL BE SOON available for
+    // rendering and signal imageAvailablesemaphore when its so. GraphicsQueue
+    // waint for this semaphore bacause we pass it in submitInfo.
     VkResult result = vkAcquireNextImageKHR(
         device,
         swapChain,
@@ -4122,14 +3973,8 @@ void CVulkanRenderer::mainRenderDrawFrame() {
     vkResetFences(device, 1, &inFlightFences[currentFrame]);
     vkResetCommandBuffer(
         mainRenderCommandBuffers[currentFrame],
-        /*VkCommandBufferResetFlagBits*/ 0
+        0 // VkCommandBufferResetFlagBits.
     );
-    // directionalLightRecordCoomandBuffer(directionalLightSecondaryCommandBuffers,
-    // currentFrame);
-    // spotLightRecordCommandBuffer(spotLightSecondaryCommandBuffers,
-    // currentFrame);
-    // pointLightRecordCommandBuffer(pointLightSecondaryCommandBuffers,
-    // currentFrame);
 
     auto future1 = renderThreadPool->enqueue([this]() {
         directionalLightRecordCoomandBuffer(
@@ -4230,17 +4075,18 @@ void CVulkanRenderer::mainRenderDrawFrame() {
         );
     }
 
+    imguiOverlay->recordCommandBuffer(
+        mainRenderCommandBuffers[currentFrame],
+        imageIndex
+    );
     hudScreenRecordCommandBuffer(
         mainRenderCommandBuffers[currentFrame],
         imageIndex
     );
-    //		sdfRecordCommandBuffer(mainRenderCommandBuffers[currentFrame],
-    // imageIndex);
 
     VkSubmitInfo submitInfo {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-    /// GraphicsQueue wait for swapchain image when its become available.
+    // GraphicsQueue wait for swapchain image when its become available.
     VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
     VkPipelineStageFlags waitStages[] = {
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
@@ -4288,11 +4134,9 @@ void CVulkanRenderer::mainRenderDrawFrame() {
     }
 
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-    //		currentFrame = 0;
 }
 
 void CVulkanRenderer::directionalLightShadowMapDrawFrame() {
-    namespace cm = GLVM::ecs::components;
     vkWaitForFences(
         device,
         1,
@@ -4310,11 +4154,8 @@ void CVulkanRenderer::directionalLightShadowMapDrawFrame() {
     );
     vkResetCommandBuffer(
         directionalLightCommandBuffers[directionalLightCurrentFrame],
-        /*VkCommandBufferResetFlagBits*/ 0
+        0 // VkCommandBufferResetFlagBits.
     );
-    //        directionalLightRecordCoomandBuffer(directionalLightCommandBuffers[directionalLightCurrentFrame],
-    //        imageIndex);
-
     VkSubmitInfo submitInfo {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -4337,7 +4178,7 @@ void CVulkanRenderer::directionalLightShadowMapDrawFrame() {
 }
 
 void CVulkanRenderer::spotLightShadowMapDrawFrame() {
-    namespace cm = GLVM::ecs::components;
+    namespace cm = glvm::ecs::components;
     vkWaitForFences(
         device,
         1,
@@ -4355,10 +4196,8 @@ void CVulkanRenderer::spotLightShadowMapDrawFrame() {
     );
     vkResetCommandBuffer(
         spotLightCommandBuffers[spotLightCurrentFrame],
-        /*VkCommandBufferResetFlagBits*/ 0
+        0 // VkCommandBufferResetFlagBits.
     );
-    //        spotLightRecordCommandBuffer(spotLightCommandBuffers[spotLightCurrentFrame],
-    //        imageIndex);
 
     VkSubmitInfo submitInfo {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -4381,7 +4220,7 @@ void CVulkanRenderer::spotLightShadowMapDrawFrame() {
 }
 
 void CVulkanRenderer::pointLightShadowMapDrawFrame() {
-    namespace cm = GLVM::ecs::components;
+    namespace cm = glvm::ecs::components;
     vkWaitForFences(
         device,
         1,
@@ -4399,10 +4238,8 @@ void CVulkanRenderer::pointLightShadowMapDrawFrame() {
     );
     vkResetCommandBuffer(
         pointLightCommandBuffers[pointLightCurrentFrame],
-        /*VkCommandBufferResetFlagBits*/ 0
+        0 // VkCommandBufferResetFlagBits.
     );
-    //        pointLightRecordCommandBuffer(pointLightCommandBuffers[pointLightCurrentFrame],
-    //        imageIndex);
 
     VkSubmitInfo submitInfo {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -4453,29 +4290,6 @@ void CVulkanRenderer::directionalLightRecordCoomandBuffer(
                 "failed to begin recording command buffer!"
             );
         }
-
-        // VkClearValue shadowMapClearValues[1];
-        // shadowMapClearValues[0].depthStencil.depth = 1.0f;
-        // shadowMapClearValues[0].depthStencil.stencil = 0;
-
-        // VkRenderPassBeginInfo shadowMapRenderPassInfo{};
-        // shadowMapRenderPassInfo.sType =
-        // VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        // shadowMapRenderPassInfo.pNext = NULL;
-        // shadowMapRenderPassInfo.renderPass =
-        // renderPasses[SpecificPipeline::DIRECTIONAL_LIGHT_PIPELINE];
-        // shadowMapRenderPassInfo.framebuffer =
-        // directionalLightShadowMapFrameBuffers[directionalLightCounter];
-        // shadowMapRenderPassInfo.renderArea.offset.x = 0;
-        // shadowMapRenderPassInfo.renderArea.offset.y = 0;
-        // shadowMapRenderPassInfo.renderArea.extent.width =
-        // swapChainExtent.width;
-        // shadowMapRenderPassInfo.renderArea.extent.height =
-        // swapChainExtent.height; shadowMapRenderPassInfo.clearValueCount = 1;
-        // shadowMapRenderPassInfo.pClearValues = shadowMapClearValues;
-
-        // vkCmdBeginRenderPass(commandBuffer, &shadowMapRenderPassInfo,
-        // VK_SUBPASS_CONTENTS_INLINE);
 
         VkViewport shadowMapViewPort;
         shadowMapViewPort.height = FLAT_SHADOW_MAP_SIZE;
@@ -4560,7 +4374,6 @@ void CVulkanRenderer::directionalLightRecordCoomandBuffer(
         if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
             throw std::runtime_error("failed to record command buffer!");
         }
-        //			vkCmdEndRenderPass(commandBuffer);
     }
 }
 
@@ -4591,31 +4404,6 @@ void CVulkanRenderer::spotLightRecordCommandBuffer(
                 "failed to begin recording command buffer!"
             );
         }
-
-        // VkClearValue spotLightShadowMapClearValues[1];
-        // spotLightShadowMapClearValues[0].depthStencil.depth = 1.0f;
-        // spotLightShadowMapClearValues[0].depthStencil.stencil = 0;
-
-        // VkRenderPassBeginInfo spotLightShadowMapRenderPassInfo{};
-        // spotLightShadowMapRenderPassInfo.sType =
-        // VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        // spotLightShadowMapRenderPassInfo.pNext = NULL;
-        // spotLightShadowMapRenderPassInfo.renderPass =
-        // renderPasses[SpecificPipeline::SPOT_LIGHT_PIPELINE];
-        // spotLightShadowMapRenderPassInfo.framebuffer =
-        // spotLightShadowMapFrameBuffers[spotLightCounter];
-        // spotLightShadowMapRenderPassInfo.renderArea.offset.x = 0;
-        // spotLightShadowMapRenderPassInfo.renderArea.offset.y = 0;
-        // spotLightShadowMapRenderPassInfo.renderArea.extent.width =
-        // swapChainExtent.width;
-        // spotLightShadowMapRenderPassInfo.renderArea.extent.height =
-        // swapChainExtent.height;
-        // spotLightShadowMapRenderPassInfo.clearValueCount = 1;
-        // spotLightShadowMapRenderPassInfo.pClearValues =
-        // spotLightShadowMapClearValues;
-
-        // vkCmdBeginRenderPass(commandBuffer,
-        // &spotLightShadowMapRenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         VkViewport spotLightShadowMapViewPort;
         spotLightShadowMapViewPort.height = FLAT_SHADOW_MAP_SIZE;
@@ -4698,7 +4486,6 @@ void CVulkanRenderer::spotLightRecordCommandBuffer(
         if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
             throw std::runtime_error("failed to record command buffer!");
         }
-        //			vkCmdEndRenderPass(commandBuffer);
     }
 }
 
@@ -4706,53 +4493,14 @@ void CVulkanRenderer::pointLightRecordCommandBuffer(
     std::vector<VkCommandBuffer>& commandBuffers,
     [[maybe_unused]] uint32_t currentFrame
 ) {
-    // 		if ( entityManager->isEntitiesCollectionChanged &&
-    // componentManager->isComponentsCollectionChanged ) {
-
-    // 			core::vector<unsigned int> linkedEntities;
-    // 			for ( unsigned int i = 0; i < linkedEntitiesTemp.GetSize(); ++i
-    // ) { 				unsigned int entity = linkedEntitiesTemp[i];
-    // for ( unsigned int j = 0; j < pointLightEntities.GetSize(); ++j ) {
-    // if ( entity == pointLightEntities[j] ) { 						break;
-    // } else if ( entity != pointLightEntities[j] && j ==
-    // pointLightEntities.GetSize() - 1 ) {
-    // linkedEntities.Push(entity);
-    // 					}
-    // 				}
-    // 			}
-    // //			std::cout << "number of actors: " <<
-    // linkedEntities.GetSize() << std::endl;
-    // 			entitiesCollectionLinked__Trn_Mat_Mes_Act.clear();
-    // 			for ( unsigned int i = 0; i < linkedEntities.GetSize(); ++i )
-    // 				entitiesCollectionLinked__Trn_Mat_Mes_Act.Push(linkedEntities[i]);
-
-    // 			entitiesCollectionLinked__Trn_PoL_Mes_Act.clear();
-    // 			for ( unsigned int i = 0; i < pointLightEntities.GetSize(); ++i
-    // )
-    // entitiesCollectionLinked__Trn_PoL_Mes_Act.Push(pointLightEntities[i]);
-
-    // 			entityManager->isEntitiesCollectionChanged = false;
-    // 			componentManager->isComponentsCollectionChanged = false;
-    // 		}
-
-    // VkDebugUtilsLabelEXT label;
-    // label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
-    // label.color[0] = 0.1;
-    // label.color[0] = 0.7;
-    // label.color[0] = 0.2;
-    // label.color[0] = 1.0;
-    // label.pLabelName = "pointLightShadowMap";
-    // label.pNext = NULL;
-
-    // vkDebugUtils::CreateBeginDebugUtilsLabelEXT(instance, commandBuffers[0],
-    // &label);
     for (uint32_t pointLightCounter = 0;
          pointLightCounter < pointLights.GetSize();
          ++pointLightCounter) {
         uint32_t maxCubeMapLayers = 6;
+        // 6 is a number of cube map layers.
         for (uint32_t cubeMapLayerCounter = 0;
              cubeMapLayerCounter < maxCubeMapLayers;
-             ++cubeMapLayerCounter) { ///< 6 is a number of cube map layers.
+             ++cubeMapLayerCounter) {
             VkCommandBufferInheritanceInfo inheritanceInfo {};
             inheritanceInfo.sType =
                 VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
@@ -4777,32 +4525,6 @@ void CVulkanRenderer::pointLightRecordCommandBuffer(
                 );
             }
 
-            // VkClearValue pointLightShadowMapClearValues[2];
-            // pointLightShadowMapClearValues[0].depthStencil.depth = 1.0f;
-            // pointLightShadowMapClearValues[0].depthStencil.stencil = 0;
-            // pointLightShadowMapClearValues[1].color = {{0.5f, 0.5f,
-            // 0.5f, 1.0f}};
-
-            // VkRenderPassBeginInfo pointLightShadowMapRenderPassInfo{};
-            // pointLightShadowMapRenderPassInfo.sType =
-            // VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            // pointLightShadowMapRenderPassInfo.pNext = NULL;
-            // pointLightShadowMapRenderPassInfo.renderPass =
-            // renderPasses[SpecificPipeline::POINT_LIGHT_PIPELINE];
-            // pointLightShadowMapRenderPassInfo.framebuffer =
-            // pointLightShadowMapFrameBuffers[pointLightCounter][cubeMapLayerCounter];
-            // pointLightShadowMapRenderPassInfo.renderArea.offset.x = 0;
-            // pointLightShadowMapRenderPassInfo.renderArea.offset.y = 0;
-            // pointLightShadowMapRenderPassInfo.renderArea.extent.width =
-            // SHADOW_MAP_SIZE;
-            // pointLightShadowMapRenderPassInfo.renderArea.extent.height =
-            // SHADOW_MAP_SIZE; pointLightShadowMapRenderPassInfo.clearValueCount
-            // = 2; pointLightShadowMapRenderPassInfo.pClearValues =
-            // pointLightShadowMapClearValues;
-
-            // vkCmdBeginRenderPass(commandBuffer,
-            // &pointLightShadowMapRenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
             VkViewport pointLightShadowMapViewPort;
             pointLightShadowMapViewPort.height = SHADOW_MAP_SIZE;
             pointLightShadowMapViewPort.width = SHADOW_MAP_SIZE;
@@ -4825,24 +4547,16 @@ void CVulkanRenderer::pointLightRecordCommandBuffer(
                 pipelineConfigs[SpecificPipeline::POINT_LIGHT_PIPELINE].pipeline
             );
 
-            //				unsigned int pointLightEntity =
-            // entitiesCollectionLinked__Trn_PoL_Mes_Act[pointLightCounter];
-
             uint32_t actorsNumber = actors.GetSize();
             for (unsigned int actorCounter = 0; actorCounter < actorsNumber;
                  ++actorCounter) {
-                //					unsigned int meshOwnerEntity =
-                // entitiesCollectionLinked__Trn_Mat_Mes_Act[actorCounter];
                 RenderActor actor = actors[actorCounter];
                 unsigned int meshID = actor.meshID;
 
                 unsigned int uboIndex = pointLightNumber * actorsNumber
                         * maxCubeMapLayers * pointLightCurrentFrame
-                    + ///< Choose frame (first 168 or second 168)
-                    actorsNumber * maxCubeMapLayers * pointLightCounter
-                    + ///< Choose point light (i)
-                    maxCubeMapLayers * actorCounter
-                    + cubeMapLayerCounter; ///< Choose actor (m) and layer (j)
+                    + actorsNumber * maxCubeMapLayers * pointLightCounter
+                    + maxCubeMapLayers * actorCounter + cubeMapLayerCounter;
 
                 updatePointLightShadowMapMatrixUBO(
                     uboIndex,
@@ -4899,7 +4613,6 @@ void CVulkanRenderer::pointLightRecordCommandBuffer(
             if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
                 throw std::runtime_error("failed to record command buffer!");
             }
-            //				vkCmdEndRenderPass(commandBuffer);
         }
     }
 }
@@ -4941,8 +4654,6 @@ VkPresentModeKHR CVulkanRenderer::chooseSwapPresentMode(
     for (const auto& availablePresentMode : availablePresentModes) {
         if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR
             || availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR) {
-            //			if (availablePresentMode == VK_PRESENT_MODE_FIFO_KHR) {
-            //				std::cout << "present mode found!" << std::endl;
             return availablePresentMode;
         }
     }
@@ -5199,7 +4910,6 @@ VkDescriptorImageInfo CVulkanRenderer::createDescriptorImageInfo(
     VkSampler textureSampler
 ) {
     VkDescriptorImageInfo imageInfo {};
-    //		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     imageInfo.imageLayout = layout;
     imageInfo.imageView = textureImage.views[textureViewIndex];
     imageInfo.sampler = textureSampler;
@@ -5231,18 +4941,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL CVulkanRenderer::debugCallback(
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
     [[maybe_unused]] void* pUserData
 ) {
-    // (void) messageSeverity;
-    // (void) messageType;
-    // (void) pUserData;
-    // if ( pCallbackData->messageIdNumber == 941228658 ) {
-    // 	[[maybe_unused]] int i = 0;
-    // }
-
-    // std::cout << "Error code: " << pCallbackData->messageIdNumber <<
-    // std::endl; std::cout << "Message name:: " <<
-    // pCallbackData->pMessageIdName << std::endl;
     std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 
     return VK_FALSE;
 }
-} // namespace GLVM::core
+} // namespace glvm::core

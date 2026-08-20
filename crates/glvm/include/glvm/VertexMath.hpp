@@ -1,10 +1,4 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef VERTEX_MATH
-#define VERTEX_MATH
+#pragma once
 
 #include <cmath>
 #include <iostream>
@@ -50,8 +44,6 @@ public:
     Matrix(T arg = 0) {
         for (int i = 0; i < var; ++i) {
             m_matrix[i][i] = arg;
-            // if(i == (var-1))
-            // 	m_matrix[i][i] = 1;
         }
     }
 
@@ -221,8 +213,8 @@ public:
     Vector<T2, dim> operator*(const Matrix<T, dim2>& matrix);
     Vector<T2, dim> operator*(const Vector<T2, dim>& _vector);
     Vector<T2, dim> operator*=(const Vector<T2, dim>& _vector);
-    Vector<T2, dim> operator-(const Vector<T2, dim>& _vector);
-    Vector<T2, dim> operator+(const Vector<T2, dim>& _vector);
+    Vector<T2, dim> operator-(const Vector<T2, dim>& _vector) const;
+    Vector<T2, dim> operator+(const Vector<T2, dim>& _vector) const;
     void operator-=(const Vector<T2, dim>& _vector);
     void operator+=(const Vector<T2, dim>& _vector);
     Vector<T2, dim> operator*(const T2& _scalar);
@@ -306,7 +298,9 @@ Vector<T2, var2> Vector<T2, var2>::operator*=(const Vector<T2, var2>& _vector) {
 }
 
 template<typename T2, int var2>
-Vector<T2, var2> Vector<T2, var2>::operator-(const Vector<T2, var2>& _vector) {
+Vector<T2, var2> Vector<T2, var2>::operator-(
+    const Vector<T2, var2>& _vector
+) const {
     Vector<T2, var2> temp_Vector(1);
 
     temp_Vector[0] = m_vector[0] - _vector[0];
@@ -317,7 +311,9 @@ Vector<T2, var2> Vector<T2, var2>::operator-(const Vector<T2, var2>& _vector) {
 }
 
 template<typename T2, int var2>
-Vector<T2, var2> Vector<T2, var2>::operator+(const Vector<T2, var2>& _vector) {
+Vector<T2, var2> Vector<T2, var2>::operator+(
+    const Vector<T2, var2>& _vector
+) const {
     Vector<T2, var2> temp_Vector(1);
 
     temp_Vector[0] = m_vector[0] + _vector[0];
@@ -361,28 +357,6 @@ Vector<T2, var2> operator*(const Vector<T2, var2>& vector, const T2 _scalar) {
 
     return temp;
 }
-
-// template <typename T, int size, int row, int col>
-// Matrix<T, size - 1> matrix_minor( Matrix<T, size> matrix ) {
-// 	Matrix<T, size - 1> minor(0.0f);
-// 	unsigned int minor_row = 0;
-// 	unsigned int minor_col = 0;
-
-// 	for ( unsigned int i = 0; i < size; ++i ) {
-// 		if ( i == row )
-// 			continue;
-// 		for ( unsigned int j = 0; j < size; ++j ) {
-// 			if ( j == col )
-// 				continue;
-
-// 			minor[minor_row][minor_col] = matrix[i][j];
-// 			++minor_col;
-// 		}
-// 		++minor_row;
-// 	}
-
-// 	return minor;
-// }
 
 template<typename T>
 T determinant_2x2(Matrix<T, 2> matrix) {
@@ -482,7 +456,6 @@ Matrix<T, 4> inverse_matrix_4x4(Matrix<T, 4> matrix) {
     remove_1row_1col[2][0] = matrix[3][1];
     remove_1row_1col[2][1] = matrix[3][2];
     remove_1row_1col[2][2] = matrix[3][3];
-
     Matrix<T, 3> remove_1row_2col(0.0f);
     remove_1row_2col[0][0] = matrix[1][0];
     remove_1row_2col[0][1] = matrix[1][2];
@@ -493,7 +466,6 @@ Matrix<T, 4> inverse_matrix_4x4(Matrix<T, 4> matrix) {
     remove_1row_2col[2][0] = matrix[3][0];
     remove_1row_2col[2][1] = matrix[3][2];
     remove_1row_2col[2][2] = matrix[3][3];
-
     Matrix<T, 3> remove_1row_3col(0.0f);
     remove_1row_3col[0][0] = matrix[1][0];
     remove_1row_3col[0][1] = matrix[1][1];
@@ -504,7 +476,6 @@ Matrix<T, 4> inverse_matrix_4x4(Matrix<T, 4> matrix) {
     remove_1row_3col[2][0] = matrix[3][0];
     remove_1row_3col[2][1] = matrix[3][1];
     remove_1row_3col[2][2] = matrix[3][3];
-
     Matrix<T, 3> remove_1row_4col(0.0f);
     remove_1row_4col[0][0] = matrix[1][0];
     remove_1row_4col[0][1] = matrix[1][1];
@@ -515,7 +486,6 @@ Matrix<T, 4> inverse_matrix_4x4(Matrix<T, 4> matrix) {
     remove_1row_4col[2][0] = matrix[3][0];
     remove_1row_4col[2][1] = matrix[3][1];
     remove_1row_4col[2][2] = matrix[3][2];
-
     Matrix<T, 3> remove_2row_1col(0.0f);
     remove_2row_1col[0][0] = matrix[0][1];
     remove_2row_1col[0][1] = matrix[0][2];
@@ -526,7 +496,6 @@ Matrix<T, 4> inverse_matrix_4x4(Matrix<T, 4> matrix) {
     remove_2row_1col[2][0] = matrix[3][1];
     remove_2row_1col[2][1] = matrix[3][2];
     remove_2row_1col[2][2] = matrix[3][3];
-
     Matrix<T, 3> remove_2row_2col(0.0f);
     remove_2row_2col[0][0] = matrix[0][0];
     remove_2row_2col[0][1] = matrix[0][2];
@@ -537,7 +506,6 @@ Matrix<T, 4> inverse_matrix_4x4(Matrix<T, 4> matrix) {
     remove_2row_2col[2][0] = matrix[3][0];
     remove_2row_2col[2][1] = matrix[3][2];
     remove_2row_2col[2][2] = matrix[3][3];
-
     Matrix<T, 3> remove_2row_3col(0.0f);
     remove_2row_3col[0][0] = matrix[0][0];
     remove_2row_3col[0][1] = matrix[0][1];
@@ -548,7 +516,6 @@ Matrix<T, 4> inverse_matrix_4x4(Matrix<T, 4> matrix) {
     remove_2row_3col[2][0] = matrix[3][0];
     remove_2row_3col[2][1] = matrix[3][1];
     remove_2row_3col[2][2] = matrix[3][3];
-
     Matrix<T, 3> remove_2row_4col(0.0f);
     remove_2row_4col[0][0] = matrix[0][0];
     remove_2row_4col[0][1] = matrix[0][1];
@@ -559,7 +526,6 @@ Matrix<T, 4> inverse_matrix_4x4(Matrix<T, 4> matrix) {
     remove_2row_4col[2][0] = matrix[3][0];
     remove_2row_4col[2][1] = matrix[3][1];
     remove_2row_4col[2][2] = matrix[3][2];
-
     Matrix<T, 3> remove_3row_1col(0.0f);
     remove_3row_1col[0][0] = matrix[0][1];
     remove_3row_1col[0][1] = matrix[0][2];
@@ -570,7 +536,6 @@ Matrix<T, 4> inverse_matrix_4x4(Matrix<T, 4> matrix) {
     remove_3row_1col[2][0] = matrix[3][1];
     remove_3row_1col[2][1] = matrix[3][2];
     remove_3row_1col[2][2] = matrix[3][3];
-
     Matrix<T, 3> remove_3row_2col(0.0f);
     remove_3row_2col[0][0] = matrix[0][0];
     remove_3row_2col[0][1] = matrix[0][2];
@@ -581,7 +546,6 @@ Matrix<T, 4> inverse_matrix_4x4(Matrix<T, 4> matrix) {
     remove_3row_2col[2][0] = matrix[3][0];
     remove_3row_2col[2][1] = matrix[3][2];
     remove_3row_2col[2][2] = matrix[3][3];
-
     Matrix<T, 3> remove_3row_3col(0.0f);
     remove_3row_3col[0][0] = matrix[0][0];
     remove_3row_3col[0][1] = matrix[0][1];
@@ -592,7 +556,6 @@ Matrix<T, 4> inverse_matrix_4x4(Matrix<T, 4> matrix) {
     remove_3row_3col[2][0] = matrix[3][0];
     remove_3row_3col[2][1] = matrix[3][1];
     remove_3row_3col[2][2] = matrix[3][3];
-
     Matrix<T, 3> remove_3row_4col(0.0f);
     remove_3row_4col[0][0] = matrix[0][0];
     remove_3row_4col[0][1] = matrix[0][1];
@@ -603,7 +566,6 @@ Matrix<T, 4> inverse_matrix_4x4(Matrix<T, 4> matrix) {
     remove_3row_4col[2][0] = matrix[3][0];
     remove_3row_4col[2][1] = matrix[3][1];
     remove_3row_4col[2][2] = matrix[3][2];
-
     Matrix<T, 3> remove_4row_1col(0.0f);
     remove_4row_1col[0][0] = matrix[0][1];
     remove_4row_1col[0][1] = matrix[0][2];
@@ -614,7 +576,6 @@ Matrix<T, 4> inverse_matrix_4x4(Matrix<T, 4> matrix) {
     remove_4row_1col[2][0] = matrix[2][1];
     remove_4row_1col[2][1] = matrix[2][2];
     remove_4row_1col[2][2] = matrix[2][3];
-
     Matrix<T, 3> remove_4row_2col(0.0f);
     remove_4row_2col[0][0] = matrix[0][0];
     remove_4row_2col[0][1] = matrix[0][2];
@@ -625,7 +586,6 @@ Matrix<T, 4> inverse_matrix_4x4(Matrix<T, 4> matrix) {
     remove_4row_2col[2][0] = matrix[2][0];
     remove_4row_2col[2][1] = matrix[2][2];
     remove_4row_2col[2][2] = matrix[2][3];
-
     Matrix<T, 3> remove_4row_3col(0.0f);
     remove_4row_3col[0][0] = matrix[0][0];
     remove_4row_3col[0][1] = matrix[0][1];
@@ -636,7 +596,6 @@ Matrix<T, 4> inverse_matrix_4x4(Matrix<T, 4> matrix) {
     remove_4row_3col[2][0] = matrix[2][0];
     remove_4row_3col[2][1] = matrix[2][1];
     remove_4row_3col[2][2] = matrix[2][3];
-
     Matrix<T, 3> remove_4row_4col(0.0f);
     remove_4row_4col[0][0] = matrix[0][0];
     remove_4row_4col[0][1] = matrix[0][1];
@@ -647,7 +606,6 @@ Matrix<T, 4> inverse_matrix_4x4(Matrix<T, 4> matrix) {
     remove_4row_4col[2][0] = matrix[2][0];
     remove_4row_4col[2][1] = matrix[2][1];
     remove_4row_4col[2][2] = matrix[2][2];
-
     Matrix<T, 4> matrix_of_minors(0.0f);
     matrix_of_minors[0][0] = determinant_3x3<T>(remove_1row_1col);
     matrix_of_minors[0][1] = determinant_3x3<T>(remove_1row_2col);
@@ -664,10 +622,8 @@ Matrix<T, 4> inverse_matrix_4x4(Matrix<T, 4> matrix) {
     matrix_of_minors[3][0] = determinant_3x3<T>(remove_4row_1col);
     matrix_of_minors[3][1] = determinant_3x3<T>(remove_4row_2col);
     matrix_of_minors[3][2] = determinant_3x3<T>(remove_4row_3col);
-    //	std::cout << "3 2: " << determinant_3x3<T>(remove_4row_3col) << std::endl;
     matrix_of_minors[3][3] = determinant_3x3<T>(remove_4row_4col);
-
-    // Compute matrix of cofactors
+    // Compute matrix of cofactors.
     Matrix<T, 4> matrix_of_cofactors(0.0f);
     for (unsigned int i = 0; i < 4; ++i) {
         for (unsigned int j = 0; j < 4; ++j) {
@@ -678,16 +634,13 @@ Matrix<T, 4> inverse_matrix_4x4(Matrix<T, 4> matrix) {
             }
         }
     }
-
-    // Compute adjoint matrix
+    // Compute adjoint matrix.
     Matrix<T, 4> adjoint_matrix(0.0f);
     adjoint_matrix = matrix_of_cofactors;
     adjoint_matrix.SelfTensorTranspose();
-
     T determinant_of_basic_matrix = determinant_4x4<T>(matrix);
     Matrix<T, 4> inverse_matrix(0.0f);
     inverse_matrix = adjoint_matrix * (1 / determinant_of_basic_matrix);
-
     return inverse_matrix;
 }
 
@@ -708,14 +661,9 @@ template<class T, class T2, int var, int var2>
 Matrix<T, var> Translate(Matrix<T, var> matrix, Vector<T2, var2> vector) {
     Matrix<T, var> tempMatrix(1.0f);
     tempMatrix = matrix;
-
-    // for(int i = 0; i < var; ++i)
-    // 	tempMatrix[i][var-1] += vector[i];
-
     for (int i = 0; i < var; ++i) {
         tempMatrix[var - 1][i] += vector[i];
     }
-
     return tempMatrix;
 }
 
@@ -745,56 +693,6 @@ Matrix<T, var> RotateZ(Matrix<T, var> matrix, float angle) {
 
     return tempMatrix2;
 }
-
-// template <typename T, int size>
-// T Deteminant(Matrix<T, size> _matrix)
-// {
-//     if(size <= 1)
-//         return;
-//     int iDeterminant = 0;
-//     int iSign = 1;
-
-//     Matrix<T, (size - 1)> _temp_Matrix;
-
-//     for(int i = 0; i < size; ++i)
-//     {
-//         if(i % 2 == 1)
-//             iSign = -1;
-//         else
-//             iSign = 1;
-
-//         if(size == 2)
-//             return (_matrix[0][i] *iSign) * (_matrix[0][0] * _matrix[1][1] -
-//             _matrix[0][1] * _matrix[1][0]);
-
-//         for(int j = 0; j < (size - 1); ++j)
-//         {
-//             if(j == i)
-//                 continue;
-//             for(int x = 0; x < (size - 1); ++x)
-//             {
-//                 if(x == i)
-//                     continue;
-
-//                 _temp_Matrix = _matrix[j][x];
-//             }
-//         }
-
-//         iDeterminant = (_matrix[0][i] * iSign) * iDeterminant(_temp_Matrix);
-//     }
-
-//     return iDeterminant;
-// }
-
-// template <typename T>
-// Vector<T, 3> Cross(Vector<T, 3> _vector1, Vector<T, 3> _vector2)
-// {
-//     return Vector<T, 3>(_vector1[1] * _vector2[2] - _vector1[2] *
-//     _vector2[1],
-//                            _vector1[2] * _vector2[0] - _vector1[0] *
-//                            _vector2[2], _vector1[0] * _vector2[1] -
-//                            _vector1[1] * _vector2[0]);
-// }
 
 template<typename T>
 Vector<T, 3> Cross(const Vector<T, 3>& _vector1, const Vector<T, 3>& _vector2) {
@@ -844,36 +742,6 @@ Vector<T, 3> Normalize(Vector<T, 3> _vector) {
 
     return _vector;
 }
-
-// template <typename T>
-// Matrix<T, 4> LookAtRH(Vector<T, 3> _eye, Vector<T, 3> _target, Vector<T, 3>
-// _up)
-// {
-//     Vector<T, 3> z_axis = Normalize(_eye - _target);
-//     Vector<T, 3> x_axis = Normalize(Cross(_up, z_axis));
-//     Vector<T, 3> y_axis = Cross(z_axis, x_axis);
-
-//     Matrix<T, 4> tOrientation(Vector<T, 4>(x_axis[0], y_axis[0], z_axis[0],
-//     0),
-//                               Vector<T, 4>(x_axis[1], y_axis[1], z_axis[1],
-//                               0), Vector<T, 4>(x_axis[2], y_axis[2],
-//                               z_axis[2], 0), Vector<T, 4>(0, 0, 0, 1));
-
-//     Matrix<T, 4> tTranslation(Vector<T, 4>(1, 0, 0 ,0),
-//                               Vector<T, 4>(0, 1, 0, 0),
-//                               Vector<T, 4>(0, 0, 1, 0),
-//                               Vector<T, 4>(-_eye[0], -_eye[1], -_eye[2], 1));
-
-//     return (tOrientation * tTranslation);
-
-//     // Matrix<T, 4> tView(Vector<T, 4>(x_axis[0], y_axis[0], z_axis[0], 0),
-//     //                    Vector<T, 4>(x_axis[1], y_axis[1], z_axis[1], 0),
-//     //                    Vector<T, 4>(x_axis[2], y_axis[2], z_axis[2], 0),
-//     //                    Vector<T, 4>(-Dot(x_axis, _eye), -Dot(y_axis,
-//     _eye), -Dot(z_axis, _eye), 1));
-
-//     // return tView;
-// }
 
 template<typename T>
 Matrix<T, 4> GLVM_perspectiveRH_ZO(T fov, T aspect, T near_plane, T far_plane) {
@@ -932,8 +800,6 @@ Matrix<T, 4> lookAtRH(Vector<T, 3> _eye, Vector<T, 3> _center, Vector<T, 3> _up)
     Result[3][0] = -Dot(s, _eye);
     Result[3][1] = -Dot(u, _eye);
     Result[3][2] = Dot(f, _eye);
-    //    Result.SelfTensorTranspose();
-
     return Result;
 }
 
@@ -974,8 +840,6 @@ Matrix<T, 4> LookAtMain(
 
 template<typename T>
 Matrix<T, 4> FPSview(Vector<T, 3> _eye, Vector<T, 3> _center, Vector<T, 3> _up) {
-    //    _center.m_vector[1] = _eye.m_vector[1];
-
     Vector<T, 3> f(Normalize(_center - _eye));
     Vector<T, 3> s(Normalize(Cross(f, _up)));
     Vector<T, 3> u(Cross(s, f));
@@ -993,8 +857,6 @@ Matrix<T, 4> FPSview(Vector<T, 3> _eye, Vector<T, 3> _center, Vector<T, 3> _up) 
     Result[3][0] = -Dot(s, _eye);
     Result[3][1] = -Dot(u, _eye);
     Result[3][2] = Dot(f, _eye);
-    //    Result.SelfTensorTranspose();
-
     return Result;
 }
 
@@ -1045,12 +907,8 @@ Matrix<T, 4> FPS_View_RH(Vector<T, 3> _eye, float _pitch, float _yaw) {
 template<class T, int var, int vec_size>
 Matrix<T, var> Rotate(Vector<T, vec_size> vector, float angle) {
     vector = (Normalize(vector));
-
-    //	angle *= PI / 180;
     Matrix<T, var> tempMatrix(1.0f);
-
-    /// Transposed rotate matrix.
-
+    // Transposed rotate matrix.
     tempMatrix[0][0] = std::cos(angle)
         + (vector[0] * vector[0]) * (static_cast<T>(1) - std::cos(angle));
     tempMatrix[1][0] =
@@ -1082,52 +940,6 @@ Matrix<T, var> Rotate(Vector<T, vec_size> vector, float angle) {
     tempMatrix[1][3] = static_cast<T>(0);
     tempMatrix[2][3] = static_cast<T>(0);
     tempMatrix[3][3] = static_cast<T>(1);
-
-    /// Normal rotate matrix.
-
-    // tempMatrix[0][0] = std::cos(angle) + (vector[0] * vector[0]) *
-    // (static_cast<T>(1) - std::cos(angle)); tempMatrix[0][1] = vector[0] *
-    // vector[1] * (static_cast<T>(1) - std::cos(angle)) - vector[2] *
-    // std::sin(angle); tempMatrix[0][2] = vector[0] * vector[2] *
-    // (static_cast<T>(1) - std::cos(angle)) + vector[1] * std::sin(angle);
-    // tempMatrix[0][3] = static_cast<T>(0);
-    // tempMatrix[1][0] = vector[1] * vector[0] * (static_cast<T>(1) -
-    // std::cos(angle)) + vector[2] * std::sin(angle); tempMatrix[1][1] =
-    // std::cos(angle) + (vector[1] * vector[1]) * (static_cast<T>(1) -
-    // std::cos(angle)); tempMatrix[1][2] = vector[1] * vector[2] *
-    // (static_cast<T>(1) - std::cos(angle)) - vector[0] * std::sin(angle);
-    // tempMatrix[1][3] = static_cast<T>(0);
-    // tempMatrix[2][0] = vector[2] * vector[0] * (static_cast<T>(1) -
-    // std::cos(angle)) - vector[1] * std::sin(angle); tempMatrix[2][1] =
-    // vector[2] * vector[1] * (static_cast<T>(1) - std::cos(angle)) + vector[0]
-    // * std::sin(angle); tempMatrix[2][2] = std::cos(angle) + (vector[2] *
-    // vector[2]) * (static_cast<T>(1) - std::cos(angle)); tempMatrix[2][3] =
-    // static_cast<T>(0); tempMatrix[3][0] = static_cast<T>(0); tempMatrix[3][1]
-    // = static_cast<T>(0); tempMatrix[3][2] = static_cast<T>(0);
-    // tempMatrix[3][3] = static_cast<T>(1);
-
-    // tempMatrix[0][0] = std::cos(angle) + (vector[0] * vector[0]) * (1 -
-    // std::cos(angle)); tempMatrix[0][1] = vector[0] * vector[1] * (1 -
-    // std::cos(angle)) - vector[2] * std::sin(angle); tempMatrix[0][2] =
-    // vector[0] * vector[2] * (1 - std::cos(angle)) + vector[1] *
-    // std::sin(angle); tempMatrix[0][3] = 0; tempMatrix[1][0] = vector[1] *
-    // vector[0] * (1 - std::cos(angle)) + vector[2] * std::sin(angle);
-    // tempMatrix[1][1] = std::cos(angle) + (vector[1] * vector[1]) * (1 -
-    // std::cos(angle)); tempMatrix[1][2] = vector[1] * vector[2] * (1 -
-    // std::cos(angle)) - vector[0] * std::sin(angle); tempMatrix[1][3] = 0;
-    // tempMatrix[2][0] = vector[2] * vector[0] * (1 - std::cos(angle)) -
-    // vector[1] * std::sin(angle); tempMatrix[2][1] = vector[2] * vector[1] *
-    // (1 - std::cos(angle)) + vector[0] * std::sin(angle); tempMatrix[2][2] =
-    // std::cos(angle) + (vector[2] * vector[2]) * (1 - std::cos(angle));
-    // tempMatrix[2][3] = 0;
-    // tempMatrix[3][0] = 0;
-    // tempMatrix[3][1] = 0;
-    // tempMatrix[3][2] = 0;
-    // tempMatrix[3][3] = 1;
-
-    // Matrix<float, 4> model_mat(1.0f);
-    // model_mat = matrix * tempMatrix;
-
     return tempMatrix;
 }
 
@@ -1231,13 +1043,6 @@ Matrix<T, var> Perspective(
 #else
     return perspectiveRH_ZO(fov, aspect, near_plane, far_plane);
 #endif
-    // float S = std::tan((fov/2)*(PI/360));
-    // Matrix<float, var> tempMatrix;
-    // tempMatrix[0][0] = 1/((1280.0f/1280.0f)*S);
-    // tempMatrix[1][1] = 1/S;
-    // tempMatrix[2][2] = -((f+n)/(f-n));
-    // tempMatrix[2][3] = -((2*f*n)/(f-n));
-    // tempMatrix[3][2] = -1;
 }
 
 constexpr float Max(float var1, float var2) {
@@ -1395,5 +1200,3 @@ Matrix<T, var> rotateQuaternion(Quaternion quaternion) {
 
     return result;
 }
-
-#endif

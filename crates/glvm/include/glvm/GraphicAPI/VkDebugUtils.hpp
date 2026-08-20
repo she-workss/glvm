@@ -1,5 +1,4 @@
-#ifndef VK_DEBUG_UTILS
-#define VK_DEBUG_UTILS
+#pragma once
 
 #include "glvm/GraphicAPI/RenderConfig.hpp"
 #include "glvm/ToString.hpp"
@@ -7,7 +6,7 @@
 
 #include <string>
 
-namespace GLVM::core::vkDebugUtils {
+namespace glvm::core::vkDebugUtils {
 VkResult CreateDebugUtilsMessengerEXT(
     VkInstance instance,
     const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
@@ -52,11 +51,9 @@ void setDebugObjectNames(
     VkDevice device,
     const std::vector<VkBuffer>& vertexBufferContainer,
     const std::vector<VkBuffer>& indexBufferContainer,
-    const GLVM::core::vector<Descriptor>& GPUDescriptors,
+    const glvm::core::vector<Descriptor>& GPUDescriptors,
     const std::vector<unsigned int>& fontIndicesContainer,
     const std::vector<VkBuffer>& fontVertexBufferContainer,
     const std::vector<VkBuffer>& fontIndexBufferContainer
 );
-}; // namespace GLVM::core::vkDebugUtils
-
-#endif
+}; // namespace glvm::core::vkDebugUtils

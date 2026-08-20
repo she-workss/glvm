@@ -4,77 +4,80 @@ constexpr float kWidth_Offset = 1.0f / 3;
 float aVertices[kVertex_Size] = {
     -0.5f,
     -0.5f,
-    0.5f, ///< Left vertex
+    0.5f, // Left vertex.
     -0.5f,
     0.5f,
-    0.0f, ///< Right vertex
+    0.0f, // Right vertex.
     0.0f,
     0.0f,
-    0.0f ///< Upper vertex
+    0.0f // Upper vertex.
 };
 
 float aVertices2[kVertex_Size] = {
     0.5f,
     -0.5f,
-    -0.5f, ///< Left vertex
+    // Left vertex.
+    -0.5f,
     0.5f,
     0.5f,
-    0.5f, ///< Right vertex
+    // Right vertex.
+    0.5f,
     0.0f,
     0.0f,
-    -1.0f ///< Upper vertex
+    // Upper vertex.
+    -1.0f
 };
 
 float aVertices_Static_Object[] = {
-    // координаты        // текстурные координаты
-    0.5f,  0.5f,  0.0f, 1.0f, 1.0f, // верхняя правая вершина
-    0.5f,  -0.5f, 0.0f, 1.0f, 0.0f, // нижняя правая вершина
-    -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, // нижняя левая вершина
-    -0.5f, 0.5f,  0.0f, 0.0f, 1.0f, // верхняя левая вершина
+    // Coordinates.
+    0.5f,  0.5f,  0.0f, 1.0f, 1.0f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, 1.0f, 0.0f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, 0.0f, 1.0f, // Up left vertex.
     0.5f,  0.5f,  0.0f, 1.0f, 1.0f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f
 };
 
 float vertices[] = {
-    // координаты        // текстурные координаты
-    0.5f,  0.5f,  0.0f, kWidth_Offset, 1.0f, // верхняя правая вершина
-    0.5f,  -0.5f, 0.0f, kWidth_Offset, 0.75f, // нижняя правая вершина
-    -0.5f, -0.5f, 0.0f, 0.0f,          0.75f, // нижняя левая вершина
-    -0.5f, 0.5f,  0.0f, 0.0f,          1.0f, // верхняя левая вершина
+    // Coordinates.
+    0.5f,  0.5f,  0.0f, kWidth_Offset, 1.0f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, kWidth_Offset, 0.75f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, 0.0f,          0.75f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, 0.0f,          1.0f, // Up left vertex.
     0.5f,  0.5f,  0.0f, kWidth_Offset, 1.0f,  -0.5f, -0.5f, 0.0f, 0.0f, 0.75f
 };
 
 float vertices2[] = {
-    // координаты        // текстурные координаты
-    0.5f,  0.5f,  0.0f, kWidth_Offset * 2, 1.0f, // верхняя правая вершина
-    0.5f,  -0.5f, 0.0f, kWidth_Offset * 2, 0.75f, // нижняя правая вершина
-    -0.5f, -0.5f, 0.0f, kWidth_Offset,     0.75f, // нижняя левая вершина
-    -0.5f, 0.5f,  0.0f, kWidth_Offset,     1.0f, // верхняя левая вершина
+    // Coordinates.
+    0.5f,  0.5f,  0.0f, kWidth_Offset * 2, 1.0f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, kWidth_Offset * 2, 0.75f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, kWidth_Offset,     0.75f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, kWidth_Offset,     1.0f, // Up left vertex.
     0.5f,  0.5f,  0.0f, kWidth_Offset * 2, 1.0f,
     -0.5f, -0.5f, 0.0f, kWidth_Offset,     0.75f
 };
 
 float vertices3[] = {
-    // координаты        // текстурные координаты
+    // Coordinates.
     0.5f,
     0.5f,
     0.0f,
     1.0f,
-    1.0f, // верхняя правая вершина
+    1.0f, // Up right vertex.
     0.5f,
     -0.5f,
     0.0f,
     1.0f,
-    0.75f, // нижняя правая вершина
+    0.75f, // Bottom right vertex.
     -0.5f,
     -0.5f,
     0.0f,
     kWidth_Offset * 2,
-    0.75f, // нижняя левая вершина
+    0.75f, // Bottom left vertex.
     -0.5f,
     0.5f,
     0.0f,
     kWidth_Offset * 2,
-    1.0f, // верхняя левая вершина
+    1.0f, // Up left vertex.
     0.5f,
     0.5f,
     0.0f,
@@ -88,46 +91,46 @@ float vertices3[] = {
 };
 
 float vertices4[] = {
-    // координаты        // текстурные координаты
-    0.5f,  0.5f,  0.0f, kWidth_Offset, 0.75f, // верхняя правая вершина
-    0.5f,  -0.5f, 0.0f, kWidth_Offset, 0.5f, // нижняя правая вершина
-    -0.5f, -0.5f, 0.0f, 0.0f,          0.5f, // нижняя левая вершина
-    -0.5f, 0.5f,  0.0f, 0.0f,          0.75f, // верхняя левая вершина
+    // Coordinates.
+    0.5f,  0.5f,  0.0f, kWidth_Offset, 0.75f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, kWidth_Offset, 0.5f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, 0.0f,          0.5f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, 0.0f,          0.75f, // Up left vertex.
     0.5f,  0.5f,  0.0f, kWidth_Offset, 0.75f, -0.5f, -0.5f, 0.0f, 0.0f, 0.5f
 };
 
 float vertices5[] = {
-    // координаты        // текстурные координаты
-    0.5f,  0.5f,  0.0f, kWidth_Offset * 2, 0.75f, // верхняя правая вершина
-    0.5f,  -0.5f, 0.0f, kWidth_Offset * 2, 0.5f, // нижняя правая вершина
-    -0.5f, -0.5f, 0.0f, kWidth_Offset,     0.5f, // нижняя левая вершина
-    -0.5f, 0.5f,  0.0f, kWidth_Offset,     0.75f, // верхняя левая вершина
+    // Coordinates.
+    0.5f,  0.5f,  0.0f, kWidth_Offset * 2, 0.75f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, kWidth_Offset * 2, 0.5f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, kWidth_Offset,     0.5f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, kWidth_Offset,     0.75f, // Up left vertex.
     0.5f,  0.5f,  0.0f, kWidth_Offset * 2, 0.75f,
     -0.5f, -0.5f, 0.0f, kWidth_Offset,     0.5f
 };
 
 float vertices6[] = {
-    // координаты        // текстурные координаты
+    // Coordinates.
     0.5f,
     0.5f,
     0.0f,
     1.0f,
-    0.75f, // верхняя правая вершина
+    0.75f, // Up right vertex.
     0.5f,
     -0.5f,
     0.0f,
     1.0f,
-    0.5f, // нижняя правая вершина
+    0.5f, // Bottom right vertex.
     -0.5f,
     -0.5f,
     0.0f,
     kWidth_Offset * 2,
-    0.5f, // нижняя левая вершина
+    0.5f, // Bottom left vertex.
     -0.5f,
     0.5f,
     0.0f,
     kWidth_Offset * 2,
-    0.75f, // верхняя левая вершина
+    0.75f, // Up left vertex.
     0.5f,
     0.5f,
     0.0f,
@@ -141,46 +144,46 @@ float vertices6[] = {
 };
 
 float vertices7[] = {
-    // координаты        // текстурные координаты
-    0.5f,  0.5f,  0.0f, kWidth_Offset, 0.5f, // верхняя правая вершина
-    0.5f,  -0.5f, 0.0f, kWidth_Offset, 0.25f, // нижняя правая вершина
-    -0.5f, -0.5f, 0.0f, 0.0f,          0.25f, // нижняя левая вершина
-    -0.5f, 0.5f,  0.0f, 0.0f,          0.5f, // верхняя левая вершина
+    // Coordinates.
+    0.5f,  0.5f,  0.0f, kWidth_Offset, 0.5f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, kWidth_Offset, 0.25f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, 0.0f,          0.25f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, 0.0f,          0.5f, // Up left vertex.
     0.5f,  0.5f,  0.0f, kWidth_Offset, 0.5f,  -0.5f, -0.5f, 0.0f, 0.0f, 0.25f
 };
 
 float vertices8[] = {
-    // координаты        // текстурные координаты
-    0.5f,  0.5f,  0.0f, kWidth_Offset * 2, 0.5f, // верхняя правая вершина
-    0.5f,  -0.5f, 0.0f, kWidth_Offset * 2, 0.25f, // нижняя правая вершина
-    -0.5f, -0.5f, 0.0f, kWidth_Offset,     0.25f, // нижняя левая вершина
-    -0.5f, 0.5f,  0.0f, kWidth_Offset,     0.5f, // верхняя левая вершина
+    // Coordinates.
+    0.5f,  0.5f,  0.0f, kWidth_Offset * 2, 0.5f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, kWidth_Offset * 2, 0.25f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, kWidth_Offset,     0.25f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, kWidth_Offset,     0.5f, // Up left vertex.
     0.5f,  0.5f,  0.0f, kWidth_Offset * 2, 0.5f,
     -0.5f, -0.5f, 0.0f, kWidth_Offset,     0.25f
 };
 
 float vertices9[] = {
-    // координаты        // текстурные координаты
+    // Coordinates.
     0.5f,
     0.5f,
     0.0f,
     1.0f,
-    0.5f, // верхняя правая вершина
+    0.5f, // Up right vertex.
     0.5f,
     -0.5f,
     0.0f,
     1.0f,
-    0.25f, // нижняя правая вершина
+    0.25f, // Bottom right vertex.
     -0.5f,
     -0.5f,
     0.0f,
     kWidth_Offset * 2,
-    0.25f, // нижняя левая вершина
+    0.25f, // Bottom left vertex.
     -0.5f,
     0.5f,
     0.0f,
     kWidth_Offset * 2,
-    0.5f, // верхняя левая вершина
+    0.5f, // Up left vertex.
     0.5f,
     0.5f,
     0.0f,
@@ -194,46 +197,46 @@ float vertices9[] = {
 };
 
 float vertices10[] = {
-    // координаты        // текстурные координаты
-    0.5f,  0.5f,  0.0f, kWidth_Offset, 0.25f, // верхняя правая вершина
-    0.5f,  -0.5f, 0.0f, kWidth_Offset, 0.0f, // нижняя правая вершина
-    -0.5f, -0.5f, 0.0f, 0.0f,          0.0f, // нижняя левая вершина
-    -0.5f, 0.5f,  0.0f, 0.0f,          0.25f, // верхняя левая вершина
+    // Coordinates.
+    0.5f,  0.5f,  0.0f, kWidth_Offset, 0.25f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, kWidth_Offset, 0.0f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, 0.0f,          0.0f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, 0.0f,          0.25f, // Up left vertex.
     0.5f,  0.5f,  0.0f, kWidth_Offset, 0.25f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f
 };
 
 float vertices11[] = {
-    // координаты        // текстурные координаты
-    0.5f,  0.5f,  0.0f, kWidth_Offset * 2, 0.25f, // верхняя правая вершина
-    0.5f,  -0.5f, 0.0f, kWidth_Offset * 2, 0.0f, // нижняя правая вершина
-    -0.5f, -0.5f, 0.0f, kWidth_Offset,     0.0f, // нижняя левая вершина
-    -0.5f, 0.5f,  0.0f, kWidth_Offset,     0.25f, // верхняя левая вершина
+    // Coordinates.
+    0.5f,  0.5f,  0.0f, kWidth_Offset * 2, 0.25f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, kWidth_Offset * 2, 0.0f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, kWidth_Offset,     0.0f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, kWidth_Offset,     0.25f, // Up left vertex.
     0.5f,  0.5f,  0.0f, kWidth_Offset * 2, 0.25f,
     -0.5f, -0.5f, 0.0f, kWidth_Offset,     0.0f
 };
 
 float vertices12[] = {
-    // координаты        // текстурные координаты
+    // Coordinates.
     0.5f,
     0.5f,
     0.0f,
     1.0f,
-    0.25f, // верхняя правая вершина
+    0.25f, // Up right vertex.
     0.5f,
     -0.5f,
     0.0f,
     1.0f,
-    0.0f, // нижняя правая вершина
+    0.0f, // Bottom right vertex.
     -0.5f,
     -0.5f,
     0.0f,
     kWidth_Offset * 2,
-    0.0f, // нижняя левая вершина
+    0.0f, // Bottom left vertex.
     -0.5f,
     0.5f,
     0.0f,
     kWidth_Offset * 2,
-    0.25f, // верхняя левая вершина
+    0.25f, // Up left vertex.
     0.5f,
     0.5f,
     0.0f,

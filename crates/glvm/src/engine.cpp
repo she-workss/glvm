@@ -1,8 +1,3 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
 #include "glvm/Engine.hpp"
 
 #include "glvm/ArchetypeECS/ArchECS_Types.hpp"
@@ -59,7 +54,7 @@
 #include <sys/types.h>
 #include <thread>
 
-GLVM::core::CStack Input_Stack_ {};
+glvm::core::CStack Input_Stack_ {};
 
 int x_pointer;
 int y_pointer;
@@ -69,53 +64,12 @@ int y_pointer;
 #endif
 #include <fstream>
 
-/*******************************************************************
- * Legends never die...
- * You are about to face most terrifying data structures of all time.
- *    "Abandon hope all ye who enter here..." (c) Dante Alighieri.
- *******************************************************************
- *****************  👑  !!!  DESTRUCTOR_3000  !!!  👑  *************/
+glvm::core::CEvent g_eEvent;
+// Contains all maximum absolute axis values.
+glvm::core::vector<glvm::core::MeshAxisMaxAbsoluteValues>
+    allMeshMaxAbsoluteValues;
 
-/*******************************************************************
- *                                                                  *
- *                             \_/                                  *
- *                            (* *)                                 *
- *                           __)#(__                                *
- *                          ( )...( )(_)                            *
- *                          || |_| ||//                             *
- *                       >==() | | ()/                              *
- *                           _(___)_                                *
- *                          [-]   [-]                               *
- *                                                                  *
- ********************************************************************/
-
-#define DESTRUCTOR_3000                                                        \
-    std::cout << "You have been destructurized. [=]___[=]" << std::endl;       \
-    exit(1)
-
-GLVM::core::CEvent g_eEvent;
-GLVM::core::vector<GLVM::core::MeshAxisMaxAbsoluteValues>
-    allMeshMaxAbsoluteValues; /// contain all maximum absolute axis values
-
-// struct wl_surface*    wl_surface;
-// struct wl_compositor* compositor;
-// struct xdg_toplevel*  xdg_topLevel;
-// struct xdg_wm_base*   xdg_shell;
-// struct wl_buffer*     buffer;
-// struct wl_shm*        shared_memory;
-// struct wl_seat*       seat;
-// struct wl_keyboard*   keyboard;
-// void* pixels;
-// uint16_t width = 480;
-// uint16_t height = 320;
-// uint8_t  constant_byte = 0;
-// uint8_t  close_xdg_toplevel;
-// struct wl_display*  display;
-// struct wl_registry* registry;
-// struct wl_callback* frame_callback;
-// struct xdg_surface* xdg_surface;
-
-namespace GLVM::core {
+namespace glvm::core {
 Engine* Engine::pInstance_ = nullptr;
 std::mutex Engine::Mutex_;
 
@@ -149,7 +103,7 @@ Engine::Engine() {
 
     ecs::CSystemManager* pSystem_Manager = ecs::CSystemManager::GetInstance();
 
-    ///< Call of ActivateSystem function must be in this order.
+    // Call of ActivateSystem function must be in this order.
     pSystem_Manager->ActivateSystem(procuduralLevelGeneratingSystem);
     pSystem_Manager->ActivateSystem(movementSystem);
     pSystem_Manager->ActivateSystem(enemySytem);
@@ -186,7 +140,7 @@ void Engine::GameLoop() {
 void Engine::EventQueueFlush() {}
 
 void Engine::RenderVulkan() {
-    namespace arch = GLVM::ecs::arch;
+    namespace arch = glvm::ecs::arch;
     std::cout << "INNER CALL ARCHETYPES NUMBER: "
               << arch::world.archetypes.GetSize() << std::endl;
     ecs::CSystemManager* pSystem_Manager = ecs::CSystemManager::GetInstance();
@@ -208,13 +162,13 @@ void Engine::RenderVulkan() {
     vulkanRenderer->initializeTextureData_ = textureVector;
     vulkanRenderer->pathsArray_ = pathsArray_;
     vulkanRenderer->pathsGLTF_ = pathsGLTF_;
-    GLVM::core::MeshManager* meshManager =
-        GLVM::core::MeshManager::GetInstance();
+    glvm::core::MeshManager* meshManager =
+        glvm::core::MeshManager::GetInstance();
     vulkanRenderer->SetMeshData(
         meshManager->pathsArray_,
         meshManager->pathsGLTF_
     );
-    namespace cm = GLVM::ecs::components;
+    namespace cm = glvm::ecs::components;
 
     directionalLightArchetypesNumber = 0;
     arch::world.searchCacheArchetypes(
@@ -260,18 +214,6 @@ void Engine::RenderVulkan() {
     vulkanRenderer->run();
     vulkanRenderer->Window->Input_Stack_ = &Input_Stack_;
 
-#ifdef __linux__
-    // XEvent uXEvent;
-    // while (XPending(vulkanRenderer->Window.GetDisplay())) {
-    // 	XNextEvent(vulkanRenderer->Window.GetDisplay(), &uXEvent);
-    // }
-
-    // xcb_generic_event_t* event;
-    // while (( event = xcb_poll_for_event (
-    // vulkanRenderer->Window.GetConnection() ))) {
-    // }
-#endif
-
 #ifdef _WIN32
     MSG msg;
 
@@ -279,12 +221,6 @@ void Engine::RenderVulkan() {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
-
-    // while(GetMessageA(&msg, vulkanRenderer->Window.GetModernWindowHWND(),
-    // WM_KEYFIRST, WM_KEYLAST)) {
-    // 		// TranslateMessage( &msg );
-    // 		// DispatchMessage( &msg );
-    // }
 #endif
 
     while (bGame_Loop_Active) {
@@ -295,12 +231,26 @@ void Engine::RenderVulkan() {
         vulkanRenderer->Window->ClearDisplay();
 
         vulkanRenderer->Window->HandleEvent(g_eEvent);
-        //			std::cout << "left mouse released flag" <<
-        // g_eEvent.isItemDraged << std::endl;
-        // 	Input_Stack_.ControlInput(g_eEvent);
         if ((Input_Stack_.SearchElement(EEvents::eGAME_LOOP_KILL))
             == EEvents::eGAME_LOOP_KILL) {
             bGame_Loop_Active = false;
+        }
+
+        if ((Input_Stack_.SearchElement(EEvents::eCURSOR_RELEASED))
+            == EEvents::eCURSOR_RELEASED) {
+            vulkanRenderer->isCursorReleased =
+                !vulkanRenderer->isCursorReleased;
+            Input_Stack_.Remove(EEvents::eCURSOR_RELEASED);
+            Input_Stack_.Remove(EEvents::eCURSOR_RELEASED);
+            // The click-to-relock must not trigger on the button that was
+            // already held while Esc was pressed.
+            Input_Stack_.Remove(EEvents::eMOUSE_LEFT_BUTTON);
+        }
+        if (vulkanRenderer->isCursorReleased
+            && (Input_Stack_.SearchElement(EEvents::eMOUSE_LEFT_BUTTON))
+                == EEvents::eMOUSE_LEFT_BUTTON
+            && !vulkanRenderer->imguiOverlay->wantsMouse()) {
+            vulkanRenderer->isCursorReleased = false;
         }
 
         if ((Input_Stack_.SearchElement(EEvents::eMOUSE_LEFT_BUTTON))
@@ -329,13 +279,21 @@ void Engine::RenderVulkan() {
             }
         }
         isInventoryKeyHeld = inventoryKeyPressed;
-        //				bGame_Loop_Active = false;
-        // }
         g_eEvent.SetLastEvent(Input_Stack_);
 
 #ifndef VK_USE_PLATFORM_WAYLAND_KHR
-        if (!vulkanRenderer->isInventoryOpened
-            && vulkanRenderer->Window->isFocused) {
+        const bool cursorShouldBeHidden = !vulkanRenderer->isInventoryOpened
+            && vulkanRenderer->Window->isFocused
+            && !vulkanRenderer->isCursorReleased
+            && !vulkanRenderer->imguiOverlay->wantsMouse();
+        if (cursorShouldBeHidden && !isCursorHidden) {
+            ShowCursor(FALSE);
+            isCursorHidden = true;
+        } else if (!cursorShouldBeHidden && isCursorHidden) {
+            ShowCursor(TRUE);
+            isCursorHidden = false;
+        }
+        if (cursorShouldBeHidden) {
             vulkanRenderer->Window->CursorLock(
                 g_eEvent.mousePointerPosition.position_X,
                 g_eEvent.mousePointerPosition.position_Y,
@@ -345,10 +303,10 @@ void Engine::RenderVulkan() {
         }
 
         if (wasInventoryOpened && !vulkanRenderer->isInventoryOpened) {
-            ///< Cursor was free while the inventory was open; reset the mouse
-            ///< state so the first locked sample doesn't feed a fake delta to
-            ///< the camera. WindowWinVulkan::CursorLock also discards the
-            ///< >250px teleport on its own.
+            // Cursor was free while the inventory was open; reset the mouse
+            // state so the first locked sample doesn't feed a fake delta to the
+            // camera. WindowWinVulkan::CursorLock also discards the >250px
+            // teleport on its own.
             g_eEvent.mousePointerPosition.offset_X = 0;
             g_eEvent.mousePointerPosition.offset_Y = 0;
             vulkanRenderer->prev_X = 0.0f;
@@ -372,19 +330,12 @@ void Engine::RenderVulkan() {
 #endif
 
         computeHudScreeenCoordinates();
-        // std::cout << "lmb released " << g_eEvent.isLeftMouseButtonReleased <<
-        // std::endl; std::cout << "lmb pressed " << isLeftMouseButtonPressed <<
-        // std::endl; std::cout << "item draged " << itemSystem->isItemDraged <<
-        // std::endl;
-        FPScounter();
         damageSystem->deltaTime = deltaFrameTime;
         movementSystem->deltaFrameTime = deltaFrameTime;
         movementSystem->gravity = gravity;
         collisionSystem->fDelta_Time_ = deltaFrameTime;
         collisionSystem->gravity = gravity;
         collisionSystem->isInventoryOpened = vulkanRenderer->isInventoryOpened;
-        //			collisionSystem->isItemDraged             =
-        //&itemSystem->isItemDraged;
         collisionSystem->isLeftMouseButtonPressed = isLeftMouseButtonPressed;
         collisionSystem->isLeftMouseButtonReleased =
             &g_eEvent.isLeftMouseButtonReleased;
@@ -430,14 +381,12 @@ void Engine::RenderVulkan() {
         vulkanRenderer->draw();
         vulkanRenderer->Window->SwapBuffers();
     }
-
-    //		vulkanRenderer->Window->Close();
     delete vulkanRenderer;
 }
 
 void Engine::EnlargeFrameAccumulator(float value) {
-    namespace cm = GLVM::ecs::components;
-    namespace arch = GLVM::ecs::arch;
+    namespace cm = glvm::ecs::components;
+    namespace arch = glvm::ecs::arch;
     animationArchetypesNumber = 0;
     for (uint32_t m = 0; m < arch::world.archetypes.GetSize(); ++m) {
         arch::Archetype* arch = arch::world.archetypes[m];
@@ -488,8 +437,8 @@ void Engine::EnlargeFrameAccumulator(float value) {
 }
 
 void Engine::SetViewMatrix() {
-    namespace cm = GLVM::ecs::components;
-    namespace arch = GLVM::ecs::arch;
+    namespace cm = glvm::ecs::components;
+    namespace arch = glvm::ecs::arch;
 
     playerArchetypesNumber = 0;
     arch::world.searchCacheArchetypes(
@@ -513,17 +462,6 @@ void Engine::SetViewMatrix() {
 
             Matrix<float, 4> viewMatrix_(1.0f);
             const float kSensitivity = 0.1f;
-
-            // if ( hud_screen_x > 1.0f )
-            // 	hud_screen_x = 1.0f;
-            // else if ( hud_screen_x < -1.0f )
-            // 	hud_screen_x = -1.0f;
-
-            // if ( hud_screen_y > 1.0f )
-            // 	hud_screen_y = 1.0f;
-            // else if ( hud_screen_y < -1.0f )
-            // 	hud_screen_y = -1.0f;
-
             fYaw = g_eEvent.mousePointerPosition.offset_X;
             fPitch = g_eEvent.mousePointerPosition.offset_Y;
             fYaw *= kSensitivity;
@@ -548,57 +486,33 @@ void Engine::SetViewMatrix() {
                 delta_y *= -1.0f;
 #endif
             }
-            // delta_x *= kSensitivity;
-            // delta_y *= kSensitivity;
 
             const vec3 rightVec =
                 Cross(cameraComponent->forward, vec3(0.0f, -1.0f, 0.0));
             const vec3 newUpVec = Cross(rightVec, cameraComponent->forward);
-            /*
-             * 1. The mouse direction determines the "intended direction of
-             * rotation" for the object.
-             * 2. The camera is "looking forward."
-             * 3. To make the object "rotate as if the mouse is pushing it," you
-             * need to rotate it around an axis that is perpendicular to both
-             * the view direction and the mouse movement.
-             */
+            // 1. The mouse direction determines the "intended direction of
+            // rotation" for the object.
+            // 2. The camera is "looking forward."
+            // 3. To make the object "rotate as if the mouse is pushing it," you
+            // need to rotate it around an axis that is perpendicular to both
+            // the view direction and the mouse movement.
             const vec3 rotateAxis = Normalize(Cross(
                 cameraComponent->forward,
                 rightVec * delta_x + newUpVec * delta_y
             ));
 
             if (VecLength(rotateAxis) >= 0.001f) {
-                /// A vector in the screen's tangent plane: it indicates the
-                /// direction in which the mouse moved, but expressed in world
-                /// (or 3D) space.
+                // A vector in the screen's tangent plane: it indicates the
+                // direction in which the mouse moved, but expressed in world
+                // (or 3D) space.
                 float rotationAngle =
                     sqrt(delta_y * delta_y + delta_x * delta_x);
                 constexpr float angleScale = 0.05f;
                 rotationAngle = Radians(rotationAngle * angleScale);
-                constexpr float quatAngleCorrection =
-                    0.5f; /// Quaternions need devision by 2
+                // Quaternions need devision by 2.
+                constexpr float quatAngleCorrection = 0.5f;
                 [[maybe_unused]] const float sinRotationAngle =
                     sinf(rotationAngle * quatAngleCorrection);
-                // const Quaternion rotationQuat = Quaternion(cosf(rotationAngle
-                // * quatAngleCorrection), sinRotationAngle * rotateAxis[0],
-                // 									 sinRotationAngle *
-                // rotateAxis[1], sinRotationAngle * rotateAxis[2]);
-                // // const Quaternion appliedRotationQuat =
-                // multiplyQuaternion(multiplyQuaternion(rotationQuat,
-                // Quaternion(0.0f, cameraComponent.forward[0],
-                // //
-                // cameraComponent.forward[1], cameraComponent.forward[2])),
-                // //
-                // conjugate(rotationQuat));
-
-                // const Quaternion appliedRotationQuat = (rotationQuat *
-                // Quaternion(0.0f, cameraComponent.forward[0],
-                // cameraComponent.forward[1],
-                // cameraComponent.forward[2])) * conjugate(rotationQuat);
-
-                // forward[0] = appliedRotationQuat.x;
-                // forward[1] = appliedRotationQuat.y;
-                // forward[2] = appliedRotationQuat.z;
                 pga::point appliedRotationPoint =
                     exp(rotationAngle,
                         pga::rline {
@@ -617,11 +531,11 @@ void Engine::SetViewMatrix() {
                 vulkanRenderer->forward[2] = appliedRotationPoint.z;
             }
             cameraComponent->forward = Normalize(vulkanRenderer->forward);
-            /// Pitch limit by ANGLE, not pixels: independent of screen
-            /// resolution and mouse sensitivity. Keeps the camera off the
-            /// vertical pole, where the view basis Cross(forward, up)
-            /// degenerates and the world starts rolling.
-            constexpr float maxPitchSin = 0.9999996f; /// sin(89.95°)
+            // Pitch limit by ANGLE, not pixels: independent of screen
+            // resolution and mouse sensitivity. Keeps the camera off the
+            // vertical pole, where the view basis Cross(forward, up)
+            // degenerates and the world starts rolling.
+            constexpr float maxPitchSin = 0.9999996f; // sin(89.95°).
             if (cameraComponent->forward[1] > maxPitchSin) {
                 cameraComponent->forward[1] = maxPitchSin;
             } else if (cameraComponent->forward[1] < -maxPitchSin) {
@@ -730,12 +644,6 @@ void Engine::SetProjectionMatrix() {
             jointMatrices[j] = unitMatrix;
         }
     }
-    // core::vector<mat4> jointMatrices;
-    // jointMatrices.Resize( MAX_JOINTS_NUMBER );
-    // for ( unsigned int i = 0; i < MAX_JOINTS_NUMBER; ++i ) {
-    // 	mat4 unitMatrix(1.0f);
-    // 	jointMatrices[i] = unitMatrix;
-    // }
 
     return jointMatrices;
 }
@@ -762,8 +670,6 @@ mat4 Engine::updateDirectionalLightSpaceMatrixShadowMapUBO(
         directionVectorLight,
         {0.0f, -1.0f, 0.0f}
     );
-
-    //		directionalProjectionMatrixLight[1][1] *= -1;
     return viewMatrixLight * directionalProjectionMatrixLight;
 }
 
@@ -786,8 +692,6 @@ mat4 Engine::updateSpotLightSpaceMatrixShadowMapUBO(
         directionVectorLight,
         {0.0f, -1.0f, 0.0f}
     );
-
-    //		spotProjectionMatrixLight[1][1] *= -1;
     return viewMatrixLight * spotProjectionMatrixLight;
 }
 
@@ -801,36 +705,36 @@ mat4 Engine::updatePointLightSpaceMatrixShadowMapUBO(
 
     switch (layer) {
         case 0:
-            /// Positive X
+            // Positive X.
             directionalVectorLight =
                 positionVectorLight + vec3(1.0f, 0.0f, 0.0f);
             upVector = vec3(0.0f, -1.0f, 0.0f);
             break;
         case 1:
-            /// Negative X
+            // Negative X.
             directionalVectorLight =
                 positionVectorLight + vec3(-1.0f, 0.0f, 0.0f);
             upVector = vec3(0.0f, -1.0f, 0.0f);
             break;
         case 2:
-            /// Positive Y
+            // Positive Y.
             directionalVectorLight =
                 positionVectorLight + vec3(0.0f, 1.0f, 0.0f);
             upVector = vec3(0.0f, 0.0f, 1.0f);
             break;
         case 3:
-            /// Negative Y
+            // Negative Y.
             directionalVectorLight =
                 positionVectorLight + vec3(0.0f, -1.0f, 0.0f);
             upVector = vec3(0.0f, 0.0f, -1.0f);
             break;
         case 4:
-            /// Positive Z
+            // Positive Z.
             directionalVectorLight =
                 positionVectorLight + vec3(0.0f, 0.0f, 1.0f);
             upVector = vec3(0.0f, -1.0f, 0.0f);
             break;
-            /// Negative Z
+            // Negative Z.
         case 5:
             directionalVectorLight =
                 positionVectorLight + vec3(0.0f, 0.0f, -1.0f);
@@ -938,8 +842,8 @@ mat4 Engine::updateDataUBO_IconsUI(
         const float itemScale = itemTransfromComponent->scale;
         const float fullSlotScale =
             itemMesh->gltf ? itemScale * 2.0f : itemScale;
-        constexpr float centreMultiplayer =
-            0.5f; ///< Eather division by 2.0f using multiply on 0.5f
+        // Eather division by 2.0f using multiply on 0.5f.
+        constexpr float centreMultiplayer = 0.5f;
         x_result_offset = inventoryTransformComponent->position[0]
             + (colIndexFirstSlot * fullSlotScale
                + colIndexSecondSlot * fullSlotScale)
@@ -955,14 +859,9 @@ mat4 Engine::updateDataUBO_IconsUI(
         itemTransfromComponent->position =
             vec3(x_result_offset, y_result_offset, 0.1f);
     } else {
-        //			std::cout << "item entity: " << itemEntity << std::endl;
         itemScale *= 1.1f;
-        //			itemColliderComponent->itemDrag = false;
         itemTransfromComponent->position[2] = 0.0f;
     }
-
-    //		std::cout << itemTransfromComponent->position << std::endl;
-
     mat4 model(1.0);
     model[0][0] = itemScale * itemComponent->itemSlotType.width;
     model[1][1] = itemScale * itemComponent->itemSlotType.height;
@@ -987,12 +886,9 @@ mat4 Engine::updateDataHudScreenUBO(
 
     cursorTransform->position[0] = hudScreenX;
     cursorTransform->position[1] = -hud_screen_y;
-    //		std::cout << "cursor scale: " << cursorTransform->fScale << std::endl;
 
-    //		std::cout << "x: " << cursorTransform->tPosition[0] << " y: " <<
-    // cursorTransform->tPosition << std::endl;
-
-    if (!vulkanRenderer->isInventoryOpened) {
+    if (!vulkanRenderer->isInventoryOpened
+        && !vulkanRenderer->isCursorReleased) {
         model[3][0] = defaultPosition[0];
         model[3][1] = defaultPosition[1];
         model[3][2] = defaultPosition[2];
@@ -1017,8 +913,8 @@ mat4 Engine::updateDataHudScreenUBO(
 }
 
 void Engine::setFrameData() {
-    namespace cm = GLVM::ecs::components;
-    namespace arch = GLVM::ecs::arch;
+    namespace cm = glvm::ecs::components;
+    namespace arch = glvm::ecs::arch;
 
     vulkanRenderer->directionalLights.clear();
     directionalLightArchetypesNumber = 0;
@@ -1152,10 +1048,10 @@ void Engine::setFrameData() {
                 vulkanRenderer->pointLights.Push({});
                 cm::pointLight* pointLightComponent = &pointLights[x1];
                 uint32_t maxCubeMapLayers = 6;
+                // 6 is a number of cube map layers.
                 for (uint32_t cubeMapLayerCounter = 0;
                      cubeMapLayerCounter < maxCubeMapLayers;
-                     ++cubeMapLayerCounter) { ///< 6 is a number of cube map
-                                              ///< layers.
+                     ++cubeMapLayerCounter) {
                     vulkanRenderer->pointLights[pointLightCounter]
                         .pointLightSpaceMatrix[cubeMapLayerCounter] =
                         updatePointLightSpaceMatrixShadowMapUBO(
@@ -1213,8 +1109,6 @@ void Engine::setFrameData() {
 
         for (unsigned int i = 0; i < arch->entityCount; ++i) {
             vulkanRenderer->healthBars.Push({});
-            //				unsigned int uiVertexId           =
-            // healthBarMeshes[i].handle.id;
             cm::transform* transformComponent = &healthBarTransforms[i];
             cm::health* healthComponent = &healthBars[i];
             vulkanRenderer->healthBars[healthBarCounter].meshID = uiVertexId;
@@ -1664,11 +1558,7 @@ void Engine::setFrameData() {
         }
     }
 
-    /*
-     =====================================
-     Item actors renders in the game world
-     =====================================
-     */
+    // Item actors renders in the game world.
 
     itemActorsArchetypesNumber = 0;
     arch::world.searchCacheArchetypes(
@@ -1981,8 +1871,6 @@ void Engine::initializeGLTF() {
     }
 
     for (unsigned int m = 0; m < pathsGLTF_.GetSize(); ++m) {
-        //            aIndices_.emplace_back();
-        //            aVertices_.emplace_back();
         vulkanRenderer->aVertices_.emplace_back();
         vulkanRenderer->meshAxisLimitingValues.setToDefaultValues();
 
@@ -2142,9 +2030,10 @@ void Engine::initializeFontData() {
                 static_cast<const unsigned int>(
                     vulkanRenderer->glyphs[currentBufferIndex]
                 );
+            // TODO: Fix gabage algorithm.
             for (unsigned int n = 0;
                  n < vulkanRenderer->fontIndicesContainer.size();
-                 ++n) { ///< TODO: Fix gabage algo
+                 ++n) {
                 if (nextBufferIndex
                     == vulkanRenderer->fontIndicesContainer[n]) {
                     exitFlag = true;
@@ -2194,19 +2083,6 @@ mat4 Engine::computeModelMatrix(
     yawQuat.x = 0.0f;
     yawQuat.y = sinYaw;
     yawQuat.z = 0.0f;
-
-    //		Quaternion result;
-    // result = multiplyQuaternion(pitchQuat, yawQuat);
-
-    // glm::quat rotation =
-    // glm::quat(cos(glm::radians(fPitch/2)),(glm::radians(fPitch/2))*1, 0,0);
-    // glm::mat4 rotationMat = glm::mat4_cast(rotation);
-    // // result = { rotation.w, rotation.x, rotation.y, rotation.z };
-    // // rotationMatrix = rotateQuaternion<float, 4>(result);
-    // for ( unsigned int i = 0; i < 4; ++i )
-    // 	for ( unsigned int j = 0; j < 4; ++j )
-    // 		rotationMatrix[i][j] = rotationMat[i][j];
-
     return scalingMatrix * translationMatrix;
 }
 
@@ -2217,9 +2093,9 @@ void Engine::computeHudScreeenCoordinates() {
     hud_screen_x += g_eEvent.mousePointerPosition.offset_X
         / (float)vulkanRenderer->Window->width;
 #else
-    if (vulkanRenderer->isInventoryOpened) {
-        ///< Cursor is free while the inventory is open: track its real
-        ///< position instead of the locked-mouse offsets.
+    if (vulkanRenderer->isInventoryOpened || vulkanRenderer->isCursorReleased) {
+        // Cursor is free while the inventory is open or the cursor is released:
+        // track its real position instead of the locked-mouse offsets.
         hud_screen_x = 1.0f
             - g_eEvent.mousePointerPosition.position_X
                 / ((float)vulkanRenderer->Window->width / 2.0f);
@@ -2315,16 +2191,6 @@ ecs::components::MeshHandle Engine::LoadMesh() {
     return meshHandle;
 }
 
-void Engine::FPScounter() {
-    ++fpsCounter;
-    fpsAccumulator += deltaFrameTime;
-    if (fpsAccumulator > 1.0f) {
-        std::cout << "FPS: " << fpsCounter << std::endl;
-        fpsCounter = 0;
-        fpsAccumulator = 0;
-    }
-}
-
 void Engine::GameKill() {
     runningSound = false;
     soundEngine->CloseDevice();
@@ -2352,7 +2218,5 @@ void Engine::GameKill() {
     enemySytem = nullptr;
     delete itemSystem;
     itemSystem = nullptr;
-    // delete pSystem_Manager;
-    // pSystem_Manager = nullptr;
 }
-} // namespace GLVM::core
+} // namespace glvm::core

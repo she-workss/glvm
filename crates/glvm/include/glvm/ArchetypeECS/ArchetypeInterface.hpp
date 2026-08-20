@@ -1,11 +1,10 @@
-#ifndef ARCHETYPE_INTERFACE_HPP
-#define ARCHETYPE_INTERFACE_HPP
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchECS_Types.hpp"
 #include "glvm/Vector.hpp"
 #include "glvm/typenames.hpp"
 
-namespace GLVM::ecs::arch {
+namespace glvm::ecs::arch {
 struct Archetype {
     virtual ~Archetype() = default;
 
@@ -29,8 +28,7 @@ struct EntityLocation {
     u8 gridCellCounter = 0;
     vec3 gridCellIndicies[maxGridCellNumber];
     u32 cellEntityIndices[maxGridCellNumber];
-    bool isDirty = false; ///< Is entity has been moved or removed
+    // Is entity has been moved or removed.
+    bool isDirty = false;
 };
-}; // namespace GLVM::ecs::arch
-
-#endif
+}; // namespace glvm::ecs::arch

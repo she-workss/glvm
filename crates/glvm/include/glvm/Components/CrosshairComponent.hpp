@@ -1,8 +1,5 @@
-#ifndef CROSSHAIR_COMPONENT_HPP
-#define CROSSHAIR_COMPONENT_HPP
+#pragma once
 
-namespace GLVM::ecs::components {
+namespace glvm::ecs::components {
 struct crosshair {};
-}; // namespace GLVM::ecs::components
-
-#endif
+}; // namespace glvm::ecs::components

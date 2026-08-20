@@ -1,10 +1,4 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef WINDOW_WIN_VULKAN
-#define WINDOW_WIN_VULKAN
+#pragma once
 
 #include "glvm/IWindow.hpp"
 
@@ -17,7 +11,7 @@
 #define OPENGL_API
 #include "glvm/EventsStack.hpp"
 
-namespace GLVM::core {
+namespace glvm::core {
 
 #define WGL_CONTEXT_MAJOR_VERSION_ARB 0x2091
 #define WGL_CONTEXT_MINOR_VERSION_ARB 0x2092
@@ -45,8 +39,9 @@ class WindowWinVulkan: public IWindow {
     HGLRC pModern_Context_;
     HWND pModern_Window_;
 
-    int previous_X = 0; ///< Cursor-lock baseline: the cursor's actual position
-                        ///< after the last warp (not the computed center).
+    // Cursor-lock baseline: the cursor's actual position after the last warp
+    // (not the computed center).
+    int previous_X = 0;
     int previous_Y = 0;
 
 public:
@@ -68,10 +63,12 @@ public:
         int* _x_offset,
         int* _y_offset
     ) override;
-    ///< Callback method for events handling.
-    static LRESULT CALLBACK
-    MainWndProc(HWND _pHwnd, UINT _pMsg, WPARAM _pWParam, LPARAM _pLParam);
-}; // namespace GLVM::core
-} // namespace GLVM::core
-
-#endif
+    // Callback method for events handling.
+    static LRESULT MainWndProc(
+        HWND _pHwnd,
+        UINT _pMsg,
+        WPARAM _pWParam,
+        LPARAM _pLParam
+    );
+};
+} // namespace glvm::core

@@ -1,10 +1,4 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef SPATIAL_GRID_SYSTEM_HPP
-#define SPATIAL_GRID_SYSTEM_HPP
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchECS_World.hpp"
 #include "glvm/ArchetypeECS/ArchetypeInterface.hpp"
@@ -14,7 +8,7 @@
 #include "glvm/Vector.hpp"
 #include "glvm/VertexMath.hpp"
 
-namespace GLVM::ecs {
+namespace glvm::ecs {
 
 class SpatialGridSystem: public ISystem {
     arch::Archetype* cachedArchetypes[32];
@@ -35,6 +29,4 @@ class SpatialGridSystem: public ISystem {
     void Update() override;
 };
 
-}; // namespace GLVM::ecs
-
-#endif
+}; // namespace glvm::ecs

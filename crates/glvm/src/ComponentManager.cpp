@@ -1,11 +1,6 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
 #include "glvm/ComponentManager.hpp"
 
-namespace GLVM::ecs {
+namespace glvm::ecs {
 ComponentManager* ComponentManager::pInstance_ = nullptr;
 std::mutex ComponentManager::Mutex_;
 
@@ -53,4 +48,4 @@ ComponentManager* ComponentManager::GetInstance() {
     }
     return pInstance_;
 }
-} // namespace GLVM::ecs
+} // namespace glvm::ecs

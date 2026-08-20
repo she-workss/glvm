@@ -1,10 +1,4 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef MOVEMENT_SYSTEM_HPP
-#define MOVEMENT_SYSTEM_HPP
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchetypeEntityManager.hpp"
 #include "glvm/ArchetypeECS/ArchetypeInterface.hpp"
@@ -26,7 +20,7 @@
 #include "glvm/Vector.hpp"
 #include "glvm/VertexMath.hpp"
 
-namespace GLVM::ecs {
+namespace glvm::ecs {
 class CMovementSystem: public ISystem {
 public:
     float deltaFrameTime;
@@ -51,7 +45,7 @@ public:
         ecs::components::colliderFlags* playerColliderFlags = nullptr;
         ecs::components::rigidBody* playerRigidBody = nullptr;
 
-        /// Components related to archetypes contains Rigis
+        // Components related to archetypes contains rigid.
         ecs::components::transform* transforms = nullptr;
         ecs::components::rigidBody* rigidBodies = nullptr;
         ecs::components::move* moves = nullptr;
@@ -74,6 +68,4 @@ public:
         core::CEvent& event
     );
 };
-} // namespace GLVM::ecs
-
-#endif
+} // namespace glvm::ecs

@@ -3,18 +3,19 @@
 #include "glvm/VkStructs.hpp"
 #include "glvm/typenames.hpp"
 
-namespace GLVM::core {
+namespace glvm::core {
 void descriptorSetBuilder() {
-    static unsigned int DS_globalBindingsCounter =
-        0; ///< Counts ds bindings indexes inside ds
-    static unsigned int DS_hostNumber = 0; ///< Counts host data ds
-    static unsigned int globalDescriptorsOffset =
-        0; ///< Counts offsets data descriptors
+    // Counts ds bindings indexes inside ds.
+    static unsigned int DS_globalBindingsCounter = 0;
+    // Counts host data ds.
+    static unsigned int DS_hostNumber = 0;
+    // Counts offsets data descriptors.
+    static unsigned int globalDescriptorsOffset = 0;
 
     for (unsigned int dsCounter = 0;
          dsCounter < DescriptorSetDataLink::DESCRIPTOR_CHUNKS_NUMBER;
          ++dsCounter) {
-        /// Offset for indexing inside descriptorSetsChunks
+        // Offset for indexing inside descriptorSetsChunks.
         descriptorSetsConfig[dsCounter].descriptorSetOffset = DS_hostNumber;
         DS_hostNumber += descriptorSetsConfig[dsCounter].hostDescriptorNumber;
 
@@ -24,11 +25,11 @@ void descriptorSetBuilder() {
              ++DS_localBindingsCounter) {
             const u32 DS_sumBindingsCounter =
                 DS_globalBindingsCounter + DS_localBindingsCounter;
-            /// Global offset for discriptors inside ds binding
+            // Global offset for descriptors inside ds binding.
             descriptorBindingsConfig[DS_sumBindingsCounter]
                 .globalDescriptorOffset = globalDescriptorsOffset;
 
-            /// Index for ds bindings inside ds
+            // Index for ds bindings inside ds.
             descriptorSetsConfig[dsCounter]
                 .descriptorsBindingsIDs[DS_localBindingsCounter] =
                 DS_sumBindingsCounter;
@@ -84,4 +85,4 @@ void pipelineBuilder() {
 void renderPassesBuilder() {
     renderPasses.Resize(SpecificPipeline::PIPELINES_NUMBER);
 }
-}; // namespace GLVM::core
+}; // namespace glvm::core

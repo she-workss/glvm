@@ -1,17 +1,11 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef ENTITY_MANAGER
-#define ENTITY_MANAGER
+#pragma once
 
 #include "glvm/ComponentManager.hpp"
 #include "glvm/Vector.hpp"
 
 typedef unsigned int Entity_ID;
 
-namespace GLVM::ecs {
+namespace glvm::ecs {
 class EntityManager {
     static EntityManager* pInstance_;
     static std::mutex Mutex_;
@@ -22,25 +16,19 @@ class EntityManager {
 
     EntityManager();
 
-public: ///< !!!!!DELETE!!!!!!!!!!!!!!!11
+public: // TODO: Delete this.
     ~EntityManager();
-    EntityManager(EntityManager& _entity_Manager) =
-        delete; ///< Dont need to make cope because of singleton property.
-    void operator=(const EntityManager& _entity_Manager) =
-        delete; ///< Dont need assignment operator because of singleton property.
-    static EntityManager* GetInstance(); ///< It possibly to get only one
-                                         ///< instance of this class whith this
-                                         ///< method.
-
+    // Don't need to make cope because of singleton property.
+    EntityManager(EntityManager& _entity_Manager) = delete;
+    // Don't need assignment operator because of singleton property.
+    void operator=(const EntityManager& _entity_Manager) = delete;
+    // It possibly to get only one instance of this class with this method.
+    static EntityManager* GetInstance();
     [[nodiscard]] Entity_ID CreateEntity();
-
     void RemoveEntity(
         Entity_ID& _Entity_ID,
         ComponentManager* _ComponentManager
     );
-
     bool isEntitiesCollectionChanged = true;
 };
-} // namespace GLVM::ecs
-
-#endif
+} // namespace glvm::ecs

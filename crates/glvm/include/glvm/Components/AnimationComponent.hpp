@@ -1,13 +1,10 @@
-#ifndef ANIMATION_COMPONENT_HPP
-#define ANIMATION_COMPONENT_HPP
+#pragma once
 
 #include <cstdint>
 
-namespace GLVM::ecs::components {
+namespace glvm::ecs::components {
 struct animation {
     uint32_t currentAnimationFrame = 0;
     float frameAccumulator = 0.0f;
 };
-} // namespace GLVM::ecs::components
-
-#endif
+} // namespace glvm::ecs::components

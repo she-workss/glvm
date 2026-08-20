@@ -1,10 +1,4 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef COLLISION_SYSTEM
-#define COLLISION_SYSTEM
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchetypeInterface.hpp"
 #include "glvm/Common/CommonFunctions.hpp"
@@ -20,7 +14,7 @@
 
 #include <cstdint>
 
-namespace GLVM::ecs {
+namespace glvm::ecs {
 class CCollisionSystem: public ISystem {
 public:
     float fDelta_Time_;
@@ -62,6 +56,4 @@ public:
         components::MeshHandle comparedMeshHandle
     );
 };
-} // namespace GLVM::ecs
-
-#endif
+} // namespace glvm::ecs

@@ -1,8 +1,3 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
 #include "glvm/Systems/ProjectileSystem.hpp"
 
 #include "glvm/ArchetypeECS/ArchECS_Types.hpp"
@@ -31,13 +26,13 @@
 
 #include <cstdint>
 
-namespace GLVM::ecs {
+namespace glvm::ecs {
 CProjectileSystem::CProjectileSystem(core::CStack& inputStack) :
     inputStack(inputStack) {}
 
 void CProjectileSystem::Update() {
-    namespace cm = GLVM::ecs::components;
-    namespace arch = GLVM::ecs::arch;
+    namespace cm = glvm::ecs::components;
+    namespace arch = glvm::ecs::arch;
 
     float cameraSpeed = 5.5f * deltaFrameTime;
 
@@ -65,7 +60,8 @@ void CProjectileSystem::Update() {
         projectileCooldown -= cameraSpeed;
     }
 
-    /// Iterate on every player and create projectile if "LMB pressed" event found
+    // Iterate on every player and create projectile if "LMB pressed" event
+    // found.
     for (unsigned int i = 0; i < archView.playerCachedArchetype->entityCount;
          ++i) {
         cm::beholder* playerView = &componentsView.playerViews[i];
@@ -161,7 +157,7 @@ void CProjectileSystem::Update() {
         (ecs::components::attack*)archView.projectileArchetype
             ->components[arch::ComponentsIndices::ATTACK_COMPONENT];
 
-    /// Update position of every projectile
+    // Update position of every projectile.
     for (unsigned int x = 0; x < archView.projectileArchetype->entityCount;
          ++x) {
         cm::transform* projectileTransform =
@@ -169,12 +165,10 @@ void CProjectileSystem::Update() {
         projectileTransform->position +=
             Normalize(projectileTransform->forward) * cameraSpeed * 2.5;
     }
-
-    /// Iterate every projectile, check for collistions with another entities
-    /// and update damage info if collided entity has attack component
+    // Iterate every projectile, check for collisions with another entities and
+    // update damage info if collided entity has attack component.
     for (unsigned int i = 0; i < archView.projectileArchetype->entityCount;
          ++i) {
-        //			const u32 entity = archView.projectileArchetype->entities[i];
         cm::colliderFlags* projectileColliderFlags =
             &componentsView.projectileColliderFlags[i];
         cm::health* projectileHealth = &componentsView.projectileHealth[i];
@@ -208,18 +202,10 @@ void CProjectileSystem::Update() {
                                 [arch::ComponentsIndices::ATTACK_COMPONENT];
                     attacks[collidedEntityLocation.index].damage =
                         projectileDamage->maximumDamage;
-
                     projectileHealth->currentHealth = 0;
-                    //						projectileAttack->damage = 100;
-                    // ecs::arch::ArchetypeEntityManager* archEntityManager =
-                    // ecs::arch::ArchetypeEntityManager::getInstance();
-                    // archEntityManager->removeEntity( entity );
-                    // arch::world.removeEntity( entity );
                 }
             }
-            //                pEntity_Manager->RemoveEntity(uiEntity_refProjectile,
-            //                pComponent_Manager);
         }
     }
 }
-} // namespace GLVM::ecs
+} // namespace glvm::ecs

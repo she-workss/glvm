@@ -1,10 +1,4 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef ANIMATION_SYSTEM
-#define ANIMATION_SYSTEM
+#pragma once
 
 #include "glvm/ComponentManager.hpp"
 #include "glvm/Components/AnimationMoveComponent.hpp"
@@ -18,14 +12,13 @@
 
 #define ANIM_PER_AXIS_NUMBER 4
 
-namespace GLVM::ecs {
+namespace glvm::ecs {
 
 class CAnimationSystem: public ecs::ISystem {
 public:
     core::EEvents eSave_Event_;
     static const int anim_index_array = 3;
     int anim_count = 0;
-    //		core::CStack& _Inputs;
     core::EEvents eEvent_;
     double Animation_Delta;
     double Delta_Time;
@@ -36,7 +29,7 @@ public:
         {vertices10, vertices11, vertices12}
     };
 
-    ///< Write one side of cube(if vertex component had vertices for 3D cube).
+    // Write one side of cube (if vertex component had vertices for 3D cube).
     void ArrayCopy(
         float* _aArray_Source,
         float* _aArray_Destination,
@@ -252,6 +245,4 @@ public:
     }
 };
 
-} // namespace GLVM::ecs
-
-#endif
+} // namespace glvm::ecs

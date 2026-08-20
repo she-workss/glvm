@@ -1,8 +1,3 @@
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> This file is part of Game Loop Versatile Modules
-// (GLVM) Author: Maksim Manokhin a.k.a. Yuriorkis_Scream License:
-// http://opensource.org/licenses/MIT
-
 #include "glvm/Systems/CollisionSystem.hpp"
 
 #include "glvm/ArchetypeECS/ArchECS_Types.hpp"
@@ -34,12 +29,11 @@
 #include <cstdint>
 #include <sys/types.h>
 
-namespace GLVM::ecs {
+namespace glvm::ecs {
 void CCollisionSystem::Update() {
-    namespace arch = GLVM::ecs::arch;
-    namespace cm = GLVM::ecs::components;
+    namespace arch = glvm::ecs::arch;
 
-    /// Spatial grid common data
+    // Spatial grid common data.
     const arch::SpatialGrid& spatialGrid = arch::world.spatialGrid;
     assert(
         spatialGrid.width > 0 && spatialGrid.height > 0 && spatialGrid.depth > 0
@@ -58,7 +52,7 @@ void CCollisionSystem::Update() {
     );
 
     const float cameraSpeed = 5.5f * fDelta_Time_;
-    /// Outer cycle on every archetype
+    // Outer cycle on every archetype.
     for (uint32_t x = 0; x < cachedArchetypesNumber; ++x) {
         arch::Archetype* arch = cachedArchetypes[x];
         view.backtrackingTransforms =
@@ -75,7 +69,7 @@ void CCollisionSystem::Update() {
                 arch->components[arch::ComponentsIndices::MESH_COMPONENT];
 
         for (unsigned int i = 0; i < arch->entityCount; ++i) {
-            /// Count on every entity in current outer archetype
+            // Count on every entity in current outer archetype.
             uint32_t backtrackingEntityID = arch->entities[i];
 
             uint8_t groudCollisionTurnOffMask =
@@ -99,7 +93,7 @@ void CCollisionSystem::Update() {
 
                 arch::componentMask moveRequiredMask =
                     (1ul << arch::ComponentsIndices::MOVE_COMPONENT);
-                /// Check if outer current archetype has move component
+                // Check if outer current archetype has move component.
                 if (arch::matchesRequiredMask(arch->mask, moveRequiredMask)) {
                     view.backtrackingMove =
                         (ecs::components::move*)arch
@@ -110,7 +104,7 @@ void CCollisionSystem::Update() {
                     backtrackingTransform += view.backtrackingMove[i].gravity;
                 }
 
-                ///< Collect entities from grid chunks
+                // Collect entities from grid chunks.
                 core::MeshAxisMaxAbsoluteValues entityChunkBounds =
                     allMeshMaxAbsoluteValues[backtrackingEntityMeshHandle.id];
                 core::vector<vec3> entityBoxCornerBoundPoints =
@@ -120,12 +114,10 @@ void CCollisionSystem::Update() {
                         backtrackingTransformComponent->scale
                     );
 
-                core::vector<u32>
-                    collectedEntities; ///< Result array with collected entities
-                /*
-                  Need only left bottom back cornder point and right upper front
-                  conrner point to obtain all box bounds
-                */
+                // Result array with collected entities.
+                core::vector<u32> collectedEntities;
+                // Need only left bottom back corner point and right upper front
+                // corner point to obtain all box bounds
                 const vec3 minEntityPosition = entityBoxCornerBoundPoints[0];
                 const vec3 maxEntityPosition = entityBoxCornerBoundPoints[1];
 
@@ -143,8 +135,8 @@ void CCollisionSystem::Update() {
                 int indexMaxZ =
                     (int)((maxEntityPosition[2] + chunkHalfDepth) / chunkSize);
 
-                // entity can legitimately leave the fixed-size world grid —
-                // clamp to nearest edge cell instead of crashing
+                // Entity can legitimately leave the fixed-size world grid -
+                // clamp to nearest edge cell instead of crashing.
                 indexMinX =
                     std::clamp(indexMinX, 0, (int)spatialGrid.width - 1);
                 indexMinY =
@@ -174,10 +166,10 @@ void CCollisionSystem::Update() {
                     }
                 }
 
-                /// Inner cycle on every archetype
-                /// Count on every entity in current inner archetype
+                // Inner cycle on every archetype.
+                // Count on every entity in current inner archetype.
                 for (unsigned int j = 0; j < collectedEntities.GetSize(); ++j) {
-                    /// Check for same entityID and iteration
+                    // Check for same entityID and iteration.
                     uint32_t comparedEntityID = collectedEntities[j];
                     if (backtrackingEntityID == comparedEntityID) {
                         continue;
@@ -191,8 +183,8 @@ void CCollisionSystem::Update() {
 
                     components::MeshHandle comparedEntityMeshHandle;
                     if (comparedEntityLocation.arch == nullptr) {
-                        /// entity was removed from the world but a stale
-                        /// reference survived in the grid, skip it
+                        // Entity was removed from the world but a stale
+                        // reference survived in the grid, skip it.
                         continue;
                     }
                     if (arch::matchesRequiredMask(
@@ -274,7 +266,7 @@ void CCollisionSystem::Update() {
                             backtrackingEntityMeshHandle,
                             comparedEntityMeshHandle
                         );
-}
+                    }
 
                     if (upperActorCheckFlag && boxColliderFlag) {
                         uint8_t groudCollisionTurnOnMask =
@@ -319,24 +311,23 @@ bool CCollisionSystem::UpperActorCheck(
     core::MeshAxisMaxAbsoluteValues backtrackingMeshAxisMaxAbsoluteValues =
         allMeshMaxAbsoluteValues[backtrackingMeshHandle.id];
 
-    // std::cout << "array size: " << allMeshMaxAbsoluteValues.GetSize() <<
-    // std::endl; std::cout << "mesh id: " << comparedMeshHandle.id << std::endl;
-
     core::MeshAxisMaxAbsoluteValues comparedMeshAxisMaxAbsoluteValues =
         allMeshMaxAbsoluteValues[comparedMeshHandle.id];
 
     constexpr float epsilon = 0.15f;
     if (backtrackingPosition[1]
             + backtrackingMeshAxisMaxAbsoluteValues.origin_offset_y
+                * backtrackingScale
             - backtrackingMeshAxisMaxAbsoluteValues.absolute_y
                 * backtrackingScale
             + epsilon
         > comparedPosition[1]
             + comparedMeshAxisMaxAbsoluteValues.origin_offset_y
+                * comparedScale
             + comparedMeshAxisMaxAbsoluteValues.absolute_y * comparedScale) {
         return true;
     }
 
     return false;
 }
-} // namespace GLVM::ecs
+} // namespace glvm::ecs

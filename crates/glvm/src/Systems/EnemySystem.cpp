@@ -1,8 +1,3 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
 #include "glvm/Systems/EnemySystem.hpp"
 
 #include "glvm/ArchetypeECS/ArchECS_World.hpp"
@@ -18,9 +13,9 @@
 
 #include <cstdint>
 
-namespace GLVM::ecs {
+namespace glvm::ecs {
 void EnemySystem::Update() {
-    namespace arch = GLVM::ecs::arch;
+    namespace arch = glvm::ecs::arch;
 
     playerArchetypesNumber = 0;
     arch::world.searchCacheArchetypes(
@@ -146,4 +141,4 @@ void EnemySystem::Update() {
         }
     }
 }
-} // namespace GLVM::ecs
+} // namespace glvm::ecs

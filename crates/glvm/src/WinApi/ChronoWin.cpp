@@ -1,11 +1,6 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
 #include "glvm/WinApi/ChronoWin.hpp"
 
-namespace GLVM::Time {
+namespace glvm::Time {
 CTimerWin::CTimerWin() {
     InitFrequency();
     Reset();
@@ -25,4 +20,4 @@ double CTimerWin::GetElapsed() {
     QueryPerformanceCounter((PLARGE_INTEGER)&i64Now_);
     return (double)(i64Now_ - i64Start_) / i64Freq_;
 }
-} // namespace GLVM::Time
+} // namespace glvm::Time

@@ -1,6 +1,6 @@
 #include "glvm/ArchetypeECS/ArchECS_Utils.hpp"
 
-namespace GLVM::ecs::arch {
+namespace glvm::ecs::arch {
 bool matchesRequiredMask(
     const componentMask archetypeMask,
     const componentMask& systemMask
@@ -19,4 +19,4 @@ id getId(entity entity_) {
 generation getGen(entity entity_) {
     return entity_ >> ENTITY_ID_BITS;
 }
-}; // namespace GLVM::ecs::arch
+}; // namespace glvm::ecs::arch

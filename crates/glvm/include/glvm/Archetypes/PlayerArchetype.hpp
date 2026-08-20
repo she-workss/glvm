@@ -1,5 +1,4 @@
-#ifndef PLAYER_ARCHETYPE_HPP
-#define PLAYER_ARCHETYPE_HPP
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchECS_Types.hpp"
 #include "glvm/ArchetypeECS/ArchetypeInterface.hpp"
@@ -19,7 +18,7 @@
 #include "glvm/Globals.hpp"
 #include "glvm/TagComponents/PlayerTagComponent.hpp"
 
-namespace GLVM::ecs::arch {
+namespace glvm::ecs::arch {
 constexpr uint32_t PLAYER_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(components::transform) + sizeof(components::beholder)
        + sizeof(components::collider) + sizeof(components::colliderFlags)
@@ -96,6 +95,4 @@ struct PlayerArchetype: Archetype {
         componentCount = 14;
     }
 };
-}; // namespace GLVM::ecs::arch
-
-#endif
+}; // namespace glvm::ecs::arch

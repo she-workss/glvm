@@ -1,5 +1,5 @@
-// ThreadPool.h
 #pragma once
+
 #include <condition_variable>
 #include <functional>
 #include <future>
@@ -14,11 +14,9 @@ public:
     explicit ThreadPool(size_t numThreads);
     ~ThreadPool();
 
-    // Запретить копирование и перемещение
     ThreadPool(const ThreadPool&) = delete;
     ThreadPool& operator=(const ThreadPool&) = delete;
 
-    // Добавить задачу в очередь
     template<class F, class... Args>
     auto enqueue(F&& f, Args&&... args)
         -> std::future<typename std::invoke_result_t<F, Args...>>;
@@ -32,7 +30,6 @@ private:
     bool stop;
 };
 
-// Реализация template функции в заголовке
 template<class F, class... Args>
 auto ThreadPool::enqueue(F&& f, Args&&... args)
     -> std::future<typename std::invoke_result_t<F, Args...>> {

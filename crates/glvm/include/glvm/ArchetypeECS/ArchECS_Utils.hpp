@@ -1,5 +1,4 @@
-#ifndef ARCH_ECS_UTILS_HPP
-#define ARCH_ECS_UTILS_HPP
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchECS_Types.hpp"
 #include "glvm/ArchetypeECS/ArchetypeInterface.hpp"
@@ -7,10 +6,7 @@
 #include "glvm/Archetypes/PlayerArchetype.hpp"
 #include "glvm/ComponentsFullSet.hpp"
 
-// #include "TagComponents/LevelChunkTagComponent.hpp"
-// #include "TagComponents/PlayerTagComponent.hpp"
-
-namespace GLVM::ecs::arch {
+namespace glvm::ecs::arch {
 entity makeEntity(id id_, generation generation_);
 id getId(entity entity_);
 generation getGen(entity entity_);
@@ -34,6 +30,4 @@ void unwrapArchetype(
             break;
     }
 }
-}; // namespace GLVM::ecs::arch
-
-#endif
+}; // namespace glvm::ecs::arch

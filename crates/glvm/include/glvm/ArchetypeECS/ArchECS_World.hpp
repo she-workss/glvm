@@ -1,12 +1,11 @@
-#ifndef ARCH_ECS_WORLD_HPP
-#define ARCH_ECS_WORLD_HPP
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchECS_Utils.hpp"
 #include "glvm/ArchetypeECS/ArchetypeInterface.hpp"
 #include "glvm/Vector.hpp"
 #include "glvm/typenames.hpp"
 
-namespace GLVM::ecs::arch {
+namespace glvm::ecs::arch {
 struct GridChunk {
     vec3 position;
     static constexpr float size = 32;
@@ -38,6 +37,4 @@ struct World {
 };
 
 extern World world;
-}; // namespace GLVM::ecs::arch
-
-#endif
+}; // namespace glvm::ecs::arch

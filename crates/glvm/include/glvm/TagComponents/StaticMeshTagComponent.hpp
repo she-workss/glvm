@@ -1,8 +1,5 @@
-#ifndef STATIC_MESH_TAG_COMPONENT_HPP
-#define STATIC_MESH_TAG_COMPONENT_HPP
+#pragma once
 
-namespace GLVM::ecs::tagComponents {
+namespace glvm::ecs::tagComponents {
 struct staticMeshTagComponent {};
-}; // namespace GLVM::ecs::tagComponents
-
-#endif
+}; // namespace glvm::ecs::tagComponents

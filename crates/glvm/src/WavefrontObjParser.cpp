@@ -1,8 +1,3 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
 #include "glvm/WavefrontObjParser.hpp"
 
 #include "glvm/Vector.hpp"
@@ -10,37 +5,24 @@
 #include <chrono>
 #include <iterator>
 
-namespace GLVM::core {
-// CWaveFrontObjParser* CWaveFrontObjParser::pInstance_ = nullptr;
-// std::mutex CWaveFrontObjParser::Mutex_;
-
+namespace glvm::core {
 CWaveFrontObjParser::CWaveFrontObjParser() {}
 
-// CWaveFrontObjParser* CWaveFrontObjParser::GetInstance()
-// {
-//     std::lock_guard<std::mutex> lock(Mutex_);
-//     if(pInstance_ == nullptr)
-//     {
-//         pInstance_ = new CWaveFrontObjParser();
-//     }
-//     return pInstance_;
-// }
-
-const GLVM::core::vector<SVertex>& CWaveFrontObjParser::
+const glvm::core::vector<SVertex>& CWaveFrontObjParser::
     getCoordinateVertices() const {
     return coordinateVertices_;
 }
 
-const GLVM::core::vector<SVertex>& CWaveFrontObjParser::
+const glvm::core::vector<SVertex>& CWaveFrontObjParser::
     getTextureVertices() const {
     return textureVertices_;
 }
 
-const GLVM::core::vector<SVertex>& CWaveFrontObjParser::getNormals() const {
+const glvm::core::vector<SVertex>& CWaveFrontObjParser::getNormals() const {
     return normals_;
 }
 
-const GLVM::core::vector<SFace>& CWaveFrontObjParser::getFaces() const {
+const glvm::core::vector<SFace>& CWaveFrontObjParser::getFaces() const {
     return faces_;
 }
 
@@ -60,54 +42,38 @@ void CWaveFrontObjParser::ReadFile(const char* _filePath) {
     }
 
     pWavefrontObjFileData = sWavefrontObjFileData.c_str();
-
-    // for (int i = 0; i < sWavefrontObjFileData.size(); ++i) {
-    // 	if (sWavefrontObjFileData[i] == '\n')
-    // 		std::cout << sWavefrontObjFileData[i] << std::endl;
-    // 	else
-    // 		std::cout << sWavefrontObjFileData[i];
-    // }
 }
 
 void CWaveFrontObjParser::ParseFile() {
-    // unsigned int uiCoordinateVerticesIndex = 0;
-    // unsigned int uiTextureVerticesIndex = 0;
-    // unsigned int uiFacesIndex = 0;
     while (pWavefrontObjFileData[uiCounter] != '\0') {
-        GLVM::core::vector<vector<char>> line =
+        glvm::core::vector<vector<char>> line =
             Split(pWavefrontObjFileData, ' ', '\n', uiCounter);
-
         if (line[0] == "v") {
             SVertex vertex = ParseVertices(line);
             coordinateVertices_.Push(vertex);
-            //                ++uiCoordinateVerticesIndex;
         }
         if (line[0] == "vt") {
             SVertex vertex = ParseVertices(line);
             textureVertices_.Push(vertex);
-            //                ++uiTextureVerticesIndex;
         }
         if (line[0] == "vn") {
             SVertex vertex = ParseVertices(line);
             normals_.Push(vertex);
-            //                ++uiTextureVerticesIndex;
         }
         if (line[0] == "f") {
             SFace face = ParseFaces(line);
             faces_.Push(face);
-
-            //                ++uiFacesIndex;
         }
     }
 }
 
-GLVM::core::vector<vector<char>> CWaveFrontObjParser::Split(
+glvm::core::vector<vector<char>> CWaveFrontObjParser::Split(
     const char* _pWaveFrontObjFileData,
     const char _separator,
     const char _exitSymbol,
     unsigned int& _uiCounter
 ) {
-    GLVM::core::vector<vector<char>> wordsContainer;
+    glvm::core::vector<vector<char>> wordsContainer;
     unsigned int outerIndex = 0;
     wordsContainer.Push({});
 
@@ -134,7 +100,7 @@ GLVM::core::vector<vector<char>> CWaveFrontObjParser::Split(
 }
 
 SVertex CWaveFrontObjParser::ParseVertices(
-    GLVM::core::vector<vector<char>> _wordsContainer
+    glvm::core::vector<vector<char>> _wordsContainer
 ) {
     SVertex vertex;
     unsigned int uiVertexIndex = 0;
@@ -149,11 +115,11 @@ SVertex CWaveFrontObjParser::ParseVertices(
 }
 
 SFace CWaveFrontObjParser::ParseFaces(
-    GLVM::core::vector<vector<char>> _wordsContainer
+    glvm::core::vector<vector<char>> _wordsContainer
 ) {
     SFace face;
-    GLVM::core::vector<vector<char>> wordsInnerContainer;
-    GLVM::core::vector<char> word;
+    glvm::core::vector<vector<char>> wordsInnerContainer;
+    glvm::core::vector<char> word;
 
     unsigned int uiWordsContainerSize = _wordsContainer.GetSize();
 
@@ -172,8 +138,8 @@ SFace CWaveFrontObjParser::ParseFaces(
     return face;
 }
 
-int CWaveFrontObjParser::ParseInteger(GLVM::core::vector<char> _word) {
-    GLVM::core::vector<int> baseContainer;
+int CWaveFrontObjParser::ParseInteger(glvm::core::vector<char> _word) {
+    glvm::core::vector<int> baseContainer;
 
     for (unsigned int i = 0; i < _word.GetSize() - 1; ++i) {
         baseContainer.Push(_word[i] - 48);
@@ -196,8 +162,8 @@ int CWaveFrontObjParser::ParseInteger(GLVM::core::vector<char> _word) {
     return iResult;
 }
 
-float CWaveFrontObjParser::ParseFloating(GLVM::core::vector<char> _word) {
-    GLVM::core::vector<int> baseContainer;
+float CWaveFrontObjParser::ParseFloating(glvm::core::vector<char> _word) {
+    glvm::core::vector<int> baseContainer;
 
     for (unsigned int i = 0; i < _word.GetSize() - 1; ++i) {
         baseContainer.Push(_word[i] - 48);
@@ -205,8 +171,8 @@ float CWaveFrontObjParser::ParseFloating(GLVM::core::vector<char> _word) {
 
     int integerPart = 0;
     float floatingPart = 0;
-    GLVM::core::vector<int> integerPartContainer;
-    GLVM::core::vector<int> floatingPartContainer;
+    glvm::core::vector<int> integerPartContainer;
+    glvm::core::vector<int> floatingPartContainer;
     bool dotFlag = false;
     bool negateFlag = false;
     unsigned int baseContainerSize = baseContainer.GetSize();
@@ -257,4 +223,4 @@ float CWaveFrontObjParser::ParseFloating(GLVM::core::vector<char> _word) {
 
     return result;
 }
-} // namespace GLVM::core
+} // namespace glvm::core

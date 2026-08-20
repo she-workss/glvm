@@ -1,6 +1,4 @@
-#ifdef __linux__
-#ifndef WINDOW_WAYLAND_VULKAN
-#define WINDOW_WAYLAND_VULKAN
+#pragma once
 
 #include "glvm/EventsStack.hpp"
 #include "glvm/Globals.hpp"
@@ -23,7 +21,7 @@
 #include <wayland-client-protocol.h>
 #include <wayland-client.h>
 
-namespace GLVM::core {
+namespace glvm::core {
 struct WindowWaylandVulkan: IWindow {
     WindowWaylandVulkan();
     void init();
@@ -39,11 +37,7 @@ struct WindowWaylandVulkan: IWindow {
         int* _x_offset,
         int* _y_offset
     ) override;
-
-    //		CStack           * Input_Stack_;
     bool hideAndLockPointer = false;
-    // int previous_X = 0;
-    // int previous_Y = 0;
     struct xdg_toplevel_listener xdg_toplevel_listener;
     struct xdg_surface_listener xdg_surface_listener;
     struct wl_callback_listener callback_listener;
@@ -79,41 +73,6 @@ struct WindowWaylandVulkan: IWindow {
     struct wl_callback* frame_callback;
     struct xdg_surface* xdg_surface;
 };
-
-// struct XDG_topLevelData {
-// 	uint16_t width;
-// 	uint16_t height;
-// 	wl_shm* shared_memory;
-// 	void* pixels;
-// 	wl_buffer* buffer;
-// 	uint8_t  close_xdg_toplevel;
-// };
-
-// struct XDG_surfaceConfigData {
-// 	uint16_t width;
-// 	uint16_t height;
-// 	wl_shm* shared_memory;
-// 	void* pixels;
-// 	wl_buffer* buffer;
-// 	uint8_t  constant_byte;
-// 	wl_surface* wl_surface;
-// };
-
-// struct RegistryListenerData {
-// 	wl_shm*        pointer_shared_memory;
-// 	wl_surface*    pointer_surface;
-// 	zwp_pointer_constraints_v1 *pointer_constraints;
-// 	wl_surface* wl_surface;
-// 	zwp_relative_pointer_manager_v1* relative_pointer_manager;
-// 	zwp_relative_pointer_v1* relative_pointer;
-// 	wl_pointer*    pointer;
-// 	wl_keyboard*   keyboard;
-// 	wl_display*  display;
-// 	wl_compositor* compositor;
-// 	wl_shm*        shared_memory;
-// 	xdg_wm_base*   xdg_shell;
-// 	wl_seat*       seat;
-// };
 
 void xdg_toplevel_configure(
     void* data,
@@ -242,8 +201,4 @@ void registry_global_remove(
 );
 
 [[nodiscard]] WindowWaylandVulkan* initializeWaylandWindow();
-}; // namespace GLVM::core
-
-#endif
-
-#endif
+}; // namespace glvm::core

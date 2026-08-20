@@ -11,7 +11,7 @@
 #include "glvm/Archetypes/SpotLightArchetype.hpp"
 #include "glvm/Archetypes/StaticMeshArchetype.hpp"
 
-namespace GLVM::ecs::arch {
+namespace glvm::ecs::arch {
 World world = {};
 
 World::World() {
@@ -69,9 +69,8 @@ void World::addEntityToArchetype(entity entity_, Archetype* arch) {
 void World::removeEntity(entity entity_) {
     id id_ = getId(entity_);
     EntityLocation& location = entityLocations[id_];
-
-    /// Remove entity from spatial grid cells it occupies, otherwise stale
-    /// references crash collision/physics on later frames.
+    // Remove entity from spatial grid cells it occupies, otherwise stale
+    // references crash collision/physics on later frames.
     if (location.gridCellCounter > 0) {
         for (u8 i = 0; i < location.gridCellCounter; ++i) {
             u32 z = location.gridCellIndicies[i][0];
@@ -117,4 +116,4 @@ void World::searchCacheArchetypes(
         }
     }
 }
-}; // namespace GLVM::ecs::arch
+}; // namespace glvm::ecs::arch

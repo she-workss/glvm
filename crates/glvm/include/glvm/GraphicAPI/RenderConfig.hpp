@@ -1,5 +1,4 @@
-#ifndef RENDER_CONFIG
-#define RENDER_CONFIG
+#pragma once
 
 #include "glvm/GraphicAPI/RenderData.hpp"
 #include "glvm/ShaderStructs.hpp"
@@ -8,7 +7,7 @@
 #include <cstdint>
 #include <vulkan/vulkan_core.h>
 
-namespace GLVM::core {
+namespace glvm::core {
 inline DescriptorSet descriptorSetsConfig[32];
 inline DescriptorBinding descriptorBindingsConfig[32];
 inline Pipeline pipelineConfigs[32];
@@ -16,13 +15,9 @@ inline RenderPass renderPassConfigs[32];
 constexpr uint32_t MAX_TEXTURES = 18;
 
 inline void VkConfigInitializer() {
-    /*
-    =====================================================================================
-                             PIPELINES AND ITS RENDER PASSES
-    put all meta data related to pipeline here. Also needed to add meta data of
-    desriptor sets and it's bindings that will be related to specific pipeline
-    =====================================================================================
-    */
+    // Pipelines and its render passes. Put all meta data related to pipeline
+    // here. Also needed to add meta data of descriptor sets and it's bindings
+    // that will be related to specific pipeline
 
     descriptorSetsConfig[SHADOW_MAP_DIRECTIONAL_LIGHT]
         .actualLinkedDescriptorBindingsNumber = 1;
@@ -126,9 +121,6 @@ inline void VkConfigInitializer() {
         .subpassDependencies[1]
         .dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-    /// =====================================================================================
-    /// ///
-
     descriptorSetsConfig[SHADOW_MAP_SPOT_LIGHT]
         .actualLinkedDescriptorBindingsNumber = 1;
     descriptorSetsConfig[SHADOW_MAP_SPOT_LIGHT].hostDescriptorNumber = 256;
@@ -207,9 +199,6 @@ inline void VkConfigInitializer() {
     renderPassConfigs[SPOT_LIGHT_PIPELINE]
         .subpassDependencies[1]
         .dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-    /// =====================================================================================
-    /// ///
 
     descriptorSetsConfig[SHADOW_MAP_POINT_LIGHT]
         .actualLinkedDescriptorBindingsNumber = 1;
@@ -294,9 +283,6 @@ inline void VkConfigInitializer() {
         .subpassDependencies[1]
         .dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-    /// =====================================================================================
-    /// ///
-
     descriptorSetsConfig[HUD].actualLinkedDescriptorBindingsNumber = 1;
     descriptorSetsConfig[HUD].hostDescriptorNumber = 1024;
     descriptorSetsConfig[HUD].isTexture = false;
@@ -376,9 +362,6 @@ inline void VkConfigInitializer() {
         VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
         | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     renderPassConfigs[HUD_PIPELINE].subpassDependencies[0].dependencyFlags = {};
-
-    /// =====================================================================================
-    /// ///
 
     descriptorSetsConfig[FONT_RENDER_UBO].actualLinkedDescriptorBindingsNumber =
         1;
@@ -472,9 +455,6 @@ inline void VkConfigInitializer() {
         VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
         | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     renderPassConfigs[FONT_PIPELINE].subpassDependencies[0].dependencyFlags = {};
-
-    /// =====================================================================================
-    /// ///
 
     descriptorSetsConfig[HUD_SCREEN].actualLinkedDescriptorBindingsNumber = 1;
     descriptorSetsConfig[HUD_SCREEN].hostDescriptorNumber = 64;
@@ -570,9 +550,6 @@ inline void VkConfigInitializer() {
         .subpassDependencies[0]
         .dependencyFlags = {};
 
-    /// =====================================================================================
-    /// ///
-
     descriptorSetsConfig[UI].actualLinkedDescriptorBindingsNumber = 1;
     descriptorSetsConfig[UI].hostDescriptorNumber = 128;
     descriptorSetsConfig[UI].isTexture = false;
@@ -662,9 +639,6 @@ inline void VkConfigInitializer() {
         VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
         | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     renderPassConfigs[UI_PIPELINE].subpassDependencies[0].dependencyFlags = {};
-
-    /// =====================================================================================
-    /// ///
 
     descriptorSetsConfig[UI_ICONS].actualLinkedDescriptorBindingsNumber = 1;
     descriptorSetsConfig[UI_ICONS].hostDescriptorNumber = 128;
@@ -761,9 +735,6 @@ inline void VkConfigInitializer() {
     renderPassConfigs[UI_ICONS_PIPELINE]
         .subpassDependencies[0]
         .dependencyFlags = {};
-
-    /// =====================================================================================
-    /// ///
 
     descriptorSetsConfig[VIRTUAL_TEXTURES_UBO]
         .actualLinkedDescriptorBindingsNumber = 1;
@@ -891,9 +862,6 @@ inline void VkConfigInitializer() {
     renderPassConfigs[VIRTUAL_TEXTURES_PIPELINE]
         .subpassDependencies[0]
         .dependencyFlags = {};
-
-    /// =====================================================================================
-    /// ///
 
     descriptorSetsConfig[MAIN_RENDER_MATRIX_UBO]
         .actualLinkedDescriptorBindingsNumber = 1;
@@ -1045,9 +1013,6 @@ inline void VkConfigInitializer() {
         .subpassDependencies[0]
         .dependencyFlags = {};
 
-    /// =====================================================================================
-    /// ///
-
     descriptorSetsConfig[SDF_DATA].actualLinkedDescriptorBindingsNumber = 1;
     descriptorSetsConfig[SDF_DATA].hostDescriptorNumber = 64;
     descriptorSetsConfig[SDF_DATA].isTexture = false;
@@ -1128,12 +1093,7 @@ inline void VkConfigInitializer() {
         | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     renderPassConfigs[SDF_PIPELINE].subpassDependencies[0].dependencyFlags = {};
 
-    /*
-    =====================================================================================
-                NOT RELATED TO ANY PIPELINE DESCRIPTOR SETS AND ITS BINDINGS
-    =====================================================================================
-    */
-
+    // Not related to any pipeline descriptor sets and its bindings.
     descriptorSetsConfig[RIDABLE_TEXTURES].actualLinkedDescriptorBindingsNumber =
         1;
     descriptorSetsConfig[RIDABLE_TEXTURES].hostDescriptorNumber = MAX_TEXTURES;
@@ -1145,15 +1105,4 @@ inline void VkConfigInitializer() {
     descriptorBindingsConfig[21].binding = 0;
     descriptorBindingsConfig[21].shaderDescriptorsNumber = MAX_TEXTURES;
 }
-
-// inline DescriptorSet directionalLightDescriptorSet0{ {},
-// {{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-// DescriptorsTypes::DIRECTIONAL_LIGHT_SHADOW_MAP_MATRIX_UBO,
-// 			VK_SHADER_STAGE_VERTEX_BIT, 0, 1}}, 512};
-// inline DescriptorBinding directionalLightDescriptorBinding0_Set0{
-// VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-// DescriptorsTypes::DIRECTIONAL_LIGHT_SHADOW_MAP_MATRIX_UBO,
-// 	VK_SHADER_STAGE_VERTEX_BIT, 0, 1 };
-}; // namespace GLVM::core
-
-#endif
+}; // namespace glvm::core

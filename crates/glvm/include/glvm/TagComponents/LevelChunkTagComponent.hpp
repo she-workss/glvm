@@ -1,8 +1,5 @@
-#ifndef LEVEL_CHUNK_TAG_COMPONENT_HPP
-#define LEVEL_CHUNK_TAG_COMPONENT_HPP
+#pragma once
 
-namespace GLVM::ecs::tagComponents {
+namespace glvm::ecs::tagComponents {
 struct levelChunkTagComponent {};
-}; // namespace GLVM::ecs::tagComponents
-
-#endif
+}; // namespace glvm::ecs::tagComponents

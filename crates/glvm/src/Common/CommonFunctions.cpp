@@ -1,68 +1,64 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
 #include "glvm/Common/CommonFunctions.hpp"
 
 #include "glvm/Components/ColliderComponent.hpp"
 
-namespace GLVM::core {
+namespace glvm::core {
 bool BoxCollider(
-    const vec3 backtrackingPosition,
-    const vec3 comparedPosition,
+    const vec3 backtrackingPos,
+    const vec3 comparedPos,
     const float backtrackingScale,
     const float comparedScale,
     const core::MeshAxisMaxAbsoluteValues& backtrackingMeshAxisMaxAbsoluteValues,
     const core::MeshAxisMaxAbsoluteValues& comparedMeshAxisMaxAbsoluteValues
 ) {
-    if (backtrackingPosition[0]
-                + backtrackingMeshAxisMaxAbsoluteValues.origin_offset_x
-                + backtrackingMeshAxisMaxAbsoluteValues.absolute_x
-                    * backtrackingScale
-            > comparedPosition[0]
-                + comparedMeshAxisMaxAbsoluteValues.origin_offset_x
-                - comparedMeshAxisMaxAbsoluteValues.absolute_x * comparedScale
-        && backtrackingPosition[0]
-                + backtrackingMeshAxisMaxAbsoluteValues.origin_offset_x
-                - backtrackingMeshAxisMaxAbsoluteValues.absolute_x
-                    * backtrackingScale
-            < comparedPosition[0]
-                + comparedMeshAxisMaxAbsoluteValues.origin_offset_x
-                + comparedMeshAxisMaxAbsoluteValues.absolute_x * comparedScale
-        && backtrackingPosition[1]
-                + backtrackingMeshAxisMaxAbsoluteValues.origin_offset_y
-                + backtrackingMeshAxisMaxAbsoluteValues.absolute_y
-                    * backtrackingScale
-            > comparedPosition[1]
-                + comparedMeshAxisMaxAbsoluteValues.origin_offset_y
-                - comparedMeshAxisMaxAbsoluteValues.absolute_y * comparedScale
-        && backtrackingPosition[1]
-                + backtrackingMeshAxisMaxAbsoluteValues.origin_offset_y
-                - backtrackingMeshAxisMaxAbsoluteValues.absolute_y
-                    * backtrackingScale
-            < comparedPosition[1]
-                + comparedMeshAxisMaxAbsoluteValues.origin_offset_y
-                + comparedMeshAxisMaxAbsoluteValues.absolute_y * comparedScale
-        && backtrackingPosition[2]
-                + backtrackingMeshAxisMaxAbsoluteValues.origin_offset_z
-                + backtrackingMeshAxisMaxAbsoluteValues.absolute_z
-                    * backtrackingScale
-            > comparedPosition[2]
-                + comparedMeshAxisMaxAbsoluteValues.origin_offset_z
-                - comparedMeshAxisMaxAbsoluteValues.absolute_z * comparedScale
-        && backtrackingPosition[2]
-                + backtrackingMeshAxisMaxAbsoluteValues.origin_offset_z
-                - backtrackingMeshAxisMaxAbsoluteValues.absolute_z
-                    * backtrackingScale
-            < comparedPosition[2]
-                + comparedMeshAxisMaxAbsoluteValues.origin_offset_z
-                + comparedMeshAxisMaxAbsoluteValues.absolute_z
-                    * comparedScale) {
-        return true;
-    }
-
-    return false;
+    return backtrackingPos[0]
+            + backtrackingMeshAxisMaxAbsoluteValues.origin_offset_x
+                * backtrackingScale
+            + (backtrackingMeshAxisMaxAbsoluteValues.absolute_x
+               * backtrackingScale)
+        > comparedPos[0] + comparedMeshAxisMaxAbsoluteValues.origin_offset_x
+                * comparedScale
+            - (comparedMeshAxisMaxAbsoluteValues.absolute_x * comparedScale)
+        && backtrackingPos[0]
+            + backtrackingMeshAxisMaxAbsoluteValues.origin_offset_x
+                * backtrackingScale
+            - (backtrackingMeshAxisMaxAbsoluteValues.absolute_x
+               * backtrackingScale)
+        < comparedPos[0] + comparedMeshAxisMaxAbsoluteValues.origin_offset_x
+                * comparedScale
+            + (comparedMeshAxisMaxAbsoluteValues.absolute_x * comparedScale)
+        && backtrackingPos[1]
+            + backtrackingMeshAxisMaxAbsoluteValues.origin_offset_y
+                * backtrackingScale
+            + (backtrackingMeshAxisMaxAbsoluteValues.absolute_y
+               * backtrackingScale)
+        > comparedPos[1] + comparedMeshAxisMaxAbsoluteValues.origin_offset_y
+                * comparedScale
+            - (comparedMeshAxisMaxAbsoluteValues.absolute_y * comparedScale)
+        && backtrackingPos[1]
+            + backtrackingMeshAxisMaxAbsoluteValues.origin_offset_y
+                * backtrackingScale
+            - (backtrackingMeshAxisMaxAbsoluteValues.absolute_y
+               * backtrackingScale)
+        < comparedPos[1] + comparedMeshAxisMaxAbsoluteValues.origin_offset_y
+                * comparedScale
+            + (comparedMeshAxisMaxAbsoluteValues.absolute_y * comparedScale)
+        && backtrackingPos[2]
+            + backtrackingMeshAxisMaxAbsoluteValues.origin_offset_z
+                * backtrackingScale
+            + (backtrackingMeshAxisMaxAbsoluteValues.absolute_z
+               * backtrackingScale)
+        > comparedPos[2] + comparedMeshAxisMaxAbsoluteValues.origin_offset_z
+                * comparedScale
+            - (comparedMeshAxisMaxAbsoluteValues.absolute_z * comparedScale)
+        && backtrackingPos[2]
+            + backtrackingMeshAxisMaxAbsoluteValues.origin_offset_z
+                * backtrackingScale
+            - (backtrackingMeshAxisMaxAbsoluteValues.absolute_z
+               * backtrackingScale)
+        < comparedPos[2] + comparedMeshAxisMaxAbsoluteValues.origin_offset_z
+                * comparedScale
+            + (comparedMeshAxisMaxAbsoluteValues.absolute_z * comparedScale);
 }
 
 core::vector<vec3> computeBoxCornerBoundPoints(
@@ -73,15 +69,16 @@ core::vector<vec3> computeBoxCornerBoundPoints(
     const float halfWidht = entityChunkBounds.absolute_x * scale;
     const float halfHeight = entityChunkBounds.absolute_y * scale;
     const float halfDepth = entityChunkBounds.absolute_z * scale;
-
+    const vec3 centerOffset = {
+        entityChunkBounds.origin_offset_x * scale,
+        entityChunkBounds.origin_offset_y * scale,
+        entityChunkBounds.origin_offset_z * scale
+    };
     core::vector<vec3> result;
-    result.Push(
-        entityPosition + vec3(-halfWidht, -halfHeight, -halfDepth)
-    ); ///< left bottom back
-    result.Push(
-        entityPosition + vec3(halfWidht, halfHeight, halfDepth)
-    ); ///< right upper front
-
+    // Left bottom back.
+    result.Push(entityPosition + centerOffset + vec3(-halfWidht, -halfHeight, -halfDepth));
+    // Right upper front.
+    result.Push(entityPosition + centerOffset + vec3(halfWidht, halfHeight, halfDepth));
     return result;
 }
 
@@ -148,4 +145,4 @@ void CreateProjectile(
 
     projectileBundle->damage = damage;
 }
-}; // namespace GLVM::core
+}; // namespace glvm::core

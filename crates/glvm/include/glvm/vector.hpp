@@ -1,10 +1,4 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef VECTOR_CONTAINER_HPP
-#define VECTOR_CONTAINER_HPP
+#pragma once
 
 #include "glvm/Constants.hpp"
 #include "glvm/IContainer.hpp"
@@ -16,7 +10,7 @@
 #include <cstdint>
 #include <iostream>
 
-namespace GLVM::core {
+namespace glvm::core {
 template<class T>
 class vector;
 
@@ -155,8 +149,7 @@ vector<T>::~vector() {
     rowInnerData = nullptr;
 }
 
-/// Push element on top of the container.
-
+// Push element on top of the container.
 template<class T>
 void vector<T>::Push(T item) {
     if (size == capacity) {
@@ -189,12 +182,7 @@ void vector<T>::Pop() {
     if (size < 1) {
         return;
     }
-
     T& element = *(T*)&rowInnerData[(size - 1) * sizeof(T)];
-    // if ( typeid(T).name() == typeid(unsigned int).name() ) {
-    // 	element = 0;                                                     ///<
-    // For debug purpouses only!!!
-    // }
     element.~T();
     --size;
 }
@@ -233,8 +221,7 @@ VectorIterator<T> vector<T>::Find(T& element) {
     return iterator;
 }
 
-/// Insert element into chosen cell.
-
+// Insert element into chosen cell.
 template<typename T>
 void vector<T>::Resize(const unsigned int index) {
     if (index < size) {
@@ -272,21 +259,12 @@ void vector<T>::Remove(unsigned int index) {
     if (size < 1) {
         return;
     }
-
     for (unsigned int j = index; j < size - 1; ++j) {
         T& element = *(T*)&rowInnerData[(j + 1) * sizeof(T)];
         T& previousElement = *(T*)&rowInnerData[j * sizeof(T)];
         previousElement.~T();
         new (&rowInnerData[j * sizeof(T)]) T(element);
     }
-
-    /// FIXME: FOR DEBUG ONLY!
-    // if ( typeid(T).name() == typeid(unsigned int).name() ) {
-    // 	T& element = *(T*)&rowInnerData[(size - 1) * sizeof(T)];
-    // 	element = 0;                                                     ///<
-    // For debug purpouses only!!!
-    // }
-
     --size;
 }
 
@@ -347,13 +325,11 @@ int vector<T>::GetCapacity() {
 
 template<typename T>
 const T& vector<T>::operator[](const unsigned int _iIndex) const {
-    //		assert( _iIndex < size );
     return reinterpret_cast<const T*>(rowInnerData)[_iIndex];
 }
 
 template<typename T>
 T& vector<T>::operator[](const unsigned int _iIndex) {
-    //		assert( _iIndex < size );
     return reinterpret_cast<T*>(rowInnerData)[_iIndex];
 }
 
@@ -362,31 +338,13 @@ void vector<T>::clear() {
     if (size < 1) {
         return;
     }
-
-    // /// FIXME: FOR DEBUG ONLY!
-    // if ( typeid(T).name() == typeid(unsigned int).name() ) {
-    // 	for ( unsigned int i = 0; i < capacity; ++i ) {
-    // 		T& element = *(T*)&rowInnerData[i * sizeof(T)];
-    // 		element = 0; ///< For debug purpouses only!!!
-    // 	}
-    // }
-
     for (unsigned int i = 0; i < size; ++i) {
         T& element = *(T*)&rowInnerData[i * sizeof(T)];
         element.~T();
     }
-
     delete[] this->rowInnerData;
     this->rowInnerData = nullptr;
-
-    /// FIXME: DEBUG ONLY!
-    // unsigned int sizeOfType = sizeof(T);
-    // for (unsigned int j = 0; j < capacity * sizeOfType; ++j) {
-    // 	*(unsigned char*)&rowInnerData[j] = 0;
-    // }
-
     size = 0;
-    //		capacity = 0;
 }
 
 template<class T>
@@ -399,9 +357,5 @@ void vector<T>::Print() {
     for (unsigned int i = 0; i < size; ++i) {
         std::cout << *(T*)&rowInnerData[i * sizeof(T)] << std::endl;
     }
-
-    std::cout << "End of container" << std::endl;
 }
-} // namespace GLVM::core
-
-#endif
+} // namespace glvm::core

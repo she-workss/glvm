@@ -1,10 +1,4 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef ENGINE_HPP
-#define ENGINE_HPP
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchECS_Utils.hpp"
 #include "glvm/ArchetypeECS/ArchECS_World.hpp"
@@ -31,7 +25,6 @@
 #include "glvm/IContainer.hpp"
 #include "glvm/ISoundEngine.hpp"
 #include "glvm/IWindow.hpp"
-#include "glvm/Network/UDP_ServerLinux.hpp"
 #include "glvm/ProceduralLevelGeneratingSystem.hpp"
 #include "glvm/ShaderStructs.hpp"
 #include "glvm/SystemManager.hpp"
@@ -52,7 +45,7 @@
 
 using Entity = unsigned int;
 
-namespace GLVM::core {
+namespace glvm::core {
 enum RendererType { OPENGL_RENDERER, VULKAN_RENDERER };
 
 class Engine {
@@ -65,7 +58,6 @@ class Engine {
     std::atomic<bool> runningSound {false};
     float deltaFrameTime;
     float gravity;
-    //		CStack               Input_Stack_;
     bool isLeftMouseButtonPressed;
     std::vector<ecs::Texture> textureVector;
     std::vector<const char*> pathsArray_;
@@ -74,19 +66,16 @@ class Engine {
     bool isAlreadyCached;
     bool isInventoryKeyHeld = false;
     bool wasInventoryOpened = false;
+    bool isCursorHidden = false;
     float hud_screen_x = 0.0f;
     float hud_screen_y;
-    int dragedItemEntity =
-        -1; ///< If dont have any draged item then this variable have value of -1
-    [[maybe_unused]] float fYaw = -90.0f;
-    [[maybe_unused]] float fPitch = 0.0f;
-    [[maybe_unused]] float previousMouseOffsetX = 0.0f;
-    [[maybe_unused]] float previousMouseOffsetY = 0.0f;
-
+    // If don't have any dragged item then this variable have value of -1.
+    int dragedItemEntity = -1;
+    float fYaw = -90.0f;
+    float fPitch = 0.0f;
+    float previousMouseOffsetX = 0.0f;
+    float previousMouseOffsetY = 0.0f;
     CVulkanRenderer* vulkanRenderer;
-
-    //		ecs::CSystemManager* pSystem_Manager;
-
     ecs::SpatialGridSystem* spatialGridSystem;
     ecs::CCollisionSystem* collisionSystem;
     ecs::CMovementSystem* movementSystem;
@@ -97,33 +86,24 @@ class Engine {
     ecs::ItemSystem* itemSystem;
     ProceduralLevelGeneratingSystem* procuduralLevelGeneratingSystem;
     ecs::InventorySystem* inventorySystem;
-
-    // struct PreinitializedRenderData {
-
-    // } preinitializedRenderData;
-
-    /// PreinitializedRenderData
     ecs::arch::Archetype* cachedDirectionalLigthArchetypes[32];
     uint32_t directionalLightArchetypesNumber = 0;
     ecs::arch::componentMask directionalLightRequiredMask =
         (1ul << ecs::arch::ComponentsIndices::DIRECTIONAL_LIGHT_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT);
-
     ecs::arch::Archetype* cachedSpotLigthArchetypes[32];
     uint32_t spotLightArchetypesNumber = 0;
     ecs::arch::componentMask spotLightRequiredMask =
         (1ul << ecs::arch::ComponentsIndices::SPOT_LIGHT_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT);
-
     ecs::arch::Archetype* cachedPointLigthArchetypes[32];
     uint32_t pointLightArchetypesNumber = 0;
     ecs::arch::componentMask pointLightRequiredMask =
         (1ul << ecs::arch::ComponentsIndices::POINT_LIGHT_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT);
-
     ecs::arch::Archetype* cachedAnimationActorsArchetypes[32];
     uint32_t animationActorsArchetypesNumber = 0;
     ecs::arch::componentMask animatedActorsRequiredMask =
@@ -132,7 +112,6 @@ class Engine {
         | (1ul << ecs::arch::ComponentsIndices::ROTATION_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT);
-
     ecs::arch::Archetype* cachedStaticActorsArchetypes[32];
     uint32_t staticActorsArchetypesNumber = 0;
     ecs::arch::componentMask staticActorsRequiredMask =
@@ -141,14 +120,12 @@ class Engine {
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::ROTATION_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT);
-
     ecs::arch::Archetype* cachedPlayerArchetypes[32];
     uint32_t playerArchetypesNumber = 0;
     ecs::arch::componentMask playerRequiredMask =
         (1ul << ecs::arch::ComponentsIndices::PLAYER_TAG_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::VIEW_COMPONENT);
-
     ecs::arch::Archetype* cachedAnimationArchetypes[32];
     uint32_t animationArchetypesNumber = 0;
     ecs::arch::componentMask animationRequiredMask =
@@ -157,14 +134,12 @@ class Engine {
         | (1ul << ecs::arch::ComponentsIndices::ROTATION_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT);
-
     ecs::arch::Archetype* cachedCrosshairActorsArchetypes[32];
     uint32_t crosshairActorsArchetypesNumber = 0;
     ecs::arch::componentMask crosshairRequiredMask =
         (1ul << ecs::arch::ComponentsIndices::CROSSHAIR_TAG_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT);
-
     ecs::arch::Archetype* cachedLevelChunkActorsArchetypes[32];
     uint32_t levelChunkActorsArchetypesNumber = 0;
     ecs::arch::componentMask levelChunkRequiredMask =
@@ -173,7 +148,6 @@ class Engine {
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::ROTATION_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT);
-
     ecs::arch::Archetype* cachedProjectileActorsArchetypes[32];
     uint32_t projectileActorsArchetypesNumber = 0;
     ecs::arch::componentMask projectileRequiredMask =
@@ -181,7 +155,6 @@ class Engine {
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::ROTATION_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT);
-
     ecs::arch::Archetype* cachedItemActorsArchetypes[32];
     uint32_t itemActorsArchetypesNumber = 0;
     ecs::arch::componentMask rotationItemRequiredMask =
@@ -192,7 +165,6 @@ class Engine {
         | (1ul << ecs::arch::ComponentsIndices::COLLIDER_FLAGS_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::ROTATION_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::MATERIAL_COMPONENT);
-
     ecs::arch::Archetype* cachedInventoryArchetypes[32];
     uint32_t inventoryArchetypesNumber = 0;
     ecs::arch::componentMask inventoryRequiredMask =
@@ -200,7 +172,6 @@ class Engine {
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::MATERIAL_COMPONENT);
-
     ecs::arch::Archetype* cachedItemArchetypes[32];
     uint32_t itemArchetypesNumber = 0;
     ecs::arch::componentMask itemRequiredMask =
@@ -210,24 +181,18 @@ class Engine {
         | (1ul << ecs::arch::ComponentsIndices::COLLIDER_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::COLLIDER_FLAGS_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::MATERIAL_COMPONENT);
-
     ecs::arch::Archetype* cachedHealthBarsArchetypes[32];
     uint32_t healthBarsArchetypesNumber = 0;
     ecs::arch::componentMask healthBarsRequiredMask =
         (1ul << ecs::arch::ComponentsIndices::HEALTH_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT);
-
     ecs::arch::Archetype* cachedFontsArchetypes[32];
     uint32_t fontsArchetypesNumber = 0;
     ecs::arch::componentMask fontRequiredMask =
         (1ul << ecs::arch::ComponentsIndices::FONT_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT);
-
-    /// For FPS counting
-    unsigned int fpsCounter = 0;
     double fpsAccumulator = 0;
-
     Engine();
 
 public:
@@ -237,13 +202,12 @@ public:
 
     ~Engine();
 
-    Engine(Engine& _engine) =
-        delete; ///< Dont need to make copy because of singleton property.
-    void operator=(const Engine& _engine) =
-        delete; ///< Dont need assignment operator because of singleton property.
-    static Engine* GetInstance(); ///< It possibly to get only one instance of
-                                  ///< this class whith this method
-
+    // Don't need to make copy because of singleton property.
+    Engine(Engine& _engine) = delete;
+    // Don't need assignment operator because of singleton property.
+    void operator=(const Engine& _engine) = delete;
+    // It possibly to get only one instance of this class with this method.
+    static Engine* GetInstance();
     void GameLoop();
     void EventQueueFlush();
     void RenderVulkan();
@@ -304,9 +268,6 @@ public:
     ecs::components::MeshHandle LoadMeshFromFile_OBJ(const char* _pathToMesh);
     ecs::components::MeshHandle LoadMeshFromFile_GLTF(const char* pathToMesh);
     ecs::components::MeshHandle LoadMesh();
-    void FPScounter();
     void GameKill();
 };
-} // namespace GLVM::core
-
-#endif
+} // namespace glvm::core

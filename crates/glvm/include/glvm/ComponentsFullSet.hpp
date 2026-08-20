@@ -1,10 +1,4 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef COMPONENTS_FULL_SET_HPP
-#define COMPONENTS_FULL_SET_HPP
+#pragma once
 
 #include "glvm/Components/AnimationComponent.hpp"
 #include "glvm/Components/ColliderComponent.hpp"
@@ -25,5 +19,3 @@
 #include "glvm/Components/TransformComponent.hpp"
 #include "glvm/Components/VertexComponent.hpp"
 #include "glvm/Components/ViewComponent.hpp"
-
-#endif

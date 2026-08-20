@@ -1,5 +1,4 @@
-#ifndef INVENTORY_COMPONENT_HPP
-#define INVENTORY_COMPONENT_HPP
+#pragma once
 
 #include "glvm/Components/InventorySlotComponent.hpp"
 #include "glvm/Components/VertexComponent.hpp"
@@ -7,7 +6,7 @@
 
 #include <climits>
 
-namespace GLVM::ecs::components {
+namespace glvm::ecs::components {
 class inventory {
 public:
     inventory() {
@@ -48,26 +47,12 @@ public:
 
     unsigned int row = 8;
     unsigned int col = 8;
-    // int slots[row][col] = {
-    // 	{ -1, -1, -1, -1, -1, -1, -1, -1 },
-    // 	{ -1, -1, -1, -1, -1, -1, -1, -1 },
-    // 	{ -1, -1, -1, -1, -1, -1, -1, -1 },
-    // 	{ -1, -1, -1, -1, -1, -1, -1, -1 },
-    // 	{ -1, -1, -1, -1, -1, -1, -1, -1 },
-    // 	{ -1, -1, -1, -1, -1, -1, -1, -1 },
-    // 	{ -1, -1, -1, -1, -1, -1, -1, -1 },
-    // 	{ -1, -1, -1, -1, -1, -1, -1, -1 },
-    // };
-
-    unsigned int** slots =
-        new unsigned int*[row]; ///< Array with entities contained
-                                ///< inventorySlotComponents
+    // Array with entities contained inventorySlotComponents.
+    unsigned int** slots = new unsigned int*[row];
     unsigned int entityOwner = UINT_MAX;
     core::vector<unsigned int> highlightedSlots;
     bool isAvailableHighlightedSlots = false;
     MeshHandle slotMeshID;
     float slotScale;
 };
-}; // namespace GLVM::ecs::components
-
-#endif
+}; // namespace glvm::ecs::components

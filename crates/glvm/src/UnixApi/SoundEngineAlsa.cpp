@@ -1,13 +1,7 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
 #include "glvm/SoundEngineAlsa.hpp"
 
-namespace GLVM::core::Sound {
+namespace glvm::core::Sound {
 void CSoundEngineAlsa::OpenDevice(const char* device) {
-    //		const char *kDevice = "default";
     (snd_pcm_open(&pPcm, device, SND_PCM_STREAM_PLAYBACK, 0));
 }
 
@@ -27,7 +21,8 @@ void CSoundEngineAlsa::PlaybackSoundSample(CSoundSample& _sound_sample) {
     snd_pcm_format_t format = SND_PCM_FORMAT_S16_LE;
     snd_pcm_access_t access = SND_PCM_ACCESS_RW_INTERLEAVED;
     unsigned int uiChannels = 2, uiRate;
-    unsigned int uiLatency = 500000; /* 0.5 s */
+    // 0.5 s
+    unsigned int uiLatency = 500000;
     unsigned int uiFrame_Size = uiChannels * 2;
 
     uiRate = _sound_sample.uiRate_;
@@ -63,12 +58,8 @@ void CSoundEngineAlsa::PlaybackSoundSample(CSoundSample& _sound_sample) {
         data = buf;
         while (rest > 0) {
             frames = snd_pcm_writei(pPcm, data, rest);
-            // if (frames < 0)
-            //     CHECK(snd_pcm_recover(pPcm, frames, 0));
-            // else {
             rest -= frames;
             data += frames * uiFrame_Size;
-            //                    }
         }
     }
     free(buf);
@@ -124,4 +115,4 @@ CSoundEngineAlsa::~CSoundEngineAlsa() {
         tSound_Contaier[i] = nullptr;
     }
 }
-} // namespace GLVM::core::Sound
+} // namespace glvm::core::Sound

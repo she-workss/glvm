@@ -1,8 +1,3 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
 #include "glvm/UnixApi/WindowXVulkan.hpp"
 
 #include <X11/Xlib.h>
@@ -10,19 +5,8 @@
 #include <bits/types/wint_t.h>
 #include <iostream>
 
-namespace GLVM::core {
+namespace glvm::core {
 WindowXVulkan::WindowXVulkan() {
-    // const int aAttrib[] =
-    // {
-    //     GLX_RENDER_TYPE, GLX_RGBA_BIT,
-    //     GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
-    //     GLX_DOUBLEBUFFER, true,
-    //     GLX_RED_SIZE, 1,
-    //     GLX_GREEN_SIZE, 1,
-    //     GLX_BLUE_SIZE, 1,
-    //     None
-    // };
-
     pDisp_ = XOpenDisplay(NULL);
     Root_Window_ = DefaultRootWindow(pDisp_);
     Set_Window_Attributes_.event_mask = KeyPressMask | KeyReleaseMask
@@ -32,6 +16,7 @@ WindowXVulkan::WindowXVulkan() {
     const int screenNumber = XDefaultScreen(pDisp_);
     width = DisplayWidth(pDisp_, screenNumber);
     height = DisplayHeight(pDisp_, screenNumber);
+    // Show the window.
     Win_ = XCreateWindow(
         pDisp_,
         Root_Window_,
@@ -46,7 +31,6 @@ WindowXVulkan::WindowXVulkan() {
         CWEventMask,
         &Set_Window_Attributes_
     );
-    ///< Show_the_window
 
     XMapWindow(pDisp_, Win_);
 
@@ -74,7 +58,6 @@ WindowXVulkan::WindowXVulkan() {
     XFreePixmap(pDisp_, bitmapNoData);
 
     XGetWindowAttributes(pDisp_, Win_, &GWindow_Attributes_);
-    //		const int kInterval = 1;
 }
 
 WindowXVulkan::~WindowXVulkan() = default;
@@ -99,11 +82,19 @@ void WindowXVulkan::CursorLock(
 
     *_x_offset += iOffset_X;
     *_y_offset -= iOffset_Y;
-
-    ///< Pitch is limited by angle in Engine::SetViewMatrix(), so this offset
-    ///< may accumulate freely; no pixel clamp here (resolution-independent).
-
-    XWarpPointer(pDisp_, None, Win_, 0, 0, 0, 0, (int)(width / 2), (int)(height / 2));
+    // Pitch is limited by angle in Engine::SetViewMatrix(), so this offset may
+    // accumulate freely; no pixel clamp here (resolution-independent).
+    XWarpPointer(
+        pDisp_,
+        None,
+        Win_,
+        0,
+        0,
+        0,
+        0,
+        (int)(width / 2),
+        (int)(height / 2)
+    );
     XFlush(pDisp_);
 }
 
@@ -127,12 +118,7 @@ bool WindowXVulkan::HandleEvent(CEvent& _Event) {
                 _Event.SetEvent(EEvents::eMOUSE_POINTER_POSITION);
                 _Event.mousePointerPosition.position_X = motion.x;
                 _Event.mousePointerPosition.position_Y = motion.y;
-
-                ///< Search MapNotify events depend on XMapWindow(pDisp_, Win_)
-                ///< function.
-                //				break;
             case MapNotify:
-                ///< Link mouse cursor to specified window.
                 XGrabPointer(
                     pDisp_,
                     Win_,
@@ -217,7 +203,7 @@ bool WindowXVulkan::HandleEvent(CEvent& _Event) {
                     if (uXNext_Event.type == KeyPress
                         && uXNext_Event.xkey.time == uXEvent.xkey.time
                         && uXNext_Event.xkey.keycode == uXEvent.xkey.keycode) {
-                        ///< Key wasn’t actually released
+                        // Key wasn't actually released.
                         XNextEvent(pDisp_, &uXNext_Event);
                         continue;
                     }
@@ -228,19 +214,19 @@ bool WindowXVulkan::HandleEvent(CEvent& _Event) {
                         _Event.SetEvent(EEvents::eINVENTORY_RELEASE);
                         break;
                     case XKEY_A:
-                        _Event.SetEvent(GLVM::core::eKEYRELEASE_A);
+                        _Event.SetEvent(glvm::core::eKEYRELEASE_A);
                         break;
                     case XKEY_D:
-                        _Event.SetEvent(GLVM::core::eKEYRELEASE_D);
+                        _Event.SetEvent(glvm::core::eKEYRELEASE_D);
                         break;
                     case XKEY_S:
-                        _Event.SetEvent(GLVM::core::eKEYRELEASE_S);
+                        _Event.SetEvent(glvm::core::eKEYRELEASE_S);
                         break;
                     case XKEY_W:
-                        _Event.SetEvent(GLVM::core::eKEYRELEASE_W);
+                        _Event.SetEvent(glvm::core::eKEYRELEASE_W);
                         break;
                     case XKEY_SPACE:
-                        _Event.SetEvent(GLVM::core::eKEYRELEASE_JUMP);
+                        _Event.SetEvent(glvm::core::eKEYRELEASE_JUMP);
                         break;
                 }
                 break;
@@ -253,9 +239,6 @@ bool WindowXVulkan::HandleEvent(CEvent& _Event) {
 
 void WindowXVulkan::Close() {
     XDestroyWindow(pDisp_, Win_);
-    //        XFreeColormap(pDisp_, Color_Map_);
-    //        XFree(pVisual_);
-    //        XFree(pFbc_);
     XCloseDisplay(pDisp_);
 }
-} // namespace GLVM::core
+} // namespace glvm::core

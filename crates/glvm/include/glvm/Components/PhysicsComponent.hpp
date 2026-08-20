@@ -1,10 +1,7 @@
-#ifndef PHYSICS_COMPONENT_HPP
-#define PHYSICS_COMPONENT_HPP
+#pragma once
 
-namespace GLVM::ecs::components {
+namespace glvm::ecs::components {
 struct physics {
     float gravityAccumulator = 0.0f;
 };
-}; // namespace GLVM::ecs::components
-
-#endif
+}; // namespace glvm::ecs::components

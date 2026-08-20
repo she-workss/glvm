@@ -1,16 +1,10 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef STACK
-#define STACK
+#pragma once
 
 #include "glvm/Event.hpp"
 
 #include <iostream>
 
-namespace GLVM::core {
+namespace glvm::core {
 class CStack {
     int iHead_ = 0;
     static const int iStack_Range_ = 6;
@@ -65,9 +59,6 @@ public:
         }
     }
 
-    ///<       !!!!!!!!!!!!!!!!!!!!!!!!!!! DELETE ALL THIS IF'S WHITH CHECKEVENT
-    ///<       FUNCTION !!!!!!!!!!!!!!!!!!!!!!!!!!
-
     void ControlInput(CEvent& _eEvent) {
         if (!(SearchElement(_eEvent.GetEvent()) == eEmpty)) {
             return;
@@ -115,6 +106,9 @@ public:
             case eINVENTORY:
                 Push(eINVENTORY);
                 break;
+            case eCURSOR_RELEASED:
+                Push(eCURSOR_RELEASED);
+                break;
             case eMOUSE_LEFT_BUTTON:
                 Push(eMOUSE_LEFT_BUTTON);
                 break;
@@ -158,5 +152,4 @@ public:
         }
     }
 };
-} // namespace GLVM::core
-#endif
+} // namespace glvm::core

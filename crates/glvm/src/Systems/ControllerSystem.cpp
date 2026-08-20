@@ -2,10 +2,10 @@
 
 #include "glvm/Event.hpp"
 
-namespace GLVM::core {
+namespace glvm::core {
 ControllerSystem::ControllerSystem(CStack& inputStack, CEvent& event) :
     inputStack_(inputStack),
     event_(event) {}
 
 void ControllerSystem::Update() {}
-} // namespace GLVM::core
+} // namespace glvm::core

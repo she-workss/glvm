@@ -1,5 +1,4 @@
-#ifndef STATIC_MESH_ARCHETYPE_HPP
-#define STATIC_MESH_ARCHETYPE_HPP
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchetypeInterface.hpp"
 #include "glvm/Components/ColliderComponent.hpp"
@@ -12,7 +11,7 @@
 #include "glvm/Globals.hpp"
 #include "glvm/TagComponents/StaticMeshTagComponent.hpp"
 
-namespace GLVM::ecs::arch {
+namespace glvm::ecs::arch {
 constexpr uint32_t STATIC_MESH_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(components::transform) + sizeof(components::collider)
        + sizeof(components::colliderFlags) + sizeof(components::mesh)
@@ -62,6 +61,4 @@ struct StaticMeshArchetype: Archetype {
         componentCount = 8;
     }
 };
-}; // namespace GLVM::ecs::arch
-
-#endif
+}; // namespace glvm::ecs::arch

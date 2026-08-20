@@ -1,7 +1,7 @@
 #include "glvm/GraphicAPI/RenderData.hpp"
 
-namespace GLVM::core {
+namespace glvm::core {
 vector<VkDescriptorSet> descriptorSetsChunks;
-GLVM::core::vector<VkRenderPass> renderPasses;
-GLVM::core::vector<Descriptor> GPUDescriptors;
-} // namespace GLVM::core
+glvm::core::vector<VkRenderPass> renderPasses;
+glvm::core::vector<Descriptor> GPUDescriptors;
+} // namespace glvm::core

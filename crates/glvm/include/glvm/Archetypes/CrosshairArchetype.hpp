@@ -1,5 +1,4 @@
-#ifndef CROSSHAIR_ARCHETYPE
-#define CROSSHAIR_ARCHETYPE
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchetypeInterface.hpp"
 #include "glvm/Components/MaterialComponent.hpp"
@@ -8,7 +7,7 @@
 #include "glvm/Globals.hpp"
 #include "glvm/TagComponents/CrosshairTagComponent.hpp"
 
-namespace GLVM::ecs::arch {
+namespace glvm::ecs::arch {
 constexpr uint32_t CROSSHAIR_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(components::transform) + sizeof(components::mesh)
        + sizeof(components::material)
@@ -40,6 +39,4 @@ struct CrosshairArchetype: Archetype {
         componentCount = 4;
     }
 };
-}; // namespace GLVM::ecs::arch
-
-#endif
+}; // namespace glvm::ecs::arch

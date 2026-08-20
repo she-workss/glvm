@@ -1,5 +1,4 @@
-#ifndef PROCEDURAL_LEVEL_GENEGRATING_SYSTEM
-#define PROCEDURAL_LEVEL_GENEGRATING_SYSTEM
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchECS_World.hpp"
 #include "glvm/ArchetypeECS/ArchetypeInterface.hpp"
@@ -14,7 +13,7 @@
 #include <map>
 #include <random>
 
-namespace GLVM::core {
+namespace glvm::core {
 class ProceduralLevelGeneratingSystem: public ecs::ISystem {
 public:
     unsigned int levelNubmer = 0;
@@ -53,16 +52,14 @@ public:
     core::vector<ecs::TextureHandle> textureHandlers;
 
     std::vector<core::vector<core::Vertex>> levelGeneratedVertices;
-    std::vector<std::vector<uint32_t>>
-        levelGeneratedIndices; ///< wavefront.obj indices
-    MeshAxisLimitingValues
-        meshAxisLimitingValues; /// keep axis liniting values for every exis per
-                                /// mesh in current iteration while initializing
-                                /// wavefrontobj and gltf
-    MeshAxisLimitingValues
-        coordinateMaximumValuePerDirection; ///< contain maximum coordinate
-                                            ///< value in every direction for
-                                            ///< all generated levels
+    // Wavefront .obj indices.
+    std::vector<std::vector<uint32_t>> levelGeneratedIndices;
+    // Keep axis limiting values for every axis per mesh in current iteration
+    // while initializing Wavefront .obj and GLTF.
+    MeshAxisLimitingValues meshAxisLimitingValues;
+    // Contains maximum coordinate value in every direction for all generated
+    // levels.
+    MeshAxisLimitingValues coordinateMaximumValuePerDirection;
 
     void Update();
     void setHalfExtentsFromDirection(
@@ -101,6 +98,4 @@ public:
         float half_z
     );
 };
-} // namespace GLVM::core
-
-#endif
+} // namespace glvm::core

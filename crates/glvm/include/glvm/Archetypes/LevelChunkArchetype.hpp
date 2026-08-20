@@ -1,5 +1,4 @@
-#ifndef LEVEL_CHUNK_ARCHETYPE
-#define LEVEL_CHUNK_ARCHETYPE
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchECS_Types.hpp"
 #include "glvm/ArchetypeECS/ArchetypeInterface.hpp"
@@ -12,7 +11,7 @@
 #include "glvm/Globals.hpp"
 #include "glvm/TagComponents/LevelChunkTagComponent.hpp"
 
-namespace GLVM::ecs::arch {
+namespace glvm::ecs::arch {
 constexpr uint32_t LEVEL_CHUNK_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(components::transform) + sizeof(components::material)
        + sizeof(components::mesh) + sizeof(components::collider)
@@ -57,6 +56,4 @@ struct LevelChunkArchetype: Archetype {
         componentCount = 7;
     }
 };
-}; // namespace GLVM::ecs::arch
-
-#endif
+}; // namespace glvm::ecs::arch

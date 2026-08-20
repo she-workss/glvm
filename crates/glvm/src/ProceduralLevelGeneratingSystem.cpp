@@ -18,14 +18,14 @@
 #include <cstdint>
 #include <random>
 
-namespace GLVM::core {
+namespace glvm::core {
 void ProceduralLevelGeneratingSystem::Update() {
-    using namespace GLVM;
-    namespace cm = GLVM::ecs::components;
-    namespace arch = GLVM::ecs::arch;
+    using namespace glvm;
+    namespace cm = glvm::ecs::components;
+    namespace arch = glvm::ecs::arch;
     core::Engine* GLVM = core::Engine::GetInstance();
 
-    /// New arch ECS
+    // New arch ECS.
     arch::ArchetypeEntityManager* archEntityManager =
         arch::ArchetypeEntityManager::getInstance();
 
@@ -53,12 +53,12 @@ void ProceduralLevelGeneratingSystem::Update() {
             unsigned int levelHalfX = distCurrentLevel_x_z(mersenne);
             unsigned int levelHalfZ = distCurrentLevel_x_z(mersenne);
 
-            constexpr float transitionBridgeHalfWidth =
-                0.5f; ///< Need to move on half
+            // Need to move on half.
+            constexpr float transitionBridgeHalfWidth = 0.5f;
             constexpr float transitionBridgeHalfHeight = 1.0f;
-            if (levelNubmer != 0) { ///< On first iteration we dont need to
-                                    ///< define where locate current level
-                                    ///< depends on previousTransitionBridge
+            // On first iteration we dont need to define where locate current
+            // level depends on previousTransitionBridge.
+            if (levelNubmer != 0) {
                 generateLevel(
                     levelHalfX,
                     levelHalfY,
@@ -67,7 +67,7 @@ void ProceduralLevelGeneratingSystem::Update() {
                     transitionBridgeHalfHeight
                 );
             } else {
-                // Set to first level maximum values
+                // Set to first level maximum values.
                 coordinateMaximumValuePerDirection.lowest_x =
                     currentLevelPosition[0] - levelHalfX;
                 coordinateMaximumValuePerDirection.highest_x =
@@ -112,7 +112,7 @@ void ProceduralLevelGeneratingSystem::Update() {
                 archEntityManager->createEntity();
 
             cachedLevelChunkArchNumber = 0;
-            /// Search and cache one time for LevelChunkArch
+            // Search and cache one time for LevelChunkArch.
             arch::world.searchCacheArchetypes(
                 requiredMask,
                 &archView.cachedLevelChunkArch,
@@ -133,7 +133,7 @@ void ProceduralLevelGeneratingSystem::Update() {
             const uint32_t gameLevelChunkIndex = gameLevelChunkLocation.index;
             ecs::TextureHandle gameLevelTexture = textureHandlers[2];
             if (levelNubmer == 0) {
-                /// Set up current level position to player position
+                // Set up current level position to player position.
                 componentsView.playerTransforms->position = vec3(
                     currentLevelPosition[0],
                     componentsView.playerTransforms->position[1],
@@ -345,35 +345,32 @@ void ProceduralLevelGeneratingSystem::generateTransitionBridge(
 ) {
     std::random_device rd;
     std::mt19937 mersenne(rd());
-    std::uniform_int_distribution<int> distNextLevelTransitionDirection(
-        1,
-        4
-    ); ///< 1 - north, 2 - east, 3 - south, 4 - west
-    nextLevelTransitionDirection = distNextLevelTransitionDirection(
-        mersenne
-    ); ///< randomly chose direction in where next level will appeared
+    // 1 - north, 2 - east, 3 - south, 4 - west.
+    std::uniform_int_distribution<int> distNextLevelTransitionDirection(1, 4);
+    // Randomly chose direction in where next level will appeared.
+    nextLevelTransitionDirection = distNextLevelTransitionDirection(mersenne);
     unsigned int transitionBridgeAnchorPoint = 0;
     float transitionBridgeOffset_x = 0.0f;
     float transitionBridgeOffset_z = 0.0f;
     bool validTransitionBridge = false;
     while (!validTransitionBridge) {
+        // Choose up (1) or down (3) insert point direction.
         if (nextLevelTransitionDirection == 1
-            || nextLevelTransitionDirection
-                == 3) { ///< Choose up (1) or down (3) insert point direction
+            || nextLevelTransitionDirection == 3) {
+            // In what point we connect next transition bridge to current level.
             std::uniform_int_distribution<int> distTransitionBridgeAnchorPoint(
                 0,
                 levelHalfX * 2 - 1
-            ); ///< In what point we connect next transition bridge to current
-               ///< level
+            );
             transitionBridgeAnchorPoint =
                 distTransitionBridgeAnchorPoint(mersenne);
-            /// Summarize most left position with random value of point where
-            /// transition bridge will be insert
+            // Summarize most left position with random value of point where
+            // transition bridge will be insert.
             transitionBridgeOffset_x =
                 -(float)levelHalfX + (float)transitionBridgeAnchorPoint;
             if (nextLevelTransitionDirection == 1) {
-                transitionBridgeOffset_z =
-                    levelHalfZ; ///< Move to the bottom level edge
+                // Move to the bottom level edge.
+                transitionBridgeOffset_z = levelHalfZ;
                 transitionBridgePosition = {
                     currentLevelPosition[0] + transitionBridgeOffset_x
                         + transitionBridgeHalfWidth,
@@ -382,8 +379,8 @@ void ProceduralLevelGeneratingSystem::generateTransitionBridge(
                         + transitionBridgeHalfHeight
                 };
             } else {
-                transitionBridgeOffset_z =
-                    -(float)levelHalfZ; ///< Move to the upper level edge
+                // Move to the upper level edge.
+                transitionBridgeOffset_z = -(float)levelHalfZ;
                 transitionBridgePosition = {
                     currentLevelPosition[0] + transitionBridgeOffset_x
                         + transitionBridgeHalfWidth,
@@ -392,24 +389,25 @@ void ProceduralLevelGeneratingSystem::generateTransitionBridge(
                         - transitionBridgeHalfHeight
                 };
             }
+            // Choose left (2) or right (4) insert point direction.
         } else if (
             nextLevelTransitionDirection == 2
             || nextLevelTransitionDirection == 4
-        ) { ///< Choose left (2) or right (4) insert point direction
+        ) {
+            // In what point we connect next transition bridge to current level.
             std::uniform_int_distribution<int> distTransitionBridgeAnchorPoint(
                 0,
                 levelHalfZ * 2 - 1
-            ); ///< In what point we connect next transition bridge to current
-               ///< level
+            );
             transitionBridgeAnchorPoint =
                 distTransitionBridgeAnchorPoint(mersenne);
-            /// Summarize forwardmost position with random value of point where
-            /// transition bridge will be insert
+            // Summarize forward most position with random value of point where
+            // transition bridge will be insert.
             transitionBridgeOffset_z =
                 -(float)levelHalfZ + (float)transitionBridgeAnchorPoint;
             if (nextLevelTransitionDirection == 2) {
-                transitionBridgeOffset_x =
-                    levelHalfX; ///< Move to the right level edge
+                // Move to the right level edge.
+                transitionBridgeOffset_x = levelHalfX;
                 transitionBridgePosition = {
                     currentLevelPosition[0] + transitionBridgeOffset_x
                         + transitionBridgeHalfHeight,
@@ -418,8 +416,8 @@ void ProceduralLevelGeneratingSystem::generateTransitionBridge(
                         + transitionBridgeHalfWidth
                 };
             } else {
-                transitionBridgeOffset_x =
-                    -(float)levelHalfX; ///< Move to the left level edge
+                // Move to the left level edge.
+                transitionBridgeOffset_x = -(float)levelHalfX;
                 transitionBridgePosition = {
                     currentLevelPosition[0] + transitionBridgeOffset_x
                         - transitionBridgeHalfHeight,
@@ -432,8 +430,8 @@ void ProceduralLevelGeneratingSystem::generateTransitionBridge(
 
         float width = 0;
         float height = 0;
-        /// chose transitionBridgeHalfWidth as X and transitionBridgeHalfHeight
-        /// as Z
+        // Chose transitionBridgeHalfWidth as X and transitionBridgeHalfHeight
+        // as Z.
         setHalfExtentsFromDirection(
             width,
             height,
@@ -448,11 +446,11 @@ void ProceduralLevelGeneratingSystem::generateTransitionBridge(
                 levelHalfY,
                 height
             )) {
-            /// Need to choose another direction if we got collided with level
+            // Need to choose another direction if we got collided with level.
             nextLevelTransitionDirection =
                 (4 + nextLevelTransitionDirection) % 4 + 1;
         } else {
-            /// Setting up bounds for all levels
+            // Setting up bounds for all levels.
             coordinateMaximumValuePerDirection
                 .comparePerDirectionAndSetToMaximumValueByModule(
                     transitionBridgePosition,
@@ -563,4 +561,4 @@ bool ProceduralLevelGeneratingSystem::
         return false;
     }
 }
-} // namespace GLVM::core
+} // namespace glvm::core

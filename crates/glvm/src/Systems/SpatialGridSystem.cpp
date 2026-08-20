@@ -1,8 +1,3 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
 #include "glvm/Systems/SpatialGridSystem.hpp"
 
 #include "glvm/ArchetypeECS/ArchECS_World.hpp"
@@ -11,9 +6,9 @@
 
 #include <algorithm>
 
-namespace GLVM::ecs {
+namespace glvm::ecs {
 void SpatialGridSystem::Update() {
-    namespace arch = GLVM::ecs::arch;
+    namespace arch = glvm::ecs::arch;
 
     arch::SpatialGrid& spatialGrid = arch::world.spatialGrid;
     assert(
@@ -56,8 +51,8 @@ void SpatialGridSystem::Update() {
                     u32 x = entityLocation.gridCellIndicies[i2][2];
                     core::vector<u32>& chunkEntities =
                         spatialGrid.grid[z][y][x].entities;
-                    // remove by value: the recorded index can be stale after
-                    // other removals shifted the cell's vector
+                    // Remove by value: the recorded index can be stale after
+                    // other removals shifted the cell's vector.
                     for (u32 i3 = 0; i3 < chunkEntities.GetSize(); ++i3) {
                         if (chunkEntities[i3] == entity) {
                             chunkEntities.Remove(i3);
@@ -81,10 +76,8 @@ void SpatialGridSystem::Update() {
                     transform.scale
                 );
 
-            /*
-              Need only left bottom back cornder point and right upper front
-              conrner point to obtain all box bounds
-            */
+            // Need only left bottom back corner point and right upper front
+            // corner point to obtain all box bounds.
             const vec3 minEntityPosition = entityBoxCornerBoundPoints[0];
             const vec3 maxEntityPosition = entityBoxCornerBoundPoints[1];
 
@@ -102,9 +95,9 @@ void SpatialGridSystem::Update() {
             int indexMaxZ =
                 (int)((maxEntityPosition[2] + halfDepth) / chunkSize);
 
-            // entity can legitimately leave the fixed-size world grid (fell
-            // off the world edge, projectile flew away) — clamp to nearest
-            // edge cell instead of crashing
+            // Entity can legitimately leave the fixed-size world grid (fell off
+            // the world edge, projectile flew away) - clamp to nearest edge
+            // cell instead of crashing.
             indexMinX = std::clamp(indexMinX, 0, (int)spatialGrid.width - 1);
             indexMinY = std::clamp(indexMinY, 0, (int)spatialGrid.height - 1);
             indexMinZ = std::clamp(indexMinZ, 0, (int)spatialGrid.depth - 1);
@@ -142,4 +135,4 @@ void SpatialGridSystem::Update() {
     }
 }
 
-}; // namespace GLVM::ecs
+}; // namespace glvm::ecs

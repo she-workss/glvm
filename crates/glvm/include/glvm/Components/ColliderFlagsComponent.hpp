@@ -1,11 +1,9 @@
-#ifndef COLLIDER_FLAGS_COMPONENT_HPP
-#define COLLIDER_FLAGS_COMPONENT_HPP
+#pragma once
 
-namespace GLVM::ecs::components {
+namespace glvm::ecs::components {
 struct colliderFlags {
-    int flags : 4; ///< 0001 = wallCollision; 0010 = groundCollision; 0100 =
-                   ///< roofCollision; 1000 = itemDrag
+    // 0001 = wallCollision; 0010 = groundCollision; 0100 = roofCollision; 1000
+    // = itemDrag.
+    int flags : 4;
 };
-}; // namespace GLVM::ecs::components
-
-#endif
+}; // namespace glvm::ecs::components

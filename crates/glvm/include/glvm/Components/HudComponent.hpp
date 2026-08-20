@@ -1,11 +1,8 @@
-#ifndef HUD_COMPONENT_HPP
-#define HUD_COMPONENT_HPP
+#pragma once
 
-namespace GLVM::ecs::components {
+namespace glvm::ecs::components {
 struct hud {
     bool hud = false;
     bool gltf = true;
 };
-}; // namespace GLVM::ecs::components
-
-#endif
+}; // namespace glvm::ecs::components

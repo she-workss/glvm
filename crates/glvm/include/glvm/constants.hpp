@@ -1,10 +1,4 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef CONSTANTS
-#define CONSTANTS
+#pragma once
 
 #define MATRIX_RANGE 16
 #define VERTEX_ARRAY_RANGE 180
@@ -36,5 +30,3 @@ constexpr int boxIndicesForIndexBuffer[36] = {0, 1, 2, 3, 0, 2, 4, 0, 3,
                                               7, 4, 3, 4, 5, 1, 0, 4, 1,
                                               1, 5, 6, 2, 1, 6, 5, 4, 7,
                                               6, 5, 7, 3, 2, 6, 7, 3, 6};
-
-#endif

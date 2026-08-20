@@ -31,6 +31,10 @@ option(GLVM_BUILD_TESTS "Build GLVM tests" ${PROJECT_IS_TOP_LEVEL})
 option(GLVM_BUILD_EXAMPLES "Build GLVM examples" ${PROJECT_IS_TOP_LEVEL})
 option(GLVM_BUILD_BENCHES "Build GLVM benchmarks" ${PROJECT_IS_TOP_LEVEL})
 option(GLVM_UNITY_BUILD "Enable unity builds" ${PROJECT_IS_TOP_LEVEL})
+option(GLVM_SANITIZERS
+  "Enable sanitizers in Debug builds (ASan, UBSan)"
+  ${PROJECT_IS_TOP_LEVEL}
+)
 
 # Like .cargo/config.toml
 include(cmake/config.cmake)

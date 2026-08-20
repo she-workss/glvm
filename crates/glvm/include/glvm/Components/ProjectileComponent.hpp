@@ -1,12 +1,6 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
+#pragma once
 
-#ifndef PROJECTILE_COMPONENT
-#define PROJECTILE_COMPONENT
-
-namespace GLVM::ecs::components {
+namespace glvm::ecs::components {
 class projectile {
 public:
     unsigned int owner;
@@ -16,6 +10,4 @@ public:
     float fFlying_Range_;
     float damage;
 };
-} // namespace GLVM::ecs::components
-
-#endif
+} // namespace glvm::ecs::components

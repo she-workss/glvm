@@ -1,5 +1,4 @@
-#ifndef PHYSICS_ARCHETYPE
-#define PHYSICS_ARCHETYPE
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchetypeInterface.hpp"
 #include "glvm/Components/ColliderComponent.hpp"
@@ -9,7 +8,7 @@
 #include "glvm/Components/TransformComponent.hpp"
 #include "glvm/Globals.hpp"
 
-namespace GLVM::ecs::arch {
+namespace glvm::ecs::arch {
 constexpr uint32_t PHYSICS_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(components::transform) + sizeof(components::collider)
        + sizeof(components::colliderFlags) + sizeof(components::move)
@@ -43,6 +42,4 @@ struct PhysicsArchetype: Archetype {
         componentCount = 5;
     }
 };
-}; // namespace GLVM::ecs::arch
-
-#endif
+}; // namespace glvm::ecs::arch

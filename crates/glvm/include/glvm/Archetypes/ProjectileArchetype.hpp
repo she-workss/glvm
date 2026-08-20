@@ -1,5 +1,4 @@
-#ifndef PROJECTILE_ARCHETYPE_HPP
-#define PROJECTILE_ARCHETYPE_HPP
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchECS_Types.hpp"
 #include "glvm/ArchetypeECS/ArchetypeInterface.hpp"
@@ -18,7 +17,7 @@
 #include "glvm/Globals.hpp"
 #include "glvm/TagComponents/ProjectileTagComponent.hpp"
 
-namespace GLVM::ecs::arch {
+namespace glvm::ecs::arch {
 constexpr uint32_t PROJECTILE_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(components::transform) + sizeof(components::mesh)
        + sizeof(components::collider) + sizeof(components::colliderFlags)
@@ -78,6 +77,4 @@ struct ProjectileArchetype: Archetype {
         componentCount = 10;
     }
 };
-}; // namespace GLVM::ecs::arch
-
-#endif
+}; // namespace glvm::ecs::arch

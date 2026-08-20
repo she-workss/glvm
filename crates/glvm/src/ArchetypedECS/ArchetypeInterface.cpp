@@ -26,7 +26,7 @@
 #include "glvm/TagComponents/PlayerTagComponent.hpp"
 #include "glvm/TagComponents/ProjectileTagComponent.hpp"
 
-namespace GLVM::ecs::arch {
+namespace glvm::ecs::arch {
 uint32_t Archetype::addEntity(entity entity_) {
     uint32_t index = entityCount++;
     assert(index < CAPACITY);
@@ -35,7 +35,7 @@ uint32_t Archetype::addEntity(entity entity_) {
     return index;
 }
 
-/// Swap-remove
+// Swap-remove.
 entity Archetype::removeEntity(uint32_t index) {
     uint32_t last = entityCount - 1;
 
@@ -230,4 +230,4 @@ entity Archetype::removeEntity(uint32_t index) {
 
     return moved;
 }
-}; // namespace GLVM::ecs::arch
+}; // namespace glvm::ecs::arch

@@ -1,9 +1,8 @@
-#ifndef ARCH_ECS_TYPES_HPP
-#define ARCH_ECS_TYPES_HPP
+#pragma once
 
 #include <cstdint>
 
-namespace GLVM::ecs::arch {
+namespace glvm::ecs::arch {
 #define ENTITY_ID_BITS 32
 #define GENERATION_BITS 32
 
@@ -149,6 +148,4 @@ constexpr componentMask projectileComponentMask =
     | (1ull << ComponentsIndices::ROTATION_COMPONENT)
     | (1ull << ComponentsIndices::PROJECTILE_BUNDLE_COMPONENT)
     | (1ull << ComponentsIndices::PROJECTILE_TAG_COMPONENT);
-}; // namespace GLVM::ecs::arch
-
-#endif
+}; // namespace glvm::ecs::arch

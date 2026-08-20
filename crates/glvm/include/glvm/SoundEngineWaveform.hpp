@@ -1,10 +1,4 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef SOUND_ENGINE_WAVEFORM
-#define SOUND_ENGINE_WAVEFORM
+#pragma once
 
 #include "glvm/ISoundEngine.hpp"
 
@@ -15,7 +9,7 @@
 #include <mmsystem.h>
 // clang-format on
 
-namespace GLVM::core::Sound {
+namespace glvm::core::Sound {
 class CSoundEngineWaveform: public ISoundEngine {
     HANDLE hData = NULL;
     HPSTR lpData = NULL;
@@ -36,6 +30,4 @@ public:
     ) override;
     vector<CSoundSample*>& GetSoundContainer() override;
 };
-} // namespace GLVM::core::Sound
-
-#endif
+} // namespace glvm::core::Sound

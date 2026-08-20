@@ -1,18 +1,13 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef IWINDOW
-#define IWINDOW
+#pragma once
 
 #include "glvm/Event.hpp"
 
-namespace GLVM::core {
+namespace glvm::core {
 
 class IWindow {
 public:
-    bool isFocused = true; ///< Window keyboard focus, updated by each backend
+    // Window keyboard focus, updated by each backend.
+    bool isFocused = true;
 
     virtual ~IWindow() = default;
 
@@ -28,6 +23,4 @@ public:
     ) = 0;
 };
 
-} // namespace GLVM::core
-
-#endif
+} // namespace glvm::core

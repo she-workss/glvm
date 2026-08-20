@@ -1,10 +1,4 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef ENEMY_SYSTEM
-#define ENEMY_SYSTEM
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchECS_Types.hpp"
 #include "glvm/ArchetypeECS/ArchetypeInterface.hpp"
@@ -18,7 +12,7 @@
 #include "glvm/ISystem.hpp"
 #include "glvm/Vector.hpp"
 
-namespace GLVM::ecs {
+namespace glvm::ecs {
 class EnemySystem: public ISystem {
 public:
     uint32_t playerArchetypesNumber = 0;
@@ -51,18 +45,10 @@ public:
         (1ull << ecs::arch::ComponentsIndices::PROJECTILE_TAG_COMPONENT);
 
     void Update() override;
-    // void CalculateProjectile(const vec3& projectilePosition,
-    // 						 const vec3& projectileForward,
-    // 						 const ecs::components::MeshHandle& meshHandle,
-    // 						 const components::material& material,
-    // 						 const components::damage& damage);
-
     core::Sound::ISoundEngine* soundEngine;
     core::vector<ecs::TextureHandle> textureHandlers;
     core::vector<ecs::components::MeshHandle> meshHandlers;
     float projectileCooldown = 5.0f;
     float deltaFrameTime;
 };
-} // namespace GLVM::ecs
-
-#endif
+} // namespace glvm::ecs

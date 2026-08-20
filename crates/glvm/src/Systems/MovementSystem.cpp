@@ -1,8 +1,3 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
 #include "glvm/Systems/MovementSystem.hpp"
 
 #include "glvm/ArchetypeECS/ArchECS_Types.hpp"
@@ -22,13 +17,13 @@
 #include <cstdint>
 #include <sys/types.h>
 
-namespace GLVM::ecs {
+namespace glvm::ecs {
 CMovementSystem::CMovementSystem(core::CStack& inputStack) :
     inputStack(inputStack) {}
 
 void CMovementSystem::Update() {
-    namespace cm = GLVM::ecs::components;
-    namespace arch = GLVM::ecs::arch;
+    namespace cm = glvm::ecs::components;
+    namespace arch = glvm::ecs::arch;
 
     arch::world.searchCacheArchetypes(
         playerRequiredMask,
@@ -160,38 +155,14 @@ Vector<float, 3> CMovementSystem::CalculateVectorFB(
     [[maybe_unused]] core::CEvent& event
 ) {
     Vector<float, 3> forward(0.0f);
-    // forward[0] = std::cos(Radians(event.mousePointerPosition.yaw * 2));
-    // forward[2] = std::sin(Radians(event.mousePointerPosition.yaw * 2));
-
-    // float sinYaw = std::sin(Radians(event.mousePointerPosition.yaw / 2));
-    // float cosYaw = std::cos(Radians(event.mousePointerPosition.yaw / 2));
-
-    // Quaternion yawQuat;
-    // yawQuat.w = cosYaw;
-    // yawQuat.x = 0.0f;
-    // yawQuat.y = sinYaw;
-    // yawQuat.z = 0.0f;
-
-    // Quaternion result;
-    // result = multiplyQuaternion(multiplyQuaternion(yawQuat, Quaternion{ .w =
-    // 0.0f, .x = 0.0f, 			.y = 0.0f, .z = 1.0f }),
-    // inverseQuaternion(yawQuat));
-
-    // forward[0] = result.x;
-    // forward[1] = result.y;
-    // forward[2] = result.z;
-
     current_X = (float)g_eEvent.mousePointerPosition.offset_X;
     float delta_x = current_X - prev_X;
-    // if ( delta_x < 0.0001 )
-    // 	delta_x = prev_delta_x;
-
     const vec3 rotateAxis = {0.0, -1.0, 0.0};
     float rotationAngle = delta_x;
     constexpr float angleScale = 0.1f;
     rotationAngle = Radians(rotationAngle * angleScale);
-    constexpr float quatAngleCorrection =
-        0.5f; /// Quaternions need devision by 2
+    // Quaternions need division by 2.
+    constexpr float quatAngleCorrection = 0.5f;
     const float sinRotationAngle = sinf(rotationAngle * quatAngleCorrection);
     Quaternion rotationQuat = Quaternion(
         cosf(rotationAngle * quatAngleCorrection),
@@ -199,11 +170,6 @@ Vector<float, 3> CMovementSystem::CalculateVectorFB(
         sinRotationAngle * rotateAxis[1],
         sinRotationAngle * rotateAxis[2]
     );
-    // Quaternion appliedRotationQuat =
-    // multiplyQuaternion(multiplyQuaternion(rotationQuat, Quaternion(0.0f,
-    // beholder.forward[0],
-    // beholder.forward[1], beholder.forward[2])),
-    // conjugate(rotationQuat));
     const Quaternion appliedRotationQuat = (rotationQuat
                                             * Quaternion(
                                                 0.0f,
@@ -216,12 +182,8 @@ Vector<float, 3> CMovementSystem::CalculateVectorFB(
     forward[0] = appliedRotationQuat.x;
     forward[1] = 0.0f;
     forward[2] = appliedRotationQuat.z;
-
     prev_X = (float)g_eEvent.mousePointerPosition.offset_X;
-    // if ( delta_x > 0.0f )
-    // 	prev_delta_x = delta_x;
-
     forward = Normalize(forward);
     return forward;
 }
-} // namespace GLVM::ecs
+} // namespace glvm::ecs

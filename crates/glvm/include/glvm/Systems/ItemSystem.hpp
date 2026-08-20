@@ -1,5 +1,4 @@
-#ifndef ITEM_SYSTEM
-#define ITEM_SYSTEM
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchECS_Utils.hpp"
 #include "glvm/ArchetypeECS/ArchECS_World.hpp"
@@ -21,7 +20,7 @@
 
 #include <climits>
 
-namespace GLVM::ecs {
+namespace glvm::ecs {
 class ItemSystem: public ISystem {
 public:
     uint32_t inventoryArchetypesNumber = 0;
@@ -42,9 +41,6 @@ public:
         ecs::components::transform* itemTransformsView = nullptr;
 
         ecs::components::transform* crosshairTransforms = nullptr;
-        //
-        //			arch::ProjectileBundle*             projectileBundles =
-        // nullptr;
     } componentsView;
 
     arch::componentMask inventoryRequiredMask =
@@ -76,6 +72,4 @@ public:
     float mouseOffsetX = 0;
     float mouseOffsetY = 0;
 };
-} // namespace GLVM::ecs
-
-#endif
+} // namespace glvm::ecs

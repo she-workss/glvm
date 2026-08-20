@@ -1,15 +1,9 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef ISOUND_ENGINE
-#define ISOUND_ENGINE
+#pragma once
 
 #include "glvm/Vector.hpp"
 #include "glvm/typenames.hpp"
 
-namespace GLVM::core::Sound {
+namespace glvm::core::Sound {
 struct CSoundSample {
     const char* kPath_to_File_;
     unsigned int uiDuration_;
@@ -34,6 +28,4 @@ public:
         float volume
     ) = 0;
 };
-} // namespace GLVM::core::Sound
-
-#endif
+} // namespace glvm::core::Sound

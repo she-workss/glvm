@@ -6,7 +6,4 @@ layout(location = 2) in vec2 inTextureCoordinate;
 layout(location = 3) in vec4 inJointIndices;
 layout(location = 4) in vec4 inWeights;
 
-
-void main() {
-
-}
+void main() {}

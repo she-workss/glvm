@@ -1,10 +1,4 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef JSON_PARSER
-#define JSON_PARSER
+#pragma once
 
 #include "glvm/HashMap.hpp"
 #include "glvm/Vector.hpp"
@@ -22,7 +16,7 @@
 #include <string>
 #include <thread>
 
-namespace GLVM::Core {
+namespace glvm::Core {
 enum JsonType {
     JSON_INVALID_VALUE,
     JSON_OBJECT,
@@ -42,7 +36,7 @@ union JsonVariant {
     int iNumber;
     bool boolean;
     void* null;
-    GLVM::core::vector<JsonValue>* array;
+    glvm::core::vector<JsonValue>* array;
     HashMap<JsonValue>* object;
 
     JsonVariant() {}
@@ -81,11 +75,6 @@ struct JsonValue {
         type = JSON_BOOLEAN;
         value.boolean = _bool;
     }
-
-    // JsonValue(void* _null) {
-    // 	type = JSON_NULL;
-    // 	value.null = _null;
-    // }
 
     JsonValue(const JsonValue& _value) {
         type = JSON_INVALID_VALUE;
@@ -317,6 +306,4 @@ public:
     );
     unsigned int getJointIndex(Core::JsonValue joints, int searchingIndex);
 };
-} // namespace GLVM::Core
-
-#endif
+} // namespace glvm::Core

@@ -1,14 +1,8 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef DIRECTIONAL_LIGHT_COMPONENT_HPP
-#define DIRECTIONAL_LIGHT_COMPONENT_HPP
+#pragma once
 
 #include "glvm/VertexMath.hpp"
 
-namespace GLVM::ecs::components {
+namespace glvm::ecs::components {
 struct directionalLight {
     vec3 position;
     vec3 direction;
@@ -17,6 +11,4 @@ struct directionalLight {
     vec3 diffuse;
     vec3 specular;
 };
-} // namespace GLVM::ecs::components
-
-#endif
+} // namespace glvm::ecs::components

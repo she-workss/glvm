@@ -1,25 +1,18 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef TEXTURE
-#define TEXTURE
+#pragma once
 
 #include <cstdint>
 #include <vector>
 
 typedef unsigned int Entity;
 
-namespace GLVM::ecs {
+namespace glvm::ecs {
 struct TextureHandle {
     uint32_t id;
 };
 
 struct Texture {
-    unsigned int vkAvailableInnerId_ =
-        0; ///< This field using to choose specific instance of texture image in
-           ///< Vulkan.
+    // This field using to choose specific instance of texture image in Vulkan.
+    unsigned int vkAvailableInnerId_ = 0;
     unsigned int vkInnerIdLimit_ = 10;
 
     const char* path_to_image = "";
@@ -30,6 +23,4 @@ struct Texture {
     unsigned int dat_length_ = 0;
     unsigned char* u_iData_ = 0;
 };
-} // namespace GLVM::ecs
-
-#endif
+} // namespace glvm::ecs

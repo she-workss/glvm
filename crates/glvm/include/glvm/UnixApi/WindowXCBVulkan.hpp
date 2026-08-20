@@ -1,11 +1,4 @@
-#ifdef __linux__
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef WINDOW_XCB_VULKAN
-#define WINDOW_XCB_VULKAN
+#pragma once
 
 #include "glvm/EventsStack.hpp"
 #include "glvm/Globals.hpp"
@@ -21,7 +14,7 @@
 #include <xcb/xcb_keysyms.h>
 #include <xcb/xproto.h>
 
-namespace GLVM::core {
+namespace glvm::core {
 typedef uint32_t xcb_window_t;
 
 class WindowXCBVulkan: public IWindow {
@@ -34,7 +27,6 @@ class WindowXCBVulkan: public IWindow {
     static void print_modifiers(uint32_t mask);
 
 public:
-    //		CStack           * Input_Stack_;
     uint32_t width;
     uint32_t height;
     bool isWindowResizeRead = false;
@@ -58,8 +50,4 @@ public:
         int* _y_offset
     ) override;
 };
-} // namespace GLVM::core
-
-#endif
-
-#endif
+} // namespace glvm::core

@@ -1,10 +1,4 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef MESH_MANAGER
-#define MESH_MANAGER
+#pragma once
 
 #include "glvm/Components/VertexComponent.hpp"
 #include "glvm/Vector.hpp"
@@ -14,7 +8,7 @@
 
 typedef unsigned int Mesh_ID;
 
-namespace GLVM::core {
+namespace glvm::core {
 class MeshManager {
     static MeshManager* pInstance_;
     static std::mutex Mutex_;
@@ -26,11 +20,9 @@ public:
     std::vector<const char*> pathsArray_;
     core::vector<const char*> pathsGLTF_;
 
-    static MeshManager* GetInstance(); ///< It possibly to get only one instance
-                                       ///< of this class whith this method.
+    // It possibly to get only one instance of this class with this method.
+    static MeshManager* GetInstance();
     void SetMesh(const char* _pathToMesh);
     void SetMeshGLTF(const char* pathToMesh);
 };
-} // namespace GLVM::core
-
-#endif
+} // namespace glvm::core

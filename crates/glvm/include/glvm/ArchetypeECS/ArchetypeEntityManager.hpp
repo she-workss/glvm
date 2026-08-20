@@ -1,5 +1,4 @@
-#ifndef ARCHETYPE_ENTITY_MANAGER
-#define ARCHETYPE_ENTITY_MANAGER
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchECS_Utils.hpp"
 #include "glvm/Vector.hpp"
@@ -7,7 +6,7 @@
 #include <cstdint>
 #include <mutex>
 
-namespace GLVM::ecs::arch {
+namespace glvm::ecs::arch {
 
 struct ArchetypeEntityManager {
     inline static id nextId = 0;
@@ -27,6 +26,4 @@ private:
 
     ~ArchetypeEntityManager();
 };
-}; // namespace GLVM::ecs::arch
-
-#endif
+}; // namespace glvm::ecs::arch

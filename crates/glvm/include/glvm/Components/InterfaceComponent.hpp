@@ -1,8 +1,5 @@
-#ifndef INTERFACE_COMPONENT
-#define INTERFACE_COMPONENT
+#pragma once
 
-namespace GLVM::ecs::components {
+namespace glvm::ecs::components {
 struct interface_ui {};
-}; // namespace GLVM::ecs::components
-
-#endif
+}; // namespace glvm::ecs::components

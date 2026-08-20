@@ -1,10 +1,4 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef DAMAGE_SYSTEM
-#define DAMAGE_SYSTEM
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchetypeInterface.hpp"
 #include "glvm/Components/AttackComponent.hpp"
@@ -13,7 +7,7 @@
 #include "glvm/EntityManager.hpp"
 #include "glvm/ISystem.hpp"
 
-namespace GLVM::ecs {
+namespace glvm::ecs {
 class DamageSystem: public ISystem {
 public:
     void Update() override;
@@ -44,6 +38,4 @@ public:
     arch::componentMask fontRequiredMask =
         (1ull << ecs::arch::ComponentsIndices::FONT_COMPONENT);
 };
-} // namespace GLVM::ecs
-
-#endif
+} // namespace glvm::ecs

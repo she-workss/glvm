@@ -1,11 +1,10 @@
-#ifndef SHADER_STRUCTS
-#define SHADER_STRUCTS
+#pragma once
 
 #include "glvm/VertexMath.hpp"
 
 #include <stdint.h>
 
-namespace GLVM::core {
+namespace glvm::core {
 #define SHADOW_MAP_SIZE 1024
 #define FLAT_SHADOW_MAP_SIZE 2048
 
@@ -139,6 +138,13 @@ struct alignas(64) LightData {
 
     Vector<int, 4>
         indirectTexture[INDIRECT_TEXTURE_WIDTH * INDIRECT_TEXTURE_HEIGHT / 4 + 1];
+
+    // Debug: 0 = off, 1 = directional, 2 = spot. When set, the main shader
+    // renders the shadow map depth projected onto the scene instead of
+    // lighting (visualized from the normal moving camera).
+    int debugShadowMode;
+    int debugShadowLight;
+    int shadowsEnabled;
 };
 
 struct alignas(64) HUD_UBO {
@@ -174,6 +180,4 @@ struct alignas(64) SDF_UBO {
     float iTime;
 };
 
-} // namespace GLVM::core
-
-#endif
+} // namespace glvm::core

@@ -1,8 +1,5 @@
-#ifndef CROSSHAIR_TAG_COMPONENT_HPP
-#define CROSSHAIR_TAG_COMPONENT_HPP
+#pragma once
 
-namespace GLVM::ecs::tagComponents {
+namespace glvm::ecs::tagComponents {
 struct crossHairTagComponent {};
-}; // namespace GLVM::ecs::tagComponents
-
-#endif
+}; // namespace glvm::ecs::tagComponents

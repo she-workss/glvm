@@ -1,12 +1,8 @@
-#ifndef INVENTORY_SLOT_COMPONENT
-#define INVENTORY_SLOT_COMPONENT
-
+#pragma once
 #include <climits>
 
-namespace GLVM::ecs::components {
+namespace glvm::ecs::components {
 struct inventorySlot {
     unsigned int itemEntity = UINT_MAX;
 };
-} // namespace GLVM::ecs::components
-
-#endif
+} // namespace glvm::ecs::components

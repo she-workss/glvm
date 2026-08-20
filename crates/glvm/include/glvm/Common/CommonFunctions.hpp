@@ -1,10 +1,4 @@
-// This file is part of Game Loop Versatile Modules (GLVM)
-// Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts:
-// <fellfrostqtw@gmail.com> Author: Maksim Manokhin a.k.a. Yuriorkis_Scream
-// License: http://opensource.org/licenses/MIT
-
-#ifndef COMMON_FUNCTIONS_HPP
-#define COMMON_FUNCTIONS_HPP
+#pragma once
 
 #include "glvm/ArchetypeECS/ArchECS_Types.hpp"
 #include "glvm/ArchetypeECS/ArchECS_World.hpp"
@@ -16,7 +10,7 @@
 #include "glvm/VertexMath.hpp"
 #include "glvm/typenames.hpp"
 
-namespace GLVM::core {
+namespace glvm::core {
 bool BoxCollider(
     const vec3 backtrackingPosition,
     const vec3 comparedPosition,
@@ -52,6 +46,4 @@ void CreateProjectile(
     const ecs::components::damage& damage,
     const ecs::arch::EntityLocation& projectileLocation
 );
-}; // namespace GLVM::core
-
-#endif
+}; // namespace glvm::core

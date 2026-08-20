@@ -1,8 +1,5 @@
-#ifndef PROJECTILE_TAG_COMPONENT_HPP
-#define PROJECTILE_TAG_COMPONENT_HPP
+#pragma once
 
-namespace GLVM::ecs::tagComponents {
+namespace glvm::ecs::tagComponents {
 struct projectileTagComponent {};
-}; // namespace GLVM::ecs::tagComponents
-
-#endif
+}; // namespace glvm::ecs::tagComponents
