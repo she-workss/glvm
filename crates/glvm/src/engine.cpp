@@ -1,49 +1,49 @@
-#include "glvm/Engine.hpp"
+#include "glvm/engine.hpp"
 
-#include "glvm/ArchetypeECS/ArchECS_Types.hpp"
-#include "glvm/ArchetypeECS/ArchECS_Utils.hpp"
-#include "glvm/ArchetypeECS/ArchetypeInterface.hpp"
-#include "glvm/Archetypes/CrosshairArchetype.hpp"
-#include "glvm/Archetypes/DirectionalLightArchetype.hpp"
-#include "glvm/Archetypes/EnemyArchetype.hpp"
-#include "glvm/Archetypes/InventoryArchetype.hpp"
-#include "glvm/Archetypes/ItemArchetype.hpp"
-#include "glvm/Archetypes/LevelChunkArchetype.hpp"
-#include "glvm/Archetypes/PlayerArchetype.hpp"
-#include "glvm/Archetypes/ProjectileArchetype.hpp"
-#include "glvm/Archetypes/StaticMeshArchetype.hpp"
-#include "glvm/Common/CommonFunctions.hpp"
-#include "glvm/Components/AnimationComponent.hpp"
-#include "glvm/Components/ColliderComponent.hpp"
-#include "glvm/Components/DirectionalLightComponent.hpp"
-#include "glvm/Components/HealthComponent.hpp"
-#include "glvm/Components/InventoryComponent.hpp"
-#include "glvm/Components/MaterialComponent.hpp"
-#include "glvm/Components/PointLightComponent.hpp"
-#include "glvm/Components/ProjectileBundle.hpp"
-#include "glvm/Components/RotationComponent.hpp"
-#include "glvm/Components/TransformComponent.hpp"
-#include "glvm/Components/VertexComponent.hpp"
-#include "glvm/Components/ViewComponent.hpp"
-#include "glvm/Event.hpp"
-#include "glvm/EventsStack.hpp"
-#include "glvm/GraphicAPI/Vulkan.hpp"
-#include "glvm/ISoundEngine.hpp"
-#include "glvm/ProceduralLevelGeneratingSystem.hpp"
-#include "glvm/ShaderStructs.hpp"
-#include "glvm/SoundEngineFactory.hpp"
-#include "glvm/SystemManager.hpp"
-#include "glvm/Systems/CollisionSystem.hpp"
-#include "glvm/Systems/DamageSystem.hpp"
-#include "glvm/Systems/EnemySystem.hpp"
-#include "glvm/Systems/InventorySystem.hpp"
-#include "glvm/Systems/ItemSystem.hpp"
-#include "glvm/Systems/MovementSystem.hpp"
-#include "glvm/Systems/PhysicsSystem.hpp"
-#include "glvm/Systems/ProjectileSystem.hpp"
-#include "glvm/TagComponents/LevelChunkTagComponent.hpp"
-#include "glvm/Texture.hpp"
-#include "glvm/VkStructs.hpp"
+#include "glvm/archetype_ecs/arch_ecs_types.hpp"
+#include "glvm/archetype_ecs/arch_ecs_utils.hpp"
+#include "glvm/archetype_ecs/archetype_interface.hpp"
+#include "glvm/archetypes/crosshair_archetype.hpp"
+#include "glvm/archetypes/directional_light_archetype.hpp"
+#include "glvm/archetypes/enemy_archetype.hpp"
+#include "glvm/archetypes/inventory_archetype.hpp"
+#include "glvm/archetypes/item_archetype.hpp"
+#include "glvm/archetypes/level_chunk_archetype.hpp"
+#include "glvm/archetypes/player_archetype.hpp"
+#include "glvm/archetypes/projectile_archetype.hpp"
+#include "glvm/archetypes/static_mesh_archetype.hpp"
+#include "glvm/common/common_functions.hpp"
+#include "glvm/components/animation_component.hpp"
+#include "glvm/components/collider_component.hpp"
+#include "glvm/components/directional_light_component.hpp"
+#include "glvm/components/health_component.hpp"
+#include "glvm/components/inventory_component.hpp"
+#include "glvm/components/material_component.hpp"
+#include "glvm/components/point_light_component.hpp"
+#include "glvm/components/projectile_bundle.hpp"
+#include "glvm/components/rotation_component.hpp"
+#include "glvm/components/transform_component.hpp"
+#include "glvm/components/vertex_component.hpp"
+#include "glvm/components/view_component.hpp"
+#include "glvm/event.hpp"
+#include "glvm/events_stack.hpp"
+#include "glvm/graphic_api/vulkan.hpp"
+#include "glvm/i_sound_engine.hpp"
+#include "glvm/procedural_level_generating_system.hpp"
+#include "glvm/shader_structs.hpp"
+#include "glvm/sound_engine_factory.hpp"
+#include "glvm/system_manager.hpp"
+#include "glvm/systems/collision_system.hpp"
+#include "glvm/systems/damage_system.hpp"
+#include "glvm/systems/enemy_system.hpp"
+#include "glvm/systems/inventory_system.hpp"
+#include "glvm/systems/item_system.hpp"
+#include "glvm/systems/movement_system.hpp"
+#include "glvm/systems/physics_system.hpp"
+#include "glvm/systems/projectile_system.hpp"
+#include "glvm/tag_components/level_chunk_tag_component.hpp"
+#include "glvm/texture.hpp"
+#include "glvm/vk_structs.hpp"
 
 #include <cstdint>
 #include <limits>
@@ -66,8 +66,7 @@ int y_pointer;
 
 glvm::core::CEvent g_eEvent;
 // Contains all maximum absolute axis values.
-glvm::core::vector<glvm::core::MeshAxisMaxAbsoluteValues>
-    allMeshMaxAbsoluteValues;
+std::vector<glvm::core::MeshAxisMaxAbsoluteValues> allMeshMaxAbsoluteValues;
 
 namespace glvm::core {
 Engine* Engine::pInstance_ = nullptr;
@@ -142,7 +141,7 @@ void Engine::EventQueueFlush() {}
 void Engine::RenderVulkan() {
     namespace arch = glvm::ecs::arch;
     std::cout << "INNER CALL ARCHETYPES NUMBER: "
-              << arch::world.archetypes.GetSize() << std::endl;
+              << arch::world.archetypes.size() << std::endl;
     ecs::CSystemManager* pSystem_Manager = ecs::CSystemManager::GetInstance();
     bool bGame_Loop_Active = true;
 
@@ -388,10 +387,9 @@ void Engine::EnlargeFrameAccumulator(float value) {
     namespace cm = glvm::ecs::components;
     namespace arch = glvm::ecs::arch;
     animationArchetypesNumber = 0;
-    for (uint32_t m = 0; m < arch::world.archetypes.GetSize(); ++m) {
+    for (uint32_t m = 0; m < arch::world.archetypes.size(); ++m) {
         arch::Archetype* arch = arch::world.archetypes[m];
-        arch::componentMask requiredMask =
-            (1ul << arch::ComponentsIndices::MESH_COMPONENT)
+        uint64_t requiredMask = (1ul << arch::ComponentsIndices::MESH_COMPONENT)
             | (1ul << arch::ComponentsIndices::ANIMATION_COMPONENT);
 
         if (arch::matchesRequiredMask(arch->mask, requiredMask)) {
@@ -424,9 +422,8 @@ void Engine::EnlargeFrameAccumulator(float value) {
                  ++i) {
                 if (&meshView[i] != nullptr && &animationView[i] != nullptr) {
                     unsigned int mesh_id = meshView[i].handle.id;
-                    if (vulkanRenderer->jointMatricesPerMesh.GetSize() > 0
-                        && vulkanRenderer->jointMatricesPerMesh[mesh_id]
-                                .GetSize()
+                    if (vulkanRenderer->jointMatricesPerMesh.size() > 0
+                        && vulkanRenderer->jointMatricesPerMesh[mesh_id].size()
                             > 0) {
                         animationView[i].frameAccumulator += value;
                     }
@@ -487,16 +484,19 @@ void Engine::SetViewMatrix() {
 #endif
             }
 
-            const vec3 rightVec =
-                Cross(cameraComponent->forward, vec3(0.0f, -1.0f, 0.0));
-            const vec3 newUpVec = Cross(rightVec, cameraComponent->forward);
+            const Vector<float, 3> rightVec = Cross(
+                cameraComponent->forward,
+                Vector<float, 3>(0.0f, -1.0f, 0.0)
+            );
+            const Vector<float, 3> newUpVec =
+                Cross(rightVec, cameraComponent->forward);
             // 1. The mouse direction determines the "intended direction of
             // rotation" for the object.
             // 2. The camera is "looking forward."
             // 3. To make the object "rotate as if the mouse is pushing it," you
             // need to rotate it around an axis that is perpendicular to both
             // the view direction and the mouse movement.
-            const vec3 rotateAxis = Normalize(Cross(
+            const Vector<float, 3> rotateAxis = Normalize(Cross(
                 cameraComponent->forward,
                 rightVec * delta_x + newUpVec * delta_y
             ));
@@ -543,11 +543,11 @@ void Engine::SetViewMatrix() {
             }
             cameraComponent->forward = Normalize(cameraComponent->forward);
             _Player->forward = cameraComponent->forward;
-            mat4 view = LookAtMain(
+            Matrix<float, 4> view = LookAtMain(
                 cameraComponent->Position + _Player->position,
                 cameraComponent->Position + _Player->position
                     + cameraComponent->forward,
-                vec3(0.0f, -1.0f, 0.0)
+                Vector<float, 3>(0.0f, -1.0f, 0.0)
             );
             for (unsigned int i = 0; i < 4; ++i) {
                 for (unsigned int j = 0; j < 4; ++j) {
@@ -566,70 +566,67 @@ void Engine::SetViewMatrix() {
 }
 
 void Engine::SetProjectionMatrix() {
-    mat4 tProjection_Matrix =
+    Matrix<float, 4> tProjection_Matrix =
         Perspective(Radians(90.0f), vulkanRenderer->aspectRate, 0.1f, 100.0f);
     vulkanRenderer->projectionMatrix = tProjection_Matrix;
     vulkanRenderer->projectionMatrix[1][1] *= 1.0f;
 }
 
-[[nodiscard]] core::vector<mat4> Engine::updateAnimationFrames(
+[[nodiscard]] std::vector<Matrix<float, 4>> Engine::updateAnimationFrames(
     [[maybe_unused]] ecs::components::animation* animationComponent,
     [[maybe_unused]] unsigned int meshID
 ) {
-    if (vulkanRenderer->jointMatricesPerMesh.GetSize() > 0
-        && vulkanRenderer->jointMatricesPerMesh[meshID].GetSize() > 0
+    if (vulkanRenderer->jointMatricesPerMesh.size() > 0
+        && vulkanRenderer->jointMatricesPerMesh[meshID].size() > 0
         && animationComponent->frameAccumulator
             >= vulkanRenderer
                     ->frames[meshID][animationComponent->currentAnimationFrame]
                 * 1.0f) {
         ++animationComponent->currentAnimationFrame;
-        if (vulkanRenderer->jointMatricesPerMesh[meshID].GetSize() > 0
+        if (vulkanRenderer->jointMatricesPerMesh[meshID].size() > 0
             && animationComponent->currentAnimationFrame
-                == vulkanRenderer->frames[meshID].GetSize()) {
+                == vulkanRenderer->frames[meshID].size()) {
             animationComponent->currentAnimationFrame = 0;
             animationComponent->frameAccumulator = 0.0f;
         }
     }
 
     unsigned int joinMatricesDataSize {};
-    if (vulkanRenderer->jointMatricesPerMesh.GetSize() > 0) {
+    if (vulkanRenderer->jointMatricesPerMesh.size() > 0) {
         joinMatricesDataSize =
-            vulkanRenderer->jointMatricesPerMesh[meshID].GetSize();
+            vulkanRenderer->jointMatricesPerMesh[meshID].size();
     }
 
-    core::vector<mat4> jointMatrices;
+    std::vector<Matrix<float, 4>> jointMatrices;
     if (joinMatricesDataSize == 0) {
-        jointMatrices.Resize(MAX_JOINTS_NUMBER);
+        jointMatrices.resize(MAX_JOINTS_NUMBER);
         for (unsigned int i = 0; i < MAX_JOINTS_NUMBER; ++i) {
-            mat4 unitMatrix(1.0f);
+            Matrix<float, 4> unitMatrix(1.0f);
             jointMatrices[i] = unitMatrix;
         }
 
     } else {
-        jointMatrices.Resize(MAX_JOINTS_NUMBER);
+        jointMatrices.resize(MAX_JOINTS_NUMBER);
         for (unsigned int i = 0; i < joinMatricesDataSize; ++i) {
-            if (meshID >= vulkanRenderer->jointMatricesPerMesh.GetSize()) {
+            if (meshID >= vulkanRenderer->jointMatricesPerMesh.size()) {
                 std::cout << "OUTER ARRAY OVERFLOW" << std::endl;
                 throw("sdfsdf");
-            } else if (
-                i >= vulkanRenderer->jointMatricesPerMesh[meshID].GetSize()
-            ) {
+            } else if (i >= vulkanRenderer->jointMatricesPerMesh[meshID].size()) {
                 std::cout << "MIDDLE ARRAY OVERFLOW" << std::endl;
                 throw("sdfsdf");
             } else if (
                 animationComponent->currentAnimationFrame
-                >= vulkanRenderer->jointMatricesPerMesh[meshID][i].GetSize()
+                >= vulkanRenderer->jointMatricesPerMesh[meshID][i].size()
             ) {
                 std::cout << "frame: "
                           << animationComponent->currentAnimationFrame
                           << std::endl;
                 std::cout
                     << "array size: "
-                    << vulkanRenderer->jointMatricesPerMesh[meshID][i].GetSize()
+                    << vulkanRenderer->jointMatricesPerMesh[meshID][i].size()
                     << std::endl;
                 std::cout << "frames number: "
-                          << vulkanRenderer->frames[meshID].GetSize()
-                          << std::endl;
+                          << vulkanRenderer->frames[meshID].size() << std::endl;
                 std::cout << "INNER ARRAY OVERFLOW" << std::endl;
                 throw("sdfsdf");
             }
@@ -639,8 +636,8 @@ void Engine::SetProjectionMatrix() {
                     [meshID][i][animationComponent->currentAnimationFrame];
         }
 
-        for (u32 j = joinMatricesDataSize; j < MAX_JOINTS_NUMBER; ++j) {
-            mat4 unitMatrix(1.0f);
+        for (uint32_t j = joinMatricesDataSize; j < MAX_JOINTS_NUMBER; ++j) {
+            Matrix<float, 4> unitMatrix(1.0f);
             jointMatrices[j] = unitMatrix;
         }
     }
@@ -648,12 +645,12 @@ void Engine::SetProjectionMatrix() {
     return jointMatrices;
 }
 
-mat4 Engine::updateDirectionalLightSpaceMatrixShadowMapUBO(
+Matrix<float, 4> Engine::updateDirectionalLightSpaceMatrixShadowMapUBO(
     ecs::components::directionalLight* directionalLightComponent
 ) {
     float nearPlaneFlatShadowMap = 5.5f;
     float farPlaneFlatShadowMap = 100.0f;
-    mat4 directionalProjectionMatrixLight = ortho(
+    Matrix<float, 4> directionalProjectionMatrixLight = ortho(
         -50.0f,
         50.0f,
         -50.0f,
@@ -662,10 +659,11 @@ mat4 Engine::updateDirectionalLightSpaceMatrixShadowMapUBO(
         farPlaneFlatShadowMap
     );
 
-    vec3 positionVectorLight = directionalLightComponent->position;
-    vec3 directionVectorLight = directionalLightComponent->direction;
+    Vector<float, 3> positionVectorLight = directionalLightComponent->position;
+    Vector<float, 3> directionVectorLight =
+        directionalLightComponent->direction;
 
-    mat4 viewMatrixLight = LookAtMain(
+    Matrix<float, 4> viewMatrixLight = LookAtMain(
         positionVectorLight,
         directionVectorLight,
         {0.0f, -1.0f, 0.0f}
@@ -673,21 +671,21 @@ mat4 Engine::updateDirectionalLightSpaceMatrixShadowMapUBO(
     return viewMatrixLight * directionalProjectionMatrixLight;
 }
 
-mat4 Engine::updateSpotLightSpaceMatrixShadowMapUBO(
+Matrix<float, 4> Engine::updateSpotLightSpaceMatrixShadowMapUBO(
     ecs::components::spotLight* spotLightComponent
 ) {
     float nearPlaneFlatShadowMap = 0.5f;
     float farPlaneFlatShadowMap = 100.0f;
-    mat4 spotProjectionMatrixLight = Perspective(
+    Matrix<float, 4> spotProjectionMatrixLight = Perspective(
         Radians(90.0f),
         (float)SHADOW_MAP_SIZE / (float)SHADOW_MAP_SIZE,
         nearPlaneFlatShadowMap,
         farPlaneFlatShadowMap
     );
 
-    vec3 positionVectorLight = spotLightComponent->position;
-    vec3 directionVectorLight = spotLightComponent->direction;
-    mat4 viewMatrixLight = LookAtMain(
+    Vector<float, 3> positionVectorLight = spotLightComponent->position;
+    Vector<float, 3> directionVectorLight = spotLightComponent->direction;
+    Matrix<float, 4> viewMatrixLight = LookAtMain(
         positionVectorLight,
         directionVectorLight,
         {0.0f, -1.0f, 0.0f}
@@ -695,63 +693,64 @@ mat4 Engine::updateSpotLightSpaceMatrixShadowMapUBO(
     return viewMatrixLight * spotProjectionMatrixLight;
 }
 
-mat4 Engine::updatePointLightSpaceMatrixShadowMapUBO(
+Matrix<float, 4> Engine::updatePointLightSpaceMatrixShadowMapUBO(
     ecs::components::pointLight* pointLightComponent,
     uint32_t layer
 ) {
-    vec3 positionVectorLight = pointLightComponent->position;
-    vec3 directionalVectorLight = vec3(0.0f, 0.0f, 0.0f);
-    vec3 upVector = {0.0, 0.0, 0.0};
+    Vector<float, 3> positionVectorLight = pointLightComponent->position;
+    Vector<float, 3> directionalVectorLight =
+        Vector<float, 3>(0.0f, 0.0f, 0.0f);
+    Vector<float, 3> upVector = {0.0, 0.0, 0.0};
 
     switch (layer) {
         case 0:
             // Positive X.
             directionalVectorLight =
-                positionVectorLight + vec3(1.0f, 0.0f, 0.0f);
-            upVector = vec3(0.0f, -1.0f, 0.0f);
+                positionVectorLight + Vector<float, 3>(1.0f, 0.0f, 0.0f);
+            upVector = Vector<float, 3>(0.0f, -1.0f, 0.0f);
             break;
         case 1:
             // Negative X.
             directionalVectorLight =
-                positionVectorLight + vec3(-1.0f, 0.0f, 0.0f);
-            upVector = vec3(0.0f, -1.0f, 0.0f);
+                positionVectorLight + Vector<float, 3>(-1.0f, 0.0f, 0.0f);
+            upVector = Vector<float, 3>(0.0f, -1.0f, 0.0f);
             break;
         case 2:
             // Positive Y.
             directionalVectorLight =
-                positionVectorLight + vec3(0.0f, 1.0f, 0.0f);
-            upVector = vec3(0.0f, 0.0f, 1.0f);
+                positionVectorLight + Vector<float, 3>(0.0f, 1.0f, 0.0f);
+            upVector = Vector<float, 3>(0.0f, 0.0f, 1.0f);
             break;
         case 3:
             // Negative Y.
             directionalVectorLight =
-                positionVectorLight + vec3(0.0f, -1.0f, 0.0f);
-            upVector = vec3(0.0f, 0.0f, -1.0f);
+                positionVectorLight + Vector<float, 3>(0.0f, -1.0f, 0.0f);
+            upVector = Vector<float, 3>(0.0f, 0.0f, -1.0f);
             break;
         case 4:
             // Positive Z.
             directionalVectorLight =
-                positionVectorLight + vec3(0.0f, 0.0f, 1.0f);
-            upVector = vec3(0.0f, -1.0f, 0.0f);
+                positionVectorLight + Vector<float, 3>(0.0f, 0.0f, 1.0f);
+            upVector = Vector<float, 3>(0.0f, -1.0f, 0.0f);
             break;
             // Negative Z.
         case 5:
             directionalVectorLight =
-                positionVectorLight + vec3(0.0f, 0.0f, -1.0f);
-            upVector = vec3(0.0f, -1.0f, 0.0f);
+                positionVectorLight + Vector<float, 3>(0.0f, 0.0f, -1.0f);
+            upVector = Vector<float, 3>(0.0f, -1.0f, 0.0f);
             break;
         default:
             break;
     }
 
-    mat4 projectionMatrixCubeShadowMap = Perspective(
+    Matrix<float, 4> projectionMatrixCubeShadowMap = Perspective(
         Radians(90.0f),
         (float)SHADOW_MAP_SIZE / (float)SHADOW_MAP_SIZE,
         0.3f,
         100.0f
     );
 
-    mat4 viewMatrixLight =
+    Matrix<float, 4> viewMatrixLight =
         LookAtMain(positionVectorLight, directionalVectorLight, upVector);
 
     return viewMatrixLight * projectionMatrixCubeShadowMap;
@@ -765,7 +764,7 @@ mat4 Engine::updatePointLightSpaceMatrixShadowMapUBO(
     ecs::components::mesh* meshComponent
 ) {
     SlotData hudUBO {};
-    mat4 model(1.0);
+    Matrix<float, 4> model(1.0);
     const float fullSlotScale = meshComponent->gltf
         ? inventoryComponent->slotScale * 2.0f
         : inventoryComponent->slotScale;
@@ -785,7 +784,7 @@ mat4 Engine::updatePointLightSpaceMatrixShadowMapUBO(
     hudUBO.model = model;
 
     bool highLightedSlot = false;
-    for (unsigned int i = 0; i < inventoryComponent->highlightedSlots.GetSize();
+    for (unsigned int i = 0; i < inventoryComponent->highlightedSlots.size();
          ++i) {
         if (inventoryComponent->highlightedSlots[i]
             == currentInventoryRow * inventoryComponent->col
@@ -797,7 +796,7 @@ mat4 Engine::updatePointLightSpaceMatrixShadowMapUBO(
         }
     }
 
-    if (inventoryComponent->highlightedSlots.GetSize() > 0) {
+    if (inventoryComponent->highlightedSlots.size() > 0) {
         if (highLightedSlot) {
             if (inventoryComponent->isAvailableHighlightedSlots) {
                 hudUBO.color = {0.0, 0.3, 0.0};
@@ -812,7 +811,7 @@ mat4 Engine::updatePointLightSpaceMatrixShadowMapUBO(
     return hudUBO;
 }
 
-mat4 Engine::updateDataUBO_IconsUI(
+Matrix<float, 4> Engine::updateDataUBO_IconsUI(
     ecs::components::transform* itemTransfromComponent,
     [[maybe_unused]] ecs::components::collider* itemColliderComponent,
     ecs::components::item* itemComponent,
@@ -824,12 +823,12 @@ mat4 Engine::updateDataUBO_IconsUI(
 ) {
     float x_result_offset = 0.0f;
     float y_result_offset = 0.0f;
-    if (itemComponent->occupiedSlots.GetSize() == 0) {
+    if (itemComponent->occupiedSlots.size() == 0) {
     } else {
         const unsigned int inventorySlotEntity_0 =
             itemComponent->occupiedSlots[0];
         const unsigned int inventorySlotEntity_3 =
-            itemComponent->occupiedSlots.GetHead();
+            itemComponent->occupiedSlots.back();
         const unsigned int rowIndexFirstSlot =
             inventorySlotEntity_0 / rowInventory;
         const unsigned int colIndexFirstSlot =
@@ -857,12 +856,12 @@ mat4 Engine::updateDataUBO_IconsUI(
 
     if (dragedItemEntity != itemEntity) {
         itemTransfromComponent->position =
-            vec3(x_result_offset, y_result_offset, 0.1f);
+            Vector<float, 3>(x_result_offset, y_result_offset, 0.1f);
     } else {
         itemScale *= 1.1f;
         itemTransfromComponent->position[2] = 0.0f;
     }
-    mat4 model(1.0);
+    Matrix<float, 4> model(1.0);
     model[0][0] = itemScale * itemComponent->itemSlotType.width;
     model[1][1] = itemScale * itemComponent->itemSlotType.height;
     model[2][2] = 0.0f;
@@ -873,11 +872,11 @@ mat4 Engine::updateDataUBO_IconsUI(
     return model;
 }
 
-mat4 Engine::updateDataHudScreenUBO(
+Matrix<float, 4> Engine::updateDataHudScreenUBO(
     ecs::components::transform* cursorTransform
 ) {
-    mat4 model;
-    vec3 defaultPosition = vec3(0.0, 0.0, 0.0);
+    Matrix<float, 4> model;
+    Vector<float, 3> defaultPosition = Vector<float, 3>(0.0, 0.0, 0.0);
 
     float hudScreenX = hud_screen_x;
 #ifndef VK_USE_PLATFORM_WAYLAND_KHR
@@ -933,7 +932,7 @@ void Engine::setFrameData() {
 
         for (uint32_t x1 = 0; x1 < arch->entityCount; ++x1) {
             if (directionalLights) {
-                vulkanRenderer->directionalLights.Push({});
+                vulkanRenderer->directionalLights.push_back({});
                 cm::directionalLight* directionalLightComponent =
                     &directionalLights[x1];
                 vulkanRenderer->directionalLights[directionalLightCounter]
@@ -942,35 +941,35 @@ void Engine::setFrameData() {
                         directionalLightComponent
                     );
                 vulkanRenderer->directionalLights[directionalLightCounter]
-                    .position = vec4(
+                    .position = Vector<float, 4>(
                     directionalLightComponent->position[0],
                     directionalLightComponent->position[1],
                     directionalLightComponent->position[2],
                     0.0
                 );
                 vulkanRenderer->directionalLights[directionalLightCounter]
-                    .direction = vec4(
+                    .direction = Vector<float, 4>(
                     directionalLightComponent->direction[0],
                     directionalLightComponent->direction[1],
                     directionalLightComponent->direction[2],
                     0.0
                 );
                 vulkanRenderer->directionalLights[directionalLightCounter]
-                    .ambient = vec4(
+                    .ambient = Vector<float, 4>(
                     directionalLightComponent->ambient[0],
                     directionalLightComponent->ambient[1],
                     directionalLightComponent->ambient[2],
                     0.0
                 );
                 vulkanRenderer->directionalLights[directionalLightCounter]
-                    .diffuse = vec4(
+                    .diffuse = Vector<float, 4>(
                     directionalLightComponent->diffuse[0],
                     directionalLightComponent->diffuse[1],
                     directionalLightComponent->diffuse[2],
                     0.0
                 );
                 vulkanRenderer->directionalLights[directionalLightCounter]
-                    .specular = vec4(
+                    .specular = Vector<float, 4>(
                     directionalLightComponent->specular[0],
                     directionalLightComponent->specular[1],
                     directionalLightComponent->specular[2],
@@ -998,7 +997,7 @@ void Engine::setFrameData() {
 
         for (uint32_t x1 = 0; x1 < arch->entityCount; ++x1) {
             if (spotLights) {
-                vulkanRenderer->spotLights.Push({});
+                vulkanRenderer->spotLights.push_back({});
                 cm::spotLight* spotLightComponent = &spotLights[x1];
                 vulkanRenderer->spotLights[spotLightCounter]
                     .SpotLigthSpaceMatrix =
@@ -1045,7 +1044,7 @@ void Engine::setFrameData() {
 
         for (uint32_t x1 = 0; x1 < arch->entityCount; ++x1) {
             if (pointLights) {
-                vulkanRenderer->pointLights.Push({});
+                vulkanRenderer->pointLights.push_back({});
                 cm::pointLight* pointLightComponent = &pointLights[x1];
                 uint32_t maxCubeMapLayers = 6;
                 // 6 is a number of cube map layers.
@@ -1108,7 +1107,7 @@ void Engine::setFrameData() {
         }
 
         for (unsigned int i = 0; i < arch->entityCount; ++i) {
-            vulkanRenderer->healthBars.Push({});
+            vulkanRenderer->healthBars.push_back({});
             cm::transform* transformComponent = &healthBarTransforms[i];
             cm::health* healthComponent = &healthBars[i];
             vulkanRenderer->healthBars[healthBarCounter].meshID = uiVertexId;
@@ -1141,7 +1140,7 @@ void Engine::setFrameData() {
                 arch->components[arch::ComponentsIndices::FONT_COMPONENT];
 
         for (unsigned int i = 0; i < arch->entityCount; ++i) {
-            vulkanRenderer->fonts.Push({});
+            vulkanRenderer->fonts.push_back({});
             cm::font* fontComponent = &fonts[i];
             cm::transform* transformComponent = &fontTransforms[i];
             vulkanRenderer->fonts[fontCounter].position =
@@ -1182,7 +1181,7 @@ void Engine::setFrameData() {
             if (inventoryTransforms && inventoryMaterials && inventory
                 && inventoryMeshes) {
                 for (unsigned int i = 0; i < arch->entityCount; ++i) {
-                    vulkanRenderer->inventories.Push({});
+                    vulkanRenderer->inventories.push_back({});
                     cm::inventory* inventoryComponent = &inventory[i];
                     unsigned int inventoryTextureID =
                         inventoryMaterials[i].diffuseTextureID_.id;
@@ -1203,7 +1202,7 @@ void Engine::setFrameData() {
                             cm::transform* slotTransformComponent =
                                 &inventoryTransforms[i];
                             vulkanRenderer->inventories[inventoryCounter]
-                                .slotData.Push({});
+                                .slotData.push_back({});
                             vulkanRenderer->inventories[inventoryCounter]
                                 .slotData[j * inventoryComponent->col + m] =
                                 updateDataUBO_UI(
@@ -1256,7 +1255,7 @@ void Engine::setFrameData() {
                                  ++a) {
                                 cm::item* itemComponent = &items[a];
                                 if (!itemComponent->isActor) {
-                                    vulkanRenderer->items.Push({});
+                                    vulkanRenderer->items.push_back({});
                                     unsigned int meshID =
                                         itemMeshes[a].handle.id;
                                     unsigned int diffuseTexureID =
@@ -1315,7 +1314,7 @@ void Engine::setFrameData() {
                 arch->components[arch::ComponentsIndices::MESH_COMPONENT];
 
         for (unsigned int i = 0; i < arch->entityCount; ++i) {
-            vulkanRenderer->crosshairs.Push({});
+            vulkanRenderer->crosshairs.push_back({});
             cm::transform* cursorTransform = &crosshairTransforms[i];
             unsigned int meshID = crosshairMeshes[i].handle.id;
             vulkanRenderer->crosshairs[i].meshID = meshID;
@@ -1351,15 +1350,15 @@ void Engine::setFrameData() {
             (ecs::tagComponents::levelChunkTagComponent*)arch
                 ->components[arch::ComponentsIndices::LEVEL_CHUNK_TAG_COMPONENT];
 
-        core::vector<mat4> jointMatrices;
-        jointMatrices.Resize(MAX_JOINTS_NUMBER);
+        std::vector<Matrix<float, 4>> jointMatrices;
+        jointMatrices.resize(MAX_JOINTS_NUMBER);
         for (unsigned int i = 0; i < MAX_JOINTS_NUMBER; ++i) {
-            mat4 unitMatrix(1.0f);
+            Matrix<float, 4> unitMatrix(1.0f);
             jointMatrices[i] = unitMatrix;
         }
 
         for (uint32_t n = 0; n < arch->entityCount; ++n) {
-            vulkanRenderer->actors.Push({});
+            vulkanRenderer->actors.push_back({});
             cm::transform* transformComponent = &levelChunkTransforms[n];
             cm::material* materialComponent = &levelChunkMaterials[n];
             cm::rotation* rotationComponent = &levelChunkRotations[n];
@@ -1413,7 +1412,7 @@ void Engine::setFrameData() {
                 arch->components[arch::ComponentsIndices::ANIMATION_COMPONENT];
 
         for (uint32_t n = 0; n < arch->entityCount; ++n) {
-            vulkanRenderer->actors.Push({});
+            vulkanRenderer->actors.push_back({});
             cm::transform* transformComponent = &actorTransforms[n];
             cm::material* materialComponent = &actorMaterials[n];
             [[maybe_unused]] cm::animation* animationComponent =
@@ -1465,15 +1464,15 @@ void Engine::setFrameData() {
             (ecs::components::rotation*)
                 arch->components[arch::ComponentsIndices::ROTATION_COMPONENT];
 
-        core::vector<mat4> jointMatrices;
-        jointMatrices.Resize(MAX_JOINTS_NUMBER);
+        std::vector<Matrix<float, 4>> jointMatrices;
+        jointMatrices.resize(MAX_JOINTS_NUMBER);
         for (unsigned int i = 0; i < MAX_JOINTS_NUMBER; ++i) {
-            mat4 unitMatrix(1.0f);
+            Matrix<float, 4> unitMatrix(1.0f);
             jointMatrices[i] = unitMatrix;
         }
 
         for (uint32_t n = 0; n < arch->entityCount; ++n) {
-            vulkanRenderer->actors.Push({});
+            vulkanRenderer->actors.push_back({});
             cm::transform* transformComponent = &staticActorTransforms[n];
             cm::material* materialComponent = &staticActorMaterials[n];
             cm::rotation* rotationComponent = &staticActorRotations[n];
@@ -1522,15 +1521,15 @@ void Engine::setFrameData() {
             (ecs::components::rotation*)
                 arch->components[arch::ComponentsIndices::ROTATION_COMPONENT];
 
-        core::vector<mat4> jointMatrices;
-        jointMatrices.Resize(MAX_JOINTS_NUMBER);
+        std::vector<Matrix<float, 4>> jointMatrices;
+        jointMatrices.resize(MAX_JOINTS_NUMBER);
         for (unsigned int i = 0; i < MAX_JOINTS_NUMBER; ++i) {
-            mat4 unitMatrix(1.0f);
+            Matrix<float, 4> unitMatrix(1.0f);
             jointMatrices[i] = unitMatrix;
         }
 
         for (uint32_t n = 0; n < arch->entityCount; ++n) {
-            vulkanRenderer->actors.Push({});
+            vulkanRenderer->actors.push_back({});
             cm::transform* transformComponent = &actorTransforms[n];
             cm::material* materialComponent =
                 &actorProjectileBundles[n].material;
@@ -1586,16 +1585,16 @@ void Engine::setFrameData() {
             (ecs::components::item*)
                 arch->components[arch::ComponentsIndices::ITEM_COMPONENT];
 
-        core::vector<mat4> jointMatrices;
-        jointMatrices.Resize(MAX_JOINTS_NUMBER);
+        std::vector<Matrix<float, 4>> jointMatrices;
+        jointMatrices.resize(MAX_JOINTS_NUMBER);
         for (unsigned int i = 0; i < MAX_JOINTS_NUMBER; ++i) {
-            mat4 unitMatrix(1.0f);
+            Matrix<float, 4> unitMatrix(1.0f);
             jointMatrices[i] = unitMatrix;
         }
 
         for (uint32_t n = 0; n < arch->entityCount; ++n) {
             if (items[n].isActor) {
-                vulkanRenderer->actors.Push({});
+                vulkanRenderer->actors.push_back({});
                 cm::transform* transformComponent = &itemTransforms[n];
                 cm::material* materialComponent = &itemMaterials[n];
                 cm::rotation* rotationComponent = &itemRotations[n];
@@ -1642,7 +1641,7 @@ void Engine::setFrameData() {
                 arch->components[arch::ComponentsIndices::TRANSFORM_COMPONENT];
 
         for (unsigned int n = 0; n < arch->entityCount; ++n) {
-            vulkanRenderer->players.Push({});
+            vulkanRenderer->players.push_back({});
             cm::transform* playerTransformComponent = &playerTransforms[n];
             if (&playerTransforms[n] != nullptr) {
                 vulkanRenderer->players[playerEntityCount].position =
@@ -1668,14 +1667,13 @@ void Engine::loadWavefrontObj() {
         vulkanRenderer->highest_gltf_Y.emplace_back();
         vulkanRenderer->highest_gltf_Y[m] = -999.999f;
 
-        vulkanRenderer->frames.Push({});
-        vulkanRenderer->jointMatricesPerMesh.Push({});
+        vulkanRenderer->frames.push_back({});
+        vulkanRenderer->jointMatricesPerMesh.push_back({});
 
         unsigned int vertexIndex = 0;
         unsigned int textureIndex = 0;
         unsigned int normalIndex = 0;
-        unsigned int faceVerticesSize =
-            wavefrontObjParser->getFaces().GetSize();
+        unsigned int faceVerticesSize = wavefrontObjParser->getFaces().size();
         vulkanRenderer->meshAxisLimitingValues.setToDefaultValues();
 
         for (unsigned int i = 0; i < faceVerticesSize; ++i) {
@@ -1690,8 +1688,8 @@ void Engine::loadWavefrontObj() {
                 normalIndex = wavefrontObjParser->getFaces()[i][2][j] - 1;
                 SVertex normal = wavefrontObjParser->getNormals()[normalIndex];
 
-                vec4 jointIndices;
-                vec4 weights;
+                Vector<float, 4> jointIndices;
+                Vector<float, 4> weights;
 
                 if (vertex[1] > vulkanRenderer->highest_gltf_Y[m]) {
                     vulkanRenderer->highest_gltf_Y[m] = vertex[1];
@@ -1737,7 +1735,7 @@ void Engine::loadWavefrontObj() {
                 weights[2] = 1.0f;
                 weights[2] = 1.0f;
 
-                vulkanRenderer->aVertices_[m].Push(
+                vulkanRenderer->aVertices_[m].push_back(
                     {{vertex[0], vertex[1], vertex[2]},
                      {normal[0], normal[1], normal[2]},
                      {texture[0], texture[1]},
@@ -1751,7 +1749,7 @@ void Engine::loadWavefrontObj() {
     }
 }
 
-void Engine::calculateMeshBounds(const vec4& animatedVertex) {
+void Engine::calculateMeshBounds(const Vector<float, 4>& animatedVertex) {
     if (animatedVertex[0] < vulkanRenderer->meshAxisLimitingValues.lowest_x) {
         vulkanRenderer->meshAxisLimitingValues.lowest_x = animatedVertex[0];
     } else if (
@@ -1779,7 +1777,7 @@ void Engine::calculateMeshBounds(const vec4& animatedVertex) {
 
 bool Engine::isModelCacheExists(const std::string& modelFilePath) {
     std::ofstream modelsCache(
-        "../../../assets/cache/models/cache",
+        "../../../examples/assets/cache/models/cache",
         std::ios::app
     );
 
@@ -1788,7 +1786,7 @@ bool Engine::isModelCacheExists(const std::string& modelFilePath) {
         throw std::runtime_error("Failed to load mesh cache");
     }
 
-    std::ifstream file("../../../assets/cache/models/cache");
+    std::ifstream file("../../../examples/assets/cache/models/cache");
 
     std::string line;
     while (std::getline(file, line)) {
@@ -1823,7 +1821,7 @@ bool Engine::isModelCacheExists(const std::string& modelFilePath) {
 
 void Engine::writeModelsCache(const std::string& modelFilePath) {
     std::ofstream modelsCache(
-        "../../../assets/cache/models/cache",
+        "../../../examples/assets/cache/models/cache",
         std::ios::app
     );
 
@@ -1849,28 +1847,30 @@ void Engine::writeModelsCache(const std::string& modelFilePath) {
 }
 
 void Engine::initializeGLTF() {
-    core::vector<bool> animationFlags;
-    for (unsigned int m = 0; m < pathsGLTF_.GetSize(); ++m) {
+    std::vector<bool> animationFlags;
+    for (unsigned int m = 0; m < pathsGLTF_.size(); ++m) {
         Core::CJsonParser jsonParser;
         vulkanRenderer->aVertexesTemp_.emplace_back();
         vulkanRenderer->aIndices_.emplace_back();
-        vulkanRenderer->frames.Push({});
-        vulkanRenderer->jointMatricesPerMesh.Push({});
-        animationFlags.Push({});
+        vulkanRenderer->frames.push_back({});
+        vulkanRenderer->jointMatricesPerMesh.push_back({});
+        animationFlags.push_back({});
         vulkanRenderer->highest_gltf_Y.emplace_back();
         uint32_t nextIndexGLTF = wavefrontObjCounter + m;
+        bool animationFlag = false;
         jsonParser.LoadGLTF(
             pathsGLTF_[m],
             vulkanRenderer->aVertexesTemp_[m],
             vulkanRenderer->aIndices_[nextIndexGLTF],
             vulkanRenderer->jointMatricesPerMesh[nextIndexGLTF],
             vulkanRenderer->frames[nextIndexGLTF],
-            animationFlags[m],
+            animationFlag,
             vulkanRenderer->highest_gltf_Y[nextIndexGLTF]
         );
+        animationFlags[m] = animationFlag;
     }
 
-    for (unsigned int m = 0; m < pathsGLTF_.GetSize(); ++m) {
+    for (unsigned int m = 0; m < pathsGLTF_.size(); ++m) {
         vulkanRenderer->aVertices_.emplace_back();
         vulkanRenderer->meshAxisLimitingValues.setToDefaultValues();
 
@@ -1898,8 +1898,8 @@ void Engine::initializeGLTF() {
             texture[0] = vulkanRenderer->aVertexesTemp_[m][n + 6];
             texture[1] = vulkanRenderer->aVertexesTemp_[m][n + 7];
 
-            vec4 joinIndices;
-            vec4 weights;
+            Vector<float, 4> joinIndices;
+            Vector<float, 4> weights;
             if (animationFlags[m]) {
                 joinIndices[0] = -1;
                 joinIndices[1] = -1;
@@ -1924,7 +1924,7 @@ void Engine::initializeGLTF() {
             }
 
             uint32_t nextIndexGLTF = wavefrontObjCounter + m;
-            vulkanRenderer->aVertices_[nextIndexGLTF].Push(
+            vulkanRenderer->aVertices_[nextIndexGLTF].push_back(
                 {{vertex[0], vertex[1], vertex[2]},
                  {normal[0], normal[1], normal[2]},
                  {texture[0], texture[1]},
@@ -1939,15 +1939,16 @@ void Engine::initializeGLTF() {
                 continue;
             }
 
-            vec4 animatedVertex = vec4(vertex[0], vertex[1], vertex[2], 1.0);
+            Vector<float, 4> animatedVertex =
+                Vector<float, 4>(vertex[0], vertex[1], vertex[2], 1.0);
             if (!animationFlags[m]
-                && vulkanRenderer->jointMatricesPerMesh[nextIndexGLTF].GetSize()
+                && vulkanRenderer->jointMatricesPerMesh[nextIndexGLTF].size()
                     > 0) {
                 for (unsigned int frame = 0; frame
                      < vulkanRenderer->jointMatricesPerMesh[nextIndexGLTF][0]
-                           .GetSize();
+                           .size();
                      ++frame) {
-                    mat4 skinMatrix =
+                    Matrix<float, 4> skinMatrix =
                         (vulkanRenderer
                              ->jointMatricesPerMesh[nextIndexGLTF]
                                                    [int(joinIndices[0])][frame]
@@ -1966,7 +1967,8 @@ void Engine::initializeGLTF() {
                            * weights[3]);
 
                     animatedVertex =
-                        vec4(vertex[0], vertex[1], vertex[2], 1.0) * skinMatrix;
+                        Vector<float, 4>(vertex[0], vertex[1], vertex[2], 1.0)
+                        * skinMatrix;
                     calculateMeshBounds(animatedVertex);
                 }
             } else {
@@ -1994,29 +1996,29 @@ void Engine::initializeFontData() {
 
     for (unsigned int i = 0; i < glyph_row; ++i) {
         for (unsigned int j = 0; j < glyph_column; ++j) {
-            core::vector<Vertex> symbol_g_vertices;
-            symbol_g_vertices.Push(
+            std::vector<Vertex> symbol_g_vertices;
+            symbol_g_vertices.push_back(
                 {{-0.5f, 0.5f, 0.0f},
                  {0.0f, 1.0f, 0.0f},
                  {fontStep * j, fontStep * i + fontStep},
                  {0.0f, 0.0f, 0.0f, 0.0f},
                  {1.0f, 0.0f, 0.0f, 0.0f}}
             );
-            symbol_g_vertices.Push(
+            symbol_g_vertices.push_back(
                 {{0.5f, 0.5f, 0.0f},
                  {1.0f, 1.0f, 0.0f},
                  {fontStep * j + fontStep, fontStep * i + fontStep},
                  {0.0f, 0.0f, 0.0f, 0.0f},
                  {1.0f, 0.0f, 0.0f, 0.0f}}
             );
-            symbol_g_vertices.Push(
+            symbol_g_vertices.push_back(
                 {{-0.5f, -0.5f, 0.0f},
                  {0.0f, 0.0f, 0.0f},
                  {fontStep * j, fontStep * i},
                  {0.0f, 0.0f, 0.0f, 0.0f},
                  {1.0f, 0.0f, 0.0f, 0.0f}}
             );
-            symbol_g_vertices.Push(
+            symbol_g_vertices.push_back(
                 {{0.5f, -0.5f, 0.0f},
                  {1.0f, 0.0f, 0.0f},
                  {fontStep * j + fontStep, fontStep * i},
@@ -2044,19 +2046,21 @@ void Engine::initializeFontData() {
                 continue;
             }
 
-            vulkanRenderer->symbolGVerticesContainer.Push(symbol_g_vertices);
+            vulkanRenderer->symbolGVerticesContainer.push_back(
+                symbol_g_vertices
+            );
             vulkanRenderer->fontIndicesContainer.push_back(nextBufferIndex);
         }
     }
 }
 
-mat4 Engine::computeModelMatrix(
+Matrix<float, 4> Engine::computeModelMatrix(
     ecs::components::transform* _transformComponent,
     ecs::components::rotation* rotation
 ) {
-    mat4 rotationMatrix(1.0f);
-    mat4 scalingMatrix(1.0f);
-    mat4 translationMatrix(1.0f);
+    Matrix<float, 4> rotationMatrix(1.0f);
+    Matrix<float, 4> scalingMatrix(1.0f);
+    Matrix<float, 4> translationMatrix(1.0f);
 
     scalingMatrix[0][0] = _transformComponent->scale;
     scalingMatrix[1][1] = _transformComponent->scale;
@@ -2133,7 +2137,7 @@ ecs::TextureHandle Engine::LoadTextureFromFile(const char* path_to_texture) {
     ecs::TextureHandle textureHandle;
     textureHandle.id = textureID;
     textureVector.push_back({.path_to_image = path_to_texture});
-    textureHandlers.Push(textureHandle);
+    textureHandlers.push_back(textureHandle);
 
     return textureHandle;
 }
@@ -2153,7 +2157,7 @@ ecs::TextureHandle Engine::LoadTextureFromAddress(
          .dat_length_ = dat_length,
          .u_iData_ = u_iData}
     );
-    textureHandlers.Push(textureHandle);
+    textureHandlers.push_back(textureHandle);
 
     return textureHandle;
 }
@@ -2164,7 +2168,7 @@ ecs::components::MeshHandle Engine::LoadMeshFromFile_OBJ(
     ecs::components::MeshHandle meshHandle;
     meshHandle.id = meshID;
     pathsArray_.push_back(_pathToMesh);
-    meshHandlers.Push(meshHandle);
+    meshHandlers.push_back(meshHandle);
     ++meshID;
 
     return meshHandle;
@@ -2175,8 +2179,8 @@ ecs::components::MeshHandle Engine::LoadMeshFromFile_GLTF(
 ) {
     ecs::components::MeshHandle meshHandle;
     meshHandle.id = meshID;
-    pathsGLTF_.Push(pathToMesh);
-    meshHandlers.Push(meshHandle);
+    pathsGLTF_.push_back(pathToMesh);
+    meshHandlers.push_back(meshHandle);
     ++meshID;
 
     return meshHandle;
@@ -2185,7 +2189,7 @@ ecs::components::MeshHandle Engine::LoadMeshFromFile_GLTF(
 ecs::components::MeshHandle Engine::LoadMesh() {
     ecs::components::MeshHandle meshHandle;
     meshHandle.id = meshID;
-    meshHandlers.Push(meshHandle);
+    meshHandlers.push_back(meshHandle);
     ++meshID;
 
     return meshHandle;

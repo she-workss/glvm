@@ -1,26 +1,39 @@
+# https://clangd.llvm.org/config.html
 CompileFlags:
-  CompilationDatabase: build/debug
-  Add:
-    - "-std=c++20"
-    - "-Icrates/rusty/include"
-    - "-Icrates/glvm/include"
-    - "-Icrates/game/include"
-  Remove:
-    - "-fmodules-ts"
-    - "-fmodule-mapper=*"
-    - "-fdeps-format=*"
-    - "-fdeps-file=*"
-    - "-fmodule-output=*"
-    - "-fdiagnostics-color=*"
-    - "-MD"
-    - "-MT*"
-    - "-MF*"
+    CompilationDatabase: build/debug
+    Add:
+        - -std=c++26
+        - -Wall
+        - -Wextra
+        - -Wpedantic
+        - -Wno-old-style-cast
+        - -Icrates/**/include/**
+        - -Ibuild/**/_deps/**
+    Remove:
+        - -fmodules-ts
+        - -fmodule-mapper=*
+        - -fdeps-format=*
+        - -fdeps-file=*
+        - -fmodule-output=*
+        - -fdiagnostics-color=*
+        - -MD
+        - -MT*
+        - -MF*
 
 Index:
-  Background: Build
+    Background: Build
 
 Diagnostics:
-  UnusedIncludes: None
-  ClangTidy:
-    Remove:
-      - misc-include-cleaner
+    UnusedIncludes: None
+    ClangTidy:
+        Remove:
+            - misc-include-cleaner
+
+InlayHints:
+    Enabled: true
+    ParameterNames: true
+    DeducedTypes: true
+
+Hover:
+    ShowAKA: true
+

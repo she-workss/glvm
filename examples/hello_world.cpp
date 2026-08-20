@@ -1,145 +1,115 @@
-#include "glvm/ArchetypeECS/ArchECS_Utils.hpp"
-#include "glvm/ArchetypeECS/ArchECS_World.hpp"
-#include "glvm/Archetypes/CrosshairArchetype.hpp"
-#include "glvm/Archetypes/InventoryArchetype.hpp"
-#include "glvm/Archetypes/LevelChunkArchetype.hpp"
-#include "glvm/Archetypes/RigidBodyArchetype.hpp"
-#include "glvm/Archetypes/SpotLightArchetype.hpp"
-#include "glvm/Archetypes/StaticMeshArchetype.hpp"
-#include "glvm/Components/ActorComponent.hpp"
-#include "glvm/Components/AnimationMoveComponent.hpp"
-#include "glvm/Components/ColliderComponent.hpp"
-#include "glvm/Components/CrosshairComponent.hpp"
-#include "glvm/Components/EnemyComponent.hpp"
-#include "glvm/Components/FontComponent.hpp"
-#include "glvm/Components/HealthComponent.hpp"
-#include "glvm/Components/InterfaceComponent.hpp"
-#include "glvm/Components/InventoryComponent.hpp"
-#include "glvm/Components/InventorySlotComponent.hpp"
-#include "glvm/Components/ItemComponent.hpp"
-#include "glvm/Components/MaterialComponent.hpp"
-#include "glvm/Components/RigidBodyComponent.hpp"
-#include "glvm/Components/TransformComponent.hpp"
-#include "glvm/Components/VertexComponent.hpp"
-#include "glvm/Engine.hpp"
-#include "glvm/PGA.hpp"
-#include "glvm/SpritesData.hpp"
-#include "glvm/Texture.hpp"
-#include "glvm/VertexMath.hpp"
+#include "assets/textures/chelik.h"
+#include "assets/textures/container2.h"
+#include "assets/textures/container2_specular.h"
+#include "assets/textures/crosshair.h"
+#include "assets/textures/fontAtlas.h"
+#include "assets/textures/gray.h"
+#include "assets/textures/inventorySlot.h"
+#include "assets/textures/tileset.h"
+#include "assets/textures/witch.h"
+#include "glvm/glvm.hpp"
 
 #include <cstdio>
 #include <map>
 #include <random>
 
 using namespace glvm;
-namespace pga = glvm::core::pga;
-namespace arch = glvm::ecs::arch;
 
 auto main() -> int {
-    pga::plane plane0 = {.x = 2.1f, .y = 3.5f, .z = 4.2f, .w = 3.87f};
-    pga::plane plane1 = {.x = 3.17f, .y = 10.20f, .z = 7.832f, .w = 3.87f};
-    pga::point point0 = {.x = 1.5f, .y = 2.77f, .z = 6.55f, .w = 8.99f};
-    pga::point point1 = {.x = 3.577f, .y = 0.787f, .z = 16.575f, .w = 888.99f};
-    pga::line line0 = {
-        .rx = 1.87,
-        .ry = 2.053,
-        .rz = 6.234,
-        .ix = 10.34,
-        .iy = 3234.32,
-        .iz = 223.43
-    };
-    pga::line line1 = {
-        .rx = 5.723,
-        .ry = 10.234,
-        .rz = 3.343,
-        .ix = 0.344,
-        .iy = 234.123,
-        .iz = 77.345
-    };
-    pga::rline rline0 = {.rx = 21.87, .ry = 25.053, .rz = 63.234};
-    pga::rline rline1 = {.rx = 15.723, .ry = 510.234, .rz = 73.343};
-    auto* entity_manager = ecs::EntityManager::GetInstance();
-    auto* component_manager = ecs::ComponentManager::GetInstance();
-    auto* arch_entity_manager = arch::ArchetypeEntityManager::getInstance();
-    auto* engine = core::Engine::GetInstance();
-    auto hyper_cube =
-        engine->LoadMeshFromFile_GLTF("../../../assets/gltf/hyper_cube.gltf");
-    auto hyper_cube2 =
-        engine->LoadMeshFromFile_GLTF("../../../assets/gltf/hyper_cube2.gltf");
-    auto mega_chel =
-        engine->LoadMeshFromFile_GLTF("../../../assets/gltf/mega_chel.gltf");
-    auto simple_cube =
-        engine->LoadMeshFromFile_GLTF("../../../assets/gltf/simpleCube2.gltf");
-    auto crosshair_001_handle = engine->LoadMeshFromFile_GLTF(
-        "../../../assets/gltf/crosshair_001.gltf"
+    auto* entity_manager = EntityManager::get_instance();
+    auto* component_manager = ComponentManager::get_instance();
+    auto* arch_entity_manager = ArchetypeEntityManager::get_instance();
+    auto* engine = Engine::get_instance();
+    auto hyper_cube = engine->load_mesh_from_gltf(
+        "../../../examples/assets/gltf/hyper_cube.gltf"
     );
-    auto inventory_handle =
-        engine->LoadMeshFromFile_GLTF("../../../assets/gltf/inventory.gltf");
-    auto cyborg_handle =
-        engine->LoadMeshFromFile_GLTF("../../../assets/gltf/cyborg11.gltf");
+    auto hyper_cube2 = engine->load_mesh_from_gltf(
+        "../../../examples/assets/gltf/hyper_cube2.gltf"
+    );
+    auto mega_chel = engine->load_mesh_from_gltf(
+        "../../../examples/assets/gltf/mega_chel.gltf"
+    );
+    auto simple_cube = engine->load_mesh_from_gltf(
+        "../../../examples/assets/gltf/simpleCube2.gltf"
+    );
+    auto crosshair_001_handle = engine->load_mesh_from_gltf(
+        "../../../examples/assets/gltf/crosshair_001.gltf"
+    );
+    auto inventory_handle = engine->load_mesh_from_gltf(
+        "../../../examples/assets/gltf/inventory.gltf"
+    );
+    auto cyborg_handle = engine->load_mesh_from_gltf(
+        "../../../examples/assets/gltf/cyborg11.gltf"
+    );
     auto robot0_handle =
-        engine->LoadMeshFromFile_GLTF("../../../assets/gltf/scene.gltf");
-
+        engine->load_mesh_from_gltf("../../../examples/assets/gltf/scene.gltf");
     auto chelik_texture =
-        engine->LoadTextureFromAddress(128, 96, chelik_dat_len, chelik_dat);
+        engine->load_texture_from_address(128, 96, chelik_dat_len, chelik_dat);
     auto witch_texture =
-        engine->LoadTextureFromAddress(32, 32, witch_dat_len, witch_dat);
+        engine->load_texture_from_address(32, 32, witch_dat_len, witch_dat);
     auto gray_texture =
-        engine->LoadTextureFromAddress(32, 32, gray_dat_len, gray_dat);
-    auto container2 = engine->LoadTextureFromAddress(
+        engine->load_texture_from_address(32, 32, gray_dat_len, gray_dat);
+    auto container2 = engine->load_texture_from_address(
         500,
         500,
         container2_dat_len,
         container2_dat
     );
-    auto container2_specular_texture = engine->LoadTextureFromAddress(
+    auto container2_specular_texture = engine->load_texture_from_address(
         500,
         500,
         container2_specular_dat_len,
         container2_specular_dat
     );
-    auto crosshair_texture =
-        engine->LoadTextureFromAddress(32, 32, Crosshair_dat_len, Crosshair_dat);
-    auto font_atlas_texture =
-        engine
-            ->LoadTextureFromAddress(84, 132, fontAtlas_dat_len, fontAtlas_dat);
-    auto inventory_texture = engine->LoadTextureFromAddress(
+    auto crosshair_texture = engine->load_texture_from_address(
+        32,
+        32,
+        Crosshair_dat_len,
+        Crosshair_dat
+    );
+    auto font_atlas_texture = engine->load_texture_from_address(
+        84,
+        132,
+        fontAtlas_dat_len,
+        fontAtlas_dat
+    );
+    auto inventory_texture = engine->load_texture_from_address(
         64,
         64,
         inventorySlot_dat_len,
         inventorySlot_dat
     );
     auto tileset_texture =
-        engine->LoadTextureFromAddress(512, 512, tileset_dat_len, tileset_dat);
+        engine
+            ->load_texture_from_address(512, 512, tileset_dat_len, tileset_dat);
     {
-        auto* level_chunk_arch = new arch::LevelChunkArchetype;
-        auto* player_arch = new arch::PlayerArchetype;
-        auto* enemy_arch = new arch::EnemyArchetype;
-        auto* projectile_arch = new arch::ProjectileArchetype;
-        auto* static_mesh_arch = new arch::StaticMeshArchetype;
-        auto* crosshair_arch = new arch::CrosshairArchetype;
-        auto* inventory_arch = new arch::InventoryArchetype;
-        auto* item_arch = new arch::ItemArchetype;
-        auto* directional_light_arch = new arch::DirectionalLightArchetype;
-        auto* point_light_arch = new arch::PointLightArchetype;
-        auto* spot_light_arch = new arch::SpotLightArchetype;
-        arch::world.archetypes.Push(level_chunk_arch);
-        arch::world.archetypes.Push(player_arch);
-        arch::world.archetypes.Push(enemy_arch);
-        arch::world.archetypes.Push(projectile_arch);
-        arch::world.archetypes.Push(static_mesh_arch);
-        arch::world.archetypes.Push(crosshair_arch);
-        arch::world.archetypes.Push(inventory_arch);
-        arch::world.archetypes.Push(item_arch);
-        arch::world.archetypes.Push(directional_light_arch);
-        arch::world.archetypes.Push(point_light_arch);
-        arch::world.archetypes.Push(spot_light_arch);
+        auto* level_chunk_arch = new LevelChunkArchetype;
+        auto* player_arch = new PlayerArchetype;
+        auto* enemy_arch = new EnemyArchetype;
+        auto* projectile_arch = new ProjectileArchetype;
+        auto* static_mesh_arch = new StaticMeshArchetype;
+        auto* crosshair_arch = new CrosshairArchetype;
+        auto* inventory_arch = new InventoryArchetype;
+        auto* item_arch = new ItemArchetype;
+        auto* directional_light_arch = new DirectionalLightArchetype;
+        auto* point_light_arch = new PointLightArchetype;
+        auto* spot_light_arch = new SpotLightArchetype;
+        world.archetypes.push_back(level_chunk_arch);
+        world.archetypes.push_back(player_arch);
+        world.archetypes.push_back(enemy_arch);
+        world.archetypes.push_back(projectile_arch);
+        world.archetypes.push_back(static_mesh_arch);
+        world.archetypes.push_back(crosshair_arch);
+        world.archetypes.push_back(inventory_arch);
+        world.archetypes.push_back(item_arch);
+        world.archetypes.push_back(directional_light_arch);
+        world.archetypes.push_back(point_light_arch);
+        world.archetypes.push_back(spot_light_arch);
     }
     auto player = arch_entity_manager->createEntity();
-    arch::world.addEntityToArchetype(player, arch::world.archetypes[1]);
-    auto player_location = arch::world.entityLocations[arch::getId(player)];
-    auto* player_arch =
-        dynamic_cast<arch::PlayerArchetype*>(player_location.arch);
+    world.addEntityToArchetype(player, world.archetypes[1]);
+    auto player_location = world.entityLocations[getId(player)];
+    auto* player_arch = dynamic_cast<PlayerArchetype*>(player_location.arch);
     const auto player_index = player_location.index;
     player_arch->transforms[player_index] = {
         .position = {15.0f, 15.0f, 15.0f},
@@ -164,36 +134,35 @@ auto main() -> int {
     std::uniform_int_distribution<int> dist(0, 3);
     for (auto i = 0; i < 5; ++i) {
         auto enemy = arch_entity_manager->createEntity();
-        arch::world.addEntityToArchetype(enemy, arch::world.archetypes[2]);
-        auto enemy_location = arch::world.entityLocations[arch::getId(enemy)];
-        auto* enemy_arch =
-            dynamic_cast<arch::EnemyArchetype*>(enemy_location.arch);
+        world.addEntityToArchetype(enemy, world.archetypes[2]);
+        auto enemy_location = world.entityLocations[getId(enemy)];
+        auto* enemy_arch = dynamic_cast<EnemyArchetype*>(enemy_location.arch);
         const auto enemy_index = enemy_location.index;
         auto random = dist(mersenne);
-        vec3 random_direction = {};
+        Vector<float, 3> random_direction = {};
         switch (random) {
             case 0:
-                random_direction = vec3(3.0f, 0.0f, 0.0f, 0.0);
+                random_direction = Vector<float, 3>(3.0f, 0.0f, 0.0f, 0.0);
                 break;
             case 1:
-                random_direction = vec3(-3.0f, 0.0f, 0.0f, 0.0);
+                random_direction = Vector<float, 3>(-3.0f, 0.0f, 0.0f, 0.0);
                 break;
             case 2:
-                random_direction = vec3(0.0f, 0.0f, 3.0f, 0.0);
+                random_direction = Vector<float, 3>(0.0f, 0.0f, 3.0f, 0.0);
                 break;
             case 3:
-                random_direction = vec3(0.0f, 0.0f, -3.0f, 0.0);
+                random_direction = Vector<float, 3>(0.0f, 0.0f, -3.0f, 0.0);
                 break;
             default:
                 break;
         }
         enemy_arch->transforms[enemy_index] = {
             .position =
-                {vec3(static_cast<float>(i) * 5, 3.0f, -3.0f)
+                {Vector<float, 3>(static_cast<float>(i) * 5, 3.0f, -3.0f)
                  + random_direction},
             .scale = 0.02f
         };
-        enemy_arch->states[enemy_index] = {.state = core::States::ROAMING};
+        enemy_arch->states[enemy_index] = {.state = States::ROAMING};
         enemy_arch->rigidBodies[enemy_index] = {.fMass_ = 0.0f};
         enemy_arch->enemies[enemy_index] = {.detectRadius = 10.0f};
         enemy_arch->health[enemy_index] = {
@@ -202,17 +171,17 @@ auto main() -> int {
         };
         auto* enemy_font_component = &enemy_arch->fonts[enemy_index];
         if (i < 3) {
-            enemy_font_component->font_string.Push('1');
+            enemy_font_component->font_string.push_back('1');
         } else if (i < 6) {
-            enemy_font_component->font_string.Push('1');
-            enemy_font_component->font_string.Push('0');
+            enemy_font_component->font_string.push_back('1');
+            enemy_font_component->font_string.push_back('0');
         } else if (i < 10) {
-            enemy_font_component->font_string.Push('1');
-            enemy_font_component->font_string.Push('0');
-            enemy_font_component->font_string.Push('E');
+            enemy_font_component->font_string.push_back('1');
+            enemy_font_component->font_string.push_back('0');
+            enemy_font_component->font_string.push_back('E');
         } else {
-            enemy_font_component->font_string.Push('J');
-            enemy_font_component->font_string.Push('r');
+            enemy_font_component->font_string.push_back('J');
+            enemy_font_component->font_string.push_back('r');
         }
         enemy_font_component->lifeTime = 0.0f;
         enemy_font_component->removeble = false;
@@ -229,10 +198,10 @@ auto main() -> int {
     }
     for (auto i = 0; i < 5; ++i) {
         auto cube = arch_entity_manager->createEntity();
-        arch::world.addEntityToArchetype(cube, arch::world.archetypes[4]);
-        auto cube_location = arch::world.entityLocations[arch::getId(cube)];
+        world.addEntityToArchetype(cube, world.archetypes[4]);
+        auto cube_location = world.entityLocations[getId(cube)];
         auto* cube_arch =
-            dynamic_cast<arch::StaticMeshArchetype*>(cube_location.arch);
+            dynamic_cast<StaticMeshArchetype*>(cube_location.arch);
         const auto cube_index = cube_location.index;
         cube_arch->transforms[cube_index] = {
             .position = {7.0f, 2.0f, 10.0f + (static_cast<float>(i) * 2.0f)},
@@ -245,14 +214,13 @@ auto main() -> int {
             .ambient = {0.05f, 0.05f, 0.05f},
             .shininess = 128.0f * 0.078125f
         };
-        cube_arch->fonts[cube_index].font_string.Push('R');
+        cube_arch->fonts[cube_index].font_string.push_back('R');
     }
     auto crosshair = arch_entity_manager->createEntity();
-    arch::world.addEntityToArchetype(crosshair, arch::world.archetypes[5]);
-    auto crosshair_location =
-        arch::world.entityLocations[arch::getId(crosshair)];
+    world.addEntityToArchetype(crosshair, world.archetypes[5]);
+    auto crosshair_location = world.entityLocations[getId(crosshair)];
     auto* crosshair_arch =
-        dynamic_cast<arch::CrosshairArchetype*>(crosshair_location.arch);
+        dynamic_cast<CrosshairArchetype*>(crosshair_location.arch);
     const auto crosshair_index = crosshair_location.index;
     crosshair_arch->transforms[crosshair_index] = {.scale = 0.01f};
     crosshair_arch->meshes[crosshair_index].handle = crosshair_001_handle;
@@ -262,13 +230,11 @@ auto main() -> int {
         .ambient = {0.05f, 0.05f, 0.05f},
         .shininess = 128.0f * 0.078125f
     };
-
     auto inventory = arch_entity_manager->createEntity();
-    arch::world.addEntityToArchetype(inventory, arch::world.archetypes[6]);
-    auto inventory_location =
-        arch::world.entityLocations[arch::getId(inventory)];
+    world.addEntityToArchetype(inventory, world.archetypes[6]);
+    auto inventory_location = world.entityLocations[getId(inventory)];
     auto* inventory_arch =
-        dynamic_cast<arch::InventoryArchetype*>(inventory_location.arch);
+        dynamic_cast<InventoryArchetype*>(inventory_location.arch);
     const auto inventory_index = inventory_location.index;
     auto* inventory_component = &inventory_arch->invetories[inventory_index];
     inventory_component->entityOwner = player;
@@ -287,12 +253,10 @@ auto main() -> int {
         .shininess = 128.0f * 0.078125f
     };
     for (auto i = 0; i < 5; ++i) {
-        arch::entity item = arch_entity_manager->createEntity();
-        arch::world.addEntityToArchetype(item, arch::world.archetypes[7]);
-        arch::EntityLocation item_location =
-            arch::world.entityLocations[arch::getId(item)];
-        auto* item_arch =
-            dynamic_cast<arch::ItemArchetype*>(item_location.arch);
+        uint64_t item = arch_entity_manager->createEntity();
+        world.addEntityToArchetype(item, world.archetypes[7]);
+        EntityLocation item_location = world.entityLocations[getId(item)];
+        auto* item_arch = dynamic_cast<ItemArchetype*>(item_location.arch);
         const auto item_index = item_location.index;
         auto row = i + 1;
         item_arch->items[item_index].itemSlotType = {
@@ -314,16 +278,12 @@ auto main() -> int {
         };
     }
     auto directional_light = arch_entity_manager->createEntity();
-    arch::world.addEntityToArchetype(
-        directional_light,
-        arch::world.archetypes[8]
-    );
+    world.addEntityToArchetype(directional_light, world.archetypes[8]);
     auto directional_light_location =
-        arch::world.entityLocations[arch::getId(directional_light)];
-    auto* directional_light_arch =
-        dynamic_cast<arch::DirectionalLightArchetype*>(
-            directional_light_location.arch
-        );
+        world.entityLocations[getId(directional_light)];
+    auto* directional_light_arch = dynamic_cast<DirectionalLightArchetype*>(
+        directional_light_location.arch
+    );
     const auto directional_light_index = directional_light_location.index;
     directional_light_arch->directionalLights[directional_light_index] = {
         .position = {0.0f, 25.0f, 15.0f},
@@ -344,11 +304,10 @@ auto main() -> int {
         .shininess = 128.0f * 0.078125f
     };
     auto point_light = arch_entity_manager->createEntity();
-    arch::world.addEntityToArchetype(point_light, arch::world.archetypes[9]);
-    auto point_light_location =
-        arch::world.entityLocations[arch::getId(point_light)];
+    world.addEntityToArchetype(point_light, world.archetypes[9]);
+    auto point_light_location = world.entityLocations[getId(point_light)];
     auto* point_light_arch =
-        dynamic_cast<arch::PointLightArchetype*>(point_light_location.arch);
+        dynamic_cast<PointLightArchetype*>(point_light_location.arch);
     const auto point_light_index = point_light_location.index;
     point_light_arch->pointLights[point_light_index] = {
         .position = {3.0f, 10.0f, 15.0f},
@@ -371,11 +330,10 @@ auto main() -> int {
         .shininess = 128.0f * 0.078125f
     };
     auto spot_light = arch_entity_manager->createEntity();
-    arch::world.addEntityToArchetype(spot_light, arch::world.archetypes[10]);
-    auto spot_light_location =
-        arch::world.entityLocations[arch::getId(spot_light)];
+    world.addEntityToArchetype(spot_light, world.archetypes[10]);
+    auto spot_light_location = world.entityLocations[getId(spot_light)];
     auto* spot_light_arch =
-        dynamic_cast<arch::SpotLightArchetype*>(spot_light_location.arch);
+        dynamic_cast<SpotLightArchetype*>(spot_light_location.arch);
     const auto spot_light_index = spot_light_location.index;
     spot_light_arch->spotLights[spot_light_index] = {
         .position = {1.0f, 12.0f, 5.0f},

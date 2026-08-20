@@ -1,6 +1,6 @@
-#include "glvm/Event.hpp"
+#include "glvm/event.hpp"
 
-#include "glvm/EventsStack.hpp"
+#include "glvm/events_stack.hpp"
 
 namespace glvm::core {
 CEvent::CEvent() {}

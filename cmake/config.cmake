@@ -8,6 +8,17 @@ if(NOT MSVC AND NOT EMSCRIPTEN AND NOT APPLE)
   endif()
 endif()
 
+# GCC's -fmodules-ts emits duplicate std::logic_error symbols on MinGW static
+# linking; this project doesn't use C++ modules, so disable module scanning.
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  # MinGW + static libstdc++: GCC 16 emits a strong definition of
+  # std::logic_error's copy ctor (C++26 constexpr-exceptions branch) that
+  # collides with libstdc++.a(cow-stdexcept.o).
+  add_link_options(-Wl,--allow-multiple-definition)
+endif()
+
 find_program(CCACHE_PATH ccache)
 if(CCACHE_PATH AND NOT CMAKE_CXX_COMPILER_LAUNCHER)
   set(CMAKE_C_COMPILER_LAUNCHER   "${CCACHE_PATH}" CACHE STRING "")

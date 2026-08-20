@@ -1,52 +1,49 @@
 #pragma once
 
-#include "glvm/ArchetypeECS/ArchECS_Utils.hpp"
-#include "glvm/ArchetypeECS/ArchECS_World.hpp"
-#include "glvm/ArchetypeECS/ArchetypeInterface.hpp"
-#include "glvm/Archetypes/DirectionalLightArchetype.hpp"
-#include "glvm/Archetypes/EnemyArchetype.hpp"
-#include "glvm/Archetypes/ItemArchetype.hpp"
-#include "glvm/Archetypes/LevelChunkArchetype.hpp"
-#include "glvm/Archetypes/PlayerArchetype.hpp"
-#include "glvm/Archetypes/PointLightArchetype.hpp"
-#include "glvm/Archetypes/ProjectileArchetype.hpp"
-#include "glvm/Archetypes/RigidBodyArchetype.hpp"
-#include "glvm/Archetypes/SpotLightArchetype.hpp"
-#include "glvm/Archetypes/StaticMeshArchetype.hpp"
-#include "glvm/ComponentManager.hpp"
-#include "glvm/Components/InventoryComponent.hpp"
-#include "glvm/ComponentsFullSet.hpp"
-#include "glvm/Constants.hpp"
-#include "glvm/EntityManager.hpp"
-#include "glvm/Event.hpp"
-#include "glvm/EventsStack.hpp"
-#include "glvm/GraphicAPI/Vulkan.hpp"
-#include "glvm/IChrono.hpp"
-#include "glvm/IContainer.hpp"
-#include "glvm/ISoundEngine.hpp"
-#include "glvm/IWindow.hpp"
-#include "glvm/ProceduralLevelGeneratingSystem.hpp"
-#include "glvm/ShaderStructs.hpp"
-#include "glvm/SystemManager.hpp"
-#include "glvm/Systems/DamageSystem.hpp"
-#include "glvm/Systems/EnemySystem.hpp"
-#include "glvm/Systems/InventorySystem.hpp"
-#include "glvm/Systems/ItemSystem.hpp"
-#include "glvm/Systems/SpatialGridSystem.hpp"
-#include "glvm/SystemsFullSet.hpp"
-#include "glvm/Texture.hpp"
-#include "glvm/TextureManager.hpp"
-#include "glvm/TimerCreator.hpp"
-#include "glvm/Vector.hpp"
-#include "glvm/VkStructs.hpp"
+#include "glvm/archetype_ecs/arch_ecs_utils.hpp"
+#include "glvm/archetype_ecs/arch_ecs_world.hpp"
+#include "glvm/archetype_ecs/archetype_interface.hpp"
+#include "glvm/archetypes/directional_light_archetype.hpp"
+#include "glvm/archetypes/enemy_archetype.hpp"
+#include "glvm/archetypes/item_archetype.hpp"
+#include "glvm/archetypes/level_chunk_archetype.hpp"
+#include "glvm/archetypes/player_archetype.hpp"
+#include "glvm/archetypes/point_light_archetype.hpp"
+#include "glvm/archetypes/projectile_archetype.hpp"
+#include "glvm/archetypes/rigid_body_archetype.hpp"
+#include "glvm/archetypes/spot_light_archetype.hpp"
+#include "glvm/archetypes/static_mesh_archetype.hpp"
+#include "glvm/component_manager.hpp"
+#include "glvm/components/inventory_component.hpp"
+#include "glvm/components_full_set.hpp"
+#include "glvm/constants.hpp"
+#include "glvm/entity_manager.hpp"
+#include "glvm/event.hpp"
+#include "glvm/events_stack.hpp"
+#include "glvm/graphic_api/vulkan.hpp"
+#include "glvm/i_chrono.hpp"
+#include "glvm/i_sound_engine.hpp"
+#include "glvm/i_window.hpp"
+#include "glvm/procedural_level_generating_system.hpp"
+#include "glvm/shader_structs.hpp"
+#include "glvm/system_manager.hpp"
+#include "glvm/systems/damage_system.hpp"
+#include "glvm/systems/enemy_system.hpp"
+#include "glvm/systems/inventory_system.hpp"
+#include "glvm/systems/item_system.hpp"
+#include "glvm/systems/spatial_grid_system.hpp"
+#include "glvm/systems_full_set.hpp"
+#include "glvm/texture.hpp"
+#include "glvm/texture_manager.hpp"
+#include "glvm/timer_creator.hpp"
+#include "glvm/vk_structs.hpp"
 
 #include <cstdint>
 #include <mutex>
-
-using Entity = unsigned int;
+#include <vector>
 
 namespace glvm::core {
-enum RendererType { OPENGL_RENDERER, VULKAN_RENDERER };
+enum RendererType { VULKAN_RENDERER };
 
 class Engine {
     static Engine* pInstance_;
@@ -61,7 +58,7 @@ class Engine {
     bool isLeftMouseButtonPressed;
     std::vector<ecs::Texture> textureVector;
     std::vector<const char*> pathsArray_;
-    core::vector<const char*> pathsGLTF_;
+    std::vector<const char*> pathsGLTF_;
     uint32_t meshID = 0;
     bool isAlreadyCached;
     bool isInventoryKeyHeld = false;
@@ -88,25 +85,25 @@ class Engine {
     ecs::InventorySystem* inventorySystem;
     ecs::arch::Archetype* cachedDirectionalLigthArchetypes[32];
     uint32_t directionalLightArchetypesNumber = 0;
-    ecs::arch::componentMask directionalLightRequiredMask =
+    uint64_t directionalLightRequiredMask =
         (1ul << ecs::arch::ComponentsIndices::DIRECTIONAL_LIGHT_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT);
     ecs::arch::Archetype* cachedSpotLigthArchetypes[32];
     uint32_t spotLightArchetypesNumber = 0;
-    ecs::arch::componentMask spotLightRequiredMask =
+    uint64_t spotLightRequiredMask =
         (1ul << ecs::arch::ComponentsIndices::SPOT_LIGHT_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT);
     ecs::arch::Archetype* cachedPointLigthArchetypes[32];
     uint32_t pointLightArchetypesNumber = 0;
-    ecs::arch::componentMask pointLightRequiredMask =
+    uint64_t pointLightRequiredMask =
         (1ul << ecs::arch::ComponentsIndices::POINT_LIGHT_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT);
     ecs::arch::Archetype* cachedAnimationActorsArchetypes[32];
     uint32_t animationActorsArchetypesNumber = 0;
-    ecs::arch::componentMask animatedActorsRequiredMask =
+    uint64_t animatedActorsRequiredMask =
         (1ul << ecs::arch::ComponentsIndices::MATERIAL_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::ANIMATION_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::ROTATION_COMPONENT)
@@ -114,7 +111,7 @@ class Engine {
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT);
     ecs::arch::Archetype* cachedStaticActorsArchetypes[32];
     uint32_t staticActorsArchetypesNumber = 0;
-    ecs::arch::componentMask staticActorsRequiredMask =
+    uint64_t staticActorsRequiredMask =
         (1ul << ecs::arch::ComponentsIndices::MATERIAL_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::STATIC_MESH_TAG_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT)
@@ -122,13 +119,13 @@ class Engine {
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT);
     ecs::arch::Archetype* cachedPlayerArchetypes[32];
     uint32_t playerArchetypesNumber = 0;
-    ecs::arch::componentMask playerRequiredMask =
+    uint64_t playerRequiredMask =
         (1ul << ecs::arch::ComponentsIndices::PLAYER_TAG_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::VIEW_COMPONENT);
     ecs::arch::Archetype* cachedAnimationArchetypes[32];
     uint32_t animationArchetypesNumber = 0;
-    ecs::arch::componentMask animationRequiredMask =
+    uint64_t animationRequiredMask =
         (1ul << ecs::arch::ComponentsIndices::MATERIAL_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::ANIMATION_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::ROTATION_COMPONENT)
@@ -136,13 +133,13 @@ class Engine {
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT);
     ecs::arch::Archetype* cachedCrosshairActorsArchetypes[32];
     uint32_t crosshairActorsArchetypesNumber = 0;
-    ecs::arch::componentMask crosshairRequiredMask =
+    uint64_t crosshairRequiredMask =
         (1ul << ecs::arch::ComponentsIndices::CROSSHAIR_TAG_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT);
     ecs::arch::Archetype* cachedLevelChunkActorsArchetypes[32];
     uint32_t levelChunkActorsArchetypesNumber = 0;
-    ecs::arch::componentMask levelChunkRequiredMask =
+    uint64_t levelChunkRequiredMask =
         (1ul << ecs::arch::ComponentsIndices::MATERIAL_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::LEVEL_CHUNK_TAG_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT)
@@ -150,14 +147,14 @@ class Engine {
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT);
     ecs::arch::Archetype* cachedProjectileActorsArchetypes[32];
     uint32_t projectileActorsArchetypesNumber = 0;
-    ecs::arch::componentMask projectileRequiredMask =
+    uint64_t projectileRequiredMask =
         (1ul << ecs::arch::ComponentsIndices::PROJECTILE_BUNDLE_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::ROTATION_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT);
     ecs::arch::Archetype* cachedItemActorsArchetypes[32];
     uint32_t itemActorsArchetypesNumber = 0;
-    ecs::arch::componentMask rotationItemRequiredMask =
+    uint64_t rotationItemRequiredMask =
         (1ul << ecs::arch::ComponentsIndices::ITEM_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT)
@@ -167,14 +164,14 @@ class Engine {
         | (1ul << ecs::arch::ComponentsIndices::MATERIAL_COMPONENT);
     ecs::arch::Archetype* cachedInventoryArchetypes[32];
     uint32_t inventoryArchetypesNumber = 0;
-    ecs::arch::componentMask inventoryRequiredMask =
+    uint64_t inventoryRequiredMask =
         (1ul << ecs::arch::ComponentsIndices::INVENTORY_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::MATERIAL_COMPONENT);
     ecs::arch::Archetype* cachedItemArchetypes[32];
     uint32_t itemArchetypesNumber = 0;
-    ecs::arch::componentMask itemRequiredMask =
+    uint64_t itemRequiredMask =
         (1ul << ecs::arch::ComponentsIndices::ITEM_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT)
@@ -183,21 +180,21 @@ class Engine {
         | (1ul << ecs::arch::ComponentsIndices::MATERIAL_COMPONENT);
     ecs::arch::Archetype* cachedHealthBarsArchetypes[32];
     uint32_t healthBarsArchetypesNumber = 0;
-    ecs::arch::componentMask healthBarsRequiredMask =
+    uint64_t healthBarsRequiredMask =
         (1ul << ecs::arch::ComponentsIndices::HEALTH_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::MESH_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT);
     ecs::arch::Archetype* cachedFontsArchetypes[32];
     uint32_t fontsArchetypesNumber = 0;
-    ecs::arch::componentMask fontRequiredMask =
+    uint64_t fontRequiredMask =
         (1ul << ecs::arch::ComponentsIndices::FONT_COMPONENT)
         | (1ul << ecs::arch::ComponentsIndices::TRANSFORM_COMPONENT);
     double fpsAccumulator = 0;
     Engine();
 
 public:
-    core::vector<ecs::components::MeshHandle> meshHandlers;
-    core::vector<ecs::TextureHandle> textureHandlers;
+    std::vector<ecs::components::MeshHandle> meshHandlers;
+    std::vector<ecs::TextureHandle> textureHandlers;
     uint32_t wavefrontObjCounter = 0;
 
     ~Engine();
@@ -214,17 +211,17 @@ public:
     void EnlargeFrameAccumulator(float value);
     void SetViewMatrix();
     void SetProjectionMatrix();
-    [[nodiscard]] core::vector<mat4> updateAnimationFrames(
+    [[nodiscard]] std::vector<Matrix<float, 4>> updateAnimationFrames(
         ecs::components::animation* animationComponent,
         unsigned int meshID
     );
-    mat4 updateDirectionalLightSpaceMatrixShadowMapUBO(
+    Matrix<float, 4> updateDirectionalLightSpaceMatrixShadowMapUBO(
         ecs::components::directionalLight* directionalLightComponent
     );
-    mat4 updateSpotLightSpaceMatrixShadowMapUBO(
+    Matrix<float, 4> updateSpotLightSpaceMatrixShadowMapUBO(
         ecs::components::spotLight* spotLightComponent
     );
-    mat4 updatePointLightSpaceMatrixShadowMapUBO(
+    Matrix<float, 4> updatePointLightSpaceMatrixShadowMapUBO(
         ecs::components::pointLight* pointLightComponent,
         uint32_t layer
     );
@@ -235,7 +232,7 @@ public:
         ecs::components::transform* slotTransfromComponent,
         ecs::components::mesh* meshComponent
     );
-    mat4 updateDataUBO_IconsUI(
+    Matrix<float, 4> updateDataUBO_IconsUI(
         ecs::components::transform* itemTransfromComponent,
         [[maybe_unused]] ecs::components::collider* itemColliderComponent,
         ecs::components::item* itemComponent,
@@ -245,15 +242,17 @@ public:
         ecs::components::mesh* itemMesh,
         int itemEntity
     );
-    mat4 updateDataHudScreenUBO(ecs::components::transform* cursorTransform);
+    Matrix<float, 4> updateDataHudScreenUBO(
+        ecs::components::transform* cursorTransform
+    );
     void setFrameData();
     void loadWavefrontObj();
-    void calculateMeshBounds(const vec4& animatedVertex);
+    void calculateMeshBounds(const Vector<float, 4>& animatedVertex);
     bool isModelCacheExists(const std::string& modelFilePath);
     void writeModelsCache(const std::string& modelFilePath);
     void initializeGLTF();
     void initializeFontData();
-    mat4 computeModelMatrix(
+    Matrix<float, 4> computeModelMatrix(
         ecs::components::transform* _transformComponent,
         ecs::components::rotation* rotation
     );

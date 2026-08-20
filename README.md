@@ -1,10 +1,83 @@
-# Game Loop Versatile Modules (GLVM)
+# Game Loop Versatile Modules (GLVM) - C++ Game Engine
 
-This is my simple game engine for Linux and Windows OS's with Vulkan support.
-It's based on entity component system (ECS) with user friendly C++ interface.
-Also it has partial support of `GLTf` and `Wavefront .obj` 3D model formats.
-With GLVM you can make simple phong light of three types (directional, spot,
-point). Very basic physics included (collisions, gravity).
+Simple game engine for Windows and Linux with Vulkan support.
+
+## Features
+
+- **ECS** based on archetypes.
+- `GLTf` and `Wavefront .obj` parsers.
+- Simple phong light (directional light, spotlight, point light).
+- Basic physics support (collisions, gravity).
+
+## Usage
+
+```cpp
+// TBD
+
+auto main() -> i32 {
+}
+```
+
+## Building
+
+### Basic Build
+```bash
+# Configure and build (Debug)
+cmake --workflow d
+
+# Configure, build and run tests (Debug)
+cmake --workflow dfull
+
+# Configure
+cmake --preset debug
+
+# Build everything
+cmake --build --preset debug
+```
+
+## Running
+
+### Examples
+```bash
+# Run basic GLVM example
+cmake --build --preset debug -t run_hello_world
+```
+
+See `examples/` folder for usage examples.
+
+### Tests
+```bash
+# Run all tests (unit + integration)
+ctest --preset debug --output-on-failure --parallel
+
+# Run unit tests only
+cmake --build --preset debug -t test_basic_glvm
+
+# Run integration tests only
+cmake --build --preset debug -t test_basic
+```
+
+See [TESTING.md](TESTING.md) for comprehensive testing guide.
+
+
+### Benchmarks
+```bash
+# Run ECS benchmarks
+cmake --build --preset release -t bench_ecs
+```
+
+### Documentation
+```bash
+# Build docs
+cmake --build --preset debug -t docs
+```
+
+Then open up `./build/debug/docs/html/index.html` file:
+
+## Requirements
+
+- CMake 3.25+
+- C++26 compatible compiler (GCC 14+, Clang 18+, MSVC 19.40+)
 
 ## Linux
 
@@ -81,48 +154,20 @@ dnf install libX11-devel \
     winget install MSYS2.MSYS2
     ```
 
-2. Install the compiler and Vulkan libs:
-    Inside MSYS2, for simpler way of installing packages, we need to install
-    `pactoys`:
+2. Install Vulkan libs:
     ```bash
-    pacman -S pactoys
+    pacman -S mingw-w64-x86_64-vulkan-devel
     ```
 
-3. Now we can use just shortened names of packages inside any MSYS2 toolchain:
-    ```bash
-    pacboy -S gcc:p
-    pacboy -S vulkan:p
-    ```
+### Optionally:
 
-## Building GLVM
+- Doxygen 1.9.5+ (for documentation)
+- Graphviz (for class/include diagrams in documentation)
 
-### Linux
+## Contributing
 
-Release mode:
+See [CONTRIBUTING.md](CONTRIBUTING.md) for complete documentation.
 
-```bash
-./tool/build.sh -r
-```
+## Architecture
 
-Debug mode:
-
-```bash
-./tool/build.sh -d
-```
-
-### Windows
-
-Release mode:
-
-```bash
-tool\build.bat -r
-```
-
-Debug mode:
-
-```bash
-tool\build.bat -d
-```
-
-# License
-Copyright © 2024 Maksim Manokhin a.k.a. Yuriorkis_Scream. Contacts: <fellfrostqtw@gmail.com>
+See [ARCHITECTURE.md](ARCHITECTURE.md) for complete documentation.

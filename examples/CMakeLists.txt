@@ -1,5 +1,16 @@
 function(glvm_add_example NAME)
-  add_executable(${NAME} "${CMAKE_CURRENT_SOURCE_DIR}/${NAME}.cpp")
+  add_executable(${NAME}
+    "${CMAKE_CURRENT_SOURCE_DIR}/${NAME}.cpp"
+    assets/textures/chelik.cpp
+    assets/textures/container2_specular.cpp
+    assets/textures/container2.cpp
+    assets/textures/crosshair.cpp
+    assets/textures/fontAtlas.cpp
+    assets/textures/gray.cpp
+    assets/textures/inventorySlot.cpp
+    assets/textures/tileset.cpp
+    assets/textures/witch.cpp
+  )
   target_link_libraries(${NAME}
     PRIVATE
       glvm

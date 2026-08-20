@@ -3,8 +3,6 @@
 #include <cstdint>
 #include <vector>
 
-typedef unsigned int Entity;
-
 namespace glvm::ecs {
 struct TextureHandle {
     uint32_t id;
@@ -16,7 +14,7 @@ struct Texture {
     unsigned int vkInnerIdLimit_ = 10;
 
     const char* path_to_image = "";
-    std::vector<Entity> entitiesOwnsThisTypeOfTexture_ = {};
+    std::vector<unsigned int> entitiesOwnsThisTypeOfTexture_ = {};
     unsigned int id_ = 0;
     unsigned int iWidth_ = 0;
     unsigned int iHeight_ = 0;

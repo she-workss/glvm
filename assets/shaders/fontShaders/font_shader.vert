@@ -1,0 +1,77 @@
+#version 450
+
+layout(location = 0) in vec3 inPosition;
+layout(location = 1) in vec3 inNormal;
+layout(location = 2) in vec2 inTextureCoordinate;
+layout(location = 3) in vec4 inJointIndices;
+layout(location = 4) in vec4 inWeights;
+layout(location = 0) out vec2 outFragmentTextureCoordinate;
+layout(set = 0, binding = 0) uniform FONT_UBO {
+    mat4 view;
+    mat4 proj;
+    vec3 position;
+    float scale;
+}
+
+font_ubo;
+
+void main() {
+    mat4 translationMatrix = mat4(
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        font_ubo.position.x,
+        font_ubo.position.y - 0.32,
+        font_ubo.position.z,
+        1.0
+    );
+    mat4 commonScale = mat4(
+        0.2,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.2,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.2,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+    );
+    mat4 scaleMatrix = mat4(
+        0.9 * font_ubo.scale,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.6 * font_ubo.scale,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0 * font_ubo.scale,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+    );
+    outFragmentTextureCoordinate = inTextureCoordinate;
+    vec4 p =
+        translationMatrix * commonScale * scaleMatrix * vec4(inPosition, 1.0);
+    gl_Position = vec4(p.xy, 0.1, 1.0);
+}

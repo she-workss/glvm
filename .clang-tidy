@@ -19,7 +19,9 @@ Checks:
   ,-cppcoreguidelines-avoid-magic-numbers\
   ,-cppcoreguidelines-non-private-member-variables-in-classes\
   ,-cppcoreguidelines-pro-bounds-constant-array-index\
+  ,-cppcoreguidelines-pro-type-union-access\
   ,-google-build-using-namespace\
+  ,-google-readability-todo\
   ,-hicpp-uppercase-literal-suffix\
   ,-misc-include-cleaner\
   ,-misc-non-private-member-variables-in-classes\
