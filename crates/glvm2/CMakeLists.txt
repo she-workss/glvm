@@ -24,5 +24,13 @@ target_link_libraries(glvm
     ${Vulkan_LIBRARY}
 )
 
+if(TARGET glvm-wayland-protocols)
+  target_link_libraries(glvm
+    PUBLIC
+      glvm-wayland-protocols
+      PkgConfig::WAYLAND_CLIENT
+  )
+endif()
+
 # [tests]
 include(cmake/tests.cmake)

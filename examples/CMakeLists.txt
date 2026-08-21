@@ -16,13 +16,13 @@ function(glvm_add_example NAME)
       glvm
   )
 
-  target_link_options(${NAME} PRIVATE
-    -static
-    $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:-s>
-    $<$<BOOL:${WIN32}>:-Wl,-Bstatic,--whole-archive>
-    $<$<BOOL:${WIN32}>:-lwinpthread>
-    $<$<BOOL:${WIN32}>:-Wl,--no-whole-archive>
-  )
+  # target_link_options(${NAME} PRIVATE
+  #   -static
+  #   $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:-s>
+  #   $<$<BOOL:${WIN32}>:-Wl,-Bstatic,--whole-archive>
+  #   $<$<BOOL:${WIN32}>:-lwinpthread>
+  #   $<$<BOOL:${WIN32}>:-Wl,--no-whole-archive>
+  # )
 
   add_custom_target(run_${NAME}
     COMMENT "Running example '${NAME}'"

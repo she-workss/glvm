@@ -32,8 +32,15 @@
 #ifdef _WIN32
 #include "imgui_impl_win32.h"
 
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
+#ifndef NOGDI
+#define NOGDI
+#endif
 // clang-format off
 #include <windows.h>
 #include <mmsystem.h>
@@ -42,6 +49,14 @@
 #ifdef __linux__
 #include <wayland-client-core.h>
 #endif // __linux__
+
+#ifdef _WIN32
+constexpr auto VK_W = 0x57;
+constexpr auto VK_S = 0x53;
+constexpr auto VK_A = 0x41;
+constexpr auto VK_D = 0x44;
+constexpr auto VK_I = 0x49;
+#endif
 
 namespace glvm {
 auto matches_required_mask(
@@ -238,95 +253,95 @@ uint64_t Archetype::removeEntity(uint32_t index) {
         const uint32_t componentId = componentIds[i];
 
         switch (componentId) {
-            case ComponentsIndices::TRANSFORM_COMPONENT:
+            case ComponentsIndices::TransformComponent:
                 static_cast<transform*>(components[componentId])[index] =
                     static_cast<transform*>(components[componentId])[last];
                 break;
-            case ComponentsIndices::RIGID_BODY_COMPONENT:
-                static_cast<rigidBody*>(components[componentId])[index] =
-                    static_cast<rigidBody*>(components[componentId])[last];
+            case ComponentsIndices::RigidBodyComponent:
+                static_cast<RigidBody*>(components[componentId])[index] =
+                    static_cast<RigidBody*>(components[componentId])[last];
                 break;
-            case ComponentsIndices::MESH_COMPONENT:
+            case ComponentsIndices::MeshComponent:
                 static_cast<mesh*>(components[componentId])[index] =
                     static_cast<mesh*>(components[componentId])[last];
                 break;
-            case ComponentsIndices::FONT_COMPONENT:
+            case ComponentsIndices::FontComponent:
                 static_cast<font*>(components[componentId])[index] =
                     static_cast<font*>(components[componentId])[last];
                 break;
-            case ComponentsIndices::COLLIDER_COMPONENT:
+            case ComponentsIndices::ColliderComponent:
                 static_cast<collider*>(components[componentId])[index] =
                     static_cast<collider*>(components[componentId])[last];
                 break;
-            case ComponentsIndices::COLLIDER_FLAGS_COMPONENT:
+            case ComponentsIndices::ColliderFlagsComponent:
                 static_cast<colliderFlags*>(components[componentId])[index] =
                     static_cast<colliderFlags*>(components[componentId])[last];
                 break;
-            case ComponentsIndices::MATERIAL_COMPONENT:
+            case ComponentsIndices::MaterialComponent:
                 static_cast<material*>(components[componentId])[index] =
                     static_cast<material*>(components[componentId])[last];
                 break;
-            case ComponentsIndices::VIEW_COMPONENT:
+            case ComponentsIndices::ViewComponent:
                 static_cast<beholder*>(components[componentId])[index] =
                     static_cast<beholder*>(components[componentId])[last];
                 break;
-            case ComponentsIndices::HEALTH_COMPONENT:
+            case ComponentsIndices::HealthComponent:
                 static_cast<health*>(components[componentId])[index] =
                     static_cast<health*>(components[componentId])[last];
                 break;
-            case ComponentsIndices::ANIMATION_COMPONENT:
+            case ComponentsIndices::AnimationComponent:
                 static_cast<animation*>(components[componentId])[index] =
                     static_cast<animation*>(components[componentId])[last];
                 break;
-            case ComponentsIndices::STATE_COMPONENT:
+            case ComponentsIndices::StateComponent:
                 static_cast<state*>(components[componentId])[index] =
                     static_cast<state*>(components[componentId])[last];
                 break;
-            case ComponentsIndices::ENEMY_COMPONENT:
+            case ComponentsIndices::EnemyComponent:
                 static_cast<enemy*>(components[componentId])[index] =
                     static_cast<enemy*>(components[componentId])[last];
                 break;
-            case ComponentsIndices::DAMAGE_COMPONENT:
+            case ComponentsIndices::DamageComponent:
                 static_cast<damage*>(components[componentId])[index] =
                     static_cast<damage*>(components[componentId])[last];
                 break;
-            case ComponentsIndices::ATTACK_COMPONENT:
+            case ComponentsIndices::AttackComponent:
                 static_cast<attack*>(components[componentId])[index] =
                     static_cast<attack*>(components[componentId])[last];
                 break;
-            case ComponentsIndices::INVENTORY_COMPONENT:
+            case ComponentsIndices::InventoryComponent:
                 static_cast<inventory*>(components[componentId])[index] =
                     static_cast<inventory*>(components[componentId])[last];
                 break;
-            case ComponentsIndices::DIRECTIONAL_LIGHT_COMPONENT:
+            case ComponentsIndices::DirectionalLightComponent:
                 static_cast<directionalLight*>(components[componentId])[index] =
                     static_cast<directionalLight*>(
                         components[componentId]
                     )[last];
                 break;
-            case ComponentsIndices::SPOT_LIGHT_COMPONENT:
+            case ComponentsIndices::SpotLightComponent:
                 static_cast<spotLight*>(components[componentId])[index] =
                     static_cast<spotLight*>(components[componentId])[last];
                 break;
-            case ComponentsIndices::POINT_LIGHT_COMPONENT:
+            case ComponentsIndices::PointLightComponent:
                 static_cast<pointLight*>(components[componentId])[index] =
                     static_cast<pointLight*>(components[componentId])[last];
                 break;
-            case ComponentsIndices::ITEM_COMPONENT:
+            case ComponentsIndices::ItemComponent:
                 static_cast<item*>(components[componentId])[index] =
                     static_cast<item*>(components[componentId])[last];
                 break;
-            case ComponentsIndices::MOVE_COMPONENT:
+            case ComponentsIndices::MoveComponent:
                 static_cast<move*>(components[componentId])[index] =
                     static_cast<move*>(components[componentId])[last];
                 break;
-            case ComponentsIndices::PROJECTILE_BUNDLE_COMPONENT:
+            case ComponentsIndices::ProjectileBundleComponent:
                 static_cast<ProjectileBundle*>(components[componentId])[index] =
                     static_cast<ProjectileBundle*>(
                         components[componentId]
                     )[last];
                 break;
-            case ComponentsIndices::LEVEL_CHUNK_TAG_COMPONENT:
+            case ComponentsIndices::LevelChunkTagComponent:
                 static_cast<levelChunkTagComponent*>(
                     components[componentId]
                 )[index] =
@@ -334,7 +349,7 @@ uint64_t Archetype::removeEntity(uint32_t index) {
                         components[componentId]
                     )[last];
                 break;
-            case ComponentsIndices::PROJECTILE_TAG_COMPONENT:
+            case ComponentsIndices::ProjectileTagComponent:
                 static_cast<projectileTagComponent*>(
                     components[componentId]
                 )[index] =
@@ -342,7 +357,7 @@ uint64_t Archetype::removeEntity(uint32_t index) {
                         components[componentId]
                     )[last];
                 break;
-            case ComponentsIndices::PLAYER_TAG_COMPONENT:
+            case ComponentsIndices::PlayerTagComponent:
                 static_cast<playerTagComponent*>(
                     components[componentId]
                 )[index] =
@@ -876,8 +891,8 @@ void Engine::EnlargeFrameAccumulator(float value) {
     animationArchetypesNumber = 0;
     for (uint32_t m = 0; m < world.archetypes.size(); ++m) {
         Archetype* arch = world.archetypes[m];
-        uint64_t requiredMask = (1ul << ComponentsIndices::MESH_COMPONENT)
-            | (1ul << ComponentsIndices::ANIMATION_COMPONENT);
+        uint64_t requiredMask = (1ul << ComponentsIndices::MeshComponent)
+            | (1ul << ComponentsIndices::AnimationComponent);
 
         if (matches_required_mask(arch->mask, requiredMask)) {
             cachedAnimationArchetypes[animationArchetypesNumber] = arch;
@@ -930,9 +945,9 @@ void Engine::SetViewMatrix() {
     for (uint32_t n = 0; n < playerArchetypesNumber; ++n) {
         Archetype* arch = cachedPlayerArchetypes[n];
         beholder* views =
-            (beholder*)arch->components[ComponentsIndices::VIEW_COMPONENT];
+            (beholder*)arch->components[ComponentsIndices::ViewComponent];
         transform* transfroms =
-            (transform*)arch->components[ComponentsIndices::TRANSFORM_COMPONENT];
+            (transform*)arch->components[ComponentsIndices::TransformComponent];
 
         for (uint32_t x = 0; x < arch->entityCount; ++x) {
             beholder* cameraComponent = &views[x];
@@ -1403,8 +1418,8 @@ void Engine::setFrameData() {
     for (uint32_t x = 0; x < directionalLightArchetypesNumber; ++x) {
         Archetype* arch = cachedDirectionalLigthArchetypes[x];
         directionalLight* directionalLights =
-            (directionalLight*)arch
-                ->components[ComponentsIndices::DIRECTIONAL_LIGHT_COMPONENT];
+            (directionalLight*)
+                arch->components[ComponentsIndices::DirectionalLightComponent];
 
         for (uint32_t x1 = 0; x1 < arch->entityCount; ++x1) {
             if (directionalLights) {
@@ -1468,8 +1483,7 @@ void Engine::setFrameData() {
     for (uint32_t x = 0; x < spotLightArchetypesNumber; ++x) {
         Archetype* arch = cachedSpotLigthArchetypes[x];
         spotLight* spotLights =
-            (spotLight*)
-                arch->components[ComponentsIndices::SPOT_LIGHT_COMPONENT];
+            (spotLight*)arch->components[ComponentsIndices::SpotLightComponent];
 
         for (uint32_t x1 = 0; x1 < arch->entityCount; ++x1) {
             if (spotLights) {
@@ -1516,7 +1530,7 @@ void Engine::setFrameData() {
         Archetype* arch = cachedPointLigthArchetypes[x];
         pointLight* pointLights =
             (pointLight*)
-                arch->components[ComponentsIndices::POINT_LIGHT_COMPONENT];
+                arch->components[ComponentsIndices::PointLightComponent];
 
         for (uint32_t x1 = 0; x1 < arch->entityCount; ++x1) {
             if (pointLights) {
@@ -1565,11 +1579,11 @@ void Engine::setFrameData() {
     for (uint32_t x = 0; x < healthBarsArchetypesNumber; ++x) {
         Archetype* arch = cachedHealthBarsArchetypes[x];
         transform* healthBarTransforms =
-            (transform*)arch->components[ComponentsIndices::TRANSFORM_COMPONENT];
+            (transform*)arch->components[ComponentsIndices::TransformComponent];
         mesh* healthBarMeshes =
-            (mesh*)arch->components[ComponentsIndices::MESH_COMPONENT];
+            (mesh*)arch->components[ComponentsIndices::MeshComponent];
         health* healthBars =
-            (health*)arch->components[ComponentsIndices::HEALTH_COMPONENT];
+            (health*)arch->components[ComponentsIndices::HealthComponent];
 
         unsigned int uiVertexId = 0;
         if (matches_required_mask(arch->mask, playerComponentMask)) {
@@ -1603,9 +1617,8 @@ void Engine::setFrameData() {
     for (uint32_t x = 0; x < fontsArchetypesNumber; ++x) {
         Archetype* arch = cachedFontsArchetypes[x];
         transform* fontTransforms =
-            (transform*)arch->components[ComponentsIndices::TRANSFORM_COMPONENT];
-        font* fonts =
-            (font*)arch->components[ComponentsIndices::FONT_COMPONENT];
+            (transform*)arch->components[ComponentsIndices::TransformComponent];
+        font* fonts = (font*)arch->components[ComponentsIndices::FontComponent];
 
         for (unsigned int i = 0; i < arch->entityCount; ++i) {
             vulkanRenderer->fonts.push_back({});
@@ -1635,15 +1648,15 @@ void Engine::setFrameData() {
             Archetype* arch = cachedInventoryArchetypes[x];
             transform* inventoryTransforms =
                 (transform*)
-                    arch->components[ComponentsIndices::TRANSFORM_COMPONENT];
+                    arch->components[ComponentsIndices::TransformComponent];
             inventory* inventoryData =
                 (inventory*)
-                    arch->components[ComponentsIndices::INVENTORY_COMPONENT];
+                    arch->components[ComponentsIndices::InventoryComponent];
             material* inventoryMaterials =
                 (material*)
-                    arch->components[ComponentsIndices::MATERIAL_COMPONENT];
+                    arch->components[ComponentsIndices::MaterialComponent];
             mesh* inventoryMeshes =
-                (mesh*)arch->components[ComponentsIndices::MESH_COMPONENT];
+                (mesh*)arch->components[ComponentsIndices::MeshComponent];
 
             if (inventoryTransforms && inventoryMaterials && inventoryData
                 && inventoryMeshes) {
@@ -1702,19 +1715,19 @@ void Engine::setFrameData() {
                         Archetype* arch = cachedItemArchetypes[c];
                         transform* itemTransforms =
                             (transform*)arch->components
-                                [ComponentsIndices::TRANSFORM_COMPONENT];
+                                [ComponentsIndices::TransformComponent];
                         item* items =
                             (item*)arch
-                                ->components[ComponentsIndices::ITEM_COMPONENT];
+                                ->components[ComponentsIndices::ItemComponent];
                         material* itemMaterials =
                             (material*)arch->components
-                                [ComponentsIndices::MATERIAL_COMPONENT];
+                                [ComponentsIndices::MaterialComponent];
                         mesh* itemMeshes =
                             (mesh*)arch
-                                ->components[ComponentsIndices::MESH_COMPONENT];
+                                ->components[ComponentsIndices::MeshComponent];
                         collider* itemColliders =
                             (collider*)arch->components
-                                [ComponentsIndices::COLLIDER_COMPONENT];
+                                [ComponentsIndices::ColliderComponent];
 
                         if (itemTransforms && itemMaterials && itemMeshes
                             && itemColliders && items) {
@@ -1725,12 +1738,12 @@ void Engine::setFrameData() {
                                     vulkanRenderer->items.push_back({});
                                     unsigned int meshID =
                                         itemMeshes[a].handle.id;
-                                    unsigned int diffuseTexureID =
+                                    unsigned int diffuseTextureID =
                                         itemMaterials[a].diffuseTextureID_.id;
                                     vulkanRenderer->items[itemCounter].meshID =
                                         meshID;
                                     vulkanRenderer->items[itemCounter]
-                                        .diffuseTexureID = diffuseTexureID;
+                                        .diffuseTextureID = diffuseTextureID;
                                     transform* itemTransformComponent =
                                         &itemTransforms[a];
                                     collider* itemColliderComponent =
@@ -1774,9 +1787,9 @@ void Engine::setFrameData() {
     for (uint32_t x = 0; x < crosshairActorsArchetypesNumber; ++x) {
         Archetype* arch = cachedCrosshairActorsArchetypes[x];
         transform* crosshairTransforms =
-            (transform*)arch->components[ComponentsIndices::TRANSFORM_COMPONENT];
+            (transform*)arch->components[ComponentsIndices::TransformComponent];
         mesh* crosshairMeshes =
-            (mesh*)arch->components[ComponentsIndices::MESH_COMPONENT];
+            (mesh*)arch->components[ComponentsIndices::MeshComponent];
 
         for (unsigned int i = 0; i < arch->entityCount; ++i) {
             vulkanRenderer->crosshairs.push_back({});
@@ -1800,16 +1813,16 @@ void Engine::setFrameData() {
     for (uint32_t x = 0; x < levelChunkActorsArchetypesNumber; ++x) {
         Archetype* arch = cachedLevelChunkActorsArchetypes[x];
         transform* levelChunkTransforms =
-            (transform*)arch->components[ComponentsIndices::TRANSFORM_COMPONENT];
+            (transform*)arch->components[ComponentsIndices::TransformComponent];
         mesh* levelChunkMeshes =
-            (mesh*)arch->components[ComponentsIndices::MESH_COMPONENT];
+            (mesh*)arch->components[ComponentsIndices::MeshComponent];
         material* levelChunkMaterials =
-            (material*)arch->components[ComponentsIndices::MATERIAL_COMPONENT];
+            (material*)arch->components[ComponentsIndices::MaterialComponent];
         rotation* levelChunkRotations =
-            (rotation*)arch->components[ComponentsIndices::ROTATION_COMPONENT];
+            (rotation*)arch->components[ComponentsIndices::RotationComponent];
         levelChunkTagComponent* levelChunks =
             (levelChunkTagComponent*)
-                arch->components[ComponentsIndices::LEVEL_CHUNK_TAG_COMPONENT];
+                arch->components[ComponentsIndices::LevelChunkTagComponent];
 
         std::vector<Matrix<float, 4>> jointMatrices;
         jointMatrices.resize(MAX_JOINTS_NUMBER);
@@ -1857,15 +1870,15 @@ void Engine::setFrameData() {
     for (uint32_t x = 0; x < animationActorsArchetypesNumber; ++x) {
         Archetype* arch = cachedAnimationActorsArchetypes[x];
         transform* actorTransforms =
-            (transform*)arch->components[ComponentsIndices::TRANSFORM_COMPONENT];
+            (transform*)arch->components[ComponentsIndices::TransformComponent];
         mesh* actorMeshes =
-            (mesh*)arch->components[ComponentsIndices::MESH_COMPONENT];
+            (mesh*)arch->components[ComponentsIndices::MeshComponent];
         material* actorMaterials =
-            (material*)arch->components[ComponentsIndices::MATERIAL_COMPONENT];
+            (material*)arch->components[ComponentsIndices::MaterialComponent];
         rotation* actorRotations =
-            (rotation*)arch->components[ComponentsIndices::ROTATION_COMPONENT];
+            (rotation*)arch->components[ComponentsIndices::RotationComponent];
         animation* actorAnimations =
-            (animation*)arch->components[ComponentsIndices::ANIMATION_COMPONENT];
+            (animation*)arch->components[ComponentsIndices::AnimationComponent];
 
         for (uint32_t n = 0; n < arch->entityCount; ++n) {
             vulkanRenderer->actors.push_back({});
@@ -1908,13 +1921,13 @@ void Engine::setFrameData() {
     for (uint32_t x = 0; x < staticActorsArchetypesNumber; ++x) {
         Archetype* arch = cachedStaticActorsArchetypes[x];
         transform* staticActorTransforms =
-            (transform*)arch->components[ComponentsIndices::TRANSFORM_COMPONENT];
+            (transform*)arch->components[ComponentsIndices::TransformComponent];
         mesh* staticActorMeshes =
-            (mesh*)arch->components[ComponentsIndices::MESH_COMPONENT];
+            (mesh*)arch->components[ComponentsIndices::MeshComponent];
         material* staticActorMaterials =
-            (material*)arch->components[ComponentsIndices::MATERIAL_COMPONENT];
+            (material*)arch->components[ComponentsIndices::MaterialComponent];
         rotation* staticActorRotations =
-            (rotation*)arch->components[ComponentsIndices::ROTATION_COMPONENT];
+            (rotation*)arch->components[ComponentsIndices::RotationComponent];
 
         std::vector<Matrix<float, 4>> jointMatrices;
         jointMatrices.resize(MAX_JOINTS_NUMBER);
@@ -1961,14 +1974,14 @@ void Engine::setFrameData() {
     for (uint32_t x = 0; x < projectileActorsArchetypesNumber; ++x) {
         Archetype* arch = cachedProjectileActorsArchetypes[x];
         transform* actorTransforms =
-            (transform*)arch->components[ComponentsIndices::TRANSFORM_COMPONENT];
+            (transform*)arch->components[ComponentsIndices::TransformComponent];
         mesh* actorMeshes =
-            (mesh*)arch->components[ComponentsIndices::MESH_COMPONENT];
+            (mesh*)arch->components[ComponentsIndices::MeshComponent];
         ProjectileBundle* actorProjectileBundles =
-            (ProjectileBundle*)arch
-                ->components[ComponentsIndices::PROJECTILE_BUNDLE_COMPONENT];
+            (ProjectileBundle*)
+                arch->components[ComponentsIndices::ProjectileBundleComponent];
         rotation* actorRotations =
-            (rotation*)arch->components[ComponentsIndices::ROTATION_COMPONENT];
+            (rotation*)arch->components[ComponentsIndices::RotationComponent];
 
         std::vector<Matrix<float, 4>> jointMatrices;
         jointMatrices.resize(MAX_JOINTS_NUMBER);
@@ -2018,15 +2031,14 @@ void Engine::setFrameData() {
     for (uint32_t x = 0; x < itemActorsArchetypesNumber; ++x) {
         Archetype* arch = cachedItemActorsArchetypes[x];
         transform* itemTransforms =
-            (transform*)arch->components[ComponentsIndices::TRANSFORM_COMPONENT];
+            (transform*)arch->components[ComponentsIndices::TransformComponent];
         mesh* itemMeshes =
-            (mesh*)arch->components[ComponentsIndices::MESH_COMPONENT];
+            (mesh*)arch->components[ComponentsIndices::MeshComponent];
         material* itemMaterials =
-            (material*)arch->components[ComponentsIndices::MATERIAL_COMPONENT];
+            (material*)arch->components[ComponentsIndices::MaterialComponent];
         rotation* itemRotations =
-            (rotation*)arch->components[ComponentsIndices::ROTATION_COMPONENT];
-        item* items =
-            (item*)arch->components[ComponentsIndices::ITEM_COMPONENT];
+            (rotation*)arch->components[ComponentsIndices::RotationComponent];
+        item* items = (item*)arch->components[ComponentsIndices::ItemComponent];
 
         std::vector<Matrix<float, 4>> jointMatrices;
         jointMatrices.resize(MAX_JOINTS_NUMBER);
@@ -2080,7 +2092,7 @@ void Engine::setFrameData() {
     for (uint32_t x = 0; x < playerArchetypesNumber; ++x) {
         Archetype* arch = cachedPlayerArchetypes[x];
         transform* playerTransforms =
-            (transform*)arch->components[ComponentsIndices::TRANSFORM_COMPONENT];
+            (transform*)arch->components[ComponentsIndices::TransformComponent];
 
         for (unsigned int n = 0; n < arch->entityCount; ++n) {
             vulkanRenderer->players.push_back({});
@@ -3140,9 +3152,7 @@ void setDebugObjectNames(
             GPUDescriptors[descriptorBindingsConfig[fontUboDescriptorBindingIndex]
                                .globalDescriptorOffset]
                 .GPUBuffer->buffer;
-    ;
     SetDebugObjectName(device, &fontUniformBufferObjectInfo);
-
     VkDebugUtilsObjectNameInfoEXT uiUniformBufferObjectInfo {};
     uiUniformBufferObjectInfo.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
@@ -3160,7 +3170,6 @@ void setDebugObjectNames(
                                .globalDescriptorOffset]
                 .GPUBuffer->buffer;
     SetDebugObjectName(device, &uiUniformBufferObjectInfo);
-
     VkDebugUtilsObjectNameInfoEXT uiIconsUniformBufferObjectInfo {};
     uiIconsUniformBufferObjectInfo.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
@@ -3178,7 +3187,6 @@ void setDebugObjectNames(
                  .globalDescriptorOffset]
                 .GPUBuffer->buffer;
     SetDebugObjectName(device, &uiIconsUniformBufferObjectInfo);
-
     VkDebugUtilsObjectNameInfoEXT directionalLightUniformBufferObjectInfo {};
     directionalLightUniformBufferObjectInfo.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
@@ -3200,7 +3208,6 @@ void setDebugObjectNames(
                                    .globalDescriptorOffset]
                 .GPUBuffer->buffer;
     SetDebugObjectName(device, &directionalLightUniformBufferObjectInfo);
-
     VkDebugUtilsObjectNameInfoEXT pointLightUniformBufferObjectInfo {};
     pointLightUniformBufferObjectInfo.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
@@ -3219,7 +3226,6 @@ void setDebugObjectNames(
                  .globalDescriptorOffset]
                 .GPUBuffer->buffer;
     SetDebugObjectName(device, &pointLightUniformBufferObjectInfo);
-
     VkDebugUtilsObjectNameInfoEXT spotLightUniformBufferObjectInfo {};
     spotLightUniformBufferObjectInfo.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
@@ -3238,7 +3244,6 @@ void setDebugObjectNames(
                  .globalDescriptorOffset]
                 .GPUBuffer->buffer;
     SetDebugObjectName(device, &spotLightUniformBufferObjectInfo);
-
     for (unsigned long i = 0; i < vertexBufferContainer.size(); ++i) {
         VkDebugUtilsObjectNameInfoEXT uniformBufferObjectInfo {};
         uniformBufferObjectInfo.sType =
@@ -3252,7 +3257,6 @@ void setDebugObjectNames(
             (uint64_t)vertexBufferContainer[i];
         SetDebugObjectName(device, &uniformBufferObjectInfo);
     }
-
     for (unsigned long i = 0; i < indexBufferContainer.size(); ++i) {
         VkDebugUtilsObjectNameInfoEXT uniformBufferObjectInfo {};
         uniformBufferObjectInfo.sType =
@@ -3266,7 +3270,6 @@ void setDebugObjectNames(
             (uint64_t)indexBufferContainer[i];
         SetDebugObjectName(device, &uniformBufferObjectInfo);
     }
-
     for (unsigned long i = 0; i < fontIndicesContainer.size(); ++i) {
         VkDebugUtilsObjectNameInfoEXT uniformBufferObjectInfo {};
         uniformBufferObjectInfo.sType =
@@ -3281,7 +3284,6 @@ void setDebugObjectNames(
             (uint64_t)fontVertexBufferContainer[fontIndicesContainer[i]];
         SetDebugObjectName(device, &uniformBufferObjectInfo);
     }
-
     for (unsigned long i = 0; i < fontIndicesContainer.size(); ++i) {
         VkDebugUtilsObjectNameInfoEXT uniformBufferObjectInfo {};
         uniformBufferObjectInfo.sType =
@@ -3296,7 +3298,6 @@ void setDebugObjectNames(
             (uint64_t)fontIndexBufferContainer[fontIndicesContainer[i]];
         SetDebugObjectName(device, &uniformBufferObjectInfo);
     }
-
     VkDebugUtilsObjectNameInfoEXT uniformBufferObjectInfo {};
     uniformBufferObjectInfo.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
@@ -3309,7 +3310,6 @@ void setDebugObjectNames(
         (uint64_t)GPUDescriptors[DescriptorSetDataLink::MAIN_RENDER_MATRIX_UBO]
             .GPUBuffer->buffer;
     SetDebugObjectName(device, &uniformBufferObjectInfo);
-
     VkDebugUtilsObjectNameInfoEXT lightDataUniformBufferObjectInfo {};
     lightDataUniformBufferObjectInfo.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
@@ -3392,16 +3392,13 @@ void ImGuiOverlay::init() {
     if (initialized_) {
         return;
     }
-
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.IniFilename = nullptr;
-
     createRenderPass();
     createVertexBuffer();
     createLinePipeline();
-
     ImGui_ImplWin32_Init(renderer_.Window->GetModernWindowHWND());
     ImGui_ImplVulkan_InitInfo initInfo {};
     initInfo.ApiVersion = VK_API_VERSION_1_0;
@@ -3417,11 +3414,9 @@ void ImGuiOverlay::init() {
         static_cast<uint32_t>(renderer_.swapChainImages.size());
     initInfo.PipelineInfoMain.RenderPass = renderPass_;
     initInfo.PipelineInfoMain.Subpass = 0;
-
     if (!ImGui_ImplVulkan_Init(&initInfo)) {
         throw std::runtime_error("failed to init ImGui vulkan backend!");
     }
-
     initialized_ = true;
     createSwapChainResources();
 }
@@ -3436,12 +3431,10 @@ void ImGuiOverlay::shutdown() {
     vkFreeMemory(renderer_.device, vertexBufferMemory_, nullptr);
     vertexBuffer_ = VK_NULL_HANDLE;
     vertexBufferMapped_ = nullptr;
-
     vkDestroyPipeline(renderer_.device, linePipeline_, nullptr);
     vkDestroyPipelineLayout(renderer_.device, lineLayout_, nullptr);
     vkDestroyRenderPass(renderer_.device, renderPass_, nullptr);
     renderPass_ = VK_NULL_HANDLE;
-
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
@@ -3495,10 +3488,8 @@ void ImGuiOverlay::newFrame() {
     if (ImGui::IsKeyPressed(ImGuiKey_F1, false)) {
         showPanel = !showPanel;
     }
-
     buildPanel();
     buildDebugVertices();
-
     ImGui::Render();
 }
 
@@ -3509,7 +3500,6 @@ void ImGuiOverlay::recordCommandBuffer(
     if (!initialized_) {
         return;
     }
-
     VkRenderPassBeginInfo renderPassInfo {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = renderPass_;
@@ -3518,13 +3508,11 @@ void ImGuiOverlay::recordCommandBuffer(
     renderPassInfo.renderArea.extent = renderer_.swapChainExtent;
     renderPassInfo.clearValueCount = 0;
     renderPassInfo.pClearValues = nullptr;
-
     vkCmdBeginRenderPass(
         commandBuffer,
         &renderPassInfo,
         VK_SUBPASS_CONTENTS_INLINE
     );
-
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
@@ -3533,12 +3521,10 @@ void ImGuiOverlay::recordCommandBuffer(
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-
     VkRect2D scissor {};
     scissor.offset = {0, 0};
     scissor.extent = renderer_.swapChainExtent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
     if (lineVertexCount_ > 0) {
         vkCmdBindPipeline(
             commandBuffer,
@@ -3559,9 +3545,7 @@ void ImGuiOverlay::recordCommandBuffer(
         );
         vkCmdDraw(commandBuffer, lineVertexCount_, 1, 0, 0);
     }
-
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
-
     vkCmdEndRenderPass(commandBuffer);
 }
 
@@ -3591,7 +3575,7 @@ void ImGuiOverlay::buildPanel() {
             std::max(1, maxLight)
         );
     }
-    ImGui::Text("Actors: %u", renderer_.actors.size());
+    ImGui::Text("Actors: %zu", renderer_.actors.size());
     ImGui::Text(
         "Dir lights: %u, Spot lights: %u",
         renderer_.directionalLightNumber,
@@ -3608,7 +3592,6 @@ void ImGuiOverlay::buildDebugVertices() {
     std::vector<DebugVertex> vertices;
     vertices.reserve(kMaxDebugVertices);
     lineVertexCount_ = 0;
-
     if (showActorBounds) {
         const Vector<float, 3> green = {0.0f, 1.0f, 0.0f};
         const Vector<float, 3> red = {1.0f, 0.0f, 0.0f};
@@ -3719,7 +3702,6 @@ void ImGuiOverlay::buildDebugVertices() {
             }
             pushBox(vertices, corners, yellow);
         }
-
         const Vector<float, 3> cyan = {0.0f, 1.0f, 1.0f};
         for (uint32_t i = 0; i < renderer_.spotLightNumber; ++i) {
             Vector<float, 3> corners[8];
@@ -3797,16 +3779,13 @@ void ImGuiOverlay::createRenderPass() {
     colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     colorAttachment.initialLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
     VkAttachmentReference colorReference {};
     colorReference.attachment = 0;
     colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
     VkSubpassDescription subpass {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorReference;
-
     VkSubpassDependency dependencies[2] {};
     dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
     dependencies[0].dstSubpass = 0;
@@ -3824,7 +3803,6 @@ void ImGuiOverlay::createRenderPass() {
     dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
     dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     dependencies[1].dstAccessMask = 0;
-
     VkRenderPassCreateInfo renderPassInfo {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = 1;
@@ -3833,7 +3811,6 @@ void ImGuiOverlay::createRenderPass() {
     renderPassInfo.pSubpasses = &subpass;
     renderPassInfo.dependencyCount = 2;
     renderPassInfo.pDependencies = dependencies;
-
     if (vkCreateRenderPass(
             renderer_.device,
             &renderPassInfo,
@@ -3870,10 +3847,12 @@ void ImGuiOverlay::createLinePipeline() {
         return module;
     };
 
-    VkShaderModule vert =
-        createShaderModule("../../../assets/shaders/debug/debug_vert.spv");
-    VkShaderModule frag =
-        createShaderModule("../../../assets/shaders/debug/debug_frag.spv");
+    VkShaderModule vert = createShaderModule(
+        "../../../crates/glvm2/assets/shaders/debug/debug_vert.spv"
+    );
+    VkShaderModule frag = createShaderModule(
+        "../../../crates/glvm2/assets/shaders/debug/debug_frag.spv"
+    );
 
     VkPipelineShaderStageCreateInfo shaderStages[2] {};
     shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -6342,7 +6321,6 @@ void CVulkanRenderer::updateDescriptorSetsCombinedImageSampler(
                   + descriptorSet.descriptorSetOffset + i);
             descriptorWrites[lastElement].dstBinding =
                 descriptorBindingsConfig[bindingsIDs[j]].binding;
-            ;
             descriptorWrites[lastElement].dstArrayElement = 0;
             descriptorWrites[lastElement].descriptorType =
                 VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -7009,7 +6987,7 @@ void CVulkanRenderer::uiIconsRecordCommandBuffer(
     for (unsigned int i = 0; i < items.size(); ++i) {
         RenderItem item = items[i];
         unsigned int uiVertexId = item.meshID;
-        unsigned int diffuseTexureID = item.diffuseTexureID;
+        unsigned int diffuseTextureID = item.diffuseTextureID;
         unsigned int uboIndex = currentFrame * items.size() + i;
 
         updateUBO_IconsUI(uboIndex, i);
@@ -7043,7 +7021,7 @@ void CVulkanRenderer::uiIconsRecordCommandBuffer(
             1,
             &(*(descriptorSetsChunks.data()
                 + currentDescriptorSet1.descriptorSetOffset
-                + MAX_FRAMES_IN_FLIGHT * diffuseTexureID + currentFrame)),
+                + MAX_FRAMES_IN_FLIGHT * diffuseTextureID + currentFrame)),
             0,
             nullptr
         );
@@ -9047,13 +9025,13 @@ void CJsonParser::Parse() {
             } else if (boolOrNullString == "null") {
                 if (keyFlag) {
                     JsonValue jsonNull;
-                    jsonNull.type = JSON_NULL;
+                    jsonNull.type = JsonNull;
                     jsonNull.value.null = NULL;
                     (*stackOfJsonValues_.back()
                           ->value.object)[lastKey_.c_str()] = jsonNull;
                 } else {
                     JsonValue jsonNull;
-                    jsonNull.type = JSON_NULL;
+                    jsonNull.type = JsonNull;
                     jsonNull.value.null = NULL;
                     stackOfJsonValues_.back()->value.array->push_back(jsonNull);
                 }
@@ -9103,7 +9081,7 @@ void CJsonParser::Parse() {
         } else if (currentChar_ == '}') {
             stackOfJsonValues_.pop_back();
             if (stackOfJsonValues_.size()
-                && stackOfJsonValues_.back()->type == JSON_OBJECT) {
+                && stackOfJsonValues_.back()->type == JsonObject) {
                 keyFlag = true;
             } else {
                 keyFlag = false;
@@ -9112,7 +9090,7 @@ void CJsonParser::Parse() {
         } else if (currentChar_ == ']') {
             stackOfJsonValues_.pop_back();
             if (stackOfJsonValues_.size()
-                && stackOfJsonValues_.back()->type == JSON_OBJECT) {
+                && stackOfJsonValues_.back()->type == JsonObject) {
                 keyFlag = true;
             } else {
                 keyFlag = false;
@@ -9125,14 +9103,14 @@ void CJsonParser::Parse() {
 
 JsonValue CJsonParser::CreateJsonHashMap() {
     JsonValue jsonObject;
-    jsonObject.type = JSON_OBJECT;
+    jsonObject.type = JsonObject;
     jsonObject.value.object = new HashMap<JsonValue>;
     return jsonObject;
 }
 
 JsonValue CJsonParser::CreateJsonArray() {
     JsonValue jsonArray;
-    jsonArray.type = JSON_ARRAY;
+    jsonArray.type = JsonArray;
     jsonArray.value.array = new std::vector<JsonValue>;
     return jsonArray;
 }
@@ -9333,7 +9311,7 @@ void CJsonParser::SearchInJsonArray(
     std::vector<JsonValue>& resultVector
 ) const {
     for (unsigned int i = 0; i < arrayValue->size(); ++i) {
-        if ((*arrayValue)[i].type == JSON_OBJECT) {
+        if ((*arrayValue)[i].type == JsonObject) {
             SearchInJsonObject(
                 (*arrayValue)[i].value.object,
                 key_,
@@ -9341,7 +9319,7 @@ void CJsonParser::SearchInJsonArray(
             );
         }
 
-        if ((*arrayValue)[i].type == JSON_ARRAY) {
+        if ((*arrayValue)[i].type == JsonArray) {
             SearchInJsonArray((*arrayValue)[i].value.array, key_, resultVector);
         }
     }
@@ -9362,7 +9340,7 @@ void CJsonParser::SearchInJsonObject(
                     resultVector.push_back(current->value_);
                 }
 
-                if (current->value_.type == JSON_OBJECT) {
+                if (current->value_.type == JsonObject) {
                     SearchInJsonObject(
                         current->value_.value.object,
                         key_,
@@ -9370,7 +9348,7 @@ void CJsonParser::SearchInJsonObject(
                     );
                 }
 
-                if (current->value_.type == JSON_ARRAY) {
+                if (current->value_.type == JsonArray) {
                     SearchInJsonArray(
                         current->value_.value.array,
                         key_,
@@ -9510,7 +9488,7 @@ struct BufferViewMetaData {
         (*gltf)["accessors"][accessorIndex]["componentType"].value.iNumber;
 
     bufferMetaData.byteOffset = 0;
-    if ((*gltf)["accessors"][accessorIndex].isObject() == JSON_OBJECT) {
+    if ((*gltf)["accessors"][accessorIndex].isObject() == JsonObject) {
         HashMap<JsonValue>* ptr =
             (*gltf)["accessors"][accessorIndex].value.object;
         if (ptr->Contain("byteOffset")) {
@@ -9530,7 +9508,7 @@ struct BufferViewMetaData {
     bufferViewMetaData.byteLength =
         (*gltf)["bufferViews"][bufferViewIndex]["byteLength"].value.iNumber;
     bufferViewMetaData.byteOffset = 0;
-    if ((*gltf)["bufferViews"][bufferViewIndex].isObject() == JSON_OBJECT) {
+    if ((*gltf)["bufferViews"][bufferViewIndex].isObject() == JsonObject) {
         HashMap<JsonValue>* ptr =
             (*gltf)["bufferViews"][bufferViewIndex].value.object;
         if (ptr->Contain("byteOffset")) {
@@ -9598,11 +9576,9 @@ void CJsonParser::LoadGLTF(
     std::cout << "path: " << pathsGLTF_ << std::endl;
     ReadFile(pathsGLTF_);
     Parse();
-
     JsonValue* gltf = GetRoot();
     std::string binary_path = *(*gltf)["buffers"][0]["uri"].value.string;
     int full_byte_size = (*gltf)["buffers"][0]["byteLength"].value.iNumber;
-    ;
     size_t lastSeparator = std::string(pathsGLTF_).find_last_of("/\\");
     std::string binary_full_path = lastSeparator == std::string::npos
         ? binary_path
@@ -9617,7 +9593,6 @@ void CJsonParser::LoadGLTF(
     char* buffer = new char[full_byte_size];
     in_stream.read(buffer, full_byte_size);
     in_stream.close();
-
     const uint32_t indicesAccessorIndex =
         (*gltf)["meshes"][0]["primitives"][0]["indices"].value.iNumber;
     AccessorMetaData indicesAccessorMetaData =
@@ -9631,7 +9606,6 @@ void CJsonParser::LoadGLTF(
         indicesBufferViewMetaData,
         indices
     );
-
     const uint32_t verticesPositionAccessorIndex =
         (*gltf)["meshes"][0]["primitives"][0]["attributes"]["POSITION"]
             .value.iNumber;
@@ -9649,7 +9623,6 @@ void CJsonParser::LoadGLTF(
         verticesPositionBufferViewMetaData,
         verticesPosition
     );
-
     const uint32_t textureCoordinatesAccessorIndex =
         (*gltf)["meshes"][0]["primitives"][0]["attributes"]["TEXCOORD_0"]
             .value.iNumber;
@@ -9667,7 +9640,6 @@ void CJsonParser::LoadGLTF(
         textureCoordinatesBufferViewMetaData,
         textureCoordinates
     );
-
     const uint32_t normalsAccessorIndex =
         (*gltf)["meshes"][0]["primitives"][0]["attributes"]["NORMAL"]
             .value.iNumber;
@@ -9682,7 +9654,6 @@ void CJsonParser::LoadGLTF(
         normalsBufferViewMetaData,
         normals
     );
-
     std::vector<JsonValue> skins = Search("skins");
     JsonValue joints;
     std::vector<Matrix<float, 4>> globalTransformJointNode;
@@ -9691,11 +9662,9 @@ void CJsonParser::LoadGLTF(
     std::vector<float> weightsContainer;
     std::vector<int> jointsIndices;
     std::vector<std::vector<int>> children;
-
     if (skins.size() > 0) {
         noAnimations = false;
         joints = (*gltf)["skins"][0]["joints"];
-
         JsonValue nodes = (*gltf)["nodes"];
         // Loop on joints.
         for (unsigned int i = 0; i < joints.value.array->size(); ++i) {
@@ -9706,7 +9675,6 @@ void CJsonParser::LoadGLTF(
             Matrix<float, 4> rotation(1.0f);
             Matrix<float, 4> scale(1.0f);
             Matrix<float, 4> translation(1.0f);
-
             if (node.value.object->Contain("rotation")) {
                 JsonValue array = (*node.value.object)["rotation"];
                 for (unsigned int i = 0; i < array.value.array->size(); ++i) {
@@ -9741,11 +9709,9 @@ void CJsonParser::LoadGLTF(
                             break;
                     }
                 }
-
                 rotation = rotateQuaternion<float, 4>(rotationQuaternion);
                 rotation.SelfTensorTranspose();
             }
-
             std::vector<int> local_children;
             // Collect children indices.
             if (node.value.object->Contain("children")) {
@@ -9760,7 +9726,6 @@ void CJsonParser::LoadGLTF(
                 // Put empty pack of children if can find a one.
                 children.push_back(emptyChildren);
             }
-
             if (node.value.object->Contain("scale")) {
                 JsonValue array = (*node.value.object)["scale"];
                 for (unsigned int i = 0; i < array.value.array->size(); ++i) {
@@ -9771,7 +9736,6 @@ void CJsonParser::LoadGLTF(
                     }
                 }
             }
-
             if (node.value.object->Contain("translation")) {
                 JsonValue array = (*node.value.object)["translation"];
                 for (unsigned int i = 0; i < array.value.array->size(); ++i) {
@@ -9782,12 +9746,10 @@ void CJsonParser::LoadGLTF(
                     }
                 }
             }
-
             // Compute model matrix.
             Matrix<float, 4> model = scale * rotation * translation;
             globalTransformJointNode.push_back(model);
         }
-
         // Get the inverse bind matrices accessor index.
         const uint32_t inverseBindMatricesAccessorIndex =
             (*gltf)["skins"][0]["inverseBindMatrices"].value.iNumber;
@@ -9805,7 +9767,6 @@ void CJsonParser::LoadGLTF(
             inveresBindMatricesBufferViewMetaData,
             inverseBindMatricesData
         );
-
         Matrix<float, 4> inverseBindMatrix(0.0f);
         for (unsigned int n = 0; n < joints.value.array->size(); ++n) {
             for (unsigned int g = 0; g < 4; ++g) {
@@ -9817,7 +9778,6 @@ void CJsonParser::LoadGLTF(
             }
             inverseBindMatrixSet.push_back(inverseBindMatrix);
         }
-
         const uint32_t jointsAccessorIndex =
             (*gltf)["meshes"][0]["primitives"][0]["attributes"]["JOINTS_0"]
                 .value.iNumber;
@@ -9831,7 +9791,6 @@ void CJsonParser::LoadGLTF(
             jointsBufferViewMetaData,
             jointsIndices
         );
-
         unsigned int weightsAccessorIndex =
             (*gltf)["meshes"][0]["primitives"][0]["attributes"]["WEIGHTS_0"]
                 .value.iNumber;
@@ -9848,9 +9807,7 @@ void CJsonParser::LoadGLTF(
     } else {
         noAnimations = true;
     }
-
     std::vector<JsonValue> animations = Search("animations");
-
     if (animations.size() > 0) {
         std::vector<JsonValue> samplerIndices;
         std::vector<JsonValue> targetNodes;
@@ -9859,15 +9816,12 @@ void CJsonParser::LoadGLTF(
         for (unsigned int i = 0; i < channels.value.array->size(); ++i) {
             samplerIndices.push_back(channels[i]["sampler"]);
         }
-
         for (unsigned int i = 0; i < channels.value.array->size(); ++i) {
             targetNodes.push_back(channels[i]["target"]["node"]);
         }
-
         for (unsigned int i = 0; i < channels.value.array->size(); ++i) {
             targetPaths.push_back(channels[i]["target"]["path"]);
         }
-
         std::vector<unsigned int> translationSamplerIndices;
         std::vector<unsigned int> rotationSamplerIndices;
         std::vector<unsigned int> scaleSamplerIndices;
@@ -9890,24 +9844,19 @@ void CJsonParser::LoadGLTF(
                 nodesMapScales.push_back(targetNodes[i].value.iNumber);
             }
         }
-
         JsonValue samplers = (*gltf)["animations"][0]["samplers"];
-
         std::vector<unsigned int> translationInputs;
         std::vector<unsigned int> translationOutputs;
-
         for (unsigned int i = 0; i < translationSamplerIndices.size(); ++i) {
             translationInputs.push_back(
                 samplers[translationSamplerIndices[i]]["input"].value.iNumber
             );
         }
-
         for (unsigned int i = 0; i < translationSamplerIndices.size(); ++i) {
             translationOutputs.push_back(
                 samplers[translationSamplerIndices[i]]["output"].value.iNumber
             );
         }
-
         std::vector<std::vector<float>> frameInputsTranslation;
         for (unsigned int i = 0; i < translationInputs.size(); ++i) {
             AccessorMetaData frameInputsTranslationAccessorMetaData =
@@ -9926,7 +9875,6 @@ void CJsonParser::LoadGLTF(
             );
             frameInputsTranslation.push_back(temp);
         }
-
         std::vector<std::vector<float>> translations;
         for (unsigned int i = 0; i < translationOutputs.size(); ++i) {
             AccessorMetaData frameOutputsTranslationAccessorMetaData =
@@ -9945,22 +9893,18 @@ void CJsonParser::LoadGLTF(
             );
             translations.push_back(temp);
         }
-
         std::vector<unsigned int> rotationInputs;
         std::vector<unsigned int> rotationOutputs;
-
         for (unsigned int i = 0; i < rotationSamplerIndices.size(); ++i) {
             rotationInputs.push_back(
                 samplers[rotationSamplerIndices[i]]["input"].value.iNumber
             );
         }
-
         for (unsigned int i = 0; i < rotationSamplerIndices.size(); ++i) {
             rotationOutputs.push_back(
                 samplers[rotationSamplerIndices[i]]["output"].value.iNumber
             );
         }
-
         std::vector<std::vector<float>> frameInputsRotation;
         for (unsigned int i = 0; i < rotationInputs.size(); ++i) {
             AccessorMetaData frameInputsRotationAccessorMetaData =
@@ -9979,7 +9923,6 @@ void CJsonParser::LoadGLTF(
             );
             frameInputsRotation.push_back(temp);
         }
-
         std::vector<std::vector<float>> rotations;
         for (unsigned int i = 0; i < rotationOutputs.size(); ++i) {
             AccessorMetaData frameOutputsRotationAccessorMetaData =
@@ -9998,22 +9941,18 @@ void CJsonParser::LoadGLTF(
             );
             rotations.push_back(temp);
         }
-
         std::vector<unsigned int> scaleInputs;
         std::vector<unsigned int> scaleOutputs;
-
         for (unsigned int i = 0; i < scaleSamplerIndices.size(); ++i) {
             scaleInputs.push_back(
                 samplers[scaleSamplerIndices[i]]["input"].value.iNumber
             );
         }
-
         for (unsigned int i = 0; i < scaleSamplerIndices.size(); ++i) {
             scaleOutputs.push_back(
                 samplers[scaleSamplerIndices[i]]["output"].value.iNumber
             );
         }
-
         std::vector<std::vector<float>> frameInputsScale;
         for (unsigned int i = 0; i < scaleInputs.size(); ++i) {
             AccessorMetaData frameInputsScaleAccessorMetaData =
@@ -10032,7 +9971,6 @@ void CJsonParser::LoadGLTF(
             );
             frameInputsScale.push_back(temp);
         }
-
         std::vector<std::vector<float>> scales;
         for (unsigned int i = 0; i < scaleOutputs.size(); ++i) {
             AccessorMetaData frameOutputsScaleAccessorMetaData =
@@ -10051,12 +9989,10 @@ void CJsonParser::LoadGLTF(
             );
             scales.push_back(temp);
         }
-
         // Searching for root joins.
         std::vector<int> rootNodes;
         for (unsigned int s = 0; s < joints.value.array->size(); ++s) {
             int current_joint = (*joints.value.array)[s].value.iNumber;
-
             for (unsigned w = 0; w < children.size(); ++w) {
                 for (unsigned q = 0; q < children[w].size(); ++q) {
                     if (children[w][q] == current_joint) {
@@ -10066,15 +10002,9 @@ void CJsonParser::LoadGLTF(
             }
             // If we execute this line then this joint index ectualy the root.
             rootNodes.push_back(current_joint);
-
         most_scary_operator_of_all_time: // Not so scary at all. Am i right?
             continue;
         }
-
-        for (unsigned int i = 0; i < rootNodes.size(); ++i) {
-            std::cout << "root joint: " << rootNodes[i] << std::endl;
-        }
-
         std::vector<std::vector<unsigned int>> nodesHierarchy;
         // Loop on parent joints.
         for (unsigned int w = 0; w < rootNodes.size(); ++w) {
@@ -10083,7 +10013,6 @@ void CJsonParser::LoadGLTF(
             std::vector<uint32_t> node_stack;
             // Start from root joint.
             node_stack.push_back(currentRoot);
-
             std::vector<uint32_t> deepness_stack;
             traversalBones(
                 children,
@@ -10092,12 +10021,10 @@ void CJsonParser::LoadGLTF(
                 deepness_stack,
                 nodes_bones
             );
-
             for (unsigned int e = 0; e < nodes_bones.size(); ++e) {
                 nodesHierarchy.push_back(nodes_bones[e]);
             }
         }
-
         // This logic related to joints that has inverseBindMatrices.
         [[maybe_unused]] uint32_t transformationsMax =
             translations.size() > scales.size()
@@ -10105,7 +10032,6 @@ void CJsonParser::LoadGLTF(
                                                       : rotations.size())
             : (scales.size() > rotations.size() ? scales.size()
                                                 : rotations.size());
-
         const uint32_t numJoints = joints.value.array->size();
         uint32_t translationFramesNumber = 0;
         for (uint32_t k = 0; k < frameInputsTranslation.size(); ++k) {
@@ -10125,14 +10051,12 @@ void CJsonParser::LoadGLTF(
                 scaleFramesNumber = frameInputsScale[k].size();
             }
         }
-
         const uint32_t framesMax = translationFramesNumber > scaleFramesNumber
             ? (translationFramesNumber > rotationFramesNumber
                    ? translationFramesNumber
                    : rotationFramesNumber)
             : (scaleFramesNumber > rotationFramesNumber ? scaleFramesNumber
                                                         : rotationFramesNumber);
-
         for (uint32_t k = 0; k < frameInputsTranslation.size(); ++k) {
             if (frameInputsTranslation[k].size() > frames.size()) {
                 frames = frameInputsTranslation[k];
@@ -10148,7 +10072,6 @@ void CJsonParser::LoadGLTF(
                 frames = frameInputsScale[k];
             }
         }
-
         std::vector<int> jointToTranslationCh;
         std::vector<int> jointToRotationCh;
         std::vector<int> jointToScaleCh;
@@ -10177,7 +10100,6 @@ void CJsonParser::LoadGLTF(
                 jointToScaleCh[jIdx] = (int)k;
             }
         }
-
         // Build animatedNodesMatricesAccumulator indexed by joint-index
         // (0..numJoints - 1).
         std::vector<std::vector<Matrix<float, 4>>>
@@ -10186,19 +10108,17 @@ void CJsonParser::LoadGLTF(
             int tIdx = jointToTranslationCh[j];
             int rIdx = jointToRotationCh[j];
             int sIdx = jointToScaleCh[j];
-
             // Local defaults fresh on every joint, for not make possible to
             // collect data from previous iterations.
             std::vector<float> defaultTranslations;
             std::vector<float> defaultRotations;
             std::vector<float> defaultScales;
-
             // Static TRS from node. Using if channel not exists.
             int32_t nodeIdx = (int32_t)(*joints.value.array)[j].value.iNumber;
             float sTx = 0.f, sTy = 0.f, sTz = 0.f;
             float sRx = 0.f, sRy = 0.f, sRz = 0.f, sRw = 1.f;
             float sSx = 1.f, sSy = 1.f, sSz = 1.f;
-            if ((*gltf)["nodes"][nodeIdx].isObject() == JSON_OBJECT) {
+            if ((*gltf)["nodes"][nodeIdx].isObject() == JsonObject) {
                 auto* nd = (*gltf)["nodes"][nodeIdx].value.object;
                 if (nd->Contain("translation")) {
                     sTx = (*gltf)["nodes"][nodeIdx]["translation"][0]
@@ -10224,7 +10144,6 @@ void CJsonParser::LoadGLTF(
                     sSz = (*gltf)["nodes"][nodeIdx]["scale"][2].value.fNumber;
                 }
             }
-
             if (tIdx < 0) {
                 for (uint32_t f = 0; f < framesMax; ++f) {
                     defaultTranslations.push_back(sTx);
@@ -10247,14 +10166,12 @@ void CJsonParser::LoadGLTF(
                     defaultScales.push_back(sSz);
                 }
             }
-
             std::vector<float>& boneT =
                 (tIdx >= 0) ? translations[tIdx] : defaultTranslations;
             std::vector<float>& boneR =
                 (rIdx >= 0) ? rotations[rIdx] : defaultRotations;
             std::vector<float>& boneS =
                 (sIdx >= 0) ? scales[sIdx] : defaultScales;
-
             // Chennels can has verious number of frames; framesMax - gloabal
             // maximum. Clamp index to last valid chennel frame, for not run out
             // after vectors bounds.
@@ -10269,7 +10186,6 @@ void CJsonParser::LoadGLTF(
                     animatedNodesMatricesAccumulator.push_back(empty);
                     continue;
                 }
-
                 const uint32_t ti = (i < tFrames) ? i : tFrames - 1;
                 const uint32_t ri = (i < rFrames) ? i : rFrames - 1;
                 const uint32_t si = (i < sFrames) ? i : sFrames - 1;
@@ -10294,7 +10210,6 @@ void CJsonParser::LoadGLTF(
             }
             animatedNodesMatricesAccumulator.push_back(perFrameMatrices);
         }
-
         // Final comstruction of joint-matrices. Both arrays indexed by
         // joint-index now, that's why nodesHierarchy[j][b] address accumulator
         // correctly.
@@ -10316,12 +10231,10 @@ void CJsonParser::LoadGLTF(
             jointMatrices.push_back(globalAllFrameNodeMatrix);
         }
     }
-
     jointMatricesPerMesh = jointMatrices;
     topY = -999.999f;
     for (uint32_t i = 0; i < indices.size(); ++i) {
         aIndices_.push_back(i);
-
         unsigned int index = indices[i] * 3;
         if (index + 2 < verticesPosition.size()) {
             Vector<float, 3> position = {
@@ -10329,31 +10242,25 @@ void CJsonParser::LoadGLTF(
                 verticesPosition[index + 1],
                 verticesPosition[index + 2]
             };
-
             if (position[1] > topY) {
                 topY = position[1];
             }
-
             aVertexes_.push_back(position[0]);
             aVertexes_.push_back(position[1]);
             aVertexes_.push_back(position[2]);
         }
-
         if (index + 2 < normals.size()) {
             Vector<float, 3> normal =
                 {normals[index], normals[index + 1], normals[index + 2]};
-
             aVertexes_.push_back(normal[0]);
             aVertexes_.push_back(normal[1]);
             aVertexes_.push_back(normal[2]);
         }
-
         index = indices[i] * 2;
         if (index + 1 < textureCoordinates.size()) {
             aVertexes_.push_back(textureCoordinates[index]);
             aVertexes_.push_back(textureCoordinates[index + 1]);
         }
-
         index = indices[i] * 4;
         if (index + 3 < jointsIndices.size()) {
             aVertexes_.push_back(jointsIndices[index]);
@@ -10361,7 +10268,6 @@ void CJsonParser::LoadGLTF(
             aVertexes_.push_back(jointsIndices[index + 2]);
             aVertexes_.push_back(jointsIndices[index + 3]);
         }
-
         if (index + 3 < weightsContainer.size()) {
             aVertexes_.push_back(weightsContainer[index]);
             aVertexes_.push_back(weightsContainer[index + 1]);
@@ -10369,7 +10275,6 @@ void CJsonParser::LoadGLTF(
             aVertexes_.push_back(weightsContainer[index + 3]);
         }
     }
-
     delete[] buffer;
     buffer = nullptr;
 }
@@ -10387,18 +10292,15 @@ void CJsonParser::traversalBones(
         // joint in array.
         topJointIndex = getJointIndex(joints, node_stack.back());
     }
-
     if (node_stack.size() > deepness_stack.size()) {
         // First 0 level start from.
         uint32_t firstChild = 0;
         deepness_stack.push_back(firstChild);
     }
-
     // Main exit check.
     if (deepness_stack.empty()) {
         return;
     }
-
     uint32_t nextNodeIndex = 0;
     // Check current root joint has any children. Children maps linearly with
     // root joint array index.
@@ -10411,13 +10313,11 @@ void CJsonParser::traversalBones(
             traversalBones(children, joints, node_stack, deepness_stack, result);
             return;
         }
-
         // Check if not on last child level.
         if (deepness_stack.back() > 0
             && deepness_stack.back() < children[topJointIndex].size()) {
             nextNodeIndex = children[topJointIndex][deepness_stack.back()];
             node_stack.push_back(nextNodeIndex);
-
             std::vector<uint32_t> current_node_indices;
             for (uint32_t i = 0; i < node_stack.size(); ++i) {
                 uint32_t currentJoinIndex =
@@ -10434,9 +10334,7 @@ void CJsonParser::traversalBones(
                     getJointIndex(joints, node_stack[i]);
                 current_node_indices.push_back(currentJoinIndex);
             }
-
             result.push_back(current_node_indices);
-
             nextNodeIndex = children[topJointIndex][deepness_stack.back()];
             node_stack.push_back(nextNodeIndex);
             ++deepness_stack.back();
@@ -10450,14 +10348,11 @@ void CJsonParser::traversalBones(
             result.push_back(current_node_indices);
             return;
         }
-
         for (uint32_t i = 0; i < node_stack.size(); ++i) {
             uint32_t currentJoinIndex = getJointIndex(joints, node_stack[i]);
             current_node_indices.push_back(currentJoinIndex);
         }
-
         result.push_back(current_node_indices);
-
         deepness_stack.pop_back();
         node_stack.pop_back();
         traversalBones(children, joints, node_stack, deepness_stack, result);
@@ -10469,7 +10364,6 @@ std::vector<std::vector<unsigned int>> CJsonParser::makeRenderJointsIndices(
     std::vector<std::vector<unsigned int>>& input
 ) {
     std::vector<std::vector<unsigned int>> result;
-
     bool accumulatorFlag = false;
     bool innerFlag = false;
     unsigned int accumulator = input[0][0];
@@ -10489,22 +10383,19 @@ std::vector<std::vector<unsigned int>> CJsonParser::makeRenderJointsIndices(
                     }
                 }
             }
-
             if (innerFlag) {
                 result.push_back(inner);
             }
         }
     }
-
     return result;
 }
 
-bool CJsonParser::containsElemnt(
+bool CJsonParser::containsElement(
     std::vector<std::vector<unsigned int>> container,
     unsigned int element
 ) {
     bool flag = false;
-
     for (unsigned int i = 0; i < container.size(); ++i) {
         for (unsigned int j = 0; j < container[i].size(); ++j) {
             if (container[i][j] == element) {
@@ -10512,19 +10403,16 @@ bool CJsonParser::containsElemnt(
             }
         }
     }
-
     return flag;
 }
 
 uint32_t CJsonParser::getJointIndex(JsonValue joints, int32_t searchingIndex) {
     for (unsigned int i = 0; i < joints.value.array->size(); ++i) {
         int currentJointIndex = (*joints.value.array)[i].value.iNumber;
-
         if (currentJointIndex == searchingIndex) {
             return i;
         }
     }
-
     return -1;
 }
 
@@ -10574,7 +10462,7 @@ void ProceduralLevelGeneratingSystem::Update() {
     );
     componentsView.playerTransforms =
         (transform*)archView.cachedPlayerArch
-            ->components[ComponentsIndices::TRANSFORM_COMPONENT];
+            ->components[ComponentsIndices::TransformComponent];
 
     while (levelNubmer < 5) {
         std::vector<Vertex> nextLevel;
@@ -11080,17 +10968,12 @@ bool ProceduralLevelGeneratingSystem::
         float half_y,
         float half_z
     ) {
-    if (position[0] + half_x > coordinateMaximumValuePerDirection.lowest_x
+    return position[0] + half_x > coordinateMaximumValuePerDirection.lowest_x
         && position[0] - half_x < coordinateMaximumValuePerDirection.highest_x
         && position[1] + half_y > coordinateMaximumValuePerDirection.lowest_y
         && position[1] - half_y < coordinateMaximumValuePerDirection.highest_y
         && position[2] + half_z > coordinateMaximumValuePerDirection.lowest_z
-        && position[2] - half_z
-            < coordinateMaximumValuePerDirection.highest_z) {
-        return true;
-    } else {
-        return false;
-    }
+        && position[2] - half_z < coordinateMaximumValuePerDirection.highest_z;
 }
 } // namespace glvm
 
@@ -11111,7 +10994,7 @@ ISoundEngine* CSoundEngineFactory::CreateSoundEngine() {
 #endif
 }
 
-void CSoundEngineWaveform::OpenDevice(const char* device) {}
+void CSoundEngineWaveform::OpenDevice(const char* /* device */) {}
 
 void CSoundEngineWaveform::CloseDevice() {}
 
@@ -11208,14 +11091,14 @@ void CCollisionSystem::Update() {
     for (uint32_t x = 0; x < cachedArchetypesNumber; ++x) {
         Archetype* arch = cachedArchetypes[x];
         view.backtrackingTransforms =
-            (transform*)arch->components[ComponentsIndices::TRANSFORM_COMPONENT];
+            (transform*)arch->components[ComponentsIndices::TransformComponent];
         view.backtrackingColliders =
-            (collider*)arch->components[ComponentsIndices::COLLIDER_COMPONENT];
+            (collider*)arch->components[ComponentsIndices::ColliderComponent];
         view.backtrackingColliderFlags =
             (colliderFlags*)
-                arch->components[ComponentsIndices::COLLIDER_FLAGS_COMPONENT];
+                arch->components[ComponentsIndices::ColliderFlagsComponent];
         view.backtrackingMeshes =
-            (mesh*)arch->components[ComponentsIndices::MESH_COMPONENT];
+            (mesh*)arch->components[ComponentsIndices::MeshComponent];
 
         for (unsigned int i = 0; i < arch->entityCount; ++i) {
             // Count on every entity in current outer archetype.
@@ -11240,12 +11123,12 @@ void CCollisionSystem::Update() {
                     backtrackingTransformComponent->scale;
 
                 uint64_t moveRequiredMask =
-                    (1ul << ComponentsIndices::MOVE_COMPONENT);
+                    (1ul << ComponentsIndices::MoveComponent);
                 // Check if outer current archetype has move component.
                 if (matches_required_mask(arch->mask, moveRequiredMask)) {
                     view.backtrackingMove =
                         (move*)
-                            arch->components[ComponentsIndices::MOVE_COMPONENT];
+                            arch->components[ComponentsIndices::MoveComponent];
                     backtrackingTransform +=
                         Normalize(view.backtrackingMove[i].frameMovement)
                         * cameraSpeed;
@@ -11271,19 +11154,25 @@ void CCollisionSystem::Update() {
                 const Vector<float, 3> maxEntityPosition =
                     entityBoxCornerBoundPoints[1];
 
-                int indexMinX =
-                    (int)((minEntityPosition[0] + chunkHalfWidth) / chunkSize);
-                int indexMinY =
-                    (int)((minEntityPosition[1] + chunkHalfHeight) / chunkSize);
-                int indexMinZ =
-                    (int)((minEntityPosition[2] + chunkHalfDepth) / chunkSize);
+                int indexMinX = static_cast<int>(
+                    (minEntityPosition[0] + chunkHalfWidth) / chunkSize
+                );
+                int indexMinY = static_cast<int>(
+                    (minEntityPosition[1] + chunkHalfHeight) / chunkSize
+                );
+                int indexMinZ = static_cast<int>(
+                    (minEntityPosition[2] + chunkHalfDepth) / chunkSize
+                );
 
-                int indexMaxX =
-                    (int)((maxEntityPosition[0] + chunkHalfWidth) / chunkSize);
-                int indexMaxY =
-                    (int)((maxEntityPosition[1] + chunkHalfHeight) / chunkSize);
-                int indexMaxZ =
-                    (int)((maxEntityPosition[2] + chunkHalfDepth) / chunkSize);
+                int indexMaxX = static_cast<int>(
+                    (maxEntityPosition[0] + chunkHalfWidth) / chunkSize
+                );
+                int indexMaxY = static_cast<int>(
+                    (maxEntityPosition[1] + chunkHalfHeight) / chunkSize
+                );
+                int indexMaxZ = static_cast<int>(
+                    (maxEntityPosition[2] + chunkHalfDepth) / chunkSize
+                );
 
                 // Entity can legitimately leave the fixed-size world grid -
                 // clamp to nearest edge cell instead of crashing.
@@ -11300,9 +11189,9 @@ void CCollisionSystem::Update() {
                 indexMaxZ =
                     std::clamp(indexMaxZ, 0, (int)spatialGrid.depth - 1);
 
-                for (uint32_t i2 = indexMinZ; i2 <= indexMaxZ; ++i2) {
-                    for (uint32_t i3 = indexMinY; i3 <= indexMaxY; ++i3) {
-                        for (uint32_t i4 = indexMinX; i4 <= indexMaxX; ++i4) {
+                for (auto i2 = indexMinZ; i2 <= indexMaxZ; ++i2) {
+                    for (auto i3 = indexMinY; i3 <= indexMaxY; ++i3) {
+                        for (auto i4 = indexMinX; i4 <= indexMaxX; ++i4) {
                             const std::vector<uint32_t>& chunkEntities =
                                 spatialGrid.grid[i2][i3][i4].entities;
                             for (uint32_t i5 = 0; i5 < chunkEntities.size();
@@ -11343,24 +11232,24 @@ void CCollisionSystem::Update() {
                         Archetype* arch = comparedEntityLocation.arch;
                         view.comparedTransforms = &(
                             (transform*)arch->components
-                                [ComponentsIndices::TRANSFORM_COMPONENT]
+                                [ComponentsIndices::TransformComponent]
                         )[comparedEntityIndex];
                         view.comparedMeshes = &(
                             (
                                 mesh*
-                            )arch->components[ComponentsIndices::MESH_COMPONENT]
+                            )arch->components[ComponentsIndices::MeshComponent]
                         )[comparedEntityIndex];
                         comparedEntityMeshHandle = view.comparedMeshes->handle;
 
                         uint64_t moveRequiredMask =
-                            (1ul << ComponentsIndices::MOVE_COMPONENT);
+                            (1ul << ComponentsIndices::MoveComponent);
                         if (matches_required_mask(
                                 comparedEntityLocation.arch->mask,
                                 moveRequiredMask
                             )) {
                             view.comparedMove = &(
-                                (move*)arch->components
-                                    [ComponentsIndices::MOVE_COMPONENT]
+                                (move*)arch
+                                    ->components[ComponentsIndices::MoveComponent]
                             )[comparedEntityIndex];
                         }
                     }
@@ -11489,11 +11378,11 @@ void DamageSystem::Update() {
     for (uint32_t x = 0; x < cachedAttackableArchetypesNumber; ++x) {
         Archetype* arch = archView.cachedAttackableArchetypes[x];
         componentsView.attackableAttacks =
-            (attack*)arch->components[ComponentsIndices::ATTACK_COMPONENT];
+            (attack*)arch->components[ComponentsIndices::AttackComponent];
         componentsView.attackableHealth =
-            (health*)arch->components[ComponentsIndices::HEALTH_COMPONENT];
+            (health*)arch->components[ComponentsIndices::HealthComponent];
         componentsView.attackableFonts =
-            (font*)arch->components[ComponentsIndices::FONT_COMPONENT];
+            (font*)arch->components[ComponentsIndices::FontComponent];
 
         for (unsigned int i = 0; i < arch->entityCount; ++i) {
             uint64_t entity = arch->entities[i];
@@ -11531,7 +11420,7 @@ void DamageSystem::Update() {
     for (uint32_t x = 0; x < cachedFontArchetypesNumber; ++x) {
         Archetype* arch = archView.cachedFontArchetypes[x];
         componentsView.fonts =
-            (font*)arch->components[ComponentsIndices::FONT_COMPONENT];
+            (font*)arch->components[ComponentsIndices::FontComponent];
 
         for (unsigned int i = 0; i < arch->entityCount; ++i) {
             if (componentsView.fonts) {
@@ -11556,7 +11445,7 @@ void EnemySystem::Update() {
     );
     componentsView.playerTransforms =
         (transform*)archView.playerCachedArchetype
-            ->components[ComponentsIndices::TRANSFORM_COMPONENT];
+            ->components[ComponentsIndices::TransformComponent];
 
     enemyArchetypesNumber = 0;
     world.searchCacheArchetypes(
@@ -11566,13 +11455,13 @@ void EnemySystem::Update() {
     );
     componentsView.enemyTransforms =
         (transform*)archView.enemyCachedArchetype
-            ->components[ComponentsIndices::TRANSFORM_COMPONENT];
+            ->components[ComponentsIndices::TransformComponent];
     componentsView.enemyStates =
         (state*)archView.enemyCachedArchetype
-            ->components[ComponentsIndices::STATE_COMPONENT];
+            ->components[ComponentsIndices::StateComponent];
     componentsView.enemies =
         (enemy*)archView.enemyCachedArchetype
-            ->components[ComponentsIndices::ENEMY_COMPONENT];
+            ->components[ComponentsIndices::EnemyComponent];
 
     projectileArchetypesNumber = 0;
     world.searchCacheArchetypes(
@@ -11684,7 +11573,7 @@ void InventorySystem::Update() {
         );
         componentsView.crosshairTransformsView =
             (transform*)archView.crosshairCachedArchetype
-                ->components[ComponentsIndices::TRANSFORM_COMPONENT];
+                ->components[ComponentsIndices::TransformComponent];
 
         inventoryArchetypesNumber = 0;
         world.searchCacheArchetypes(
@@ -11695,13 +11584,13 @@ void InventorySystem::Update() {
 
         componentsView.inventoryTransformsView =
             (transform*)archView.inventoryCachedArchetype
-                ->components[ComponentsIndices::TRANSFORM_COMPONENT];
+                ->components[ComponentsIndices::TransformComponent];
         componentsView.inventoryView =
             (inventory*)archView.inventoryCachedArchetype
-                ->components[ComponentsIndices::INVENTORY_COMPONENT];
+                ->components[ComponentsIndices::InventoryComponent];
         componentsView.inventoryMeshesView =
             (mesh*)archView.inventoryCachedArchetype
-                ->components[ComponentsIndices::MESH_COMPONENT];
+                ->components[ComponentsIndices::MeshComponent];
 
         if (componentsView.crosshairTransformsView
             && componentsView.inventoryTransformsView
@@ -12206,7 +12095,7 @@ void ItemSystem::Update() {
         );
         componentsView.inventoriesView =
             (inventory*)archView.inventoryCachedArchetype
-                ->components[ComponentsIndices::INVENTORY_COMPONENT];
+                ->components[ComponentsIndices::InventoryComponent];
 
         itemArchetypesNumber = 0;
         world.searchCacheArchetypes(
@@ -12216,10 +12105,10 @@ void ItemSystem::Update() {
         );
         componentsView.itemsView =
             (item*)archView.itemArchetype
-                ->components[ComponentsIndices::ITEM_COMPONENT];
+                ->components[ComponentsIndices::ItemComponent];
         componentsView.itemCollidersView =
             (collider*)archView.itemArchetype
-                ->components[ComponentsIndices::COLLIDER_COMPONENT];
+                ->components[ComponentsIndices::ColliderComponent];
 
         for (unsigned int m = 0;
              m < archView.inventoryCachedArchetype->entityCount;
@@ -12260,7 +12149,7 @@ void ItemSystem::Update() {
         );
         componentsView.crosshairTransforms =
             (transform*)archView.crosshairArchetype
-                ->components[ComponentsIndices::TRANSFORM_COMPONENT];
+                ->components[ComponentsIndices::TransformComponent];
 
         itemArchetypesNumber = 0;
         world.searchCacheArchetypes(
@@ -12270,7 +12159,7 @@ void ItemSystem::Update() {
         );
         componentsView.itemTransformsView =
             (transform*)archView.itemArchetype
-                ->components[ComponentsIndices::TRANSFORM_COMPONENT];
+                ->components[ComponentsIndices::TransformComponent];
 
         transform* crosshairTransformComponent =
             &componentsView.crosshairTransforms[0];
@@ -12300,16 +12189,16 @@ void CMovementSystem::Update() {
     );
     componentsView.playerMoves =
         (move*)archView.playerCachedArchetype
-            ->components[ComponentsIndices::MOVE_COMPONENT];
+            ->components[ComponentsIndices::MoveComponent];
     componentsView.playerViews =
         (beholder*)archView.playerCachedArchetype
-            ->components[ComponentsIndices::VIEW_COMPONENT];
+            ->components[ComponentsIndices::ViewComponent];
     componentsView.playerColliderFlags =
         (colliderFlags*)archView.playerCachedArchetype
-            ->components[ComponentsIndices::COLLIDER_FLAGS_COMPONENT];
+            ->components[ComponentsIndices::ColliderFlagsComponent];
     componentsView.playerRigidBody =
-        (rigidBody*)archView.playerCachedArchetype
-            ->components[ComponentsIndices::RIGID_BODY_COMPONENT];
+        (RigidBody*)archView.playerCachedArchetype
+            ->components[ComponentsIndices::RigidBodyComponent];
 
     const float cameraSpeed = 3.0f * deltaFrameTime;
     for (unsigned int i = 0; i < archView.playerCachedArchetype->entityCount;
@@ -12320,7 +12209,7 @@ void CMovementSystem::Update() {
         move* playerMove = &componentsView.playerMoves[i];
         colliderFlags* playerColliderFlags =
             &componentsView.playerColliderFlags[i];
-        rigidBody* playerRigidBody = &componentsView.playerRigidBody[i];
+        RigidBody* playerRigidBody = &componentsView.playerRigidBody[i];
         for (int n = 0; n < 6; ++n) {
             Vector<float, 3> right;
             Vector<float, 3> forward;
@@ -12370,14 +12259,14 @@ void CMovementSystem::Update() {
         Archetype* currentArch = archView.rigidBodyContainedArchetypesCache[i0];
         componentsView.transforms =
             (transform*)
-                currentArch->components[ComponentsIndices::TRANSFORM_COMPONENT];
+                currentArch->components[ComponentsIndices::TransformComponent];
         componentsView.rigidBodies =
-            (rigidBody*)currentArch
-                ->components[ComponentsIndices::RIGID_BODY_COMPONENT];
+            (RigidBody*)
+                currentArch->components[ComponentsIndices::RigidBodyComponent];
         componentsView.moves =
-            (move*)currentArch->components[ComponentsIndices::MOVE_COMPONENT];
+            (move*)currentArch->components[ComponentsIndices::MoveComponent];
         componentsView.items =
-            (item*)currentArch->components[ComponentsIndices::ITEM_COMPONENT];
+            (item*)currentArch->components[ComponentsIndices::ItemComponent];
 
         for (uint32_t i1 = 0; i1 < currentArch->entityCount; ++i1) {
             const uint64_t entity = currentArch->entities[i1];
@@ -12390,7 +12279,7 @@ void CMovementSystem::Update() {
             }
 
             transform* rTransform_Component = &componentsView.transforms[i1];
-            rigidBody* rigidBodyComponennt = &componentsView.rigidBodies[i1];
+            RigidBody* rigidBodyComponennt = &componentsView.rigidBodies[i1];
             move* moveComponent = &componentsView.moves[i1];
             rTransform_Component->gravityAccumulator += deltaFrameTime;
             float gravity = 9.8f * rTransform_Component->gravityAccumulator
@@ -12516,22 +12405,22 @@ void CPhysicsSystem::Update() {
 
         componentsView.transformsView =
             (transform*)archView.cachedArchetypes[x]
-                ->components[ComponentsIndices::TRANSFORM_COMPONENT];
+                ->components[ComponentsIndices::TransformComponent];
         componentsView.movesView =
             (move*)archView.cachedArchetypes[x]
-                ->components[ComponentsIndices::MOVE_COMPONENT];
+                ->components[ComponentsIndices::MoveComponent];
         componentsView.rigidBodiesView =
-            (rigidBody*)archView.cachedArchetypes[x]
-                ->components[ComponentsIndices::RIGID_BODY_COMPONENT];
+            (RigidBody*)archView.cachedArchetypes[x]
+                ->components[ComponentsIndices::RigidBodyComponent];
         componentsView.colliderFlagsView =
             (colliderFlags*)archView.cachedArchetypes[x]
-                ->components[ComponentsIndices::COLLIDER_FLAGS_COMPONENT];
+                ->components[ComponentsIndices::ColliderFlagsComponent];
         componentsView.collidersView =
             (collider*)archView.cachedArchetypes[x]
-                ->components[ComponentsIndices::COLLIDER_COMPONENT];
+                ->components[ComponentsIndices::ColliderComponent];
         componentsView.meshesView =
             (mesh*)archView.cachedArchetypes[x]
-                ->components[ComponentsIndices::MESH_COMPONENT];
+                ->components[ComponentsIndices::MeshComponent];
 
         float deltaTime = 5.5f * fDelta_Time_;
         for (unsigned int i = 0; i < arch->entityCount; ++i) {
@@ -12579,10 +12468,10 @@ void CPhysicsSystem::Update() {
                                 collidedLocation.index;
                             transform* collidedTransform =
                                 (transform*)collidedArch->components
-                                    [ComponentsIndices::TRANSFORM_COMPONENT];
+                                    [ComponentsIndices::TransformComponent];
                             mesh* collidedMesh =
                                 (mesh*)collidedArch->components
-                                    [ComponentsIndices::MESH_COMPONENT];
+                                    [ComponentsIndices::MeshComponent];
                             if (!collidedTransform || !collidedMesh) {
                                 continue;
                             }
@@ -12631,7 +12520,7 @@ void CPhysicsSystem::Update() {
                 transformComponent.position += move.gravity;
                 move.gravity = 0.0f;
                 move.frameMovement = 0.0f;
-                rigidBody& rigidBody = componentsView.rigidBodiesView[i];
+                RigidBody& rigidBody = componentsView.rigidBodiesView[i];
                 if (rigidBody.jumpAccumulator > 0.0f) {
                     rigidBody.jumpAccumulator -= deltaTime;
                     Vector<float, 3> jump =
@@ -12659,10 +12548,10 @@ void CProjectileSystem::Update() {
     );
     componentsView.playerTransforms =
         (transform*)archView.playerCachedArchetype
-            ->components[ComponentsIndices::TRANSFORM_COMPONENT];
+            ->components[ComponentsIndices::TransformComponent];
     componentsView.playerViews =
         (beholder*)archView.playerCachedArchetype
-            ->components[ComponentsIndices::VIEW_COMPONENT];
+            ->components[ComponentsIndices::ViewComponent];
 
     projectileArchetypesNumber = 0;
     world.searchCacheArchetypes(
@@ -12754,22 +12643,22 @@ void CProjectileSystem::Update() {
 
     componentsView.projectileTransforms =
         (transform*)archView.projectileArchetype
-            ->components[ComponentsIndices::TRANSFORM_COMPONENT];
+            ->components[ComponentsIndices::TransformComponent];
     componentsView.projectileColliderFlags =
         (colliderFlags*)archView.projectileArchetype
-            ->components[ComponentsIndices::COLLIDER_FLAGS_COMPONENT];
+            ->components[ComponentsIndices::ColliderFlagsComponent];
     componentsView.projectileColliders =
         (collider*)archView.projectileArchetype
-            ->components[ComponentsIndices::COLLIDER_COMPONENT];
+            ->components[ComponentsIndices::ColliderComponent];
     componentsView.projectileBundles =
         (ProjectileBundle*)archView.projectileArchetype
-            ->components[ComponentsIndices::PROJECTILE_BUNDLE_COMPONENT];
+            ->components[ComponentsIndices::ProjectileBundleComponent];
     componentsView.projectileHealth =
         (health*)archView.projectileArchetype
-            ->components[ComponentsIndices::HEALTH_COMPONENT];
+            ->components[ComponentsIndices::HealthComponent];
     componentsView.projectileAttacks =
         (attack*)archView.projectileArchetype
-            ->components[ComponentsIndices::ATTACK_COMPONENT];
+            ->components[ComponentsIndices::AttackComponent];
 
     // Update position of every projectile.
     for (unsigned int x = 0; x < archView.projectileArchetype->entityCount;
@@ -12803,15 +12692,15 @@ void CProjectileSystem::Update() {
                 EntityLocation collidedEntityLocation =
                     world.entityLocations[getId(collidedEntity)];
                 uint64_t requiredMask =
-                    (1ul << ComponentsIndices::HEALTH_COMPONENT)
-                    | (1ul << ComponentsIndices::ATTACK_COMPONENT);
+                    (1ul << ComponentsIndices::HealthComponent)
+                    | (1ul << ComponentsIndices::AttackComponent);
 
                 if ((collidedEntityLocation.arch != nullptr)
                     && (collidedEntityLocation.arch->mask & requiredMask)
                         == requiredMask) {
                     attack* attacks =
                         (attack*)collidedEntityLocation.arch
-                            ->components[ComponentsIndices::ATTACK_COMPONENT];
+                            ->components[ComponentsIndices::AttackComponent];
                     attacks[collidedEntityLocation.index].damage =
                         projectileDamage->maximumDamage;
                     projectileHealth->currentHealth = 0;
@@ -12844,9 +12733,8 @@ void SpatialGridSystem::Update() {
     for (uint32_t i0 = 0; i0 < cachedArchetypesNumber; ++i0) {
         Archetype* arch = cachedArchetypes[i0];
         view.transforms =
-            (transform*)arch->components[ComponentsIndices::TRANSFORM_COMPONENT];
-        view.meshes =
-            (mesh*)arch->components[ComponentsIndices::MESH_COMPONENT];
+            (transform*)arch->components[ComponentsIndices::TransformComponent];
+        view.meshes = (mesh*)arch->components[ComponentsIndices::MeshComponent];
 
         for (uint32_t i1 = 0; i1 < arch->entityCount; ++i1) {
             const uint64_t entity = arch->entities[i1];
@@ -12896,19 +12784,25 @@ void SpatialGridSystem::Update() {
             const Vector<float, 3> maxEntityPosition =
                 entityBoxCornerBoundPoints[1];
 
-            int indexMinX =
-                (int)((minEntityPosition[0] + halfWidth) / chunkSize);
-            int indexMinY =
-                (int)((minEntityPosition[1] + halfHeight) / chunkSize);
-            int indexMinZ =
-                (int)((minEntityPosition[2] + halfDepth) / chunkSize);
+            int indexMinX = static_cast<int>(
+                (minEntityPosition[0] + halfWidth) / chunkSize
+            );
+            int indexMinY = static_cast<int>(
+                (minEntityPosition[1] + halfHeight) / chunkSize
+            );
+            int indexMinZ = static_cast<int>(
+                (minEntityPosition[2] + halfDepth) / chunkSize
+            );
 
-            int indexMaxX =
-                (int)((maxEntityPosition[0] + halfWidth) / chunkSize);
-            int indexMaxY =
-                (int)((maxEntityPosition[1] + halfHeight) / chunkSize);
-            int indexMaxZ =
-                (int)((maxEntityPosition[2] + halfDepth) / chunkSize);
+            int indexMaxX = static_cast<int>(
+                (maxEntityPosition[0] + halfWidth) / chunkSize
+            );
+            int indexMaxY = static_cast<int>(
+                (maxEntityPosition[1] + halfHeight) / chunkSize
+            );
+            int indexMaxZ = static_cast<int>(
+                (maxEntityPosition[2] + halfDepth) / chunkSize
+            );
 
             // Entity can legitimately leave the fixed-size world grid (fell off
             // the world edge, projectile flew away) - clamp to nearest edge
@@ -12920,9 +12814,9 @@ void SpatialGridSystem::Update() {
             indexMaxY = std::clamp(indexMaxY, 0, (int)spatialGrid.height - 1);
             indexMaxZ = std::clamp(indexMaxZ, 0, (int)spatialGrid.depth - 1);
 
-            for (uint32_t i2 = indexMinZ; i2 <= indexMaxZ; ++i2) {
-                for (uint32_t i3 = indexMinY; i3 <= indexMaxY; ++i3) {
-                    for (uint32_t i4 = indexMinX; i4 <= indexMaxX; ++i4) {
+            for (auto i2 = indexMinZ; i2 <= indexMaxZ; ++i2) {
+                for (auto i3 = indexMinY; i3 <= indexMaxY; ++i3) {
+                    for (auto i4 = indexMinX; i4 <= indexMaxX; ++i4) {
                         std::vector<uint32_t>& chunkEntities =
                             spatialGrid.grid[i2][i3][i4].entities;
                         if (!isExist<uint32_t>(chunkEntities, entity)) {
@@ -13121,7 +13015,7 @@ void CSoundEngineWaveform::PlaybackSoundSample(CSoundSample& _sound_sample) {
     waveOutClose(hWaveOut);
 }
 
-void CSoundEngineWaveform::SetMasterVolume(long l_volume) {}
+void CSoundEngineWaveform::SetMasterVolume(long /* l_volume */) {}
 
 std::vector<CSoundSample*>& CSoundEngineWaveform::GetSoundContainer() {
     return tSound_Container;
@@ -13137,12 +13031,6 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(
     WPARAM wParam,
     LPARAM lParam
 );
-
-#define VK_W 0x57
-#define VK_S 0x53
-#define VK_A 0x41
-#define VK_D 0x44
-#define VK_I 0x49
 
 namespace glvm {
 WindowWinVulkan* WindowWinVulkan::instance = nullptr;

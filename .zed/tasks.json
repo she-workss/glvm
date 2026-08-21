@@ -1,0 +1,63 @@
+[
+    // Configure tasks
+    {
+        "label": "Configure Debug",
+        "command": "cmake",
+        "args": ["--preset", "debug"],
+        "reveal": "always"
+    },
+    {
+        "label": "Configure Release",
+        "command": "cmake",
+        "args": ["--preset", "release"],
+        "reveal": "always"
+    },
+    // Build tasks
+    {
+        "label": "Build Debug",
+        "command": "cmake",
+        "args": ["--build", "--preset", "debug"],
+        "reveal": "always",
+        "hide": "on_success"
+    },
+    {
+        "label": "Build Release",
+        "command": "cmake",
+        "args": ["--build", "--preset", "release"],
+        "reveal": "always",
+        "hide": "on_success"
+    },
+    // Test tasks
+    {
+        "label": "Test Debug",
+        "command": "ctest",
+        "args": ["--preset", "debug", "--output-on-failure", "--parallel"],
+        "reveal": "always"
+    },
+    {
+        "label": "Test Release",
+        "command": "ctest",
+        "args": ["--preset", "release", "--output-on-failure"],
+        "reveal": "always"
+    },
+    // Full workflow tasks
+    {
+        "label": "Full Debug Workflow",
+        "command": "cmake",
+        "args": ["--workflow", "--preset", "dfull"],
+        "reveal": "always"
+    },
+    {
+        "label": "Full Release Workflow",
+        "command": "cmake",
+        "args": ["--workflow", "--preset", "rfull"],
+        "reveal": "always"
+    },
+    // Clean
+    {
+        "label": "Clean Build Directory",
+        "command": "cmake",
+        "args": ["-E", "remove_directory", "build"],
+        "reveal": "always"
+    }
+]

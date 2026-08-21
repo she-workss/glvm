@@ -1,0 +1,27 @@
+[
+    // Examples
+    {
+        "label": "Example: hello_world",
+        "build": {
+            "command": "cmake",
+            "args": ["--build", "--preset", "debug", "-t", "hello_world"],
+            "cwd": "$ZED_WORKTREE_ROOT"
+        },
+        "program": "$ZED_WORKTREE_ROOT/build/debug/examples/hello_world",
+        "request": "launch",
+        "adapter": "CodeLLDB"
+    },
+    // Tests
+    {
+        "label": "Test: basic",
+        "build": {
+            "command": "cmake",
+            "args": ["--build", "--preset", "debug", "-t", "basic"],
+            "cwd": "$ZED_WORKTREE_ROOT"
+        },
+        "program": "$ZED_WORKTREE_ROOT/build/debug/tests/basic",
+        "args": ["--gtest_color=yes"],
+        "request": "launch",
+        "adapter": "CodeLLDB"
+    }
+]

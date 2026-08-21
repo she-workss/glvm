@@ -1,0 +1,50 @@
+{
+    "languages": {
+        "C++": {
+            "format_on_save": "on",
+            "tab_size": 4,
+            "hard_tabs": false,
+            "ensure_final_newline_on_save": true,
+            "remove_trailing_whitespace_on_save": true,
+        },
+        "C": {
+            "format_on_save": "on",
+            "tab_size": 4,
+            "hard_tabs": false,
+        },
+        "CMake": {
+            "tab_size": 2,
+            "hard_tabs": false,
+        },
+    },
+    "lsp": {
+        "clangd": {
+            "binary": {
+                "arguments": [
+                    "--clang-tidy",
+                    "--background-index",
+                    "--header-insertion=never",
+                    "--compile-commands-dir=$ZED_WORKTREE_ROOT/build/debug",
+                    "--log=verbose",
+                    "--function-arg-placeholders=1",
+                    "--completion-style=bundled",
+                    "--pch-storage=memory",
+                    "--cross-file-rename",
+                ],
+            },
+        },
+    },
+    "file_types": {
+        "C": ["c", "h"],
+        "C++": ["cpp", "hpp", "cc", "hh", "cxx", "hxx"],
+        "CMake": ["cmake", "CMakeLists.txt"],
+    },
+    "terminal": {
+        "shell": "system",
+    },
+    "tasks": {
+        "variables": {
+            "cmake_preset": "debug",
+        },
+    },
+}
