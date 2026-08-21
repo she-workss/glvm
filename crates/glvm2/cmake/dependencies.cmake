@@ -10,16 +10,18 @@ CPMAddPackage(
 )
 
 if(imgui_ADDED AND NOT TARGET imgui)
-  add_library(imgui
-    STATIC
-      ${imgui_SOURCE_DIR}/imgui.cpp
-      ${imgui_SOURCE_DIR}/imgui_demo.cpp
-      ${imgui_SOURCE_DIR}/imgui_draw.cpp
-      ${imgui_SOURCE_DIR}/imgui_tables.cpp
-      ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-      ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
-      ${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp
+  set(_imgui_sources
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_demo.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
   )
+  if(WIN32)
+    list(APPEND _imgui_sources ${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp)
+  endif()
+  add_library(imgui STATIC ${_imgui_sources})
   target_include_directories(imgui
     PUBLIC
       ${imgui_SOURCE_DIR}
@@ -30,6 +32,7 @@ endif()
 if(UNIX AND NOT APPLE)
   find_package(PkgConfig REQUIRED)
   pkg_check_modules(WAYLAND_CLIENT REQUIRED IMPORTED_TARGET wayland-client)
+  pkg_check_modules(ALSA REQUIRED IMPORTED_TARGET alsa)
 
   find_program(WAYLAND_SCANNER NAMES wayland-scanner REQUIRED)
 
@@ -46,8 +49,8 @@ if(UNIX AND NOT APPLE)
 
   set(_wl_protos
     stable/xdg-shell/xdg-shell
-    unstable/relative-pointer-unstable-v1/relative-pointer-unstable-v1
-    unstable/pointer-constraints-unstable-v1/pointer-constraints-unstable-v1
+    unstable/relative-pointer/relative-pointer-unstable-v1
+    unstable/pointer-constraints/pointer-constraints-unstable-v1
   )
 
   foreach(_proto ${_wl_protos})

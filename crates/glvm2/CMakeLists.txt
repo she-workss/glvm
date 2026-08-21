@@ -16,13 +16,14 @@ target_include_directories(glvm
 
 target_link_libraries(glvm
   PUBLIC
-    dwmapi
-    gdi32
     imgui
     rusty
-    winmm
     ${Vulkan_LIBRARY}
 )
+
+if(WIN32)
+  target_link_libraries(glvm PUBLIC dwmapi gdi32 winmm)
+endif()
 
 if(TARGET glvm-wayland-protocols)
   target_link_libraries(glvm
@@ -30,6 +31,10 @@ if(TARGET glvm-wayland-protocols)
       glvm-wayland-protocols
       PkgConfig::WAYLAND_CLIENT
   )
+endif()
+
+if(UNIX AND NOT APPLE)
+  target_link_libraries(glvm PUBLIC PkgConfig::ALSA)
 endif()
 
 # [tests]

@@ -33,13 +33,13 @@
 #include "imgui_impl_win32.h"
 
 #ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN // NOLINT(readability-identifier-naming)
 #endif
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
 #ifndef NOGDI
-#define NOGDI
+#define NOGDI // NOLINT(readability-identifier-naming)
 #endif
 // clang-format off
 #include <windows.h>
@@ -66,45 +66,46 @@ auto matches_required_mask(
     return (archetype_mask & system_mask) == system_mask;
 }
 
-auto makeEntity(uint32_t id_, uint32_t generation_) -> uint64_t {
-    return ((uint64_t)generation_ << ENTITY_ID_BITS) | id_;
+auto make_entity(uint32_t id, uint32_t generation) -> uint64_t {
+    return ((uint64_t)generation << ENTITY_ID_BITS) | id;
 }
 
-auto getId(uint64_t entity_) -> uint32_t {
-    return entity_ & entityBitsMask;
+auto get_id(uint64_t entity) -> uint32_t {
+    return entity & ENTITY_BITS_MASK;
 }
 
-auto getGen(uint64_t entity_) -> uint32_t {
-    return entity_ >> ENTITY_ID_BITS;
+auto get_gen(uint64_t entity) -> uint32_t {
+    return entity >> ENTITY_ID_BITS;
 }
 }; // namespace glvm
 
 namespace glvm {
-World world = {};
+World WORLD = {};
 
 World::World() {
     assert(
-        spatialGrid.width > 0 && spatialGrid.height > 0 && spatialGrid.depth > 0
+        spatial_grid.width > 0 && spatial_grid.height > 0
+        && spatial_grid.depth > 0
     );
 
-    const float chunkSize = spatialGrid.grid[0][0][0].size;
-    const float halfWorldWidth = spatialGrid.width * chunkSize * 0.5f;
-    const float halfWorldHeight = spatialGrid.height * chunkSize * 0.5f;
-    const float halfWorldDepth = spatialGrid.depth * chunkSize * 0.5f;
-    const float halfChunkSize = chunkSize * 0.5f;
+    const float chunk_size = spatial_grid.grid[0][0][0].SIZE;
+    const float half_world_width = spatial_grid.width * chunk_size * 0.5f;
+    const float half_world_height = spatial_grid.height * chunk_size * 0.5f;
+    const float half_world_depth = spatial_grid.depth * chunk_size * 0.5f;
+    const float half_chunk_size = chunk_size * 0.5f;
     const Vector<float, 3> pivot = Vector<float, 3>(
-        -halfWorldWidth + halfChunkSize,
-        -halfWorldHeight + halfChunkSize,
-        -halfWorldDepth + halfChunkSize
+        -half_world_width + half_chunk_size,
+        -half_world_height + half_chunk_size,
+        -half_world_depth + half_chunk_size
     );
-    for (uint32_t i0 = 0; i0 < spatialGrid.depth; ++i0) {
-        for (uint32_t i1 = 0; i1 < spatialGrid.height; ++i1) {
-            for (uint32_t i2 = 0; i2 < spatialGrid.width; ++i2) {
-                spatialGrid.grid[i0][i1][i2].position = Vector<float, 3>(
-                                                            i2 * chunkSize,
-                                                            i1 * chunkSize,
-                                                            i0 * chunkSize
-                                                        )
+    for (uint32_t i0 = 0; i0 < spatial_grid.depth; ++i0) {
+        for (uint32_t i1 = 0; i1 < spatial_grid.height; ++i1) {
+            for (uint32_t i2 = 0; i2 < spatial_grid.width; ++i2) {
+                spatial_grid.grid[i0][i1][i2].position = Vector<float, 3>(
+                                                             i2 * chunk_size,
+                                                             i1 * chunk_size,
+                                                             i0 * chunk_size
+                                                         )
                     + pivot;
             }
         }
@@ -118,251 +119,261 @@ World::~World() {
     }
 }
 
-void World::addEntityToArchetype(uint64_t entity_, Archetype* arch) {
-    uint32_t id_ = getId(entity_);
+void World::add_entity_to_archetype(uint64_t entity, Archetype* arch) {
+    uint32_t id = get_id(entity);
 
-    if (id_ >= entityLocations.size()) {
-        entityLocations.resize(id_ + 1);
+    if (id >= entity_locations.size()) {
+        entity_locations.resize(id + 1);
     }
 
-    EntityLocation& location = entityLocations[id_];
+    EntityLocation& location = entity_locations[id];
 
     if (location.arch != nullptr) {
         assert(false && "unsigned int already assigned to archetype");
     }
 
-    uint32_t index = arch->addEntity(entity_);
+    uint32_t index = arch->add_entity(entity);
 
     location.arch = arch;
     location.index = index;
 }
 
-void World::removeEntity(uint64_t entity_) {
-    uint32_t id_ = getId(entity_);
-    EntityLocation& location = entityLocations[id_];
+void World::remove_entity(uint64_t entity) {
+    uint32_t id = get_id(entity);
+    EntityLocation& location = entity_locations[id];
     // Remove entity from spatial grid cells it occupies, otherwise stale
     // references crash collision/physics on later frames.
-    if (location.gridCellCounter > 0) {
-        for (uint8_t i = 0; i < location.gridCellCounter; ++i) {
-            uint32_t z = location.gridCellIndicies[i][0];
-            uint32_t y = location.gridCellIndicies[i][1];
-            uint32_t x = location.gridCellIndicies[i][2];
-            std::vector<uint32_t>& chunkEntities =
-                spatialGrid.grid[z][y][x].entities;
-            for (uint32_t k = 0; k < chunkEntities.size(); ++k) {
-                if (chunkEntities[k] == entity_) {
-                    chunkEntities.erase(chunkEntities.begin() + k);
+    if (location.grid_cell_counter > 0) {
+        for (uint8_t i = 0; i < location.grid_cell_counter; ++i) {
+            uint32_t z = location.grid_cell_indicies[i][0];
+            uint32_t y = location.grid_cell_indicies[i][1];
+            uint32_t x = location.grid_cell_indicies[i][2];
+            std::vector<uint32_t>& chunk_entities =
+                spatial_grid.grid[z][y][x].entities;
+            for (uint32_t k = 0; k < chunk_entities.size(); ++k) {
+                if (chunk_entities[k] == entity) {
+                    chunk_entities.erase(chunk_entities.begin() + k);
                     break;
                 }
             }
         }
-        location.gridCellCounter = 0;
+        location.grid_cell_counter = 0;
     }
 
     Archetype* arch = location.arch;
     uint32_t index = location.index;
 
-    uint64_t moved = arch->removeEntity(index);
+    uint64_t moved = arch->remove_entity(index);
 
-    if (moved != entity_) {
-        uint32_t movedId = getId(moved);
-        entityLocations[movedId].index = index;
-        entityLocations[movedId].arch = arch;
+    if (moved != entity) {
+        uint32_t moved_id = get_id(moved);
+        entity_locations[moved_id].index = index;
+        entity_locations[moved_id].arch = arch;
     }
-    std::cout << "remove entity with id: " << id_ << std::endl;
+    std::cout << "remove entity with id: " << id << std::endl;
     location.arch = nullptr;
 }
 
-void World::searchCacheArchetypes(
-    uint64_t requiredMask,
-    Archetype* cachedArchetypes[],
-    uint32_t& cachedArchetypesNumber
+void World::search_cache_archetypes(
+    uint64_t required_mask,
+    Archetype* cached_archetypes[],
+    uint32_t& cached_archetypes_number
 ) {
-    for (uint32_t i = 0; i < world.archetypes.size(); ++i) {
-        Archetype* arch = world.archetypes[i];
+    for (uint32_t i = 0; i < WORLD.archetypes.size(); ++i) {
+        Archetype* arch = WORLD.archetypes[i];
 
-        if ((arch->mask & requiredMask) == requiredMask) {
-            cachedArchetypes[cachedArchetypesNumber] = arch;
-            ++cachedArchetypesNumber;
+        if ((arch->mask & required_mask) == required_mask) {
+            cached_archetypes[cached_archetypes_number] = arch;
+            ++cached_archetypes_number;
         }
     }
 }
 }; // namespace glvm
 
 namespace glvm {
-ArchetypeEntityManager* ArchetypeEntityManager::pInstance_ = nullptr;
-std::mutex ArchetypeEntityManager::Mutex_;
+ArchetypeEntityManager* ArchetypeEntityManager::p_instance = nullptr;
+std::mutex ArchetypeEntityManager::mutex;
 
 ArchetypeEntityManager::ArchetypeEntityManager() {}
 
 ArchetypeEntityManager::~ArchetypeEntityManager() {}
 
 ArchetypeEntityManager* ArchetypeEntityManager::get_instance() {
-    std::lock_guard<std::mutex> lock(Mutex_);
-    if (pInstance_ == nullptr) {
-        pInstance_ = new ArchetypeEntityManager();
+    std::lock_guard<std::mutex> lock(mutex);
+    if (p_instance == nullptr) {
+        p_instance = new ArchetypeEntityManager();
     }
-    return pInstance_;
+    return p_instance;
 }
 
-[[nodiscard]] uint64_t ArchetypeEntityManager::createEntity() {
-    uint32_t newId = 0;
+[[nodiscard]] uint64_t ArchetypeEntityManager::create_entity() {
+    uint32_t new_id = 0;
     // Check out wether or not free ID in removed entities registry.
-    if (!freeList.empty()) {
-        newId = freeList.back();
-        freeList.pop_back();
+    if (!free_list.empty()) {
+        new_id = free_list.back();
+        free_list.pop_back();
     } else {
-        newId = nextId++;
+        new_id = next_id++;
         generations.push_back(1);
     }
 
-    return makeEntity(newId, generations[newId]);
+    return make_entity(new_id, generations[new_id]);
 }
 
-void ArchetypeEntityManager::removeEntity(uint64_t entity_) {
-    uint32_t id_ = getId(entity_);
+void ArchetypeEntityManager::remove_entity(uint64_t entity) {
+    uint32_t id = get_id(entity);
 
-    if (!isAlive(entity_)) {
+    if (!is_alive(entity)) {
         return;
     }
 
-    generations[id_]++;
-    freeList.push_back(id_);
+    generations[id]++;
+    free_list.push_back(id);
 }
 
-bool ArchetypeEntityManager::isAlive(uint64_t entity_) const {
-    uint32_t id_ = getId(entity_);
-    return id_ < generations.size() && generations[id_] == getGen(entity_);
+bool ArchetypeEntityManager::is_alive(uint64_t entity) const {
+    uint32_t id = get_id(entity);
+    return id < generations.size() && generations[id] == get_gen(entity);
 }
 }; // namespace glvm
 
 namespace glvm {
-uint32_t Archetype::addEntity(uint64_t entity_) {
-    uint32_t index = entityCount++;
+uint32_t Archetype::add_entity(uint64_t entity) {
+    uint32_t index = entity_count++;
     assert(index < CAPACITY);
-    entities[index] = entity_;
+    entities[index] = entity;
 
     return index;
 }
 
 // Swap-remove.
-uint64_t Archetype::removeEntity(uint32_t index) {
-    uint32_t last = entityCount - 1;
+uint64_t Archetype::remove_entity(uint32_t index) {
+    uint32_t last = entity_count - 1;
 
-    for (uint32_t i = 0; i < componentCount; ++i) {
-        const uint32_t componentId = componentIds[i];
+    for (uint32_t i = 0; i < component_count; ++i) {
+        const uint32_t component_id = component_ids[i];
 
-        switch (componentId) {
+        switch (component_id) {
             case ComponentsIndices::TransformComponent:
-                static_cast<transform*>(components[componentId])[index] =
-                    static_cast<transform*>(components[componentId])[last];
+                static_cast<Transform*>(components[component_id])[index] =
+                    static_cast<Transform*>(components[component_id])[last];
                 break;
             case ComponentsIndices::RigidBodyComponent:
-                static_cast<RigidBody*>(components[componentId])[index] =
-                    static_cast<RigidBody*>(components[componentId])[last];
+                static_cast<RigidBody*>(components[component_id])[index] =
+                    static_cast<RigidBody*>(components[component_id])[last];
                 break;
             case ComponentsIndices::MeshComponent:
-                static_cast<mesh*>(components[componentId])[index] =
-                    static_cast<mesh*>(components[componentId])[last];
+                static_cast<Mesh*>(components[component_id])[index] =
+                    static_cast<Mesh*>(components[component_id])[last];
                 break;
             case ComponentsIndices::FontComponent:
-                static_cast<font*>(components[componentId])[index] =
-                    static_cast<font*>(components[componentId])[last];
+                static_cast<Font*>(components[component_id])[index] =
+                    static_cast<Font*>(components[component_id])[last];
                 break;
             case ComponentsIndices::ColliderComponent:
-                static_cast<collider*>(components[componentId])[index] =
-                    static_cast<collider*>(components[componentId])[last];
+                static_cast<Collider*>(components[component_id])[index] =
+                    static_cast<Collider*>(components[component_id])[last];
                 break;
             case ComponentsIndices::ColliderFlagsComponent:
-                static_cast<colliderFlags*>(components[componentId])[index] =
-                    static_cast<colliderFlags*>(components[componentId])[last];
+                static_cast<ColliderFlags*>(components[component_id])[index] =
+                    static_cast<ColliderFlags*>(components[component_id])[last];
                 break;
             case ComponentsIndices::MaterialComponent:
-                static_cast<material*>(components[componentId])[index] =
-                    static_cast<material*>(components[componentId])[last];
+                static_cast<Material*>(components[component_id])[index] =
+                    static_cast<Material*>(components[component_id])[last];
                 break;
             case ComponentsIndices::ViewComponent:
-                static_cast<beholder*>(components[componentId])[index] =
-                    static_cast<beholder*>(components[componentId])[last];
+                static_cast<Beholder*>(components[component_id])[index] =
+                    static_cast<Beholder*>(components[component_id])[last];
                 break;
             case ComponentsIndices::HealthComponent:
-                static_cast<health*>(components[componentId])[index] =
-                    static_cast<health*>(components[componentId])[last];
+                static_cast<Health*>(components[component_id])[index] =
+                    static_cast<Health*>(components[component_id])[last];
                 break;
             case ComponentsIndices::AnimationComponent:
-                static_cast<animation*>(components[componentId])[index] =
-                    static_cast<animation*>(components[componentId])[last];
+                static_cast<Animation*>(components[component_id])[index] =
+                    static_cast<Animation*>(components[component_id])[last];
                 break;
             case ComponentsIndices::StateComponent:
-                static_cast<state*>(components[componentId])[index] =
-                    static_cast<state*>(components[componentId])[last];
+                static_cast<State*>(components[component_id])[index] =
+                    static_cast<State*>(components[component_id])[last];
                 break;
             case ComponentsIndices::EnemyComponent:
-                static_cast<enemy*>(components[componentId])[index] =
-                    static_cast<enemy*>(components[componentId])[last];
+                static_cast<Enemy*>(components[component_id])[index] =
+                    static_cast<Enemy*>(components[component_id])[last];
                 break;
             case ComponentsIndices::DamageComponent:
-                static_cast<damage*>(components[componentId])[index] =
-                    static_cast<damage*>(components[componentId])[last];
+                static_cast<Damage*>(components[component_id])[index] =
+                    static_cast<Damage*>(components[component_id])[last];
                 break;
             case ComponentsIndices::AttackComponent:
-                static_cast<attack*>(components[componentId])[index] =
-                    static_cast<attack*>(components[componentId])[last];
+                static_cast<Attack*>(components[component_id])[index] =
+                    static_cast<Attack*>(components[component_id])[last];
                 break;
             case ComponentsIndices::InventoryComponent:
-                static_cast<inventory*>(components[componentId])[index] =
-                    static_cast<inventory*>(components[componentId])[last];
+                static_cast<Inventory*>(components[component_id])[index] =
+                    static_cast<Inventory*>(components[component_id])[last];
                 break;
             case ComponentsIndices::DirectionalLightComponent:
-                static_cast<directionalLight*>(components[componentId])[index] =
-                    static_cast<directionalLight*>(
-                        components[componentId]
+                static_cast<DirectionalLightComponent*>(
+                    components[component_id]
+                )[index] =
+                    static_cast<DirectionalLightComponent*>(
+                        components[component_id]
                     )[last];
                 break;
             case ComponentsIndices::SpotLightComponent:
-                static_cast<spotLight*>(components[componentId])[index] =
-                    static_cast<spotLight*>(components[componentId])[last];
+                static_cast<SpotLightComponent*>(
+                    components[component_id]
+                )[index] =
+                    static_cast<SpotLightComponent*>(
+                        components[component_id]
+                    )[last];
                 break;
             case ComponentsIndices::PointLightComponent:
-                static_cast<pointLight*>(components[componentId])[index] =
-                    static_cast<pointLight*>(components[componentId])[last];
+                static_cast<PointLightComponent*>(
+                    components[component_id]
+                )[index] =
+                    static_cast<PointLightComponent*>(
+                        components[component_id]
+                    )[last];
                 break;
             case ComponentsIndices::ItemComponent:
-                static_cast<item*>(components[componentId])[index] =
-                    static_cast<item*>(components[componentId])[last];
+                static_cast<Item*>(components[component_id])[index] =
+                    static_cast<Item*>(components[component_id])[last];
                 break;
             case ComponentsIndices::MoveComponent:
-                static_cast<move*>(components[componentId])[index] =
-                    static_cast<move*>(components[componentId])[last];
+                static_cast<Move*>(components[component_id])[index] =
+                    static_cast<Move*>(components[component_id])[last];
                 break;
             case ComponentsIndices::ProjectileBundleComponent:
-                static_cast<ProjectileBundle*>(components[componentId])[index] =
+                static_cast<ProjectileBundle*>(components[component_id])[index] =
                     static_cast<ProjectileBundle*>(
-                        components[componentId]
+                        components[component_id]
                     )[last];
                 break;
             case ComponentsIndices::LevelChunkTagComponent:
-                static_cast<levelChunkTagComponent*>(
-                    components[componentId]
+                static_cast<LevelChunkTagComponent*>(
+                    components[component_id]
                 )[index] =
-                    static_cast<levelChunkTagComponent*>(
-                        components[componentId]
+                    static_cast<LevelChunkTagComponent*>(
+                        components[component_id]
                     )[last];
                 break;
             case ComponentsIndices::ProjectileTagComponent:
-                static_cast<projectileTagComponent*>(
-                    components[componentId]
+                static_cast<ProjectileTagComponent*>(
+                    components[component_id]
                 )[index] =
-                    static_cast<projectileTagComponent*>(
-                        components[componentId]
+                    static_cast<ProjectileTagComponent*>(
+                        components[component_id]
                     )[last];
                 break;
             case ComponentsIndices::PlayerTagComponent:
-                static_cast<playerTagComponent*>(
-                    components[componentId]
+                static_cast<PlayerTagComponent*>(
+                    components[component_id]
                 )[index] =
-                    static_cast<playerTagComponent*>(
-                        components[componentId]
+                    static_cast<PlayerTagComponent*>(
+                        components[component_id]
                     )[last];
                 break;
         }
@@ -370,183 +381,200 @@ uint64_t Archetype::removeEntity(uint32_t index) {
 
     uint64_t moved = entities[last];
     entities[index] = moved;
-    --entityCount;
+    --entity_count;
 
     return moved;
 }
 }; // namespace glvm
 
 namespace glvm {
-bool BoxCollider(
-    const Vector<float, 3> backtrackingPos,
-    const Vector<float, 3> comparedPos,
-    const float backtrackingScale,
-    const float comparedScale,
-    const MeshAxisMaxAbsoluteValues& backtrackingMeshAxisMaxAbsoluteValues,
-    const MeshAxisMaxAbsoluteValues& comparedMeshAxisMaxAbsoluteValues
+bool box_collider(
+    const Vector<float, 3> backtracking_pos,
+    const Vector<float, 3> compared_pos,
+    const float backtracking_scale,
+    const float compared_scale,
+    const MeshAxisMaxAbsoluteValues& backtracking_mesh_axis_max_absolute_values,
+    const MeshAxisMaxAbsoluteValues& compared_mesh_axis_max_absolute_values
 ) {
-    return backtrackingPos[0]
-            + backtrackingMeshAxisMaxAbsoluteValues.origin_offset_x
-                * backtrackingScale
-            + (backtrackingMeshAxisMaxAbsoluteValues.absolute_x
-               * backtrackingScale)
-        > comparedPos[0]
-            + comparedMeshAxisMaxAbsoluteValues.origin_offset_x * comparedScale
-            - (comparedMeshAxisMaxAbsoluteValues.absolute_x * comparedScale)
-        && backtrackingPos[0]
-            + backtrackingMeshAxisMaxAbsoluteValues.origin_offset_x
-                * backtrackingScale
-            - (backtrackingMeshAxisMaxAbsoluteValues.absolute_x
-               * backtrackingScale)
-        < comparedPos[0]
-            + comparedMeshAxisMaxAbsoluteValues.origin_offset_x * comparedScale
-            + (comparedMeshAxisMaxAbsoluteValues.absolute_x * comparedScale)
-        && backtrackingPos[1]
-            + backtrackingMeshAxisMaxAbsoluteValues.origin_offset_y
-                * backtrackingScale
-            + (backtrackingMeshAxisMaxAbsoluteValues.absolute_y
-               * backtrackingScale)
-        > comparedPos[1]
-            + comparedMeshAxisMaxAbsoluteValues.origin_offset_y * comparedScale
-            - (comparedMeshAxisMaxAbsoluteValues.absolute_y * comparedScale)
-        && backtrackingPos[1]
-            + backtrackingMeshAxisMaxAbsoluteValues.origin_offset_y
-                * backtrackingScale
-            - (backtrackingMeshAxisMaxAbsoluteValues.absolute_y
-               * backtrackingScale)
-        < comparedPos[1]
-            + comparedMeshAxisMaxAbsoluteValues.origin_offset_y * comparedScale
-            + (comparedMeshAxisMaxAbsoluteValues.absolute_y * comparedScale)
-        && backtrackingPos[2]
-            + backtrackingMeshAxisMaxAbsoluteValues.origin_offset_z
-                * backtrackingScale
-            + (backtrackingMeshAxisMaxAbsoluteValues.absolute_z
-               * backtrackingScale)
-        > comparedPos[2]
-            + comparedMeshAxisMaxAbsoluteValues.origin_offset_z * comparedScale
-            - (comparedMeshAxisMaxAbsoluteValues.absolute_z * comparedScale)
-        && backtrackingPos[2]
-            + backtrackingMeshAxisMaxAbsoluteValues.origin_offset_z
-                * backtrackingScale
-            - (backtrackingMeshAxisMaxAbsoluteValues.absolute_z
-               * backtrackingScale)
-        < comparedPos[2]
-            + comparedMeshAxisMaxAbsoluteValues.origin_offset_z * comparedScale
-            + (comparedMeshAxisMaxAbsoluteValues.absolute_z * comparedScale);
+    return backtracking_pos[0]
+            + backtracking_mesh_axis_max_absolute_values.origin_offset_x
+                * backtracking_scale
+            + (backtracking_mesh_axis_max_absolute_values.absolute_x
+               * backtracking_scale)
+        > compared_pos[0]
+            + compared_mesh_axis_max_absolute_values.origin_offset_x
+                * compared_scale
+            - (compared_mesh_axis_max_absolute_values.absolute_x
+               * compared_scale)
+        && backtracking_pos[0]
+            + backtracking_mesh_axis_max_absolute_values.origin_offset_x
+                * backtracking_scale
+            - (backtracking_mesh_axis_max_absolute_values.absolute_x
+               * backtracking_scale)
+        < compared_pos[0]
+            + compared_mesh_axis_max_absolute_values.origin_offset_x
+                * compared_scale
+            + (compared_mesh_axis_max_absolute_values.absolute_x
+               * compared_scale)
+        && backtracking_pos[1]
+            + backtracking_mesh_axis_max_absolute_values.origin_offset_y
+                * backtracking_scale
+            + (backtracking_mesh_axis_max_absolute_values.absolute_y
+               * backtracking_scale)
+        > compared_pos[1]
+            + compared_mesh_axis_max_absolute_values.origin_offset_y
+                * compared_scale
+            - (compared_mesh_axis_max_absolute_values.absolute_y
+               * compared_scale)
+        && backtracking_pos[1]
+            + backtracking_mesh_axis_max_absolute_values.origin_offset_y
+                * backtracking_scale
+            - (backtracking_mesh_axis_max_absolute_values.absolute_y
+               * backtracking_scale)
+        < compared_pos[1]
+            + compared_mesh_axis_max_absolute_values.origin_offset_y
+                * compared_scale
+            + (compared_mesh_axis_max_absolute_values.absolute_y
+               * compared_scale)
+        && backtracking_pos[2]
+            + backtracking_mesh_axis_max_absolute_values.origin_offset_z
+                * backtracking_scale
+            + (backtracking_mesh_axis_max_absolute_values.absolute_z
+               * backtracking_scale)
+        > compared_pos[2]
+            + compared_mesh_axis_max_absolute_values.origin_offset_z
+                * compared_scale
+            - (compared_mesh_axis_max_absolute_values.absolute_z
+               * compared_scale)
+        && backtracking_pos[2]
+            + backtracking_mesh_axis_max_absolute_values.origin_offset_z
+                * backtracking_scale
+            - (backtracking_mesh_axis_max_absolute_values.absolute_z
+               * backtracking_scale)
+        < compared_pos[2]
+            + compared_mesh_axis_max_absolute_values.origin_offset_z
+                * compared_scale
+            + (compared_mesh_axis_max_absolute_values.absolute_z
+               * compared_scale);
 }
 
-std::vector<Vector<float, 3>> computeBoxCornerBoundPoints(
-    const MeshAxisMaxAbsoluteValues entityChunkBounds,
-    Vector<float, 3> entityPosition,
+std::vector<Vector<float, 3>> compute_box_corner_bound_points(
+    const MeshAxisMaxAbsoluteValues entity_chunk_bounds,
+    Vector<float, 3> entity_position,
     const float scale
 ) {
-    const float halfWidht = entityChunkBounds.absolute_x * scale;
-    const float halfHeight = entityChunkBounds.absolute_y * scale;
-    const float halfDepth = entityChunkBounds.absolute_z * scale;
-    const Vector<float, 3> centerOffset = {
-        entityChunkBounds.origin_offset_x * scale,
-        entityChunkBounds.origin_offset_y * scale,
-        entityChunkBounds.origin_offset_z * scale
+    const float half_widht = entity_chunk_bounds.absolute_x * scale;
+    const float half_height = entity_chunk_bounds.absolute_y * scale;
+    const float half_depth = entity_chunk_bounds.absolute_z * scale;
+    const Vector<float, 3> center_offset = {
+        entity_chunk_bounds.origin_offset_x * scale,
+        entity_chunk_bounds.origin_offset_y * scale,
+        entity_chunk_bounds.origin_offset_z * scale
     };
     std::vector<Vector<float, 3>> result;
     // Left bottom back.
     result.push_back(
-        entityPosition + centerOffset
-        + Vector<float, 3>(-halfWidht, -halfHeight, -halfDepth)
+        entity_position + center_offset
+        + Vector<float, 3>(-half_widht, -half_height, -half_depth)
     );
     // Right upper front.
     result.push_back(
-        entityPosition + centerOffset
-        + Vector<float, 3>(halfWidht, halfHeight, halfDepth)
+        entity_position + center_offset
+        + Vector<float, 3>(half_widht, half_height, half_depth)
     );
     return result;
 }
 
-void setMeshBounds(MeshAxisLimitingValues meshAxisLimitingValues) {
-    allMeshMaxAbsoluteValues.push_back({});
+void set_mesh_bounds(MeshAxisLimitingValues mesh_axis_limiting_values) {
+    ALL_MESH_MAX_ABSOLUTE_VALUES.push_back({});
 
-    allMeshMaxAbsoluteValues[allMeshMaxAbsoluteValues.size() - 1].absolute_x =
-        (meshAxisLimitingValues.highest_x - meshAxisLimitingValues.lowest_x)
+    ALL_MESH_MAX_ABSOLUTE_VALUES[ALL_MESH_MAX_ABSOLUTE_VALUES.size() - 1]
+        .absolute_x = (mesh_axis_limiting_values.highest_x
+                       - mesh_axis_limiting_values.lowest_x)
         / 2.0f;
-    allMeshMaxAbsoluteValues[allMeshMaxAbsoluteValues.size() - 1].absolute_y =
-        (meshAxisLimitingValues.highest_y - meshAxisLimitingValues.lowest_y)
+    ALL_MESH_MAX_ABSOLUTE_VALUES[ALL_MESH_MAX_ABSOLUTE_VALUES.size() - 1]
+        .absolute_y = (mesh_axis_limiting_values.highest_y
+                       - mesh_axis_limiting_values.lowest_y)
         / 2.0f;
-    allMeshMaxAbsoluteValues[allMeshMaxAbsoluteValues.size() - 1].absolute_z =
-        (meshAxisLimitingValues.highest_z - meshAxisLimitingValues.lowest_z)
+    ALL_MESH_MAX_ABSOLUTE_VALUES[ALL_MESH_MAX_ABSOLUTE_VALUES.size() - 1]
+        .absolute_z = (mesh_axis_limiting_values.highest_z
+                       - mesh_axis_limiting_values.lowest_z)
         / 2.0f;
 
-    allMeshMaxAbsoluteValues[allMeshMaxAbsoluteValues.size() - 1]
-        .origin_offset_x =
-        (meshAxisLimitingValues.highest_x + meshAxisLimitingValues.lowest_x)
+    ALL_MESH_MAX_ABSOLUTE_VALUES[ALL_MESH_MAX_ABSOLUTE_VALUES.size() - 1]
+        .origin_offset_x = (mesh_axis_limiting_values.highest_x
+                            + mesh_axis_limiting_values.lowest_x)
         / 2.0f;
-    allMeshMaxAbsoluteValues[allMeshMaxAbsoluteValues.size() - 1]
-        .origin_offset_y =
-        (meshAxisLimitingValues.highest_y + meshAxisLimitingValues.lowest_y)
+    ALL_MESH_MAX_ABSOLUTE_VALUES[ALL_MESH_MAX_ABSOLUTE_VALUES.size() - 1]
+        .origin_offset_y = (mesh_axis_limiting_values.highest_y
+                            + mesh_axis_limiting_values.lowest_y)
         / 2.0f;
-    allMeshMaxAbsoluteValues[allMeshMaxAbsoluteValues.size() - 1]
-        .origin_offset_z =
-        (meshAxisLimitingValues.highest_z + meshAxisLimitingValues.lowest_z)
+    ALL_MESH_MAX_ABSOLUTE_VALUES[ALL_MESH_MAX_ABSOLUTE_VALUES.size() - 1]
+        .origin_offset_z = (mesh_axis_limiting_values.highest_z
+                            + mesh_axis_limiting_values.lowest_z)
         / 2.0f;
 }
 
-void CreateProjectile(
-    const Vector<float, 3>& projectilePosition,
-    const Vector<float, 3>& projectileForward,
-    const MeshHandle& meshHandle,
-    const material& material,
-    const damage& damage,
-    const EntityLocation& projectileLocation
+void create_projectile(
+    const Vector<float, 3>& projectile_position,
+    const Vector<float, 3>& projectile_forward,
+    const MeshHandle& mesh_handle,
+    const Material& material,
+    const Damage& damage,
+    const EntityLocation& projectile_location
 ) {
-    ProjectileArchetype* projectileArch =
-        static_cast<ProjectileArchetype*>(projectileLocation.arch);
-    const uint32_t projectileIndex = projectileLocation.index;
+    ProjectileArchetype* projectile_arch =
+        static_cast<ProjectileArchetype*>(projectile_location.arch);
+    const uint32_t projectile_index = projectile_location.index;
 
-    mesh* projectileMesh = &projectileArch->meshes[projectileIndex];
-    projectileMesh->handle = meshHandle;
+    Mesh* projectile_mesh = &projectile_arch->meshes[projectile_index];
+    projectile_mesh->handle = mesh_handle;
 
-    ProjectileBundle* projectileBundle =
-        &projectileArch->projectileBundles[projectileIndex];
-    projectileBundle->material = material;
+    ProjectileBundle* projectile_bundle =
+        &projectile_arch->projectile_bundles[projectile_index];
+    projectile_bundle->material = material;
 
-    transform* rTransformProjectile =
-        &projectileArch->transforms[projectileIndex];
-    health* projectileHealth = &projectileArch->heath[projectileIndex];
-    projectileHealth->maxHealth = 100;
-    projectileHealth->currentHealth = 100;
+    Transform* r_transform_projectile =
+        &projectile_arch->transforms[projectile_index];
+    Health* projectile_health = &projectile_arch->heath[projectile_index];
+    projectile_health->max_health = 100;
+    projectile_health->current_health = 100;
 
-    projectileArch->colliders[projectileIndex].colliders.clear();
+    projectile_arch->colliders[projectile_index].colliders.clear();
 
-    rTransformProjectile->scale = 0.1f;
-    rTransformProjectile->position = projectilePosition;
-    rTransformProjectile->forward = projectileForward;
-    rTransformProjectile->position += rTransformProjectile->forward;
+    r_transform_projectile->scale = 0.1f;
+    r_transform_projectile->position = projectile_position;
+    r_transform_projectile->forward = projectile_forward;
+    r_transform_projectile->position += r_transform_projectile->forward;
 
-    projectileBundle->damage = damage;
+    projectile_bundle->damage = damage;
 }
 }; // namespace glvm
 
 namespace glvm {
-ComponentManager* ComponentManager::pInstance_ = nullptr;
-std::mutex ComponentManager::Mutex_;
+ComponentManager* ComponentManager::p_instance = nullptr;
+std::mutex ComponentManager::mutex;
 
 ComponentManager::ComponentManager() = default;
 
 ComponentManager::~ComponentManager() {
-    for (int j = 0, iSize_Ordered = worldSparseEntitiesMapToComponents.size();
-         j < iSize_Ordered;
+    for (int j = 0,
+             i_size_ordered = world_sparse_entities_map_to_components.size();
+         j < i_size_ordered;
          ++j) {
-        delete worldSparseEntitiesMapToComponents[j];
-        worldSparseEntitiesMapToComponents[j] = nullptr;
+        delete world_sparse_entities_map_to_components[j];
+        world_sparse_entities_map_to_components[j] = nullptr;
     }
-    for (int j = 0, iSize_Ordered = worldDenseComponentsMapToEntities.size();
-         j < iSize_Ordered;
+    for (int j = 0,
+             i_size_ordered = world_dense_components_map_to_entities.size();
+         j < i_size_ordered;
          ++j) {
-        delete worldDenseComponentsMapToEntities[j];
-        worldDenseComponentsMapToEntities[j] = nullptr;
+        delete world_dense_components_map_to_entities[j];
+        world_dense_components_map_to_entities[j] = nullptr;
     }
 }
 
-bool ComponentManager::checkAvailability(
+bool ComponentManager::check_availability(
     std::vector<unsigned int>& sparse,
     std::vector<unsigned int>& dense,
     unsigned int entity
@@ -555,167 +583,172 @@ bool ComponentManager::checkAvailability(
         && dense[sparse[entity]] == entity;
 }
 
-unsigned int ComponentManager::GetContainerID() {
-    return componentsContainerID;
+unsigned int ComponentManager::get_container_id() {
+    return components_container_id;
 }
 
 ComponentManager* ComponentManager::get_instance() {
-    std::lock_guard<std::mutex> lock(Mutex_);
-    if (pInstance_ == nullptr) {
-        pInstance_ = new ComponentManager();
+    std::lock_guard<std::mutex> lock(mutex);
+    if (p_instance == nullptr) {
+        p_instance = new ComponentManager();
     }
-    return pInstance_;
+    return p_instance;
 }
 } // namespace glvm
 
-glvm::CStack Input_Stack_ {};
+glvm::CStack INPUT_STACK {};
 
-int x_pointer;
-int y_pointer;
+int X_POINTER;
+int Y_POINTER;
 
 #ifdef __linux__
 #endif
 
-glvm::CEvent g_eEvent;
+glvm::CEvent G_E_EVENT;
 // Contains all maximum absolute axis values.
-std::vector<glvm::MeshAxisMaxAbsoluteValues> allMeshMaxAbsoluteValues;
+std::vector<glvm::MeshAxisMaxAbsoluteValues> ALL_MESH_MAX_ABSOLUTE_VALUES;
 
 namespace glvm {
-Engine* Engine::pInstance_ = nullptr;
-std::mutex Engine::Mutex_;
+Engine* Engine::p_instance = nullptr;
+std::mutex Engine::mutex;
 
-void PlaybackSound(ISoundEngine* _sound_Engine, std::atomic<bool>& runningSound) {
-    runningSound = true;
-    while (runningSound) {
-        _sound_Engine->SoundStream();
+void playback_sound(
+    ISoundEngine* sound_engine,
+    std::atomic<bool>& running_sound
+) {
+    running_sound = true;
+    while (running_sound) {
+        sound_engine->sound_stream();
     }
 }
 
 Engine::Engine() {
-    chrono = CTimerCreator().Create();
-    soundEngine = CSoundEngineFactory().CreateSoundEngine();
+    chrono = CTimerCreator().create();
+    sound_engine = CSoundEngineFactory().create_sound_engine();
 
-    spatialGridSystem = new SpatialGridSystem();
-    collisionSystem = new CCollisionSystem(Input_Stack_);
-    movementSystem = new CMovementSystem(Input_Stack_);
-    physicsSystem = new CPhysicsSystem(gravity, Input_Stack_);
-    projectileSystem = new CProjectileSystem(Input_Stack_);
-    damageSystem = new DamageSystem();
-    enemySytem = new EnemySystem();
-    itemSystem = new ItemSystem();
-    procuduralLevelGeneratingSystem = new ProceduralLevelGeneratingSystem();
-    inventorySystem = new InventorySystem();
+    spatial_grid_system = new SpatialGridSystem();
+    collision_system = new CCollisionSystem(INPUT_STACK);
+    movement_system = new CMovementSystem(INPUT_STACK);
+    physics_system = new CPhysicsSystem(gravity, INPUT_STACK);
+    projectile_system = new CProjectileSystem(INPUT_STACK);
+    damage_system = new DamageSystem();
+    enemy_sytem = new EnemySystem();
+    item_system = new ItemSystem();
+    procudural_level_generating_system = new ProceduralLevelGeneratingSystem();
+    inventory_system = new InventorySystem();
 
-    deltaFrameTime = 0.0;
-    g_eEvent.SetEvent(eDEFAULT);
+    delta_frame_time = 0.0;
+    G_E_EVENT.set_event(EDefault);
 
-    CSystemManager* pSystem_Manager = CSystemManager::get_instance();
+    CSystemManager* p_system_manager = CSystemManager::get_instance();
 
     // Call of ActivateSystem function must be in this order.
-    pSystem_Manager->ActivateSystem(procuduralLevelGeneratingSystem);
-    pSystem_Manager->ActivateSystem(movementSystem);
-    pSystem_Manager->ActivateSystem(enemySytem);
-    pSystem_Manager->ActivateSystem(projectileSystem);
-    pSystem_Manager->ActivateSystem(spatialGridSystem);
-    pSystem_Manager->ActivateSystem(collisionSystem);
-    pSystem_Manager->ActivateSystem(damageSystem);
-    pSystem_Manager->ActivateSystem(physicsSystem);
-    pSystem_Manager->ActivateSystem(inventorySystem);
-    pSystem_Manager->ActivateSystem(itemSystem);
+    p_system_manager->activate_system(procudural_level_generating_system);
+    p_system_manager->activate_system(movement_system);
+    p_system_manager->activate_system(enemy_sytem);
+    p_system_manager->activate_system(projectile_system);
+    p_system_manager->activate_system(spatial_grid_system);
+    p_system_manager->activate_system(collision_system);
+    p_system_manager->activate_system(damage_system);
+    p_system_manager->activate_system(physics_system);
+    p_system_manager->activate_system(inventory_system);
+    p_system_manager->activate_system(item_system);
 
     sound_thread = std::thread(
-        PlaybackSound,
-        std::ref(soundEngine),
-        std::ref(runningSound)
+        playback_sound,
+        std::ref(sound_engine),
+        std::ref(running_sound)
     );
-    soundEngine->OpenDevice("default");
+    sound_engine->open_device("default");
 }
 
 Engine::~Engine() {}
 
 Engine* Engine::get_instance() {
-    std::lock_guard<std::mutex> lock(Mutex_);
-    if (pInstance_ == nullptr) {
-        pInstance_ = new Engine();
+    std::lock_guard<std::mutex> lock(mutex);
+    if (p_instance == nullptr) {
+        p_instance = new Engine();
     }
-    return pInstance_;
+    return p_instance;
 }
 
-void Engine::GameLoop() {
-    RenderVulkan();
+void Engine::game_loop() {
+    render_vulkan();
 }
 
-void Engine::EventQueueFlush() {}
+void Engine::event_queue_flush() {}
 
-void Engine::RenderVulkan() {
-    CSystemManager* pSystem_Manager = CSystemManager::get_instance();
-    bool bGame_Loop_Active = true;
+void Engine::render_vulkan() {
+    CSystemManager* p_system_manager = CSystemManager::get_instance();
+    bool b_game_loop_active = true;
 
-    projectileSystem->textureHandlers = textureHandlers;
-    projectileSystem->meshHandlers = meshHandlers;
+    projectile_system->texture_handlers = texture_handlers;
+    projectile_system->mesh_handlers = mesh_handlers;
 
-    enemySytem->textureHandlers = textureHandlers;
-    enemySytem->meshHandlers = meshHandlers;
+    enemy_sytem->texture_handlers = texture_handlers;
+    enemy_sytem->mesh_handlers = mesh_handlers;
 
-    procuduralLevelGeneratingSystem->meshHandlers = meshHandlers;
-    procuduralLevelGeneratingSystem->textureHandlers = textureHandlers;
+    procudural_level_generating_system->mesh_handlers = mesh_handlers;
+    procudural_level_generating_system->texture_handlers = texture_handlers;
 
-    inventorySystem->isItemDraged = &draggedItemEntity;
-    itemSystem->draggedItemEntity = &draggedItemEntity;
+    inventory_system->is_item_draged = &dragged_item_entity;
+    item_system->dragged_item_entity = &dragged_item_entity;
 
-    vulkanRenderer = new CVulkanRenderer();
-    vulkanRenderer->initializeTextureData_ = textureVector;
-    vulkanRenderer->pathsArray_ = pathsArray_;
-    vulkanRenderer->pathsGLTF_ = pathsGLTF_;
-    glvm::MeshManager* meshManager = glvm::MeshManager::get_instance();
-    vulkanRenderer->SetMeshData(
-        meshManager->pathsArray_,
-        meshManager->pathsGLTF_
+    vulkan_renderer = new CVulkanRenderer();
+    vulkan_renderer->initialize_texture_data = texture_vector;
+    vulkan_renderer->paths_array = paths_array;
+    vulkan_renderer->paths_gltf = paths_gltf;
+    glvm::MeshManager* mesh_manager = glvm::MeshManager::get_instance();
+    vulkan_renderer->set_mesh_data(
+        mesh_manager->paths_array,
+        mesh_manager->paths_gltf
     );
 
-    directionalLightArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        directionalLightRequiredMask,
-        cachedDirectionalLigthArchetypes,
-        directionalLightArchetypesNumber
+    directional_light_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        directional_light_required_mask,
+        cached_directional_ligth_archetypes,
+        directional_light_archetypes_number
     );
-    vulkanRenderer->directionalLightNumber = directionalLightArchetypesNumber;
+    vulkan_renderer->directional_light_number =
+        directional_light_archetypes_number;
 
-    spotLightArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        spotLightRequiredMask,
-        cachedSpotLigthArchetypes,
-        spotLightArchetypesNumber
+    spot_light_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        spot_light_required_mask,
+        cached_spot_ligth_archetypes,
+        spot_light_archetypes_number
     );
-    vulkanRenderer->spotLightNumber = spotLightArchetypesNumber;
+    vulkan_renderer->spot_light_number = spot_light_archetypes_number;
 
-    pointLightArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        pointLightRequiredMask,
-        cachedPointLigthArchetypes,
-        pointLightArchetypesNumber
+    point_light_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        point_light_required_mask,
+        cached_point_ligth_archetypes,
+        point_light_archetypes_number
     );
-    vulkanRenderer->pointLightNumber = pointLightArchetypesNumber;
+    vulkan_renderer->point_light_number = point_light_archetypes_number;
 
-    animationActorsArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        animatedActorsRequiredMask,
-        cachedAnimationActorsArchetypes,
-        animationActorsArchetypesNumber
-    );
-
-    staticActorsArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        staticActorsRequiredMask,
-        cachedStaticActorsArchetypes,
-        staticActorsArchetypesNumber
+    animation_actors_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        animated_actors_required_mask,
+        cached_animation_actors_archetypes,
+        animation_actors_archetypes_number
     );
 
-    loadWavefrontObj();
-    initializeGLTF();
-    initializeFontData();
-    vulkanRenderer->run();
-    vulkanRenderer->Window->Input_Stack_ = &Input_Stack_;
+    static_actors_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        static_actors_required_mask,
+        cached_static_actors_archetypes,
+        static_actors_archetypes_number
+    );
+
+    load_wavefront_obj();
+    initialize_gltf();
+    initialize_font_data();
+    vulkan_renderer->run();
+    std::cout << "[probe] after_run" << std::flush;
+    vulkan_renderer->window->input_stack = &INPUT_STACK;
 
 #ifdef _WIN32
     MSG msg;
@@ -726,207 +759,220 @@ void Engine::RenderVulkan() {
     }
 #endif
 
-    while (bGame_Loop_Active) {
-        deltaFrameTime = chrono->GetElapsed();
-        chrono->Reset();
-        gravity += deltaFrameTime;
+    while (b_game_loop_active) {
+        delta_frame_time = chrono->get_elapsed();
+        chrono->reset();
+        gravity += delta_frame_time;
 
-        vulkanRenderer->Window->ClearDisplay();
+        vulkan_renderer->window->clear_display();
 
-        vulkanRenderer->Window->HandleEvent(g_eEvent);
-        if ((Input_Stack_.SearchElement(EEvents::eGAME_LOOP_KILL))
-            == EEvents::eGAME_LOOP_KILL) {
-            bGame_Loop_Active = false;
+        vulkan_renderer->window->handle_event(G_E_EVENT);
+        if ((INPUT_STACK.search_element(EEvents::EGameLoopKill))
+            == EEvents::EGameLoopKill) {
+            std::cout << "[probe] kill event received" << std::flush;
+            b_game_loop_active = false;
         }
 
-        if ((Input_Stack_.SearchElement(EEvents::eCURSOR_RELEASED))
-            == EEvents::eCURSOR_RELEASED) {
-            vulkanRenderer->isCursorReleased =
-                !vulkanRenderer->isCursorReleased;
-            Input_Stack_.Remove(EEvents::eCURSOR_RELEASED);
-            Input_Stack_.Remove(EEvents::eCURSOR_RELEASED);
+        if ((INPUT_STACK.search_element(EEvents::ECursorReleased))
+            == EEvents::ECursorReleased) {
+            vulkan_renderer->is_cursor_released =
+                !vulkan_renderer->is_cursor_released;
+            INPUT_STACK.remove(EEvents::ECursorReleased);
+            INPUT_STACK.remove(EEvents::ECursorReleased);
             // The click-to-relock must not trigger on the button that was
             // already held while Esc was pressed.
-            Input_Stack_.Remove(EEvents::eMOUSE_LEFT_BUTTON);
+            INPUT_STACK.remove(EEvents::EMouseLeftButton);
         }
-        if (vulkanRenderer->isCursorReleased
-            && (Input_Stack_.SearchElement(EEvents::eMOUSE_LEFT_BUTTON))
-                == EEvents::eMOUSE_LEFT_BUTTON
-            && !vulkanRenderer->imguiOverlay->wantsMouse()) {
-            vulkanRenderer->isCursorReleased = false;
+        if (vulkan_renderer->is_cursor_released
+            && (INPUT_STACK.search_element(EEvents::EMouseLeftButton))
+                == EEvents::EMouseLeftButton
+            && !vulkan_renderer->imgui_overlay->wants_mouse()) {
+            vulkan_renderer->is_cursor_released = false;
         }
 
-        if ((Input_Stack_.SearchElement(EEvents::eMOUSE_LEFT_BUTTON))
-            == EEvents::eMOUSE_LEFT_BUTTON) {
-            isLeftMouseButtonPressed = true;
+        if ((INPUT_STACK.search_element(EEvents::EMouseLeftButton))
+            == EEvents::EMouseLeftButton) {
+            is_left_mouse_button_pressed = true;
         } else {
-            isLeftMouseButtonPressed = false;
+            is_left_mouse_button_pressed = false;
         }
 
-        bool inventoryKeyPressed =
-            (Input_Stack_.SearchElement(EEvents::eINVENTORY)
-             == EEvents::eINVENTORY);
-        if (inventoryKeyPressed && !isInventoryKeyHeld) {
-            vulkanRenderer->isInventoryOpened =
-                !vulkanRenderer->isInventoryOpened;
-            if (vulkanRenderer->isInventoryOpened) {
-                pSystem_Manager->DeactivateSystem(
-                    DeactivatedSystems::DEACTIVATED_MOVEMENT_SYSTEM
+        bool inventory_key_pressed =
+            (INPUT_STACK.search_element(EEvents::EInventory)
+             == EEvents::EInventory);
+        if (inventory_key_pressed && !is_inventory_key_held) {
+            vulkan_renderer->is_inventory_opened =
+                !vulkan_renderer->is_inventory_opened;
+            if (vulkan_renderer->is_inventory_opened) {
+                p_system_manager->deactivate_system(
+                    DeactivatedSystems::DeactivatedMovementSystem
                 );
                 hud_screen_x = 0.0f;
                 hud_screen_y = 0.0f;
             } else {
-                pSystem_Manager->ReturnSystemToActivatedState(
-                    DeactivatedSystems::DEACTIVATED_MOVEMENT_SYSTEM
+                p_system_manager->return_system_to_activated_state(
+                    DeactivatedSystems::DeactivatedMovementSystem
                 );
             }
         }
-        isInventoryKeyHeld = inventoryKeyPressed;
-        g_eEvent.SetLastEvent(Input_Stack_);
+        is_inventory_key_held = inventory_key_pressed;
+        G_E_EVENT.set_last_event(INPUT_STACK);
 
 #ifndef VK_USE_PLATFORM_WAYLAND_KHR
-        const bool cursorShouldBeHidden = !vulkanRenderer->isInventoryOpened
-            && vulkanRenderer->Window->isFocused
-            && !vulkanRenderer->isCursorReleased
-            && !vulkanRenderer->imguiOverlay->wantsMouse();
-        if (cursorShouldBeHidden && !isCursorHidden) {
+        const bool cursor_should_be_hidden =
+            !vulkan_renderer->is_inventory_opened
+            && vulkan_renderer->window->is_focused
+            && !vulkan_renderer->is_cursor_released
+            && !vulkan_renderer->imgui_overlay->wants_mouse();
+        if (cursor_should_be_hidden && !is_cursor_hidden) {
             ShowCursor(FALSE);
-            isCursorHidden = true;
-        } else if (!cursorShouldBeHidden && isCursorHidden) {
+            is_cursor_hidden = true;
+        } else if (!cursor_should_be_hidden && is_cursor_hidden) {
             ShowCursor(TRUE);
-            isCursorHidden = false;
+            is_cursor_hidden = false;
         }
-        if (cursorShouldBeHidden) {
-            vulkanRenderer->Window->CursorLock(
-                g_eEvent.mousePointerPosition.position_X,
-                g_eEvent.mousePointerPosition.position_Y,
-                &g_eEvent.mousePointerPosition.offset_X,
-                &g_eEvent.mousePointerPosition.offset_Y
+        if (cursor_should_be_hidden) {
+            vulkan_renderer->window->cursor_lock(
+                G_E_EVENT.mouse_pointer_position.position_x,
+                G_E_EVENT.mouse_pointer_position.position_y,
+                &G_E_EVENT.mouse_pointer_position.offset_x,
+                &G_E_EVENT.mouse_pointer_position.offset_y
             );
         }
 
-        if (wasInventoryOpened && !vulkanRenderer->isInventoryOpened) {
+        if (was_inventory_opened && !vulkan_renderer->is_inventory_opened) {
             // Cursor was free while the inventory was open; reset the mouse
             // state so the first locked sample doesn't feed a fake delta to the
-            // camera. WindowWinVulkan::CursorLock also discards the >250px
+            // camera. WindowWinVulkan::cursor_lock also discards the >250px
             // teleport on its own.
-            g_eEvent.mousePointerPosition.offset_X = 0;
-            g_eEvent.mousePointerPosition.offset_Y = 0;
-            vulkanRenderer->prev_X = 0.0f;
-            vulkanRenderer->prev_Y = 0.0f;
-            vulkanRenderer->current_X = 0.0f;
-            vulkanRenderer->current_Y = 0.0f;
-            movementSystem->prev_X = 0.0f;
-            previousMouseOffsetX = 0.0f;
-            previousMouseOffsetY = 0.0f;
+            G_E_EVENT.mouse_pointer_position.offset_x = 0;
+            G_E_EVENT.mouse_pointer_position.offset_y = 0;
+            vulkan_renderer->prev_x = 0.0f;
+            vulkan_renderer->prev_y = 0.0f;
+            vulkan_renderer->current_x = 0.0f;
+            vulkan_renderer->current_y = 0.0f;
+            movement_system->prev_x = 0.0f;
+            previous_mouse_offset_x = 0.0f;
+            previous_mouse_offset_y = 0.0f;
         }
-        wasInventoryOpened = vulkanRenderer->isInventoryOpened;
+        was_inventory_opened = vulkan_renderer->is_inventory_opened;
 #else
-        if (vulkanRenderer->Window->isFocused) {
-            vulkanRenderer->Window->CursorLock(
-                g_eEvent.mousePointerPosition.position_X,
-                g_eEvent.mousePointerPosition.position_Y,
-                &g_eEvent.mousePointerPosition.offset_X,
-                &g_eEvent.mousePointerPosition.offset_Y
+        if (vulkan_renderer->window->is_focused) {
+            vulkan_renderer->window->cursor_lock(
+                G_E_EVENT.mouse_pointer_position.position_x,
+                G_E_EVENT.mouse_pointer_position.position_y,
+                &G_E_EVENT.mouse_pointer_position.offset_x,
+                &G_E_EVENT.mouse_pointer_position.offset_y
             );
         }
 #endif
 
-        computeHudScreeenCoordinates();
-        damageSystem->deltaTime = deltaFrameTime;
-        movementSystem->deltaFrameTime = deltaFrameTime;
-        movementSystem->gravity = gravity;
-        collisionSystem->fDelta_Time_ = deltaFrameTime;
-        collisionSystem->gravity = gravity;
-        collisionSystem->isInventoryOpened = vulkanRenderer->isInventoryOpened;
-        collisionSystem->isLeftMouseButtonPressed = isLeftMouseButtonPressed;
-        collisionSystem->isLeftMouseButtonReleased =
-            &g_eEvent.isLeftMouseButtonReleased;
-        enemySytem->deltaFrameTime = deltaFrameTime;
-        enemySytem->soundEngine = soundEngine;
-        projectileSystem->deltaFrameTime = deltaFrameTime;
-        projectileSystem->soundEngine = soundEngine;
-        projectileSystem->isInventoryOpened = vulkanRenderer->isInventoryOpened;
-        physicsSystem->fDelta_Time_ = deltaFrameTime;
-        physicsSystem->fAcceleration_of_Gravity_ += (deltaFrameTime / 20);
-        physicsSystem->gravity = gravity;
-        inventorySystem->isInventoryOpened = vulkanRenderer->isInventoryOpened;
-        inventorySystem->aspectRate = vulkanRenderer->aspectRate;
-        inventorySystem->isLeftMouseButtonReleased =
-            &g_eEvent.isLeftMouseButtonReleased;
-        inventorySystem->isLeftMouseButtonPressed = isLeftMouseButtonPressed;
-        inventorySystem->mouseOffsetX = hud_screen_x;
-        inventorySystem->mouseOffsetY = hud_screen_y;
-        itemSystem->inputStack = &Input_Stack_;
-        itemSystem->isInventoryOpened = vulkanRenderer->isInventoryOpened;
-        itemSystem->isLeftMouseButtonReleased =
-            &g_eEvent.isLeftMouseButtonReleased;
-        itemSystem->isLeftMouseButtonPressed = isLeftMouseButtonPressed;
-        itemSystem->mouseOffsetX = hud_screen_x;
-        itemSystem->mouseOffsetY = hud_screen_y;
-        EnlargeFrameAccumulator(deltaFrameTime);
-        pSystem_Manager->Update();
-        vulkanRenderer->levelGeneratedVertices =
-            procuduralLevelGeneratingSystem->levelGeneratedVertices;
-        vulkanRenderer->levelGeneratedIndices =
-            procuduralLevelGeneratingSystem->levelGeneratedIndices;
-        procuduralLevelGeneratingSystem->levelGeneratedVertices.clear();
-        procuduralLevelGeneratingSystem->levelGeneratedIndices.clear();
-        vulkanRenderer->draggedItemEntity = draggedItemEntity;
-        vulkanRenderer->hud_screen_x = hud_screen_x;
-        vulkanRenderer->hud_screen_y = hud_screen_y;
-        vulkanRenderer->initializeGameLevelVertices();
-        setFrameData();
-        if (!vulkanRenderer->isInventoryOpened) {
-            SetViewMatrix();
-            SetProjectionMatrix();
+        compute_hud_screeen_coordinates();
+        damage_system->delta_time = delta_frame_time;
+        movement_system->delta_frame_time = delta_frame_time;
+        movement_system->gravity = gravity;
+        collision_system->f_delta_time = delta_frame_time;
+        collision_system->gravity = gravity;
+        collision_system->is_inventory_opened =
+            vulkan_renderer->is_inventory_opened;
+        collision_system->is_left_mouse_button_pressed =
+            is_left_mouse_button_pressed;
+        collision_system->is_left_mouse_button_released =
+            &G_E_EVENT.is_left_mouse_button_released;
+        enemy_sytem->delta_frame_time = delta_frame_time;
+        enemy_sytem->sound_engine = sound_engine;
+        projectile_system->delta_frame_time = delta_frame_time;
+        projectile_system->sound_engine = sound_engine;
+        projectile_system->is_inventory_opened =
+            vulkan_renderer->is_inventory_opened;
+        physics_system->f_delta_time = delta_frame_time;
+        physics_system->f_acceleration_of_gravity += (delta_frame_time / 20);
+        physics_system->gravity = gravity;
+        inventory_system->is_inventory_opened =
+            vulkan_renderer->is_inventory_opened;
+        inventory_system->aspect_rate = vulkan_renderer->aspect_rate;
+        inventory_system->is_left_mouse_button_released =
+            &G_E_EVENT.is_left_mouse_button_released;
+        inventory_system->is_left_mouse_button_pressed =
+            is_left_mouse_button_pressed;
+        inventory_system->mouse_offset_x = hud_screen_x;
+        inventory_system->mouse_offset_y = hud_screen_y;
+        item_system->input_stack = &INPUT_STACK;
+        item_system->is_inventory_opened = vulkan_renderer->is_inventory_opened;
+        item_system->is_left_mouse_button_released =
+            &G_E_EVENT.is_left_mouse_button_released;
+        item_system->is_left_mouse_button_pressed =
+            is_left_mouse_button_pressed;
+        item_system->mouse_offset_x = hud_screen_x;
+        item_system->mouse_offset_y = hud_screen_y;
+        enlarge_frame_accumulator(delta_frame_time);
+        p_system_manager->update();
+        vulkan_renderer->level_generated_vertices =
+            procudural_level_generating_system->level_generated_vertices;
+        vulkan_renderer->level_generated_indices =
+            procudural_level_generating_system->level_generated_indices;
+        procudural_level_generating_system->level_generated_vertices.clear();
+        procudural_level_generating_system->level_generated_indices.clear();
+        vulkan_renderer->dragged_item_entity = dragged_item_entity;
+        vulkan_renderer->hud_screen_x = hud_screen_x;
+        vulkan_renderer->hud_screen_y = hud_screen_y;
+        vulkan_renderer->initialize_game_level_vertices();
+        set_frame_data();
+        if (!vulkan_renderer->is_inventory_opened) {
+            set_view_matrix();
+            set_projection_matrix();
         }
-        vulkanRenderer->draw();
-        vulkanRenderer->Window->SwapBuffers();
+        vulkan_renderer->draw();
+        static int probe_frames = 0;
+        if (++probe_frames < 4 || probe_frames % 300 == 0) {
+            std::cout << "[probe] frame " << probe_frames << std::flush;
+        }        vulkan_renderer->window->swap_buffers();
     }
-    delete vulkanRenderer;
+    std::cout << "[probe] loop_exit" << std::endl;
+    delete vulkan_renderer;
 }
 
-void Engine::EnlargeFrameAccumulator(float value) {
-    animationArchetypesNumber = 0;
-    for (uint32_t m = 0; m < world.archetypes.size(); ++m) {
-        Archetype* arch = world.archetypes[m];
-        uint64_t requiredMask = (1ul << ComponentsIndices::MeshComponent)
+void Engine::enlarge_frame_accumulator(float value) {
+    animation_archetypes_number = 0;
+    for (uint32_t m = 0; m < WORLD.archetypes.size(); ++m) {
+        Archetype* arch = WORLD.archetypes[m];
+        uint64_t required_mask = (1ul << ComponentsIndices::MeshComponent)
             | (1ul << ComponentsIndices::AnimationComponent);
 
-        if (matches_required_mask(arch->mask, requiredMask)) {
-            cachedAnimationArchetypes[animationArchetypesNumber] = arch;
-            ++animationArchetypesNumber;
+        if (matches_required_mask(arch->mask, required_mask)) {
+            cached_animation_archetypes[animation_archetypes_number] = arch;
+            ++animation_archetypes_number;
         }
     }
 
-    for (uint32_t n = 0; n < animationArchetypesNumber; ++n) {
-        Archetype* arch = cachedAnimationArchetypes[n];
-        animation* animationView = nullptr;
-        mesh* meshView = nullptr;
+    for (uint32_t n = 0; n < animation_archetypes_number; ++n) {
+        Archetype* arch = cached_animation_archetypes[n];
+        Animation* animation_view = nullptr;
+        Mesh* mesh_view = nullptr;
         if (arch != nullptr) {
             switch (arch->mask) {
-                case enemyComponentMask:
-                    animationView =
+                case ENEMY_COMPONENT_MASK:
+                    animation_view =
                         static_cast<EnemyArchetype*>(arch)->animations;
-                    meshView = static_cast<EnemyArchetype*>(arch)->meshes;
+                    mesh_view = static_cast<EnemyArchetype*>(arch)->meshes;
                     break;
-                case playerComponentMask:
-                    animationView =
+                case PLAYER_COMPONENT_MASK:
+                    animation_view =
                         static_cast<PlayerArchetype*>(arch)->animations;
-                    meshView = static_cast<PlayerArchetype*>(arch)->meshes;
+                    mesh_view = static_cast<PlayerArchetype*>(arch)->meshes;
                     break;
             }
 
             for (unsigned int i = 0;
-                 i < cachedAnimationArchetypes[n]->entityCount;
+                 i < cached_animation_archetypes[n]->entity_count;
                  ++i) {
-                if (&meshView[i] != nullptr && &animationView[i] != nullptr) {
-                    unsigned int mesh_id = meshView[i].handle.id;
-                    if (vulkanRenderer->jointMatricesPerMesh.size() > 0
-                        && vulkanRenderer->jointMatricesPerMesh[mesh_id].size()
+                if (&mesh_view[i] != nullptr && &animation_view[i] != nullptr) {
+                    unsigned int mesh_id = mesh_view[i].handle.id;
+                    if (vulkan_renderer->joint_matrices_per_mesh.size() > 0
+                        && vulkan_renderer->joint_matrices_per_mesh[mesh_id]
+                                .size()
                             > 0) {
-                        animationView[i].frameAccumulator += value;
+                        animation_view[i].frame_accumulator += value;
                     }
                 }
             }
@@ -934,839 +980,846 @@ void Engine::EnlargeFrameAccumulator(float value) {
     }
 }
 
-void Engine::SetViewMatrix() {
-    playerArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        playerRequiredMask,
-        cachedPlayerArchetypes,
-        playerArchetypesNumber
+void Engine::set_view_matrix() {
+    player_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        player_required_mask,
+        cached_player_archetypes,
+        player_archetypes_number
     );
 
-    for (uint32_t n = 0; n < playerArchetypesNumber; ++n) {
-        Archetype* arch = cachedPlayerArchetypes[n];
-        beholder* views =
-            (beholder*)arch->components[ComponentsIndices::ViewComponent];
-        transform* transfroms =
-            (transform*)arch->components[ComponentsIndices::TransformComponent];
+    for (uint32_t n = 0; n < player_archetypes_number; ++n) {
+        Archetype* arch = cached_player_archetypes[n];
+        Beholder* views =
+            (Beholder*)arch->components[ComponentsIndices::ViewComponent];
+        Transform* transfroms =
+            (Transform*)arch->components[ComponentsIndices::TransformComponent];
 
-        for (uint32_t x = 0; x < arch->entityCount; ++x) {
-            beholder* cameraComponent = &views[x];
-            transform* _Player = &transfroms[x];
+        for (uint32_t x = 0; x < arch->entity_count; ++x) {
+            Beholder* camera_component = &views[x];
+            Transform* player_transform = &transfroms[x];
 
-            Matrix<float, 4> viewMatrix_(1.0f);
-            const float kSensitivity = 0.1f;
-            fYaw = g_eEvent.mousePointerPosition.offset_X;
-            fPitch = g_eEvent.mousePointerPosition.offset_Y;
-            fYaw *= kSensitivity;
-            fPitch *= kSensitivity;
+            Matrix<float, 4> view_matrix(1.0f);
+            const float k_sensitivity = 0.1f;
+            f_yaw = G_E_EVENT.mouse_pointer_position.offset_x;
+            f_pitch = G_E_EVENT.mouse_pointer_position.offset_y;
+            f_yaw *= k_sensitivity;
+            f_pitch *= k_sensitivity;
 
-            g_eEvent.mousePointerPosition.pitch = fPitch;
-            g_eEvent.mousePointerPosition.yaw = fYaw;
+            G_E_EVENT.mouse_pointer_position.pitch = f_pitch;
+            G_E_EVENT.mouse_pointer_position.yaw = f_yaw;
 
-            vulkanRenderer->current_X =
-                (float)g_eEvent.mousePointerPosition.offset_X;
-            vulkanRenderer->current_Y =
-                (float)g_eEvent.mousePointerPosition.offset_Y;
+            vulkan_renderer->current_x =
+                (float)G_E_EVENT.mouse_pointer_position.offset_x;
+            vulkan_renderer->current_y =
+                (float)G_E_EVENT.mouse_pointer_position.offset_y;
             float delta_x = 0.0f;
             float delta_y = 0.0f;
-            if (!vulkanRenderer->isInventoryOpened) {
+            if (!vulkan_renderer->is_inventory_opened) {
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-                delta_x = vulkanRenderer->current_X;
-                delta_y = vulkanRenderer->current_Y;
+                delta_x = vulkan_renderer->current_x;
+                delta_y = vulkan_renderer->current_y;
 #else
-                delta_x = vulkanRenderer->current_X - vulkanRenderer->prev_X;
-                delta_y = vulkanRenderer->current_Y - vulkanRenderer->prev_Y;
+                delta_x = vulkan_renderer->current_x - vulkan_renderer->prev_x;
+                delta_y = vulkan_renderer->current_y - vulkan_renderer->prev_y;
                 delta_y *= -1.0f;
 #endif
             }
 
-            const Vector<float, 3> rightVec = Cross(
-                cameraComponent->forward,
+            const Vector<float, 3> right_vec = cross(
+                camera_component->forward,
                 Vector<float, 3>(0.0f, -1.0f, 0.0)
             );
-            const Vector<float, 3> newUpVec =
-                Cross(rightVec, cameraComponent->forward);
+            const Vector<float, 3> new_up_vec =
+                cross(right_vec, camera_component->forward);
             // 1. The mouse direction determines the "intended direction of
             // rotation" for the object.
             // 2. The camera is "looking forward."
             // 3. To make the object "rotate as if the mouse is pushing it," you
             // need to rotate it around an axis that is perpendicular to both
             // the view direction and the mouse movement.
-            const Vector<float, 3> rotateAxis = Normalize(Cross(
-                cameraComponent->forward,
-                rightVec * delta_x + newUpVec * delta_y
+            const Vector<float, 3> rotate_axis = normalize(cross(
+                camera_component->forward,
+                right_vec * delta_x + new_up_vec * delta_y
             ));
 
-            if (VecLength(rotateAxis) >= 0.001f) {
+            if (vec_length(rotate_axis) >= 0.001f) {
                 // A vector in the screen's tangent plane: it indicates the
                 // direction in which the mouse moved, but expressed in world
                 // (or 3D) space.
-                float rotationAngle =
+                float rotation_angle =
                     sqrt(delta_y * delta_y + delta_x * delta_x);
-                constexpr float angleScale = 0.05f;
-                rotationAngle = Radians(rotationAngle * angleScale);
+                constexpr float ANGLE_SCALE = 0.05f;
+                rotation_angle = radians(rotation_angle * ANGLE_SCALE);
                 // Quaternions need devision by 2.
-                constexpr float quatAngleCorrection = 0.5f;
-                [[maybe_unused]] const float sinRotationAngle =
-                    sinf(rotationAngle * quatAngleCorrection);
-                point appliedRotationPoint =
-                    exp(rotationAngle,
-                        rline {
-                            .rx = -rotateAxis.m_vector[0],
-                            .ry = -rotateAxis.m_vector[1],
-                            .rz = -rotateAxis.m_vector[2]
+                constexpr float QUAT_ANGLE_CORRECTION = 0.5f;
+                [[maybe_unused]] const float sin_rotation_angle =
+                    sinf(rotation_angle * QUAT_ANGLE_CORRECTION);
+                Point applied_rotation_point =
+                    exp(rotation_angle,
+                        Rline {
+                            .rx = -rotate_axis.m_vector[0],
+                            .ry = -rotate_axis.m_vector[1],
+                            .rz = -rotate_axis.m_vector[2]
                         })
-                    >> point {
-                        .x = cameraComponent->forward[0],
-                        .y = cameraComponent->forward[1],
-                        .z = cameraComponent->forward[2],
+                    >> Point {
+                        .x = camera_component->forward[0],
+                        .y = camera_component->forward[1],
+                        .z = camera_component->forward[2],
                         .w = 1.0f
                     };
-                vulkanRenderer->forward[0] = appliedRotationPoint.x;
-                vulkanRenderer->forward[1] = appliedRotationPoint.y;
-                vulkanRenderer->forward[2] = appliedRotationPoint.z;
+                vulkan_renderer->forward[0] = applied_rotation_point.x;
+                vulkan_renderer->forward[1] = applied_rotation_point.y;
+                vulkan_renderer->forward[2] = applied_rotation_point.z;
             }
-            cameraComponent->forward = Normalize(vulkanRenderer->forward);
+            camera_component->forward = normalize(vulkan_renderer->forward);
             // Pitch limit by ANGLE, not pixels: independent of screen
             // resolution and mouse sensitivity. Keeps the camera off the
             // vertical pole, where the view basis Cross(forward, up)
             // degenerates and the world starts rolling.
-            constexpr float maxPitchSin = 0.9999996f; // sin(89.95°).
-            if (cameraComponent->forward[1] > maxPitchSin) {
-                cameraComponent->forward[1] = maxPitchSin;
-            } else if (cameraComponent->forward[1] < -maxPitchSin) {
-                cameraComponent->forward[1] = -maxPitchSin;
+            constexpr float MAX_PITCH_SIN = 0.9999996f; // sin(89.95°).
+            if (camera_component->forward[1] > MAX_PITCH_SIN) {
+                camera_component->forward[1] = MAX_PITCH_SIN;
+            } else if (camera_component->forward[1] < -MAX_PITCH_SIN) {
+                camera_component->forward[1] = -MAX_PITCH_SIN;
             }
-            cameraComponent->forward = Normalize(cameraComponent->forward);
-            _Player->forward = cameraComponent->forward;
-            Matrix<float, 4> view = LookAtMain(
-                cameraComponent->Position + _Player->position,
-                cameraComponent->Position + _Player->position
-                    + cameraComponent->forward,
+            camera_component->forward = normalize(camera_component->forward);
+            player_transform->forward = camera_component->forward;
+            Matrix<float, 4> view = look_at_main(
+                camera_component->position + player_transform->position,
+                camera_component->position + player_transform->position
+                    + camera_component->forward,
                 Vector<float, 3>(0.0f, -1.0f, 0.0)
             );
             for (unsigned int i = 0; i < 4; ++i) {
                 for (unsigned int j = 0; j < 4; ++j) {
-                    viewMatrix_[i][j] = view[i][j];
+                    view_matrix[i][j] = view[i][j];
                 }
             }
 
-            vulkanRenderer->viewMatrix = viewMatrix_;
+            vulkan_renderer->view_matrix = view_matrix;
 
-            vulkanRenderer->prev_Y =
-                (float)g_eEvent.mousePointerPosition.offset_Y;
-            vulkanRenderer->prev_X =
-                (float)g_eEvent.mousePointerPosition.offset_X;
+            vulkan_renderer->prev_y =
+                (float)G_E_EVENT.mouse_pointer_position.offset_y;
+            vulkan_renderer->prev_x =
+                (float)G_E_EVENT.mouse_pointer_position.offset_x;
         }
     }
 }
 
-void Engine::SetProjectionMatrix() {
-    Matrix<float, 4> tProjection_Matrix =
-        Perspective(Radians(90.0f), vulkanRenderer->aspectRate, 0.1f, 100.0f);
-    vulkanRenderer->projectionMatrix = tProjection_Matrix;
-    vulkanRenderer->projectionMatrix[1][1] *= 1.0f;
+void Engine::set_projection_matrix() {
+    Matrix<float, 4> t_projection_matrix =
+        perspective(radians(90.0f), vulkan_renderer->aspect_rate, 0.1f, 100.0f);
+    vulkan_renderer->projection_matrix = t_projection_matrix;
+    vulkan_renderer->projection_matrix[1][1] *= 1.0f;
 }
 
-[[nodiscard]] std::vector<Matrix<float, 4>> Engine::updateAnimationFrames(
-    [[maybe_unused]] animation* animationComponent,
-    [[maybe_unused]] unsigned int meshID
+[[nodiscard]] std::vector<Matrix<float, 4>> Engine::update_animation_frames(
+    [[maybe_unused]] Animation* animation_component,
+    [[maybe_unused]] unsigned int mesh_id
 ) {
-    if (vulkanRenderer->jointMatricesPerMesh.size() > 0
-        && vulkanRenderer->jointMatricesPerMesh[meshID].size() > 0
-        && animationComponent->frameAccumulator
-            >= vulkanRenderer
-                    ->frames[meshID][animationComponent->currentAnimationFrame]
+    if (vulkan_renderer->joint_matrices_per_mesh.size() > 0
+        && vulkan_renderer->joint_matrices_per_mesh[mesh_id].size() > 0
+        && animation_component->frame_accumulator
+            >= vulkan_renderer->frames[mesh_id][animation_component
+                                                    ->current_animation_frame]
                 * 1.0f) {
-        ++animationComponent->currentAnimationFrame;
-        if (vulkanRenderer->jointMatricesPerMesh[meshID].size() > 0
-            && animationComponent->currentAnimationFrame
-                == vulkanRenderer->frames[meshID].size()) {
-            animationComponent->currentAnimationFrame = 0;
-            animationComponent->frameAccumulator = 0.0f;
+        ++animation_component->current_animation_frame;
+        if (vulkan_renderer->joint_matrices_per_mesh[mesh_id].size() > 0
+            && animation_component->current_animation_frame
+                == vulkan_renderer->frames[mesh_id].size()) {
+            animation_component->current_animation_frame = 0;
+            animation_component->frame_accumulator = 0.0f;
         }
     }
 
-    unsigned int joinMatricesDataSize {};
-    if (vulkanRenderer->jointMatricesPerMesh.size() > 0) {
-        joinMatricesDataSize =
-            vulkanRenderer->jointMatricesPerMesh[meshID].size();
+    unsigned int join_matrices_data_size {};
+    if (vulkan_renderer->joint_matrices_per_mesh.size() > 0) {
+        join_matrices_data_size =
+            vulkan_renderer->joint_matrices_per_mesh[mesh_id].size();
     }
 
-    std::vector<Matrix<float, 4>> jointMatrices;
-    if (joinMatricesDataSize == 0) {
-        jointMatrices.resize(MAX_JOINTS_NUMBER);
+    std::vector<Matrix<float, 4>> joint_matrices;
+    if (join_matrices_data_size == 0) {
+        joint_matrices.resize(MAX_JOINTS_NUMBER);
         for (unsigned int i = 0; i < MAX_JOINTS_NUMBER; ++i) {
-            Matrix<float, 4> unitMatrix(1.0f);
-            jointMatrices[i] = unitMatrix;
+            Matrix<float, 4> unit_matrix(1.0f);
+            joint_matrices[i] = unit_matrix;
         }
 
     } else {
-        jointMatrices.resize(MAX_JOINTS_NUMBER);
-        for (unsigned int i = 0; i < joinMatricesDataSize; ++i) {
-            if (meshID >= vulkanRenderer->jointMatricesPerMesh.size()) {
+        joint_matrices.resize(MAX_JOINTS_NUMBER);
+        for (unsigned int i = 0; i < join_matrices_data_size; ++i) {
+            if (mesh_id >= vulkan_renderer->joint_matrices_per_mesh.size()) {
                 std::cout << "OUTER ARRAY OVERFLOW" << std::endl;
                 throw("sdfsdf");
-            } else if (i >= vulkanRenderer->jointMatricesPerMesh[meshID].size()) {
+            } else if (
+                i >= vulkan_renderer->joint_matrices_per_mesh[mesh_id].size()
+            ) {
                 std::cout << "MIDDLE ARRAY OVERFLOW" << std::endl;
                 throw("sdfsdf");
             } else if (
-                animationComponent->currentAnimationFrame
-                >= vulkanRenderer->jointMatricesPerMesh[meshID][i].size()
+                animation_component->current_animation_frame
+                >= vulkan_renderer->joint_matrices_per_mesh[mesh_id][i].size()
             ) {
                 std::cout << "frame: "
-                          << animationComponent->currentAnimationFrame
+                          << animation_component->current_animation_frame
                           << std::endl;
-                std::cout
-                    << "array size: "
-                    << vulkanRenderer->jointMatricesPerMesh[meshID][i].size()
-                    << std::endl;
+                std::cout << "array size: "
+                          << vulkan_renderer
+                                 ->joint_matrices_per_mesh[mesh_id][i]
+                                 .size()
+                          << std::endl;
                 std::cout << "frames number: "
-                          << vulkanRenderer->frames[meshID].size() << std::endl;
+                          << vulkan_renderer->frames[mesh_id].size()
+                          << std::endl;
                 std::cout << "INNER ARRAY OVERFLOW" << std::endl;
                 throw("sdfsdf");
             }
 
-            jointMatrices[i] =
-                vulkanRenderer->jointMatricesPerMesh
-                    [meshID][i][animationComponent->currentAnimationFrame];
+            joint_matrices[i] =
+                vulkan_renderer->joint_matrices_per_mesh
+                    [mesh_id][i][animation_component->current_animation_frame];
         }
 
-        for (uint32_t j = joinMatricesDataSize; j < MAX_JOINTS_NUMBER; ++j) {
-            Matrix<float, 4> unitMatrix(1.0f);
-            jointMatrices[j] = unitMatrix;
+        for (uint32_t j = join_matrices_data_size; j < MAX_JOINTS_NUMBER; ++j) {
+            Matrix<float, 4> unit_matrix(1.0f);
+            joint_matrices[j] = unit_matrix;
         }
     }
 
-    return jointMatrices;
+    return joint_matrices;
 }
 
-Matrix<float, 4> Engine::updateDirectionalLightSpaceMatrixShadowMapUBO(
-    directionalLight* directionalLightComponent
+Matrix<float, 4> Engine::update_directional_light_space_matrix_shadow_map_ubo(
+    DirectionalLightComponent* light
 ) {
-    float nearPlaneFlatShadowMap = 5.5f;
-    float farPlaneFlatShadowMap = 100.0f;
-    Matrix<float, 4> directionalProjectionMatrixLight = ortho(
+    float near_plane_flat_shadow_map = 5.5f;
+    float far_plane_flat_shadow_map = 100.0f;
+    Matrix<float, 4> directional_projection_matrix_light = ortho(
         -50.0f,
         50.0f,
         -50.0f,
         50.0f,
-        nearPlaneFlatShadowMap,
-        farPlaneFlatShadowMap
+        near_plane_flat_shadow_map,
+        far_plane_flat_shadow_map
     );
 
-    Vector<float, 3> positionVectorLight = directionalLightComponent->position;
-    Vector<float, 3> directionVectorLight =
-        directionalLightComponent->direction;
+    Vector<float, 3> position_vector_light = light->position;
+    Vector<float, 3> direction_vector_light = light->direction;
 
-    Matrix<float, 4> viewMatrixLight = LookAtMain(
-        positionVectorLight,
-        directionVectorLight,
+    Matrix<float, 4> view_matrix_light = look_at_main(
+        position_vector_light,
+        direction_vector_light,
         {0.0f, -1.0f, 0.0f}
     );
-    return viewMatrixLight * directionalProjectionMatrixLight;
+    return view_matrix_light * directional_projection_matrix_light;
 }
 
-Matrix<float, 4> Engine::updateSpotLightSpaceMatrixShadowMapUBO(
-    spotLight* spotLightComponent
+Matrix<float, 4> Engine::update_spot_light_space_matrix_shadow_map_ubo(
+    SpotLightComponent* light
 ) {
-    float nearPlaneFlatShadowMap = 0.5f;
-    float farPlaneFlatShadowMap = 100.0f;
-    Matrix<float, 4> spotProjectionMatrixLight = Perspective(
-        Radians(90.0f),
+    float near_plane_flat_shadow_map = 0.5f;
+    float far_plane_flat_shadow_map = 100.0f;
+    Matrix<float, 4> spot_projection_matrix_light = perspective(
+        radians(90.0f),
         (float)SHADOW_MAP_SIZE / (float)SHADOW_MAP_SIZE,
-        nearPlaneFlatShadowMap,
-        farPlaneFlatShadowMap
+        near_plane_flat_shadow_map,
+        far_plane_flat_shadow_map
     );
 
-    Vector<float, 3> positionVectorLight = spotLightComponent->position;
-    Vector<float, 3> directionVectorLight = spotLightComponent->direction;
-    Matrix<float, 4> viewMatrixLight = LookAtMain(
-        positionVectorLight,
-        directionVectorLight,
+    Vector<float, 3> position_vector_light = light->position;
+    Vector<float, 3> direction_vector_light = light->direction;
+    Matrix<float, 4> view_matrix_light = look_at_main(
+        position_vector_light,
+        direction_vector_light,
         {0.0f, -1.0f, 0.0f}
     );
-    return viewMatrixLight * spotProjectionMatrixLight;
+    return view_matrix_light * spot_projection_matrix_light;
 }
 
-Matrix<float, 4> Engine::updatePointLightSpaceMatrixShadowMapUBO(
-    pointLight* pointLightComponent,
+Matrix<float, 4> Engine::update_point_light_space_matrix_shadow_map_ubo(
+    PointLightComponent* light,
     uint32_t layer
 ) {
-    Vector<float, 3> positionVectorLight = pointLightComponent->position;
-    Vector<float, 3> directionalVectorLight =
+    Vector<float, 3> position_vector_light = light->position;
+    Vector<float, 3> directional_vector_light =
         Vector<float, 3>(0.0f, 0.0f, 0.0f);
-    Vector<float, 3> upVector = {0.0, 0.0, 0.0};
+    Vector<float, 3> up_vector = {0.0, 0.0, 0.0};
 
     switch (layer) {
         case 0:
             // Positive X.
-            directionalVectorLight =
-                positionVectorLight + Vector<float, 3>(1.0f, 0.0f, 0.0f);
-            upVector = Vector<float, 3>(0.0f, -1.0f, 0.0f);
+            directional_vector_light =
+                position_vector_light + Vector<float, 3>(1.0f, 0.0f, 0.0f);
+            up_vector = Vector<float, 3>(0.0f, -1.0f, 0.0f);
             break;
         case 1:
             // Negative X.
-            directionalVectorLight =
-                positionVectorLight + Vector<float, 3>(-1.0f, 0.0f, 0.0f);
-            upVector = Vector<float, 3>(0.0f, -1.0f, 0.0f);
+            directional_vector_light =
+                position_vector_light + Vector<float, 3>(-1.0f, 0.0f, 0.0f);
+            up_vector = Vector<float, 3>(0.0f, -1.0f, 0.0f);
             break;
         case 2:
             // Positive Y.
-            directionalVectorLight =
-                positionVectorLight + Vector<float, 3>(0.0f, 1.0f, 0.0f);
-            upVector = Vector<float, 3>(0.0f, 0.0f, 1.0f);
+            directional_vector_light =
+                position_vector_light + Vector<float, 3>(0.0f, 1.0f, 0.0f);
+            up_vector = Vector<float, 3>(0.0f, 0.0f, 1.0f);
             break;
         case 3:
             // Negative Y.
-            directionalVectorLight =
-                positionVectorLight + Vector<float, 3>(0.0f, -1.0f, 0.0f);
-            upVector = Vector<float, 3>(0.0f, 0.0f, -1.0f);
+            directional_vector_light =
+                position_vector_light + Vector<float, 3>(0.0f, -1.0f, 0.0f);
+            up_vector = Vector<float, 3>(0.0f, 0.0f, -1.0f);
             break;
         case 4:
             // Positive Z.
-            directionalVectorLight =
-                positionVectorLight + Vector<float, 3>(0.0f, 0.0f, 1.0f);
-            upVector = Vector<float, 3>(0.0f, -1.0f, 0.0f);
+            directional_vector_light =
+                position_vector_light + Vector<float, 3>(0.0f, 0.0f, 1.0f);
+            up_vector = Vector<float, 3>(0.0f, -1.0f, 0.0f);
             break;
             // Negative Z.
         case 5:
-            directionalVectorLight =
-                positionVectorLight + Vector<float, 3>(0.0f, 0.0f, -1.0f);
-            upVector = Vector<float, 3>(0.0f, -1.0f, 0.0f);
+            directional_vector_light =
+                position_vector_light + Vector<float, 3>(0.0f, 0.0f, -1.0f);
+            up_vector = Vector<float, 3>(0.0f, -1.0f, 0.0f);
             break;
         default:
             break;
     }
 
-    Matrix<float, 4> projectionMatrixCubeShadowMap = Perspective(
-        Radians(90.0f),
+    Matrix<float, 4> projection_matrix_cube_shadow_map = perspective(
+        radians(90.0f),
         (float)SHADOW_MAP_SIZE / (float)SHADOW_MAP_SIZE,
         0.3f,
         100.0f
     );
 
-    Matrix<float, 4> viewMatrixLight =
-        LookAtMain(positionVectorLight, directionalVectorLight, upVector);
+    Matrix<float, 4> view_matrix_light =
+        look_at_main(position_vector_light, directional_vector_light, up_vector);
 
-    return viewMatrixLight * projectionMatrixCubeShadowMap;
+    return view_matrix_light * projection_matrix_cube_shadow_map;
 }
 
-[[nodiscard]] SlotData Engine::updateDataUBO_UI(
-    const unsigned int currentInventoryRow,
-    const unsigned int currentInventoryColumn,
-    inventory* inventoryComponent,
-    transform* slotTransfromComponent,
-    mesh* meshComponent
+[[nodiscard]] SlotData Engine::update_data_ubo_ui(
+    const unsigned int current_inventory_row,
+    const unsigned int current_inventory_column,
+    Inventory* inventory_component,
+    Transform* slot_transfrom_component,
+    Mesh* mesh_component
 ) {
-    SlotData hudUBO {};
+    SlotData hud_ubo {};
     Matrix<float, 4> model(1.0);
-    const float fullSlotScale = meshComponent->gltf
-        ? inventoryComponent->slotScale * 2.0f
-        : inventoryComponent->slotScale;
-    const float x = slotTransfromComponent->position[0]
-        + currentInventoryColumn * fullSlotScale;
-    const float y_scaleMultilayer = vulkanRenderer->aspectRate * fullSlotScale;
-    const float y = slotTransfromComponent->position[1]
-        + currentInventoryRow * y_scaleMultilayer;
-    const float inventorySlotScale = inventoryComponent->slotScale;
-    model[0][0] = inventorySlotScale;
-    model[1][1] = inventorySlotScale;
-    model[2][2] = inventorySlotScale;
+    const float full_slot_scale = mesh_component->gltf
+        ? inventory_component->slot_scale * 2.0f
+        : inventory_component->slot_scale;
+    const float x = slot_transfrom_component->position[0]
+        + current_inventory_column * full_slot_scale;
+    const float y_scale_multilayer =
+        vulkan_renderer->aspect_rate * full_slot_scale;
+    const float y = slot_transfrom_component->position[1]
+        + current_inventory_row * y_scale_multilayer;
+    const float inventory_slot_scale = inventory_component->slot_scale;
+    model[0][0] = inventory_slot_scale;
+    model[1][1] = inventory_slot_scale;
+    model[2][2] = inventory_slot_scale;
     model[3][0] = x;
     model[3][1] = y;
     model[3][2] = 0.1f;
 
-    hudUBO.model = model;
+    hud_ubo.model = model;
 
-    bool highLightedSlot = false;
-    for (unsigned int i = 0; i < inventoryComponent->highlightedSlots.size();
+    bool high_lighted_slot = false;
+    for (unsigned int i = 0; i < inventory_component->highlighted_slots.size();
          ++i) {
-        if (inventoryComponent->highlightedSlots[i]
-            == currentInventoryRow * inventoryComponent->col
-                + currentInventoryColumn) {
-            highLightedSlot = true;
+        if (inventory_component->highlighted_slots[i]
+            == current_inventory_row * inventory_component->col
+                + current_inventory_column) {
+            high_lighted_slot = true;
             break;
         } else {
             continue;
         }
     }
 
-    if (inventoryComponent->highlightedSlots.size() > 0) {
-        if (highLightedSlot) {
-            if (inventoryComponent->isAvailableHighlightedSlots) {
-                hudUBO.color = {0.0, 0.3, 0.0};
+    if (inventory_component->highlighted_slots.size() > 0) {
+        if (high_lighted_slot) {
+            if (inventory_component->is_available_highlighted_slots) {
+                hud_ubo.color = {0.0, 0.3, 0.0};
             } else {
-                hudUBO.color = {0.3, 0.0, 0.0};
+                hud_ubo.color = {0.3, 0.0, 0.0};
             }
         }
     } else {
-        hudUBO.color = {0.0, 0.0, 0.0};
+        hud_ubo.color = {0.0, 0.0, 0.0};
     }
 
-    return hudUBO;
+    return hud_ubo;
 }
 
-Matrix<float, 4> Engine::updateDataUBO_IconsUI(
-    transform* itemTransfromComponent,
-    [[maybe_unused]] collider* itemColliderComponent,
-    item* itemComponent,
-    const unsigned int rowInventory,
-    const unsigned int columnInventory,
-    transform* inventoryTransformComponent,
-    mesh* itemMesh,
-    int itemEntity
+Matrix<float, 4> Engine::update_data_ubo_icons_ui(
+    Transform* item_transfrom_component,
+    [[maybe_unused]] Collider* item_collider_component,
+    Item* item_component,
+    const unsigned int row_inventory,
+    const unsigned int column_inventory,
+    Transform* inventory_transform_component,
+    Mesh* item_mesh,
+    int item_entity
 ) {
     float x_result_offset = 0.0f;
     float y_result_offset = 0.0f;
-    if (itemComponent->occupiedSlots.size() == 0) {
+    if (item_component->occupied_slots.size() == 0) {
     } else {
-        const unsigned int inventorySlotEntity_0 =
-            itemComponent->occupiedSlots[0];
-        const unsigned int inventorySlotEntity_3 =
-            itemComponent->occupiedSlots.back();
-        const unsigned int rowIndexFirstSlot =
-            inventorySlotEntity_0 / rowInventory;
-        const unsigned int colIndexFirstSlot =
-            inventorySlotEntity_0 % columnInventory;
-        const unsigned int rowIndexSecondSlot =
-            inventorySlotEntity_3 / rowInventory;
-        const unsigned int colIndexSecondSlot =
-            inventorySlotEntity_3 % columnInventory;
+        const unsigned int inventory_slot_entity_0 =
+            item_component->occupied_slots[0];
+        const unsigned int inventory_slot_entity_3 =
+            item_component->occupied_slots.back();
+        const unsigned int row_index_first_slot =
+            inventory_slot_entity_0 / row_inventory;
+        const unsigned int col_index_first_slot =
+            inventory_slot_entity_0 % column_inventory;
+        const unsigned int row_index_second_slot =
+            inventory_slot_entity_3 / row_inventory;
+        const unsigned int col_index_second_slot =
+            inventory_slot_entity_3 % column_inventory;
 
-        const float itemScale = itemTransfromComponent->scale;
-        const float fullSlotScale =
-            itemMesh->gltf ? itemScale * 2.0f : itemScale;
+        const float item_scale = item_transfrom_component->scale;
+        const float full_slot_scale =
+            item_mesh->gltf ? item_scale * 2.0f : item_scale;
         // Eather division by 2.0f using multiply on 0.5f.
-        constexpr float centreMultiplayer = 0.5f;
-        x_result_offset = inventoryTransformComponent->position[0]
-            + (colIndexFirstSlot * fullSlotScale
-               + colIndexSecondSlot * fullSlotScale)
-                * centreMultiplayer;
-        y_result_offset = inventoryTransformComponent->position[1]
-            + (rowIndexFirstSlot * fullSlotScale
-               + rowIndexSecondSlot * fullSlotScale)
-                * centreMultiplayer * vulkanRenderer->aspectRate;
+        constexpr float CENTRE_MULTIPLAYER = 0.5f;
+        x_result_offset = inventory_transform_component->position[0]
+            + (col_index_first_slot * full_slot_scale
+               + col_index_second_slot * full_slot_scale)
+                * CENTRE_MULTIPLAYER;
+        y_result_offset = inventory_transform_component->position[1]
+            + (row_index_first_slot * full_slot_scale
+               + row_index_second_slot * full_slot_scale)
+                * CENTRE_MULTIPLAYER * vulkan_renderer->aspect_rate;
     }
-    float itemScale = itemTransfromComponent->scale;
+    float item_scale = item_transfrom_component->scale;
 
-    if (draggedItemEntity != itemEntity) {
-        itemTransfromComponent->position =
+    if (dragged_item_entity != item_entity) {
+        item_transfrom_component->position =
             Vector<float, 3>(x_result_offset, y_result_offset, 0.1f);
     } else {
-        itemScale *= 1.1f;
-        itemTransfromComponent->position[2] = 0.0f;
+        item_scale *= 1.1f;
+        item_transfrom_component->position[2] = 0.0f;
     }
     Matrix<float, 4> model(1.0);
-    model[0][0] = itemScale * itemComponent->itemSlotType.width;
-    model[1][1] = itemScale * itemComponent->itemSlotType.height;
+    model[0][0] = item_scale * item_component->item_slot_type.width;
+    model[1][1] = item_scale * item_component->item_slot_type.height;
     model[2][2] = 0.0f;
-    model[3][0] = itemTransfromComponent->position[0];
-    model[3][1] = itemTransfromComponent->position[1];
-    model[3][2] = itemTransfromComponent->position[2];
+    model[3][0] = item_transfrom_component->position[0];
+    model[3][1] = item_transfrom_component->position[1];
+    model[3][2] = item_transfrom_component->position[2];
 
     return model;
 }
 
-Matrix<float, 4> Engine::updateDataHudScreenUBO(transform* cursorTransform) {
+Matrix<float, 4> Engine::update_data_hud_screen_ubo(
+    Transform* cursor_transform
+) {
     Matrix<float, 4> model;
-    Vector<float, 3> defaultPosition = Vector<float, 3>(0.0, 0.0, 0.0);
+    Vector<float, 3> default_position = Vector<float, 3>(0.0, 0.0, 0.0);
 
-    float hudScreenX = hud_screen_x;
+    float hud_screen_x = hud_screen_x;
 #ifndef VK_USE_PLATFORM_WAYLAND_KHR
-    hudScreenX = -hud_screen_x;
+    hud_screen_x = -hud_screen_x;
 #endif
 
-    cursorTransform->position[0] = hudScreenX;
-    cursorTransform->position[1] = -hud_screen_y;
+    cursor_transform->position[0] = hud_screen_x;
+    cursor_transform->position[1] = -hud_screen_y;
 
-    if (!vulkanRenderer->isInventoryOpened
-        && !vulkanRenderer->isCursorReleased) {
-        model[3][0] = defaultPosition[0];
-        model[3][1] = defaultPosition[1];
-        model[3][2] = defaultPosition[2];
-        model[0][0] = cursorTransform->scale;
-        model[1][1] = cursorTransform->scale;
-        model[2][2] = cursorTransform->scale;
+    if (!vulkan_renderer->is_inventory_opened
+        && !vulkan_renderer->is_cursor_released) {
+        model[3][0] = default_position[0];
+        model[3][1] = default_position[1];
+        model[3][2] = default_position[2];
+        model[0][0] = cursor_transform->scale;
+        model[1][1] = cursor_transform->scale;
+        model[2][2] = cursor_transform->scale;
         model[3][3] = 1.0f;
     } else {
-        defaultPosition[0] = hudScreenX;
-        defaultPosition[1] = -hud_screen_y;
+        default_position[0] = hud_screen_x;
+        default_position[1] = -hud_screen_y;
 
-        model[3][0] = defaultPosition[0];
-        model[3][1] = defaultPosition[1];
-        model[3][2] = defaultPosition[2];
-        model[0][0] = cursorTransform->scale;
-        model[1][1] = cursorTransform->scale;
-        model[2][2] = cursorTransform->scale;
+        model[3][0] = default_position[0];
+        model[3][1] = default_position[1];
+        model[3][2] = default_position[2];
+        model[0][0] = cursor_transform->scale;
+        model[1][1] = cursor_transform->scale;
+        model[2][2] = cursor_transform->scale;
         model[3][3] = 1.0f;
     }
 
     return model;
 }
 
-void Engine::setFrameData() {
-    vulkanRenderer->directionalLights.clear();
-    directionalLightArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        directionalLightRequiredMask,
-        cachedDirectionalLigthArchetypes,
-        directionalLightArchetypesNumber
+void Engine::set_frame_data() {
+    vulkan_renderer->directional_lights.clear();
+    directional_light_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        directional_light_required_mask,
+        cached_directional_ligth_archetypes,
+        directional_light_archetypes_number
     );
 
-    uint32_t directionalLightCounter = 0;
-    for (uint32_t x = 0; x < directionalLightArchetypesNumber; ++x) {
-        Archetype* arch = cachedDirectionalLigthArchetypes[x];
-        directionalLight* directionalLights =
-            (directionalLight*)
+    uint32_t directional_light_counter = 0;
+    for (uint32_t x = 0; x < directional_light_archetypes_number; ++x) {
+        Archetype* arch = cached_directional_ligth_archetypes[x];
+        DirectionalLightComponent* directional_lights =
+            (DirectionalLightComponent*)
                 arch->components[ComponentsIndices::DirectionalLightComponent];
 
-        for (uint32_t x1 = 0; x1 < arch->entityCount; ++x1) {
-            if (directionalLights) {
-                vulkanRenderer->directionalLights.push_back({});
-                directionalLight* directionalLightComponent =
-                    &directionalLights[x1];
-                vulkanRenderer->directionalLights[directionalLightCounter]
-                    .DirectionalLightSpaceMatrix =
-                    updateDirectionalLightSpaceMatrixShadowMapUBO(
-                        directionalLightComponent
-                    );
-                vulkanRenderer->directionalLights[directionalLightCounter]
+        for (uint32_t x1 = 0; x1 < arch->entity_count; ++x1) {
+            if (directional_lights) {
+                vulkan_renderer->directional_lights.push_back({});
+                DirectionalLightComponent* light = &directional_lights[x1];
+                vulkan_renderer->directional_lights[directional_light_counter]
+                    .directional_light_space_matrix =
+                    update_directional_light_space_matrix_shadow_map_ubo(light);
+                vulkan_renderer->directional_lights[directional_light_counter]
                     .position = Vector<float, 4>(
-                    directionalLightComponent->position[0],
-                    directionalLightComponent->position[1],
-                    directionalLightComponent->position[2],
+                    light->position[0],
+                    light->position[1],
+                    light->position[2],
                     0.0
                 );
-                vulkanRenderer->directionalLights[directionalLightCounter]
+                vulkan_renderer->directional_lights[directional_light_counter]
                     .direction = Vector<float, 4>(
-                    directionalLightComponent->direction[0],
-                    directionalLightComponent->direction[1],
-                    directionalLightComponent->direction[2],
+                    light->direction[0],
+                    light->direction[1],
+                    light->direction[2],
                     0.0
                 );
-                vulkanRenderer->directionalLights[directionalLightCounter]
+                vulkan_renderer->directional_lights[directional_light_counter]
                     .ambient = Vector<float, 4>(
-                    directionalLightComponent->ambient[0],
-                    directionalLightComponent->ambient[1],
-                    directionalLightComponent->ambient[2],
+                    light->ambient[0],
+                    light->ambient[1],
+                    light->ambient[2],
                     0.0
                 );
-                vulkanRenderer->directionalLights[directionalLightCounter]
+                vulkan_renderer->directional_lights[directional_light_counter]
                     .diffuse = Vector<float, 4>(
-                    directionalLightComponent->diffuse[0],
-                    directionalLightComponent->diffuse[1],
-                    directionalLightComponent->diffuse[2],
+                    light->diffuse[0],
+                    light->diffuse[1],
+                    light->diffuse[2],
                     0.0
                 );
-                vulkanRenderer->directionalLights[directionalLightCounter]
+                vulkan_renderer->directional_lights[directional_light_counter]
                     .specular = Vector<float, 4>(
-                    directionalLightComponent->specular[0],
-                    directionalLightComponent->specular[1],
-                    directionalLightComponent->specular[2],
+                    light->specular[0],
+                    light->specular[1],
+                    light->specular[2],
                     0.0
                 );
-                ++directionalLightCounter;
+                ++directional_light_counter;
             }
         }
     }
 
-    vulkanRenderer->spotLights.clear();
-    spotLightArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        spotLightRequiredMask,
-        cachedSpotLigthArchetypes,
-        spotLightArchetypesNumber
+    vulkan_renderer->spot_lights.clear();
+    spot_light_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        spot_light_required_mask,
+        cached_spot_ligth_archetypes,
+        spot_light_archetypes_number
     );
 
-    uint32_t spotLightCounter = 0;
-    for (uint32_t x = 0; x < spotLightArchetypesNumber; ++x) {
-        Archetype* arch = cachedSpotLigthArchetypes[x];
-        spotLight* spotLights =
-            (spotLight*)arch->components[ComponentsIndices::SpotLightComponent];
+    uint32_t spot_light_counter = 0;
+    for (uint32_t x = 0; x < spot_light_archetypes_number; ++x) {
+        Archetype* arch = cached_spot_ligth_archetypes[x];
+        SpotLightComponent* spot_lights =
+            (SpotLightComponent*)
+                arch->components[ComponentsIndices::SpotLightComponent];
 
-        for (uint32_t x1 = 0; x1 < arch->entityCount; ++x1) {
-            if (spotLights) {
-                vulkanRenderer->spotLights.push_back({});
-                spotLight* spotLightComponent = &spotLights[x1];
-                vulkanRenderer->spotLights[spotLightCounter]
-                    .SpotLigthSpaceMatrix =
-                    updateSpotLightSpaceMatrixShadowMapUBO(spotLightComponent);
-                vulkanRenderer->spotLights[spotLightCounter].position =
-                    spotLightComponent->position;
-                vulkanRenderer->spotLights[spotLightCounter].direction =
-                    spotLightComponent->direction;
-                vulkanRenderer->spotLights[spotLightCounter].cutOff =
-                    spotLightComponent->cutOff;
-                vulkanRenderer->spotLights[spotLightCounter].outerCutOff =
-                    spotLightComponent->outerCutOff;
-                vulkanRenderer->spotLights[spotLightCounter].ambient =
-                    spotLightComponent->ambient;
-                vulkanRenderer->spotLights[spotLightCounter].diffuse =
-                    spotLightComponent->diffuse;
-                vulkanRenderer->spotLights[spotLightCounter].specular =
-                    spotLightComponent->specular;
-                vulkanRenderer->spotLights[spotLightCounter].constant =
-                    spotLightComponent->constant;
-                vulkanRenderer->spotLights[spotLightCounter].linear =
-                    spotLightComponent->linear;
-                vulkanRenderer->spotLights[spotLightCounter].quadratic =
-                    spotLightComponent->quadratic;
-                ++spotLightCounter;
+        for (uint32_t x1 = 0; x1 < arch->entity_count; ++x1) {
+            if (spot_lights) {
+                vulkan_renderer->spot_lights.push_back({});
+                SpotLightComponent* light = &spot_lights[x1];
+                vulkan_renderer->spot_lights[spot_light_counter]
+                    .spot_ligth_space_matrix =
+                    update_spot_light_space_matrix_shadow_map_ubo(light);
+                vulkan_renderer->spot_lights[spot_light_counter].position =
+                    light->position;
+                vulkan_renderer->spot_lights[spot_light_counter].direction =
+                    light->direction;
+                vulkan_renderer->spot_lights[spot_light_counter].cut_off =
+                    light->cut_off;
+                vulkan_renderer->spot_lights[spot_light_counter].outer_cut_off =
+                    light->outer_cut_off;
+                vulkan_renderer->spot_lights[spot_light_counter].ambient =
+                    light->ambient;
+                vulkan_renderer->spot_lights[spot_light_counter].diffuse =
+                    light->diffuse;
+                vulkan_renderer->spot_lights[spot_light_counter].specular =
+                    light->specular;
+                vulkan_renderer->spot_lights[spot_light_counter].constant =
+                    light->constant;
+                vulkan_renderer->spot_lights[spot_light_counter].linear =
+                    light->linear;
+                vulkan_renderer->spot_lights[spot_light_counter].quadratic =
+                    light->quadratic;
+                ++spot_light_counter;
             }
         }
     }
 
-    vulkanRenderer->pointLights.clear();
-    pointLightArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        pointLightRequiredMask,
-        cachedPointLigthArchetypes,
-        pointLightArchetypesNumber
+    vulkan_renderer->point_lights.clear();
+    point_light_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        point_light_required_mask,
+        cached_point_ligth_archetypes,
+        point_light_archetypes_number
     );
 
-    uint32_t pointLightCounter = 0;
-    for (uint32_t x = 0; x < pointLightArchetypesNumber; ++x) {
-        Archetype* arch = cachedPointLigthArchetypes[x];
-        pointLight* pointLights =
-            (pointLight*)
+    uint32_t point_light_counter = 0;
+    for (uint32_t x = 0; x < point_light_archetypes_number; ++x) {
+        Archetype* arch = cached_point_ligth_archetypes[x];
+        PointLightComponent* point_lights =
+            (PointLightComponent*)
                 arch->components[ComponentsIndices::PointLightComponent];
 
-        for (uint32_t x1 = 0; x1 < arch->entityCount; ++x1) {
-            if (pointLights) {
-                vulkanRenderer->pointLights.push_back({});
-                pointLight* pointLightComponent = &pointLights[x1];
-                uint32_t maxCubeMapLayers = 6;
+        for (uint32_t x1 = 0; x1 < arch->entity_count; ++x1) {
+            if (point_lights) {
+                vulkan_renderer->point_lights.push_back({});
+                PointLightComponent* light = &point_lights[x1];
+                uint32_t max_cube_map_layers = 6;
                 // 6 is a number of cube map layers.
-                for (uint32_t cubeMapLayerCounter = 0;
-                     cubeMapLayerCounter < maxCubeMapLayers;
-                     ++cubeMapLayerCounter) {
-                    vulkanRenderer->pointLights[pointLightCounter]
-                        .pointLightSpaceMatrix[cubeMapLayerCounter] =
-                        updatePointLightSpaceMatrixShadowMapUBO(
-                            pointLightComponent,
-                            cubeMapLayerCounter
+                for (uint32_t cube_map_layer_counter = 0;
+                     cube_map_layer_counter < max_cube_map_layers;
+                     ++cube_map_layer_counter) {
+                    vulkan_renderer->point_lights[point_light_counter]
+                        .point_light_space_matrix[cube_map_layer_counter] =
+                        update_point_light_space_matrix_shadow_map_ubo(
+                            light,
+                            cube_map_layer_counter
                         );
                 }
-                vulkanRenderer->pointLights[pointLightCounter].position =
-                    pointLightComponent->position;
-                vulkanRenderer->pointLights[pointLightCounter].ambient =
-                    pointLightComponent->ambient;
-                vulkanRenderer->pointLights[pointLightCounter].diffuse =
-                    pointLightComponent->diffuse;
-                vulkanRenderer->pointLights[pointLightCounter].specular =
-                    pointLightComponent->specular;
-                vulkanRenderer->pointLights[pointLightCounter].constant =
-                    pointLightComponent->constant;
-                vulkanRenderer->pointLights[pointLightCounter].linear =
-                    pointLightComponent->linear;
-                vulkanRenderer->pointLights[pointLightCounter].quadratic =
-                    pointLightComponent->quadratic;
-                ++pointLightCounter;
+                vulkan_renderer->point_lights[point_light_counter].position =
+                    light->position;
+                vulkan_renderer->point_lights[point_light_counter].ambient =
+                    light->ambient;
+                vulkan_renderer->point_lights[point_light_counter].diffuse =
+                    light->diffuse;
+                vulkan_renderer->point_lights[point_light_counter].specular =
+                    light->specular;
+                vulkan_renderer->point_lights[point_light_counter].constant =
+                    light->constant;
+                vulkan_renderer->point_lights[point_light_counter].linear =
+                    light->linear;
+                vulkan_renderer->point_lights[point_light_counter].quadratic =
+                    light->quadratic;
+                ++point_light_counter;
             }
         }
     }
 
-    vulkanRenderer->healthBars.clear();
-    healthBarsArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        healthBarsRequiredMask,
-        cachedHealthBarsArchetypes,
-        healthBarsArchetypesNumber
+    vulkan_renderer->health_bars.clear();
+    health_bars_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        health_bars_required_mask,
+        cached_health_bars_archetypes,
+        health_bars_archetypes_number
     );
 
-    uint32_t healthBarCounter = 0;
-    for (uint32_t x = 0; x < healthBarsArchetypesNumber; ++x) {
-        Archetype* arch = cachedHealthBarsArchetypes[x];
-        transform* healthBarTransforms =
-            (transform*)arch->components[ComponentsIndices::TransformComponent];
-        mesh* healthBarMeshes =
-            (mesh*)arch->components[ComponentsIndices::MeshComponent];
-        health* healthBars =
-            (health*)arch->components[ComponentsIndices::HealthComponent];
+    uint32_t health_bar_counter = 0;
+    for (uint32_t x = 0; x < health_bars_archetypes_number; ++x) {
+        Archetype* arch = cached_health_bars_archetypes[x];
+        Transform* health_bar_transforms =
+            (Transform*)arch->components[ComponentsIndices::TransformComponent];
+        Mesh* health_bar_meshes =
+            (Mesh*)arch->components[ComponentsIndices::MeshComponent];
+        Health* health_bars =
+            (Health*)arch->components[ComponentsIndices::HealthComponent];
 
-        unsigned int uiVertexId = 0;
-        if (matches_required_mask(arch->mask, playerComponentMask)) {
-            uiVertexId = healthBarMeshes[0].handle.id;
+        unsigned int ui_vertex_id = 0;
+        if (matches_required_mask(arch->mask, PLAYER_COMPONENT_MASK)) {
+            ui_vertex_id = health_bar_meshes[0].handle.id;
         }
 
-        for (unsigned int i = 0; i < arch->entityCount; ++i) {
-            vulkanRenderer->healthBars.push_back({});
-            transform* transformComponent = &healthBarTransforms[i];
-            health* healthComponent = &healthBars[i];
-            vulkanRenderer->healthBars[healthBarCounter].meshID = uiVertexId;
-            vulkanRenderer->healthBars[healthBarCounter].position =
-                transformComponent->position;
-            vulkanRenderer->healthBars[healthBarCounter].maxHealth =
-                healthComponent->maxHealth;
-            vulkanRenderer->healthBars[healthBarCounter].currentHealth =
-                healthComponent->currentHealth;
-            ++healthBarCounter;
+        for (unsigned int i = 0; i < arch->entity_count; ++i) {
+            vulkan_renderer->health_bars.push_back({});
+            Transform* transform_component = &health_bar_transforms[i];
+            Health* health_component = &health_bars[i];
+            vulkan_renderer->health_bars[health_bar_counter].mesh_id =
+                ui_vertex_id;
+            vulkan_renderer->health_bars[health_bar_counter].position =
+                transform_component->position;
+            vulkan_renderer->health_bars[health_bar_counter].max_health =
+                health_component->max_health;
+            vulkan_renderer->health_bars[health_bar_counter].current_health =
+                health_component->current_health;
+            ++health_bar_counter;
         }
     }
 
-    vulkanRenderer->fonts.clear();
-    fontsArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        fontRequiredMask,
-        cachedFontsArchetypes,
-        fontsArchetypesNumber
+    vulkan_renderer->fonts.clear();
+    fonts_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        font_required_mask,
+        cached_fonts_archetypes,
+        fonts_archetypes_number
     );
 
-    uint32_t fontCounter = 0;
-    for (uint32_t x = 0; x < fontsArchetypesNumber; ++x) {
-        Archetype* arch = cachedFontsArchetypes[x];
-        transform* fontTransforms =
-            (transform*)arch->components[ComponentsIndices::TransformComponent];
-        font* fonts = (font*)arch->components[ComponentsIndices::FontComponent];
+    uint32_t font_counter = 0;
+    for (uint32_t x = 0; x < fonts_archetypes_number; ++x) {
+        Archetype* arch = cached_fonts_archetypes[x];
+        Transform* font_transforms =
+            (Transform*)arch->components[ComponentsIndices::TransformComponent];
+        Font* fonts = (Font*)arch->components[ComponentsIndices::FontComponent];
 
-        for (unsigned int i = 0; i < arch->entityCount; ++i) {
-            vulkanRenderer->fonts.push_back({});
-            font* fontComponent = &fonts[i];
-            transform* transformComponent = &fontTransforms[i];
-            vulkanRenderer->fonts[fontCounter].position =
-                transformComponent->position;
-            vulkanRenderer->fonts[fontCounter].font_string =
-                fontComponent->font_string;
-            vulkanRenderer->fonts[fontCounter].lifeTime =
-                fontComponent->lifeTime;
-            ++fontCounter;
+        for (unsigned int i = 0; i < arch->entity_count; ++i) {
+            vulkan_renderer->fonts.push_back({});
+            Font* font_component = &fonts[i];
+            Transform* transform_component = &font_transforms[i];
+            vulkan_renderer->fonts[font_counter].position =
+                transform_component->position;
+            vulkan_renderer->fonts[font_counter].font_string =
+                font_component->font_string;
+            vulkan_renderer->fonts[font_counter].life_time =
+                font_component->life_time;
+            ++font_counter;
         }
     }
 
-    if (vulkanRenderer->isInventoryOpened) {
-        vulkanRenderer->inventories.clear();
-        uint32_t inventoryCounter = 0;
-        inventoryArchetypesNumber = 0;
-        world.searchCacheArchetypes(
-            inventoryRequiredMask,
-            cachedInventoryArchetypes,
-            inventoryArchetypesNumber
+    if (vulkan_renderer->is_inventory_opened) {
+        vulkan_renderer->inventories.clear();
+        uint32_t inventory_counter = 0;
+        inventory_archetypes_number = 0;
+        WORLD.search_cache_archetypes(
+            inventory_required_mask,
+            cached_inventory_archetypes,
+            inventory_archetypes_number
         );
 
-        for (uint32_t x = 0; x < inventoryArchetypesNumber; ++x) {
-            Archetype* arch = cachedInventoryArchetypes[x];
-            transform* inventoryTransforms =
-                (transform*)
+        for (uint32_t x = 0; x < inventory_archetypes_number; ++x) {
+            Archetype* arch = cached_inventory_archetypes[x];
+            Transform* inventory_transforms =
+                (Transform*)
                     arch->components[ComponentsIndices::TransformComponent];
-            inventory* inventoryData =
-                (inventory*)
+            Inventory* inventory_data =
+                (Inventory*)
                     arch->components[ComponentsIndices::InventoryComponent];
-            material* inventoryMaterials =
-                (material*)
+            Material* inventory_materials =
+                (Material*)
                     arch->components[ComponentsIndices::MaterialComponent];
-            mesh* inventoryMeshes =
-                (mesh*)arch->components[ComponentsIndices::MeshComponent];
+            Mesh* inventory_meshes =
+                (Mesh*)arch->components[ComponentsIndices::MeshComponent];
 
-            if (inventoryTransforms && inventoryMaterials && inventoryData
-                && inventoryMeshes) {
-                for (unsigned int i = 0; i < arch->entityCount; ++i) {
-                    vulkanRenderer->inventories.push_back({});
-                    inventory* inventoryComponent = &inventoryData[i];
-                    unsigned int inventoryTextureID =
-                        inventoryMaterials[i].diffuseTextureID_.id;
-                    unsigned int meshID = inventoryComponent->slotMeshID.id;
-                    vulkanRenderer->inventories[inventoryCounter]
-                        .inventoryTextureID = inventoryTextureID;
-                    vulkanRenderer->inventories[inventoryCounter].meshID =
-                        meshID;
-                    vulkanRenderer->inventories[inventoryCounter].row =
-                        inventoryComponent->row;
-                    vulkanRenderer->inventories[inventoryCounter].col =
-                        inventoryComponent->col;
-                    vulkanRenderer->inventories[inventoryCounter]
-                        .slotData.clear();
-                    for (unsigned int j = 0; j < inventoryComponent->row; ++j) {
-                        for (unsigned int m = 0; m < inventoryComponent->col;
+            if (inventory_transforms && inventory_materials && inventory_data
+                && inventory_meshes) {
+                for (unsigned int i = 0; i < arch->entity_count; ++i) {
+                    vulkan_renderer->inventories.push_back({});
+                    Inventory* inventory_component = &inventory_data[i];
+                    unsigned int inventory_texture_id =
+                        inventory_materials[i].diffuse_texture_id.id;
+                    unsigned int mesh_id = inventory_component->slot_mesh_id.id;
+                    vulkan_renderer->inventories[inventory_counter]
+                        .inventory_texture_id = inventory_texture_id;
+                    vulkan_renderer->inventories[inventory_counter].mesh_id =
+                        mesh_id;
+                    vulkan_renderer->inventories[inventory_counter].row =
+                        inventory_component->row;
+                    vulkan_renderer->inventories[inventory_counter].col =
+                        inventory_component->col;
+                    vulkan_renderer->inventories[inventory_counter]
+                        .slot_data.clear();
+                    for (unsigned int j = 0; j < inventory_component->row;
+                         ++j) {
+                        for (unsigned int m = 0; m < inventory_component->col;
                              ++m) {
-                            transform* slotTransformComponent =
-                                &inventoryTransforms[i];
-                            vulkanRenderer->inventories[inventoryCounter]
-                                .slotData.push_back({});
-                            vulkanRenderer->inventories[inventoryCounter]
-                                .slotData[j * inventoryComponent->col + m] =
-                                updateDataUBO_UI(
+                            Transform* slot_transform_component =
+                                &inventory_transforms[i];
+                            vulkan_renderer->inventories[inventory_counter]
+                                .slot_data.push_back({});
+                            vulkan_renderer->inventories[inventory_counter]
+                                .slot_data[j * inventory_component->col + m] =
+                                update_data_ubo_ui(
                                     j,
                                     m,
-                                    inventoryComponent,
-                                    slotTransformComponent,
-                                    &inventoryMeshes[i]
+                                    inventory_component,
+                                    slot_transform_component,
+                                    &inventory_meshes[i]
                                 );
                         }
                     }
-                    ++inventoryCounter;
+                    ++inventory_counter;
                 }
 
-                for (unsigned int i = 0; i < arch->entityCount; ++i) {
-                    inventory* inventoryComponent = &inventoryData[i];
-                    transform* inventoryTransformComponent =
-                        &inventoryTransforms[i];
+                for (unsigned int i = 0; i < arch->entity_count; ++i) {
+                    Inventory* inventory_component = &inventory_data[i];
+                    Transform* inventory_transform_component =
+                        &inventory_transforms[i];
 
-                    vulkanRenderer->items.clear();
-                    uint32_t itemCounter = 0;
-                    itemArchetypesNumber = 0;
-                    world.searchCacheArchetypes(
-                        itemRequiredMask,
-                        cachedItemArchetypes,
-                        itemArchetypesNumber
+                    vulkan_renderer->items.clear();
+                    uint32_t item_counter = 0;
+                    item_archetypes_number = 0;
+                    WORLD.search_cache_archetypes(
+                        item_required_mask,
+                        cached_item_archetypes,
+                        item_archetypes_number
                     );
 
-                    for (uint32_t c = 0; c < itemArchetypesNumber; ++c) {
-                        Archetype* arch = cachedItemArchetypes[c];
-                        transform* itemTransforms =
-                            (transform*)arch->components
+                    for (uint32_t c = 0; c < item_archetypes_number; ++c) {
+                        Archetype* arch = cached_item_archetypes[c];
+                        Transform* item_transforms =
+                            (Transform*)arch->components
                                 [ComponentsIndices::TransformComponent];
-                        item* items =
-                            (item*)arch
+                        Item* items =
+                            (Item*)arch
                                 ->components[ComponentsIndices::ItemComponent];
-                        material* itemMaterials =
-                            (material*)arch->components
+                        Material* item_materials =
+                            (Material*)arch->components
                                 [ComponentsIndices::MaterialComponent];
-                        mesh* itemMeshes =
-                            (mesh*)arch
+                        Mesh* item_meshes =
+                            (Mesh*)arch
                                 ->components[ComponentsIndices::MeshComponent];
-                        collider* itemColliders =
-                            (collider*)arch->components
+                        Collider* item_colliders =
+                            (Collider*)arch->components
                                 [ComponentsIndices::ColliderComponent];
 
-                        if (itemTransforms && itemMaterials && itemMeshes
-                            && itemColliders && items) {
-                            for (unsigned int a = 0; a < arch->entityCount;
+                        if (item_transforms && item_materials && item_meshes
+                            && item_colliders && items) {
+                            for (unsigned int a = 0; a < arch->entity_count;
                                  ++a) {
-                                item* itemComponent = &items[a];
-                                if (!itemComponent->isActor) {
-                                    vulkanRenderer->items.push_back({});
-                                    unsigned int meshID =
-                                        itemMeshes[a].handle.id;
-                                    unsigned int diffuseTextureID =
-                                        itemMaterials[a].diffuseTextureID_.id;
-                                    vulkanRenderer->items[itemCounter].meshID =
-                                        meshID;
-                                    vulkanRenderer->items[itemCounter]
-                                        .diffuseTextureID = diffuseTextureID;
-                                    transform* itemTransformComponent =
-                                        &itemTransforms[a];
-                                    collider* itemColliderComponent =
-                                        &itemColliders[a];
+                                Item* item_component = &items[a];
+                                if (!item_component->is_actor) {
+                                    vulkan_renderer->items.push_back({});
+                                    unsigned int mesh_id =
+                                        item_meshes[a].handle.id;
+                                    unsigned int diffuse_texture_id =
+                                        item_materials[a].diffuse_texture_id.id;
+                                    vulkan_renderer->items[item_counter]
+                                        .mesh_id = mesh_id;
+                                    vulkan_renderer->items[item_counter]
+                                        .diffuse_texture_id =
+                                        diffuse_texture_id;
+                                    Transform* item_transform_component =
+                                        &item_transforms[a];
+                                    Collider* item_collider_component =
+                                        &item_colliders[a];
 
-                                    if (itemTransformComponent == nullptr) {
+                                    if (item_transform_component == nullptr) {
                                         std::cout << "NULL POINTER"
                                                   << std::endl;
                                     }
 
-                                    uint32_t itemEntity = arch->entities[a];
-                                    vulkanRenderer->items[itemCounter].model =
-                                        updateDataUBO_IconsUI(
-                                            itemTransformComponent,
-                                            itemColliderComponent,
-                                            itemComponent,
-                                            inventoryComponent->row,
-                                            inventoryComponent->col,
-                                            inventoryTransformComponent,
-                                            &itemMeshes[a],
-                                            itemEntity
+                                    uint32_t item_entity = arch->entities[a];
+                                    vulkan_renderer->items[item_counter].model =
+                                        update_data_ubo_icons_ui(
+                                            item_transform_component,
+                                            item_collider_component,
+                                            item_component,
+                                            inventory_component->row,
+                                            inventory_component->col,
+                                            inventory_transform_component,
+                                            &item_meshes[a],
+                                            item_entity
                                         );
-                                    ++itemCounter;
+                                    ++item_counter;
                                 }
                             }
                         }
@@ -1776,466 +1829,506 @@ void Engine::setFrameData() {
         }
     }
 
-    vulkanRenderer->crosshairs.clear();
-    crosshairActorsArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        crosshairRequiredMask,
-        cachedCrosshairActorsArchetypes,
-        crosshairActorsArchetypesNumber
+    vulkan_renderer->crosshairs.clear();
+    crosshair_actors_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        crosshair_required_mask,
+        cached_crosshair_actors_archetypes,
+        crosshair_actors_archetypes_number
     );
 
-    for (uint32_t x = 0; x < crosshairActorsArchetypesNumber; ++x) {
-        Archetype* arch = cachedCrosshairActorsArchetypes[x];
-        transform* crosshairTransforms =
-            (transform*)arch->components[ComponentsIndices::TransformComponent];
-        mesh* crosshairMeshes =
-            (mesh*)arch->components[ComponentsIndices::MeshComponent];
+    for (uint32_t x = 0; x < crosshair_actors_archetypes_number; ++x) {
+        Archetype* arch = cached_crosshair_actors_archetypes[x];
+        Transform* crosshair_transforms =
+            (Transform*)arch->components[ComponentsIndices::TransformComponent];
+        Mesh* crosshair_meshes =
+            (Mesh*)arch->components[ComponentsIndices::MeshComponent];
 
-        for (unsigned int i = 0; i < arch->entityCount; ++i) {
-            vulkanRenderer->crosshairs.push_back({});
-            transform* cursorTransform = &crosshairTransforms[i];
-            unsigned int meshID = crosshairMeshes[i].handle.id;
-            vulkanRenderer->crosshairs[i].meshID = meshID;
-            vulkanRenderer->crosshairs[i].model =
-                updateDataHudScreenUBO(cursorTransform);
+        for (unsigned int i = 0; i < arch->entity_count; ++i) {
+            vulkan_renderer->crosshairs.push_back({});
+            Transform* cursor_transform = &crosshair_transforms[i];
+            unsigned int mesh_id = crosshair_meshes[i].handle.id;
+            vulkan_renderer->crosshairs[i].mesh_id = mesh_id;
+            vulkan_renderer->crosshairs[i].model =
+                update_data_hud_screen_ubo(cursor_transform);
         }
     }
 
-    vulkanRenderer->actors.clear();
-    levelChunkActorsArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        levelChunkRequiredMask,
-        cachedLevelChunkActorsArchetypes,
-        levelChunkActorsArchetypesNumber
+    vulkan_renderer->actors.clear();
+    level_chunk_actors_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        level_chunk_required_mask,
+        cached_level_chunk_actors_archetypes,
+        level_chunk_actors_archetypes_number
     );
 
-    uint32_t levelChunkActorsCounter = 0;
-    for (uint32_t x = 0; x < levelChunkActorsArchetypesNumber; ++x) {
-        Archetype* arch = cachedLevelChunkActorsArchetypes[x];
-        transform* levelChunkTransforms =
-            (transform*)arch->components[ComponentsIndices::TransformComponent];
-        mesh* levelChunkMeshes =
-            (mesh*)arch->components[ComponentsIndices::MeshComponent];
-        material* levelChunkMaterials =
-            (material*)arch->components[ComponentsIndices::MaterialComponent];
-        rotation* levelChunkRotations =
-            (rotation*)arch->components[ComponentsIndices::RotationComponent];
-        levelChunkTagComponent* levelChunks =
-            (levelChunkTagComponent*)
+    uint32_t level_chunk_actors_counter = 0;
+    for (uint32_t x = 0; x < level_chunk_actors_archetypes_number; ++x) {
+        Archetype* arch = cached_level_chunk_actors_archetypes[x];
+        Transform* level_chunk_transforms =
+            (Transform*)arch->components[ComponentsIndices::TransformComponent];
+        Mesh* level_chunk_meshes =
+            (Mesh*)arch->components[ComponentsIndices::MeshComponent];
+        Material* level_chunk_materials =
+            (Material*)arch->components[ComponentsIndices::MaterialComponent];
+        Rotation* level_chunk_rotations =
+            (Rotation*)arch->components[ComponentsIndices::RotationComponent];
+        LevelChunkTagComponent* level_chunks =
+            (LevelChunkTagComponent*)
                 arch->components[ComponentsIndices::LevelChunkTagComponent];
 
-        std::vector<Matrix<float, 4>> jointMatrices;
-        jointMatrices.resize(MAX_JOINTS_NUMBER);
+        std::vector<Matrix<float, 4>> joint_matrices;
+        joint_matrices.resize(MAX_JOINTS_NUMBER);
         for (unsigned int i = 0; i < MAX_JOINTS_NUMBER; ++i) {
-            Matrix<float, 4> unitMatrix(1.0f);
-            jointMatrices[i] = unitMatrix;
+            Matrix<float, 4> unit_matrix(1.0f);
+            joint_matrices[i] = unit_matrix;
         }
 
-        for (uint32_t n = 0; n < arch->entityCount; ++n) {
-            vulkanRenderer->actors.push_back({});
-            transform* transformComponent = &levelChunkTransforms[n];
-            material* materialComponent = &levelChunkMaterials[n];
-            rotation* rotationComponent = &levelChunkRotations[n];
-            if (levelChunkTransforms && levelChunkMaterials && levelChunks
-                && levelChunkRotations && levelChunkMeshes) {
-                unsigned int meshID = levelChunkMeshes[n].handle.id;
-                vulkanRenderer->actors[levelChunkActorsCounter].modelMatrix =
-                    computeModelMatrix(transformComponent, rotationComponent);
-                vulkanRenderer->actors[levelChunkActorsCounter].jointMatrices =
-                    jointMatrices;
-                vulkanRenderer->actors[levelChunkActorsCounter].meshID = meshID;
-                vulkanRenderer->actors[levelChunkActorsCounter]
-                    .diffuseTextureIndex =
-                    materialComponent->diffuseTextureID_.id;
-                vulkanRenderer->actors[levelChunkActorsCounter]
-                    .specularTextureIndex =
-                    materialComponent->specularTextureID_.id;
-                vulkanRenderer->actors[levelChunkActorsCounter].ambient =
-                    materialComponent->ambient;
-                vulkanRenderer->actors[levelChunkActorsCounter].shininess =
-                    materialComponent->shininess;
-                ++levelChunkActorsCounter;
+        for (uint32_t n = 0; n < arch->entity_count; ++n) {
+            vulkan_renderer->actors.push_back({});
+            Transform* transform_component = &level_chunk_transforms[n];
+            Material* material_component = &level_chunk_materials[n];
+            Rotation* rotation_component = &level_chunk_rotations[n];
+            if (level_chunk_transforms && level_chunk_materials && level_chunks
+                && level_chunk_rotations && level_chunk_meshes) {
+                unsigned int mesh_id = level_chunk_meshes[n].handle.id;
+                vulkan_renderer->actors[level_chunk_actors_counter]
+                    .model_matrix = compute_model_matrix(
+                    transform_component,
+                    rotation_component
+                );
+                vulkan_renderer->actors[level_chunk_actors_counter]
+                    .joint_matrices = joint_matrices;
+                vulkan_renderer->actors[level_chunk_actors_counter].mesh_id =
+                    mesh_id;
+                vulkan_renderer->actors[level_chunk_actors_counter]
+                    .diffuse_texture_index =
+                    material_component->diffuse_texture_id.id;
+                vulkan_renderer->actors[level_chunk_actors_counter]
+                    .specular_texture_index =
+                    material_component->specular_texture_id.id;
+                vulkan_renderer->actors[level_chunk_actors_counter].ambient =
+                    material_component->ambient;
+                vulkan_renderer->actors[level_chunk_actors_counter].shininess =
+                    material_component->shininess;
+                ++level_chunk_actors_counter;
             }
         }
     }
 
-    animationActorsArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        animationRequiredMask,
-        cachedAnimationArchetypes,
-        animationActorsArchetypesNumber
+    animation_actors_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        animation_required_mask,
+        cached_animation_archetypes,
+        animation_actors_archetypes_number
     );
 
-    uint32_t animationActorsCounter = levelChunkActorsCounter;
-    for (uint32_t x = 0; x < animationActorsArchetypesNumber; ++x) {
-        Archetype* arch = cachedAnimationActorsArchetypes[x];
-        transform* actorTransforms =
-            (transform*)arch->components[ComponentsIndices::TransformComponent];
-        mesh* actorMeshes =
-            (mesh*)arch->components[ComponentsIndices::MeshComponent];
-        material* actorMaterials =
-            (material*)arch->components[ComponentsIndices::MaterialComponent];
-        rotation* actorRotations =
-            (rotation*)arch->components[ComponentsIndices::RotationComponent];
-        animation* actorAnimations =
-            (animation*)arch->components[ComponentsIndices::AnimationComponent];
+    uint32_t animation_actors_counter = level_chunk_actors_counter;
+    for (uint32_t x = 0; x < animation_actors_archetypes_number; ++x) {
+        Archetype* arch = cached_animation_actors_archetypes[x];
+        Transform* actor_transforms =
+            (Transform*)arch->components[ComponentsIndices::TransformComponent];
+        Mesh* actor_meshes =
+            (Mesh*)arch->components[ComponentsIndices::MeshComponent];
+        Material* actor_materials =
+            (Material*)arch->components[ComponentsIndices::MaterialComponent];
+        Rotation* actor_rotations =
+            (Rotation*)arch->components[ComponentsIndices::RotationComponent];
+        Animation* actor_animations =
+            (Animation*)arch->components[ComponentsIndices::AnimationComponent];
 
-        for (uint32_t n = 0; n < arch->entityCount; ++n) {
-            vulkanRenderer->actors.push_back({});
-            transform* transformComponent = &actorTransforms[n];
-            material* materialComponent = &actorMaterials[n];
-            [[maybe_unused]] animation* animationComponent =
-                &actorAnimations[n];
-            rotation* rotationComponent = &actorRotations[n];
-            if (actorTransforms && actorMaterials && actorAnimations
-                && actorRotations) {
-                unsigned int meshID = actorMeshes[n].handle.id;
-                vulkanRenderer->actors[animationActorsCounter].modelMatrix =
-                    computeModelMatrix(transformComponent, rotationComponent);
-                vulkanRenderer->actors[animationActorsCounter].jointMatrices =
-                    updateAnimationFrames(animationComponent, meshID);
-                vulkanRenderer->actors[animationActorsCounter].meshID = meshID;
-                vulkanRenderer->actors[animationActorsCounter]
-                    .diffuseTextureIndex =
-                    materialComponent->diffuseTextureID_.id;
-                vulkanRenderer->actors[animationActorsCounter]
-                    .specularTextureIndex =
-                    materialComponent->specularTextureID_.id;
-                vulkanRenderer->actors[animationActorsCounter].ambient =
-                    materialComponent->ambient;
-                vulkanRenderer->actors[animationActorsCounter].shininess =
-                    materialComponent->shininess;
-                ++animationActorsCounter;
+        for (uint32_t n = 0; n < arch->entity_count; ++n) {
+            vulkan_renderer->actors.push_back({});
+            Transform* transform_component = &actor_transforms[n];
+            Material* material_component = &actor_materials[n];
+            [[maybe_unused]] Animation* animation_component =
+                &actor_animations[n];
+            Rotation* rotation_component = &actor_rotations[n];
+            if (actor_transforms && actor_materials && actor_animations
+                && actor_rotations) {
+                unsigned int mesh_id = actor_meshes[n].handle.id;
+                vulkan_renderer->actors[animation_actors_counter].model_matrix =
+                    compute_model_matrix(
+                        transform_component,
+                        rotation_component
+                    );
+                vulkan_renderer->actors[animation_actors_counter]
+                    .joint_matrices =
+                    update_animation_frames(animation_component, mesh_id);
+                vulkan_renderer->actors[animation_actors_counter].mesh_id =
+                    mesh_id;
+                vulkan_renderer->actors[animation_actors_counter]
+                    .diffuse_texture_index =
+                    material_component->diffuse_texture_id.id;
+                vulkan_renderer->actors[animation_actors_counter]
+                    .specular_texture_index =
+                    material_component->specular_texture_id.id;
+                vulkan_renderer->actors[animation_actors_counter].ambient =
+                    material_component->ambient;
+                vulkan_renderer->actors[animation_actors_counter].shininess =
+                    material_component->shininess;
+                ++animation_actors_counter;
             }
         }
     }
 
-    staticActorsArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        staticActorsRequiredMask,
-        cachedStaticActorsArchetypes,
-        staticActorsArchetypesNumber
+    static_actors_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        static_actors_required_mask,
+        cached_static_actors_archetypes,
+        static_actors_archetypes_number
     );
 
-    uint32_t staticActorsCounter = animationActorsCounter;
-    for (uint32_t x = 0; x < staticActorsArchetypesNumber; ++x) {
-        Archetype* arch = cachedStaticActorsArchetypes[x];
-        transform* staticActorTransforms =
-            (transform*)arch->components[ComponentsIndices::TransformComponent];
-        mesh* staticActorMeshes =
-            (mesh*)arch->components[ComponentsIndices::MeshComponent];
-        material* staticActorMaterials =
-            (material*)arch->components[ComponentsIndices::MaterialComponent];
-        rotation* staticActorRotations =
-            (rotation*)arch->components[ComponentsIndices::RotationComponent];
+    uint32_t static_actors_counter = animation_actors_counter;
+    for (uint32_t x = 0; x < static_actors_archetypes_number; ++x) {
+        Archetype* arch = cached_static_actors_archetypes[x];
+        Transform* static_actor_transforms =
+            (Transform*)arch->components[ComponentsIndices::TransformComponent];
+        Mesh* static_actor_meshes =
+            (Mesh*)arch->components[ComponentsIndices::MeshComponent];
+        Material* static_actor_materials =
+            (Material*)arch->components[ComponentsIndices::MaterialComponent];
+        Rotation* static_actor_rotations =
+            (Rotation*)arch->components[ComponentsIndices::RotationComponent];
 
-        std::vector<Matrix<float, 4>> jointMatrices;
-        jointMatrices.resize(MAX_JOINTS_NUMBER);
+        std::vector<Matrix<float, 4>> joint_matrices;
+        joint_matrices.resize(MAX_JOINTS_NUMBER);
         for (unsigned int i = 0; i < MAX_JOINTS_NUMBER; ++i) {
-            Matrix<float, 4> unitMatrix(1.0f);
-            jointMatrices[i] = unitMatrix;
+            Matrix<float, 4> unit_matrix(1.0f);
+            joint_matrices[i] = unit_matrix;
         }
 
-        for (uint32_t n = 0; n < arch->entityCount; ++n) {
-            vulkanRenderer->actors.push_back({});
-            transform* transformComponent = &staticActorTransforms[n];
-            material* materialComponent = &staticActorMaterials[n];
-            rotation* rotationComponent = &staticActorRotations[n];
-            if (staticActorTransforms && staticActorMaterials
-                && staticActorRotations && staticActorMeshes) {
-                unsigned int meshID = staticActorMeshes[n].handle.id;
-                vulkanRenderer->actors[staticActorsCounter].modelMatrix =
-                    computeModelMatrix(transformComponent, rotationComponent);
-                vulkanRenderer->actors[staticActorsCounter].jointMatrices =
-                    jointMatrices;
-                vulkanRenderer->actors[staticActorsCounter].meshID = meshID;
-                vulkanRenderer->actors[staticActorsCounter].diffuseTextureIndex =
-                    materialComponent->diffuseTextureID_.id;
-                vulkanRenderer->actors[staticActorsCounter]
-                    .specularTextureIndex =
-                    materialComponent->specularTextureID_.id;
-                vulkanRenderer->actors[staticActorsCounter].ambient =
-                    materialComponent->ambient;
-                vulkanRenderer->actors[staticActorsCounter].shininess =
-                    materialComponent->shininess;
-                ++staticActorsCounter;
+        for (uint32_t n = 0; n < arch->entity_count; ++n) {
+            vulkan_renderer->actors.push_back({});
+            Transform* transform_component = &static_actor_transforms[n];
+            Material* material_component = &static_actor_materials[n];
+            Rotation* rotation_component = &static_actor_rotations[n];
+            if (static_actor_transforms && static_actor_materials
+                && static_actor_rotations && static_actor_meshes) {
+                unsigned int mesh_id = static_actor_meshes[n].handle.id;
+                vulkan_renderer->actors[static_actors_counter].model_matrix =
+                    compute_model_matrix(
+                        transform_component,
+                        rotation_component
+                    );
+                vulkan_renderer->actors[static_actors_counter].joint_matrices =
+                    joint_matrices;
+                vulkan_renderer->actors[static_actors_counter].mesh_id =
+                    mesh_id;
+                vulkan_renderer->actors[static_actors_counter]
+                    .diffuse_texture_index =
+                    material_component->diffuse_texture_id.id;
+                vulkan_renderer->actors[static_actors_counter]
+                    .specular_texture_index =
+                    material_component->specular_texture_id.id;
+                vulkan_renderer->actors[static_actors_counter].ambient =
+                    material_component->ambient;
+                vulkan_renderer->actors[static_actors_counter].shininess =
+                    material_component->shininess;
+                ++static_actors_counter;
             }
         }
     }
 
-    projectileActorsArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        projectileRequiredMask,
-        cachedProjectileActorsArchetypes,
-        projectileActorsArchetypesNumber
+    projectile_actors_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        projectile_required_mask,
+        cached_projectile_actors_archetypes,
+        projectile_actors_archetypes_number
     );
 
-    uint32_t projectileActorsCounter = staticActorsCounter;
-    for (uint32_t x = 0; x < projectileActorsArchetypesNumber; ++x) {
-        Archetype* arch = cachedProjectileActorsArchetypes[x];
-        transform* actorTransforms =
-            (transform*)arch->components[ComponentsIndices::TransformComponent];
-        mesh* actorMeshes =
-            (mesh*)arch->components[ComponentsIndices::MeshComponent];
-        ProjectileBundle* actorProjectileBundles =
+    uint32_t projectile_actors_counter = static_actors_counter;
+    for (uint32_t x = 0; x < projectile_actors_archetypes_number; ++x) {
+        Archetype* arch = cached_projectile_actors_archetypes[x];
+        Transform* actor_transforms =
+            (Transform*)arch->components[ComponentsIndices::TransformComponent];
+        Mesh* actor_meshes =
+            (Mesh*)arch->components[ComponentsIndices::MeshComponent];
+        ProjectileBundle* actor_projectile_bundles =
             (ProjectileBundle*)
                 arch->components[ComponentsIndices::ProjectileBundleComponent];
-        rotation* actorRotations =
-            (rotation*)arch->components[ComponentsIndices::RotationComponent];
+        Rotation* actor_rotations =
+            (Rotation*)arch->components[ComponentsIndices::RotationComponent];
 
-        std::vector<Matrix<float, 4>> jointMatrices;
-        jointMatrices.resize(MAX_JOINTS_NUMBER);
+        std::vector<Matrix<float, 4>> joint_matrices;
+        joint_matrices.resize(MAX_JOINTS_NUMBER);
         for (unsigned int i = 0; i < MAX_JOINTS_NUMBER; ++i) {
-            Matrix<float, 4> unitMatrix(1.0f);
-            jointMatrices[i] = unitMatrix;
+            Matrix<float, 4> unit_matrix(1.0f);
+            joint_matrices[i] = unit_matrix;
         }
 
-        for (uint32_t n = 0; n < arch->entityCount; ++n) {
-            vulkanRenderer->actors.push_back({});
-            transform* transformComponent = &actorTransforms[n];
-            material* materialComponent = &actorProjectileBundles[n].material;
-            rotation* rotationComponent = &actorRotations[n];
-            if (actorTransforms && actorProjectileBundles && actorRotations
-                && actorMeshes) {
-                unsigned int meshID = actorMeshes[n].handle.id;
-                vulkanRenderer->actors[projectileActorsCounter].modelMatrix =
-                    computeModelMatrix(transformComponent, rotationComponent);
-                vulkanRenderer->actors[projectileActorsCounter].jointMatrices =
-                    jointMatrices;
-                vulkanRenderer->actors[projectileActorsCounter].meshID = meshID;
-                vulkanRenderer->actors[projectileActorsCounter]
-                    .diffuseTextureIndex =
-                    materialComponent->diffuseTextureID_.id;
-                vulkanRenderer->actors[projectileActorsCounter]
-                    .specularTextureIndex =
-                    materialComponent->specularTextureID_.id;
-                vulkanRenderer->actors[projectileActorsCounter].ambient =
-                    materialComponent->ambient;
-                vulkanRenderer->actors[projectileActorsCounter].shininess =
-                    materialComponent->shininess;
-                ++projectileActorsCounter;
+        for (uint32_t n = 0; n < arch->entity_count; ++n) {
+            vulkan_renderer->actors.push_back({});
+            Transform* transform_component = &actor_transforms[n];
+            Material* material_component =
+                &actor_projectile_bundles[n].material;
+            Rotation* rotation_component = &actor_rotations[n];
+            if (actor_transforms && actor_projectile_bundles && actor_rotations
+                && actor_meshes) {
+                unsigned int mesh_id = actor_meshes[n].handle.id;
+                vulkan_renderer->actors[projectile_actors_counter].model_matrix =
+                    compute_model_matrix(
+                        transform_component,
+                        rotation_component
+                    );
+                vulkan_renderer->actors[projectile_actors_counter]
+                    .joint_matrices = joint_matrices;
+                vulkan_renderer->actors[projectile_actors_counter].mesh_id =
+                    mesh_id;
+                vulkan_renderer->actors[projectile_actors_counter]
+                    .diffuse_texture_index =
+                    material_component->diffuse_texture_id.id;
+                vulkan_renderer->actors[projectile_actors_counter]
+                    .specular_texture_index =
+                    material_component->specular_texture_id.id;
+                vulkan_renderer->actors[projectile_actors_counter].ambient =
+                    material_component->ambient;
+                vulkan_renderer->actors[projectile_actors_counter].shininess =
+                    material_component->shininess;
+                ++projectile_actors_counter;
             }
         }
     }
 
     // Item actors renders in the game world.
 
-    itemActorsArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        rotationItemRequiredMask,
-        cachedItemActorsArchetypes,
-        itemActorsArchetypesNumber
+    item_actors_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        rotation_item_required_mask,
+        cached_item_actors_archetypes,
+        item_actors_archetypes_number
     );
 
-    uint32_t itemActorsCounter = projectileActorsCounter;
-    for (uint32_t x = 0; x < itemActorsArchetypesNumber; ++x) {
-        Archetype* arch = cachedItemActorsArchetypes[x];
-        transform* itemTransforms =
-            (transform*)arch->components[ComponentsIndices::TransformComponent];
-        mesh* itemMeshes =
-            (mesh*)arch->components[ComponentsIndices::MeshComponent];
-        material* itemMaterials =
-            (material*)arch->components[ComponentsIndices::MaterialComponent];
-        rotation* itemRotations =
-            (rotation*)arch->components[ComponentsIndices::RotationComponent];
-        item* items = (item*)arch->components[ComponentsIndices::ItemComponent];
+    uint32_t item_actors_counter = projectile_actors_counter;
+    for (uint32_t x = 0; x < item_actors_archetypes_number; ++x) {
+        Archetype* arch = cached_item_actors_archetypes[x];
+        Transform* item_transforms =
+            (Transform*)arch->components[ComponentsIndices::TransformComponent];
+        Mesh* item_meshes =
+            (Mesh*)arch->components[ComponentsIndices::MeshComponent];
+        Material* item_materials =
+            (Material*)arch->components[ComponentsIndices::MaterialComponent];
+        Rotation* item_rotations =
+            (Rotation*)arch->components[ComponentsIndices::RotationComponent];
+        Item* items = (Item*)arch->components[ComponentsIndices::ItemComponent];
 
-        std::vector<Matrix<float, 4>> jointMatrices;
-        jointMatrices.resize(MAX_JOINTS_NUMBER);
+        std::vector<Matrix<float, 4>> joint_matrices;
+        joint_matrices.resize(MAX_JOINTS_NUMBER);
         for (unsigned int i = 0; i < MAX_JOINTS_NUMBER; ++i) {
-            Matrix<float, 4> unitMatrix(1.0f);
-            jointMatrices[i] = unitMatrix;
+            Matrix<float, 4> unit_matrix(1.0f);
+            joint_matrices[i] = unit_matrix;
         }
 
-        for (uint32_t n = 0; n < arch->entityCount; ++n) {
-            if (items[n].isActor) {
-                vulkanRenderer->actors.push_back({});
-                transform* transformComponent = &itemTransforms[n];
-                material* materialComponent = &itemMaterials[n];
-                rotation* rotationComponent = &itemRotations[n];
-                if (itemTransforms && itemMaterials && itemRotations
-                    && itemMeshes) {
-                    unsigned int meshID = itemMeshes[n].handle.id;
-                    vulkanRenderer->actors[itemActorsCounter].modelMatrix =
-                        computeModelMatrix(
-                            transformComponent,
-                            rotationComponent
+        for (uint32_t n = 0; n < arch->entity_count; ++n) {
+            if (items[n].is_actor) {
+                vulkan_renderer->actors.push_back({});
+                Transform* transform_component = &item_transforms[n];
+                Material* material_component = &item_materials[n];
+                Rotation* rotation_component = &item_rotations[n];
+                if (item_transforms && item_materials && item_rotations
+                    && item_meshes) {
+                    unsigned int mesh_id = item_meshes[n].handle.id;
+                    vulkan_renderer->actors[item_actors_counter].model_matrix =
+                        compute_model_matrix(
+                            transform_component,
+                            rotation_component
                         );
-                    vulkanRenderer->actors[itemActorsCounter].jointMatrices =
-                        jointMatrices;
-                    vulkanRenderer->actors[itemActorsCounter].meshID = meshID;
-                    vulkanRenderer->actors[itemActorsCounter]
-                        .diffuseTextureIndex =
-                        materialComponent->diffuseTextureID_.id;
-                    vulkanRenderer->actors[itemActorsCounter]
-                        .specularTextureIndex =
-                        materialComponent->specularTextureID_.id;
-                    vulkanRenderer->actors[itemActorsCounter].ambient =
-                        materialComponent->ambient;
-                    vulkanRenderer->actors[itemActorsCounter].shininess =
-                        materialComponent->shininess;
-                    ++itemActorsCounter;
+                    vulkan_renderer->actors[item_actors_counter].joint_matrices =
+                        joint_matrices;
+                    vulkan_renderer->actors[item_actors_counter].mesh_id =
+                        mesh_id;
+                    vulkan_renderer->actors[item_actors_counter]
+                        .diffuse_texture_index =
+                        material_component->diffuse_texture_id.id;
+                    vulkan_renderer->actors[item_actors_counter]
+                        .specular_texture_index =
+                        material_component->specular_texture_id.id;
+                    vulkan_renderer->actors[item_actors_counter].ambient =
+                        material_component->ambient;
+                    vulkan_renderer->actors[item_actors_counter].shininess =
+                        material_component->shininess;
+                    ++item_actors_counter;
                 }
             }
         }
     }
 
-    vulkanRenderer->players.clear();
-    playerArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        playerRequiredMask,
-        cachedPlayerArchetypes,
-        playerArchetypesNumber
+    vulkan_renderer->players.clear();
+    player_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        player_required_mask,
+        cached_player_archetypes,
+        player_archetypes_number
     );
 
-    uint32_t playerEntityCount = 0;
-    for (uint32_t x = 0; x < playerArchetypesNumber; ++x) {
-        Archetype* arch = cachedPlayerArchetypes[x];
-        transform* playerTransforms =
-            (transform*)arch->components[ComponentsIndices::TransformComponent];
+    uint32_t player_entity_count = 0;
+    for (uint32_t x = 0; x < player_archetypes_number; ++x) {
+        Archetype* arch = cached_player_archetypes[x];
+        Transform* player_transforms =
+            (Transform*)arch->components[ComponentsIndices::TransformComponent];
 
-        for (unsigned int n = 0; n < arch->entityCount; ++n) {
-            vulkanRenderer->players.push_back({});
-            transform* playerTransformComponent = &playerTransforms[n];
-            if (&playerTransforms[n] != nullptr) {
-                vulkanRenderer->players[playerEntityCount].position =
-                    playerTransformComponent->position;
-                vulkanRenderer->players[playerEntityCount].forward =
-                    playerTransformComponent->forward;
+        for (unsigned int n = 0; n < arch->entity_count; ++n) {
+            vulkan_renderer->players.push_back({});
+            Transform* player_transform_component = &player_transforms[n];
+            if (&player_transforms[n] != nullptr) {
+                vulkan_renderer->players[player_entity_count].position =
+                    player_transform_component->position;
+                vulkan_renderer->players[player_entity_count].forward =
+                    player_transform_component->forward;
             }
         }
-        ++playerEntityCount;
+        ++player_entity_count;
     }
 }
 
-void Engine::loadWavefrontObj() {
-    for (unsigned int m = 0; m < pathsArray_.size(); ++m) {
+void Engine::load_wavefront_obj() {
+    for (unsigned int m = 0; m < paths_array.size(); ++m) {
         CWaveFrontObjParser parser;
-        CWaveFrontObjParser* wavefrontObjParser = &parser;
+        CWaveFrontObjParser* wavefront_obj_parser = &parser;
 
-        wavefrontObjParser->ReadFile(pathsArray_[m]);
-        wavefrontObjParser->ParseFile();
+        wavefront_obj_parser->read_file(paths_array[m]);
+        wavefront_obj_parser->parse_file();
 
-        vulkanRenderer->aIndices_.emplace_back();
-        vulkanRenderer->aVertices_.emplace_back();
-        vulkanRenderer->highest_gltf_Y.emplace_back();
-        vulkanRenderer->highest_gltf_Y[m] = -999.999f;
+        vulkan_renderer->a_indices.emplace_back();
+        vulkan_renderer->a_vertices.emplace_back();
+        vulkan_renderer->highest_gltf_y.emplace_back();
+        vulkan_renderer->highest_gltf_y[m] = -999.999f;
 
-        vulkanRenderer->frames.push_back({});
-        vulkanRenderer->jointMatricesPerMesh.push_back({});
+        vulkan_renderer->frames.push_back({});
+        vulkan_renderer->joint_matrices_per_mesh.push_back({});
 
-        unsigned int vertexIndex = 0;
-        unsigned int textureIndex = 0;
-        unsigned int normalIndex = 0;
-        unsigned int faceVerticesSize = wavefrontObjParser->getFaces().size();
-        vulkanRenderer->meshAxisLimitingValues.setToDefaultValues();
+        unsigned int vertex_index = 0;
+        unsigned int texture_index = 0;
+        unsigned int normal_index = 0;
+        unsigned int face_vertices_size =
+            wavefront_obj_parser->get_faces().size();
+        vulkan_renderer->mesh_axis_limiting_values.set_to_default_values();
 
-        for (unsigned int i = 0; i < faceVerticesSize; ++i) {
+        for (unsigned int i = 0; i < face_vertices_size; ++i) {
             for (int j = 0; j < 3; ++j) {
-                vertexIndex = wavefrontObjParser->getFaces()[i][0][j] - 1;
-                vulkanRenderer->aIndices_[m].push_back(i * 3 + j);
-                SVertex vertex =
-                    wavefrontObjParser->getCoordinateVertices()[vertexIndex];
-                textureIndex = wavefrontObjParser->getFaces()[i][1][j] - 1;
+                vertex_index = wavefront_obj_parser->get_faces()[i][0][j] - 1;
+                vulkan_renderer->a_indices[m].push_back(i * 3 + j);
+                SVertex vertex = wavefront_obj_parser
+                                     ->get_coordinate_vertices()[vertex_index];
+                texture_index = wavefront_obj_parser->get_faces()[i][1][j] - 1;
                 SVertex texture =
-                    wavefrontObjParser->getTextureVertices()[textureIndex];
-                normalIndex = wavefrontObjParser->getFaces()[i][2][j] - 1;
-                SVertex normal = wavefrontObjParser->getNormals()[normalIndex];
+                    wavefront_obj_parser->get_texture_vertices()[texture_index];
+                normal_index = wavefront_obj_parser->get_faces()[i][2][j] - 1;
+                SVertex normal =
+                    wavefront_obj_parser->get_normals()[normal_index];
 
-                Vector<float, 4> jointIndices;
+                Vector<float, 4> joint_indices;
                 Vector<float, 4> weights;
 
-                if (vertex[1] > vulkanRenderer->highest_gltf_Y[m]) {
-                    vulkanRenderer->highest_gltf_Y[m] = vertex[1];
+                if (vertex[1] > vulkan_renderer->highest_gltf_y[m]) {
+                    vulkan_renderer->highest_gltf_y[m] = vertex[1];
                 }
 
                 if (vertex[0]
-                    < vulkanRenderer->meshAxisLimitingValues.lowest_x) {
-                    vulkanRenderer->meshAxisLimitingValues.lowest_x = vertex[0];
+                    < vulkan_renderer->mesh_axis_limiting_values.lowest_x) {
+                    vulkan_renderer->mesh_axis_limiting_values.lowest_x =
+                        vertex[0];
                 } else if (
-                    vertex[0] > vulkanRenderer->meshAxisLimitingValues.highest_x
+                    vertex[0]
+                    > vulkan_renderer->mesh_axis_limiting_values.highest_x
                 ) {
-                    vulkanRenderer->meshAxisLimitingValues.highest_x =
+                    vulkan_renderer->mesh_axis_limiting_values.highest_x =
                         vertex[0];
                 }
 
                 if (vertex[1]
-                    < vulkanRenderer->meshAxisLimitingValues.lowest_y) {
-                    vulkanRenderer->meshAxisLimitingValues.lowest_y = vertex[1];
+                    < vulkan_renderer->mesh_axis_limiting_values.lowest_y) {
+                    vulkan_renderer->mesh_axis_limiting_values.lowest_y =
+                        vertex[1];
                 } else if (
-                    vertex[1] > vulkanRenderer->meshAxisLimitingValues.highest_y
+                    vertex[1]
+                    > vulkan_renderer->mesh_axis_limiting_values.highest_y
                 ) {
-                    vulkanRenderer->meshAxisLimitingValues.highest_y =
+                    vulkan_renderer->mesh_axis_limiting_values.highest_y =
                         vertex[1];
                 }
 
                 if (vertex[2]
-                    < vulkanRenderer->meshAxisLimitingValues.lowest_z) {
-                    vulkanRenderer->meshAxisLimitingValues.lowest_z = vertex[2];
+                    < vulkan_renderer->mesh_axis_limiting_values.lowest_z) {
+                    vulkan_renderer->mesh_axis_limiting_values.lowest_z =
+                        vertex[2];
                 } else if (
-                    vertex[2] > vulkanRenderer->meshAxisLimitingValues.highest_z
+                    vertex[2]
+                    > vulkan_renderer->mesh_axis_limiting_values.highest_z
                 ) {
-                    vulkanRenderer->meshAxisLimitingValues.highest_z =
+                    vulkan_renderer->mesh_axis_limiting_values.highest_z =
                         vertex[2];
                 }
 
-                jointIndices[0] = -1;
-                jointIndices[1] = -1;
-                jointIndices[2] = -1;
-                jointIndices[3] = -1;
+                joint_indices[0] = -1;
+                joint_indices[1] = -1;
+                joint_indices[2] = -1;
+                joint_indices[3] = -1;
 
                 weights[0] = 1.0f;
                 weights[1] = 1.0f;
                 weights[2] = 1.0f;
                 weights[2] = 1.0f;
 
-                vulkanRenderer->aVertices_[m].push_back(
+                vulkan_renderer->a_vertices[m].push_back(
                     {{vertex[0], vertex[1], vertex[2]},
                      {normal[0], normal[1], normal[2]},
                      {texture[0], texture[1]},
-                     {jointIndices[0], jointIndices[1], jointIndices[2]},
+                     {joint_indices[0], joint_indices[1], joint_indices[2]},
                      {weights[0], weights[1], weights[2]}}
                 );
             }
         }
-        setMeshBounds(vulkanRenderer->meshAxisLimitingValues);
-        ++wavefrontObjCounter;
+        set_mesh_bounds(vulkan_renderer->mesh_axis_limiting_values);
+        ++wavefront_obj_counter;
     }
 }
 
-void Engine::calculateMeshBounds(const Vector<float, 4>& animated_vertex) {
-    if (animated_vertex[0] < vulkanRenderer->meshAxisLimitingValues.lowest_x) {
-        vulkanRenderer->meshAxisLimitingValues.lowest_x = animated_vertex[0];
+void Engine::calculate_mesh_bounds(const Vector<float, 4>& animated_vertex) {
+    if (animated_vertex[0]
+        < vulkan_renderer->mesh_axis_limiting_values.lowest_x) {
+        vulkan_renderer->mesh_axis_limiting_values.lowest_x =
+            animated_vertex[0];
     } else if (
-        animated_vertex[0] > vulkanRenderer->meshAxisLimitingValues.highest_x
+        animated_vertex[0]
+        > vulkan_renderer->mesh_axis_limiting_values.highest_x
     ) {
-        vulkanRenderer->meshAxisLimitingValues.highest_x = animated_vertex[0];
+        vulkan_renderer->mesh_axis_limiting_values.highest_x =
+            animated_vertex[0];
     }
 
-    if (animated_vertex[1] < vulkanRenderer->meshAxisLimitingValues.lowest_y) {
-        vulkanRenderer->meshAxisLimitingValues.lowest_y = animated_vertex[1];
+    if (animated_vertex[1]
+        < vulkan_renderer->mesh_axis_limiting_values.lowest_y) {
+        vulkan_renderer->mesh_axis_limiting_values.lowest_y =
+            animated_vertex[1];
     } else if (
-        animated_vertex[1] > vulkanRenderer->meshAxisLimitingValues.highest_y
+        animated_vertex[1]
+        > vulkan_renderer->mesh_axis_limiting_values.highest_y
     ) {
-        vulkanRenderer->meshAxisLimitingValues.highest_y = animated_vertex[1];
+        vulkan_renderer->mesh_axis_limiting_values.highest_y =
+            animated_vertex[1];
     }
 
-    if (animated_vertex[2] < vulkanRenderer->meshAxisLimitingValues.lowest_z) {
-        vulkanRenderer->meshAxisLimitingValues.lowest_z = animated_vertex[2];
+    if (animated_vertex[2]
+        < vulkan_renderer->mesh_axis_limiting_values.lowest_z) {
+        vulkan_renderer->mesh_axis_limiting_values.lowest_z =
+            animated_vertex[2];
     } else if (
-        animated_vertex[2] > vulkanRenderer->meshAxisLimitingValues.highest_z
+        animated_vertex[2]
+        > vulkan_renderer->mesh_axis_limiting_values.highest_z
     ) {
-        vulkanRenderer->meshAxisLimitingValues.highest_z = animated_vertex[2];
+        vulkan_renderer->mesh_axis_limiting_values.highest_z =
+            animated_vertex[2];
     }
 }
 
-bool Engine::isModelCacheExists(const std::string& modelFilePath) {
-    std::ofstream modelsCache(
+bool Engine::is_model_cache_exists(const std::string& model_file_path) {
+    std::ofstream models_cache(
         "../../../examples/assets/cache/models/cache",
         std::ios::app
     );
 
-    if (!modelsCache.is_open()) {
+    if (!models_cache.is_open()) {
         std::cerr << "Error opening the models cache file" << std::endl;
         throw std::runtime_error("Failed to load mesh cache");
     }
@@ -2244,8 +2337,8 @@ bool Engine::isModelCacheExists(const std::string& modelFilePath) {
 
     std::string line;
     while (std::getline(file, line)) {
-        if (line.find(modelFilePath) != std::string::npos) {
-            std::cout << "Model with pafile path: " << modelFilePath
+        if (line.find(model_file_path) != std::string::npos) {
+            std::cout << "Model with pafile path: " << model_file_path
                       << " is already exists in cache" << std::endl;
 
             std::istringstream iss(line);
@@ -2255,110 +2348,111 @@ bool Engine::isModelCacheExists(const std::string& modelFilePath) {
 
             iss >> keyword >> highest_x >> lowest_x >> highest_y >> lowest_y
                 >> highest_z >> lowest_z;
-            vulkanRenderer->meshAxisLimitingValues.highest_x = highest_x;
-            vulkanRenderer->meshAxisLimitingValues.lowest_x = lowest_x;
-            vulkanRenderer->meshAxisLimitingValues.highest_y = highest_y;
-            vulkanRenderer->meshAxisLimitingValues.lowest_y = lowest_y;
-            vulkanRenderer->meshAxisLimitingValues.highest_z = highest_z;
-            vulkanRenderer->meshAxisLimitingValues.lowest_z = lowest_z;
+            vulkan_renderer->mesh_axis_limiting_values.highest_x = highest_x;
+            vulkan_renderer->mesh_axis_limiting_values.lowest_x = lowest_x;
+            vulkan_renderer->mesh_axis_limiting_values.highest_y = highest_y;
+            vulkan_renderer->mesh_axis_limiting_values.lowest_y = lowest_y;
+            vulkan_renderer->mesh_axis_limiting_values.highest_z = highest_z;
+            vulkan_renderer->mesh_axis_limiting_values.lowest_z = lowest_z;
 
-            isAlreadyCached = true;
+            is_already_cached = true;
 
-            modelsCache.close();
+            models_cache.close();
             return true;
         }
     }
 
-    modelsCache.close();
+    models_cache.close();
     return false;
 }
 
-void Engine::writeModelsCache(const std::string& modelFilePath) {
-    std::ofstream modelsCache(
+void Engine::write_models_cache(const std::string& model_file_path) {
+    std::ofstream models_cache(
         "../../../examples/assets/cache/models/cache",
         std::ios::app
     );
 
-    if (!modelsCache.is_open()) {
+    if (!models_cache.is_open()) {
         std::cerr << "Error opening the models cache file" << std::endl;
         throw std::runtime_error("Failed to load mesh cache");
     }
 
-    std::size_t pos = modelFilePath.find(' ');
-    std::string firstPart = (pos == std::string::npos)
-        ? modelFilePath
-        : modelFilePath.substr(0, pos);
+    std::size_t pos = model_file_path.find(' ');
+    std::string first_part = (pos == std::string::npos)
+        ? model_file_path
+        : model_file_path.substr(0, pos);
 
-    modelsCache << modelFilePath;
-    modelsCache << " " << vulkanRenderer->meshAxisLimitingValues.highest_x
-                << " " << vulkanRenderer->meshAxisLimitingValues.lowest_x << " "
-                << vulkanRenderer->meshAxisLimitingValues.highest_y << " "
-                << vulkanRenderer->meshAxisLimitingValues.lowest_y << " "
-                << vulkanRenderer->meshAxisLimitingValues.highest_z << " "
-                << vulkanRenderer->meshAxisLimitingValues.lowest_z << std::endl;
+    models_cache << model_file_path;
+    models_cache << " " << vulkan_renderer->mesh_axis_limiting_values.highest_x
+                 << " " << vulkan_renderer->mesh_axis_limiting_values.lowest_x
+                 << " " << vulkan_renderer->mesh_axis_limiting_values.highest_y
+                 << " " << vulkan_renderer->mesh_axis_limiting_values.lowest_y
+                 << " " << vulkan_renderer->mesh_axis_limiting_values.highest_z
+                 << " " << vulkan_renderer->mesh_axis_limiting_values.lowest_z
+                 << std::endl;
 
-    modelsCache.close();
+    models_cache.close();
 }
 
-void Engine::initializeGLTF() {
-    std::vector<bool> animationFlags;
-    for (unsigned int m = 0; m < pathsGLTF_.size(); ++m) {
-        CJsonParser jsonParser;
-        vulkanRenderer->aVertexesTemp_.emplace_back();
-        vulkanRenderer->aIndices_.emplace_back();
-        vulkanRenderer->frames.push_back({});
-        vulkanRenderer->jointMatricesPerMesh.push_back({});
-        animationFlags.push_back({});
-        vulkanRenderer->highest_gltf_Y.emplace_back();
-        uint32_t nextIndexGLTF = wavefrontObjCounter + m;
-        bool animationFlag = false;
-        jsonParser.LoadGLTF(
-            pathsGLTF_[m],
-            vulkanRenderer->aVertexesTemp_[m],
-            vulkanRenderer->aIndices_[nextIndexGLTF],
-            vulkanRenderer->jointMatricesPerMesh[nextIndexGLTF],
-            vulkanRenderer->frames[nextIndexGLTF],
-            animationFlag,
-            vulkanRenderer->highest_gltf_Y[nextIndexGLTF]
+void Engine::initialize_gltf() {
+    std::vector<bool> animation_flags;
+    for (unsigned int m = 0; m < paths_gltf.size(); ++m) {
+        CJsonParser json_parser;
+        vulkan_renderer->a_vertexes_temp.emplace_back();
+        vulkan_renderer->a_indices.emplace_back();
+        vulkan_renderer->frames.push_back({});
+        vulkan_renderer->joint_matrices_per_mesh.push_back({});
+        animation_flags.push_back({});
+        vulkan_renderer->highest_gltf_y.emplace_back();
+        uint32_t next_index_gltf = wavefront_obj_counter + m;
+        bool animation_flag = false;
+        json_parser.load_gltf(
+            paths_gltf[m],
+            vulkan_renderer->a_vertexes_temp[m],
+            vulkan_renderer->a_indices[next_index_gltf],
+            vulkan_renderer->joint_matrices_per_mesh[next_index_gltf],
+            vulkan_renderer->frames[next_index_gltf],
+            animation_flag,
+            vulkan_renderer->highest_gltf_y[next_index_gltf]
         );
-        animationFlags[m] = animationFlag;
+        animation_flags[m] = animation_flag;
     }
 
-    for (unsigned int m = 0; m < pathsGLTF_.size(); ++m) {
-        vulkanRenderer->aVertices_.emplace_back();
-        vulkanRenderer->meshAxisLimitingValues.setToDefaultValues();
+    for (unsigned int m = 0; m < paths_gltf.size(); ++m) {
+        vulkan_renderer->a_vertices.emplace_back();
+        vulkan_renderer->mesh_axis_limiting_values.set_to_default_values();
 
-        isAlreadyCached = false;
-        isModelCacheExists(pathsGLTF_[m]);
+        is_already_cached = false;
+        is_model_cache_exists(paths_gltf[m]);
 
-        int stepOffset = 0;
-        if (animationFlags[m]) {
-            stepOffset = 8;
+        int step_offset = 0;
+        if (animation_flags[m]) {
+            step_offset = 8;
         } else {
-            stepOffset = 16;
+            step_offset = 16;
         }
 
-        for (unsigned int n = 0; n < vulkanRenderer->aVertexesTemp_[m].size();
-             n += stepOffset) {
+        for (unsigned int n = 0; n < vulkan_renderer->a_vertexes_temp[m].size();
+             n += step_offset) {
             SVertex vertex;
-            vertex[0] = vulkanRenderer->aVertexesTemp_[m][n];
-            vertex[1] = vulkanRenderer->aVertexesTemp_[m][n + 1];
-            vertex[2] = vulkanRenderer->aVertexesTemp_[m][n + 2];
+            vertex[0] = vulkan_renderer->a_vertexes_temp[m][n];
+            vertex[1] = vulkan_renderer->a_vertexes_temp[m][n + 1];
+            vertex[2] = vulkan_renderer->a_vertexes_temp[m][n + 2];
             SVertex normal;
-            normal[0] = vulkanRenderer->aVertexesTemp_[m][n + 3];
-            normal[1] = vulkanRenderer->aVertexesTemp_[m][n + 4];
-            normal[2] = vulkanRenderer->aVertexesTemp_[m][n + 5];
+            normal[0] = vulkan_renderer->a_vertexes_temp[m][n + 3];
+            normal[1] = vulkan_renderer->a_vertexes_temp[m][n + 4];
+            normal[2] = vulkan_renderer->a_vertexes_temp[m][n + 5];
             SVertex texture;
-            texture[0] = vulkanRenderer->aVertexesTemp_[m][n + 6];
-            texture[1] = vulkanRenderer->aVertexesTemp_[m][n + 7];
+            texture[0] = vulkan_renderer->a_vertexes_temp[m][n + 6];
+            texture[1] = vulkan_renderer->a_vertexes_temp[m][n + 7];
 
-            Vector<float, 4> joinIndices;
+            Vector<float, 4> join_indices;
             Vector<float, 4> weights;
-            if (animationFlags[m]) {
-                joinIndices[0] = -1;
-                joinIndices[1] = -1;
-                joinIndices[2] = -1;
-                joinIndices[3] = -1;
+            if (animation_flags[m]) {
+                join_indices[0] = -1;
+                join_indices[1] = -1;
+                join_indices[2] = -1;
+                join_indices[3] = -1;
 
                 weights[0] = 1;
                 weights[1] = 1;
@@ -2366,211 +2460,210 @@ void Engine::initializeGLTF() {
                 weights[3] = 1;
 
             } else {
-                joinIndices[0] = vulkanRenderer->aVertexesTemp_[m][n + 8];
-                joinIndices[1] = vulkanRenderer->aVertexesTemp_[m][n + 9];
-                joinIndices[2] = vulkanRenderer->aVertexesTemp_[m][n + 10];
-                joinIndices[3] = vulkanRenderer->aVertexesTemp_[m][n + 11];
+                join_indices[0] = vulkan_renderer->a_vertexes_temp[m][n + 8];
+                join_indices[1] = vulkan_renderer->a_vertexes_temp[m][n + 9];
+                join_indices[2] = vulkan_renderer->a_vertexes_temp[m][n + 10];
+                join_indices[3] = vulkan_renderer->a_vertexes_temp[m][n + 11];
 
-                weights[0] = vulkanRenderer->aVertexesTemp_[m][n + 12];
-                weights[1] = vulkanRenderer->aVertexesTemp_[m][n + 13];
-                weights[2] = vulkanRenderer->aVertexesTemp_[m][n + 14];
-                weights[3] = vulkanRenderer->aVertexesTemp_[m][n + 15];
+                weights[0] = vulkan_renderer->a_vertexes_temp[m][n + 12];
+                weights[1] = vulkan_renderer->a_vertexes_temp[m][n + 13];
+                weights[2] = vulkan_renderer->a_vertexes_temp[m][n + 14];
+                weights[3] = vulkan_renderer->a_vertexes_temp[m][n + 15];
             }
 
-            uint32_t nextIndexGLTF = wavefrontObjCounter + m;
-            vulkanRenderer->aVertices_[nextIndexGLTF].push_back(
+            uint32_t next_index_gltf = wavefront_obj_counter + m;
+            vulkan_renderer->a_vertices[next_index_gltf].push_back(
                 {{vertex[0], vertex[1], vertex[2]},
                  {normal[0], normal[1], normal[2]},
                  {texture[0], texture[1]},
-                 {joinIndices[0],
-                  joinIndices[1],
-                  joinIndices[2],
-                  joinIndices[3]},
+                 {join_indices[0],
+                  join_indices[1],
+                  join_indices[2],
+                  join_indices[3]},
                  {weights[0], weights[1], weights[2], weights[3]}}
             );
 
-            if (isAlreadyCached) {
+            if (is_already_cached) {
                 continue;
             }
 
-            Vector<float, 4> animatedVertex =
+            Vector<float, 4> animated_vertex =
                 Vector<float, 4>(vertex[0], vertex[1], vertex[2], 1.0);
-            if (!animationFlags[m]
-                && vulkanRenderer->jointMatricesPerMesh[nextIndexGLTF].size()
+            if (!animation_flags[m]
+                && vulkan_renderer->joint_matrices_per_mesh[next_index_gltf]
+                        .size()
                     > 0) {
-                for (unsigned int frame = 0; frame
-                     < vulkanRenderer->jointMatricesPerMesh[nextIndexGLTF][0]
-                           .size();
+                for (unsigned int frame = 0;
+                     frame < vulkan_renderer
+                                 ->joint_matrices_per_mesh[next_index_gltf][0]
+                                 .size();
                      ++frame) {
-                    Matrix<float, 4> skinMatrix =
-                        (vulkanRenderer
-                             ->jointMatricesPerMesh[nextIndexGLTF]
-                                                   [int(joinIndices[0])][frame]
+                    Matrix<float, 4> skin_matrix =
+                        (vulkan_renderer->joint_matrices_per_mesh
+                             [next_index_gltf][int(join_indices[0])][frame]
                          * weights[0])
-                        + (vulkanRenderer
-                               ->jointMatricesPerMesh[nextIndexGLTF]
-                                                     [int(joinIndices[1])][frame]
+                        + (vulkan_renderer->joint_matrices_per_mesh
+                               [next_index_gltf][int(join_indices[1])][frame]
                            * weights[1])
-                        + (vulkanRenderer
-                               ->jointMatricesPerMesh[nextIndexGLTF]
-                                                     [int(joinIndices[2])][frame]
+                        + (vulkan_renderer->joint_matrices_per_mesh
+                               [next_index_gltf][int(join_indices[2])][frame]
                            * weights[2])
-                        + (vulkanRenderer
-                               ->jointMatricesPerMesh[nextIndexGLTF]
-                                                     [int(joinIndices[3])][frame]
+                        + (vulkan_renderer->joint_matrices_per_mesh
+                               [next_index_gltf][int(join_indices[3])][frame]
                            * weights[3]);
 
-                    animatedVertex =
+                    animated_vertex =
                         Vector<float, 4>(vertex[0], vertex[1], vertex[2], 1.0)
-                        * skinMatrix;
-                    calculateMeshBounds(animatedVertex);
+                        * skin_matrix;
+                    calculate_mesh_bounds(animated_vertex);
                 }
             } else {
-                calculateMeshBounds(animatedVertex);
+                calculate_mesh_bounds(animated_vertex);
             }
         }
 
-        if (!isAlreadyCached) {
-            writeModelsCache(pathsGLTF_[m]);
+        if (!is_already_cached) {
+            write_models_cache(paths_gltf[m]);
         }
-        setMeshBounds(vulkanRenderer->meshAxisLimitingValues);
+        set_mesh_bounds(vulkan_renderer->mesh_axis_limiting_values);
     }
 }
 
-void Engine::initializeFontData() {
-    constexpr float fontStep = 1.0 / 12;
-    constexpr unsigned int glyph_row = 7;
-    constexpr unsigned int glyph_column = 12;
+void Engine::initialize_font_data() {
+    constexpr float FONT_STEP = 1.0 / 12;
+    constexpr unsigned int GLYPH_ROW = 7;
+    constexpr unsigned int GLYPH_COLUMN = 12;
 
-    vulkanRenderer->fontVertexBufferContainer.resize(128);
-    vulkanRenderer->fontVertexBufferMemoryContainer.resize(128);
+    vulkan_renderer->font_vertex_buffer_container.resize(128);
+    vulkan_renderer->font_vertex_buffer_memory_container.resize(128);
 
-    vulkanRenderer->fontIndexBufferContainer.resize(128);
-    vulkanRenderer->fontIndexBufferMemoryContaner.resize(128);
+    vulkan_renderer->font_index_buffer_container.resize(128);
+    vulkan_renderer->font_index_buffer_memory_contaner.resize(128);
 
-    for (unsigned int i = 0; i < glyph_row; ++i) {
-        for (unsigned int j = 0; j < glyph_column; ++j) {
+    for (unsigned int i = 0; i < GLYPH_ROW; ++i) {
+        for (unsigned int j = 0; j < GLYPH_COLUMN; ++j) {
             std::vector<Vertex> symbol_g_vertices;
             symbol_g_vertices.push_back(
                 {{-0.5f, 0.5f, 0.0f},
                  {0.0f, 1.0f, 0.0f},
-                 {fontStep * j, fontStep * i + fontStep},
+                 {FONT_STEP * j, FONT_STEP * i + FONT_STEP},
                  {0.0f, 0.0f, 0.0f, 0.0f},
                  {1.0f, 0.0f, 0.0f, 0.0f}}
             );
             symbol_g_vertices.push_back(
                 {{0.5f, 0.5f, 0.0f},
                  {1.0f, 1.0f, 0.0f},
-                 {fontStep * j + fontStep, fontStep * i + fontStep},
+                 {FONT_STEP * j + FONT_STEP, FONT_STEP * i + FONT_STEP},
                  {0.0f, 0.0f, 0.0f, 0.0f},
                  {1.0f, 0.0f, 0.0f, 0.0f}}
             );
             symbol_g_vertices.push_back(
                 {{-0.5f, -0.5f, 0.0f},
                  {0.0f, 0.0f, 0.0f},
-                 {fontStep * j, fontStep * i},
+                 {FONT_STEP * j, FONT_STEP * i},
                  {0.0f, 0.0f, 0.0f, 0.0f},
                  {1.0f, 0.0f, 0.0f, 0.0f}}
             );
             symbol_g_vertices.push_back(
                 {{0.5f, -0.5f, 0.0f},
                  {1.0f, 0.0f, 0.0f},
-                 {fontStep * j + fontStep, fontStep * i},
+                 {FONT_STEP * j + FONT_STEP, FONT_STEP * i},
                  {0.0f, 0.0f, 0.0f, 0.0f},
                  {1.0f, 0.0f, 0.0f, 0.0f}}
             );
-            unsigned int currentBufferIndex = i * glyph_column + j;
+            unsigned int current_buffer_index = i * GLYPH_COLUMN + j;
 
-            bool exitFlag = false;
-            const unsigned int nextBufferIndex =
+            bool exit_flag = false;
+            const unsigned int next_buffer_index =
                 static_cast<const unsigned int>(
-                    vulkanRenderer->glyphs[currentBufferIndex]
+                    vulkan_renderer->glyphs[current_buffer_index]
                 );
             // TODO: Fix gabage algorithm.
             for (unsigned int n = 0;
-                 n < vulkanRenderer->fontIndicesContainer.size();
+                 n < vulkan_renderer->font_indices_container.size();
                  ++n) {
-                if (nextBufferIndex
-                    == vulkanRenderer->fontIndicesContainer[n]) {
-                    exitFlag = true;
+                if (next_buffer_index
+                    == vulkan_renderer->font_indices_container[n]) {
+                    exit_flag = true;
                 }
             }
 
-            if (exitFlag) {
+            if (exit_flag) {
                 continue;
             }
 
-            vulkanRenderer->symbolGVerticesContainer.push_back(
+            vulkan_renderer->symbol_g_vertices_container.push_back(
                 symbol_g_vertices
             );
-            vulkanRenderer->fontIndicesContainer.push_back(nextBufferIndex);
+            vulkan_renderer->font_indices_container.push_back(next_buffer_index);
         }
     }
 }
 
-Matrix<float, 4> Engine::computeModelMatrix(
-    transform* _transformComponent,
-    rotation* rotation
+Matrix<float, 4> Engine::compute_model_matrix(
+    Transform* transform,
+    Rotation* rotation
 ) {
-    Matrix<float, 4> rotationMatrix(1.0f);
-    Matrix<float, 4> scalingMatrix(1.0f);
-    Matrix<float, 4> translationMatrix(1.0f);
+    Matrix<float, 4> rotation_matrix(1.0f);
+    Matrix<float, 4> scaling_matrix(1.0f);
+    Matrix<float, 4> translation_matrix(1.0f);
 
-    scalingMatrix[0][0] = _transformComponent->scale;
-    scalingMatrix[1][1] = _transformComponent->scale;
-    scalingMatrix[2][2] = _transformComponent->scale;
+    scaling_matrix[0][0] = transform->scale;
+    scaling_matrix[1][1] = transform->scale;
+    scaling_matrix[2][2] = transform->scale;
 
-    translationMatrix[3][0] = _transformComponent->position[0];
-    translationMatrix[3][1] = _transformComponent->position[1];
-    translationMatrix[3][2] = _transformComponent->position[2];
-    translationMatrix[3][3] = 1.0f;
+    translation_matrix[3][0] = transform->position[0];
+    translation_matrix[3][1] = transform->position[1];
+    translation_matrix[3][2] = transform->position[2];
+    translation_matrix[3][3] = 1.0f;
 
-    float sinPitch = std::sin(Radians(-rotation->pitch / 2));
-    float cosPitch = std::cos(Radians(-rotation->pitch / 2));
-    float sinYaw = std::sin(Radians((rotation->yaw) / 2));
-    float cosYaw = std::cos(Radians((rotation->yaw) / 2));
+    float sin_pitch = std::sin(radians(-rotation->pitch / 2));
+    float cos_pitch = std::cos(radians(-rotation->pitch / 2));
+    float sin_yaw = std::sin(radians((rotation->yaw) / 2));
+    float cos_yaw = std::cos(radians((rotation->yaw) / 2));
 
-    Quaternion pitchQuat;
-    Quaternion yawQuat;
-    pitchQuat.w = cosPitch;
-    pitchQuat.x = sinPitch;
-    pitchQuat.y = 0.0f;
-    pitchQuat.z = 0.0f;
+    Quaternion pitch_quat;
+    Quaternion yaw_quat;
+    pitch_quat.w = cos_pitch;
+    pitch_quat.x = sin_pitch;
+    pitch_quat.y = 0.0f;
+    pitch_quat.z = 0.0f;
 
-    yawQuat.w = cosYaw;
-    yawQuat.x = 0.0f;
-    yawQuat.y = sinYaw;
-    yawQuat.z = 0.0f;
-    return scalingMatrix * translationMatrix;
+    yaw_quat.w = cos_yaw;
+    yaw_quat.x = 0.0f;
+    yaw_quat.y = sin_yaw;
+    yaw_quat.z = 0.0f;
+    return scaling_matrix * translation_matrix;
 }
 
-void Engine::computeHudScreeenCoordinates() {
+void Engine::compute_hud_screeen_coordinates() {
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-    hud_screen_y -= g_eEvent.mousePointerPosition.offset_Y
-        / (float)vulkanRenderer->Window->height;
-    hud_screen_x += g_eEvent.mousePointerPosition.offset_X
-        / (float)vulkanRenderer->Window->width;
+    hud_screen_y -= G_E_EVENT.mouse_pointer_position.offset_y
+        / (float)vulkan_renderer->window->height;
+    hud_screen_x += G_E_EVENT.mouse_pointer_position.offset_x
+        / (float)vulkan_renderer->window->width;
 #else
-    if (vulkanRenderer->isInventoryOpened || vulkanRenderer->isCursorReleased) {
+    if (vulkan_renderer->is_inventory_opened
+        || vulkan_renderer->is_cursor_released) {
         // Cursor is free while the inventory is open or the cursor is released:
         // track its real position instead of the locked-mouse offsets.
         hud_screen_x = 1.0f
-            - g_eEvent.mousePointerPosition.position_X
-                / ((float)vulkanRenderer->Window->width / 2.0f);
+            - G_E_EVENT.mouse_pointer_position.position_x
+                / ((float)vulkan_renderer->window->width / 2.0f);
         hud_screen_y =
-            -(g_eEvent.mousePointerPosition.position_Y
-                  / ((float)vulkanRenderer->Window->height / 2.0f)
+            -(G_E_EVENT.mouse_pointer_position.position_y
+                  / ((float)vulkan_renderer->window->height / 2.0f)
               - 1.0f);
     } else {
-        hud_screen_y -=
-            (previousMouseOffsetY - g_eEvent.mousePointerPosition.offset_Y)
-            / (float)vulkanRenderer->Window->height;
-        hud_screen_x +=
-            (previousMouseOffsetX - g_eEvent.mousePointerPosition.offset_X)
-            / (float)vulkanRenderer->Window->width;
+        hud_screen_y -= (previous_mouse_offset_y
+                         - G_E_EVENT.mouse_pointer_position.offset_y)
+            / (float)vulkan_renderer->window->height;
+        hud_screen_x += (previous_mouse_offset_x
+                         - G_E_EVENT.mouse_pointer_position.offset_x)
+            / (float)vulkan_renderer->window->width;
     }
-    previousMouseOffsetX = g_eEvent.mousePointerPosition.offset_X;
-    previousMouseOffsetY = g_eEvent.mousePointerPosition.offset_Y;
+    previous_mouse_offset_x = G_E_EVENT.mouse_pointer_position.offset_x;
+    previous_mouse_offset_y = G_E_EVENT.mouse_pointer_position.offset_y;
 #endif
 
     if (hud_screen_x > 1.0f) {
@@ -2586,92 +2679,92 @@ void Engine::computeHudScreeenCoordinates() {
     }
 }
 
-TextureHandle Engine::LoadTextureFromFile(const char* path_to_texture) {
-    uint32_t textureID = textureVector.size();
-    TextureHandle textureHandle;
-    textureHandle.id = textureID;
-    textureVector.push_back({.path_to_image = path_to_texture});
-    textureHandlers.push_back(textureHandle);
+TextureHandle Engine::load_texture_from_file(const char* path_to_texture) {
+    uint32_t texture_id = texture_vector.size();
+    TextureHandle texture_handle;
+    texture_handle.id = texture_id;
+    texture_vector.push_back({.path_to_image = path_to_texture});
+    texture_handlers.push_back(texture_handle);
 
-    return textureHandle;
+    return texture_handle;
 }
 
 auto Engine::load_texture_from_address(
-    unsigned int iWidth,
-    unsigned int iHeight,
+    unsigned int i_width,
+    unsigned int i_height,
     unsigned int dat_length,
-    unsigned char* u_iData
+    unsigned char* u_i_data
 ) -> TextureHandle {
-    uint32_t textureID = textureVector.size();
-    TextureHandle textureHandle;
-    textureHandle.id = textureID;
-    textureVector.push_back(
-        {.iWidth_ = iWidth,
-         .iHeight_ = iHeight,
-         .dat_length_ = dat_length,
-         .u_iData_ = u_iData}
+    uint32_t texture_id = texture_vector.size();
+    TextureHandle texture_handle;
+    texture_handle.id = texture_id;
+    texture_vector.push_back(
+        {.i_width = i_width,
+         .i_height = i_height,
+         .dat_length = dat_length,
+         .u_i_data = u_i_data}
     );
-    textureHandlers.push_back(textureHandle);
+    texture_handlers.push_back(texture_handle);
 
-    return textureHandle;
+    return texture_handle;
 }
 
-MeshHandle Engine::load_mesh_from_obj(const char* _pathToMesh) {
-    MeshHandle meshHandle;
-    meshHandle.id = meshID;
-    pathsArray_.push_back(_pathToMesh);
-    meshHandlers.push_back(meshHandle);
-    ++meshID;
+MeshHandle Engine::load_mesh_from_obj(const char* mesh_path) {
+    MeshHandle mesh_handle;
+    mesh_handle.id = mesh_id;
+    paths_array.push_back(mesh_path);
+    mesh_handlers.push_back(mesh_handle);
+    ++mesh_id;
 
-    return meshHandle;
+    return mesh_handle;
 }
 
-MeshHandle Engine::load_mesh_from_gltf(const char* pathToMesh) {
-    MeshHandle meshHandle;
-    meshHandle.id = meshID;
-    pathsGLTF_.push_back(pathToMesh);
-    meshHandlers.push_back(meshHandle);
-    ++meshID;
+MeshHandle Engine::load_mesh_from_gltf(const char* path_to_mesh) {
+    MeshHandle mesh_handle;
+    mesh_handle.id = mesh_id;
+    paths_gltf.push_back(path_to_mesh);
+    mesh_handlers.push_back(mesh_handle);
+    ++mesh_id;
 
-    return meshHandle;
+    return mesh_handle;
 }
 
-MeshHandle Engine::LoadMesh() {
-    MeshHandle meshHandle;
-    meshHandle.id = meshID;
-    meshHandlers.push_back(meshHandle);
-    ++meshID;
+MeshHandle Engine::load_mesh() {
+    MeshHandle mesh_handle;
+    mesh_handle.id = mesh_id;
+    mesh_handlers.push_back(mesh_handle);
+    ++mesh_id;
 
-    return meshHandle;
+    return mesh_handle;
 }
 
-void Engine::GameKill() {
-    runningSound = false;
-    soundEngine->CloseDevice();
+void Engine::game_kill() {
+    running_sound = false;
+    sound_engine->close_device();
 
     if (sound_thread.joinable()) {
         sound_thread.join();
     }
 
-    delete soundEngine;
-    soundEngine = nullptr;
+    delete sound_engine;
+    sound_engine = nullptr;
 
     delete chrono;
     chrono = nullptr;
-    delete collisionSystem;
-    collisionSystem = nullptr;
-    delete movementSystem;
-    movementSystem = nullptr;
-    delete physicsSystem;
-    physicsSystem = nullptr;
-    delete projectileSystem;
-    projectileSystem = nullptr;
-    delete damageSystem;
-    damageSystem = nullptr;
-    delete enemySytem;
-    enemySytem = nullptr;
-    delete itemSystem;
-    itemSystem = nullptr;
+    delete collision_system;
+    collision_system = nullptr;
+    delete movement_system;
+    movement_system = nullptr;
+    delete physics_system;
+    physics_system = nullptr;
+    delete projectile_system;
+    projectile_system = nullptr;
+    delete damage_system;
+    damage_system = nullptr;
+    delete enemy_sytem;
+    enemy_sytem = nullptr;
+    delete item_system;
+    item_system = nullptr;
 }
 } // namespace glvm
 
@@ -2692,19 +2785,19 @@ EntityManager* EntityManager::get_instance() {
 }
 
 [[nodiscard]] unsigned int EntityManager::create_entity() {
-    unsigned int _Entity_ID;
+    unsigned int new_id;
     // Check out wether or not free ID in removed entities registry.
-    if (removed_entity_registry.size() > k_iNull) {
-        _Entity_ID = removed_entity_registry.front();
+    if (removed_entity_registry.size() > K_I_NULL) {
+        new_id = removed_entity_registry.front();
         active_entity_registry.push_back(removed_entity_registry.front());
         removed_entity_registry.erase(removed_entity_registry.begin());
     } else {
         active_entity_registry.push_back(id);
-        _Entity_ID = id;
+        new_id = id;
         ++id;
     }
     is_entities_collection_changed = true;
-    return _Entity_ID;
+    return new_id;
 }
 
 // Don't need to delete real component in this method. Because systems dont work
@@ -2714,7 +2807,7 @@ void EntityManager::remove_entity(
     ComponentManager* component_manager
 ) {
     component_manager->remove_all_components(entity_id);
-    active_entity_registry[entity_id] = k_iUint_Max;
+    active_entity_registry[entity_id] = K_I_UINT_MAX;
     removed_entity_registry.push_back(entity_id);
     is_entities_collection_changed = true;
 }
@@ -2723,38 +2816,38 @@ void EntityManager::remove_entity(
 namespace glvm {
 CEvent::CEvent() {}
 
-EEvents& CEvent::GetEvent() {
-    return eEvent_;
+EEvents& CEvent::get_event() {
+    return e_event;
 }
 
-void CEvent::SetEvent(EEvents _eEvent) {
-    eEvent_ = _eEvent;
+void CEvent::set_event(EEvents new_event) {
+    e_event = new_event;
 }
 
-void CEvent::SetNextEvent(EEvents _eEvent) {
-    nextEvent = _eEvent;
+void CEvent::set_next_event(EEvents new_event) {
+    next_event = new_event;
 }
 
-EEvents CEvent::GetNextEvent() {
-    return nextEvent;
+EEvents CEvent::get_next_event() {
+    return next_event;
 }
 
-void CEvent::SetLastEvent(CStack _Stack) {
-    switch (_Stack.Pop()) {
-        case glvm::eMOVE_RIGHT:
-            SetEvent(glvm::EEvents::eMOVE_RIGHT);
+void CEvent::set_last_event(CStack stack) {
+    switch (stack.pop()) {
+        case glvm::EMoveRight:
+            set_event(glvm::EEvents::EMoveRight);
             break;
-        case glvm::eMOVE_LEFT:
-            SetEvent(glvm::EEvents::eMOVE_LEFT);
+        case glvm::EMoveLeft:
+            set_event(glvm::EEvents::EMoveLeft);
             break;
-        case glvm::eMOVE_BACKWARD:
-            SetEvent(glvm::EEvents::eMOVE_BACKWARD);
+        case glvm::EMoveBackward:
+            set_event(glvm::EEvents::EMoveBackward);
             break;
-        case glvm::eMOVE_FORWARD:
-            SetEvent(glvm::EEvents::eMOVE_FORWARD);
+        case glvm::EMoveForward:
+            set_event(glvm::EEvents::EMoveForward);
             break;
-        case glvm::eMOUSE_LEFT_BUTTON:
-            SetEvent(glvm::EEvents::eMOUSE_LEFT_BUTTON);
+        case glvm::EMouseLeftButton:
+            set_event(glvm::EEvents::EMouseLeftButton);
             break;
         default:
             break;
@@ -2763,579 +2856,605 @@ void CEvent::SetLastEvent(CStack _Stack) {
 } // namespace glvm
 
 namespace glvm {
-std::vector<VkDescriptorSet> descriptorSetsChunks;
-std::vector<VkRenderPass> renderPasses;
-std::vector<Descriptor> GPUDescriptors;
+std::vector<VkDescriptorSet> DESCRIPTOR_SETS_CHUNKS;
+std::vector<VkRenderPass> RENDER_PASSES;
+std::vector<Descriptor> GPU_DESCRIPTORS;
 } // namespace glvm
 
 namespace glvm {
-void descriptorSetBuilder() {
+void descriptor_set_builder() {
     // Counts ds bindings indexes inside ds.
-    static unsigned int DS_globalBindingsCounter = 0;
+    static unsigned int DS_GLOBAL_BINDINGS_COUNTER = 0;
     // Counts host data ds.
-    static unsigned int DS_hostNumber = 0;
+    static unsigned int DS_HOST_NUMBER = 0;
     // Counts offsets data descriptors.
-    static unsigned int globalDescriptorsOffset = 0;
+    static unsigned int GLOBAL_DESCRIPTORS_OFFSET = 0;
 
-    for (unsigned int dsCounter = 0;
-         dsCounter < DescriptorSetDataLink::DESCRIPTOR_CHUNKS_NUMBER;
-         ++dsCounter) {
+    for (unsigned int ds_counter = 0;
+         ds_counter < DescriptorSetDataLink::DescriptorChunksNumber;
+         ++ds_counter) {
         // Offset for indexing inside descriptorSetsChunks.
-        descriptorSetsConfig[dsCounter].descriptorSetOffset = DS_hostNumber;
-        DS_hostNumber += descriptorSetsConfig[dsCounter].hostDescriptorNumber;
+        DESCRIPTOR_SETS_CONFIG[ds_counter].descriptor_set_offset =
+            DS_HOST_NUMBER;
+        DS_HOST_NUMBER +=
+            DESCRIPTOR_SETS_CONFIG[ds_counter].host_descriptor_number;
 
-        for (unsigned int DS_localBindingsCounter = 0; DS_localBindingsCounter
-             < descriptorSetsConfig[dsCounter]
-                   .actualLinkedDescriptorBindingsNumber;
-             ++DS_localBindingsCounter) {
-            const uint32_t DS_sumBindingsCounter =
-                DS_globalBindingsCounter + DS_localBindingsCounter;
+        for (unsigned int ds_local_bindings_counter = 0;
+             ds_local_bindings_counter
+             < DESCRIPTOR_SETS_CONFIG[ds_counter]
+                   .actual_linked_descriptor_bindings_number;
+             ++ds_local_bindings_counter) {
+            const uint32_t ds_sum_bindings_counter =
+                DS_GLOBAL_BINDINGS_COUNTER + ds_local_bindings_counter;
             // Global offset for descriptors inside ds binding.
-            descriptorBindingsConfig[DS_sumBindingsCounter]
-                .globalDescriptorOffset = globalDescriptorsOffset;
+            DESCRIPTOR_BINDINGS_CONFIG[ds_sum_bindings_counter]
+                .global_descriptor_offset = GLOBAL_DESCRIPTORS_OFFSET;
 
             // Index for ds bindings inside ds.
-            descriptorSetsConfig[dsCounter]
-                .descriptorsBindingsIDs[DS_localBindingsCounter] =
-                DS_sumBindingsCounter;
-            if (descriptorBindingsConfig[DS_sumBindingsCounter].vkType
+            DESCRIPTOR_SETS_CONFIG[ds_counter]
+                .descriptors_bindings_i_ds[ds_local_bindings_counter] =
+                ds_sum_bindings_counter;
+            if (DESCRIPTOR_BINDINGS_CONFIG[ds_sum_bindings_counter].vk_type
                 == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
-                for (unsigned int descriptorCounter = 0; descriptorCounter
-                     < descriptorBindingsConfig[DS_sumBindingsCounter]
-                           .shaderDescriptorsNumber;
-                     ++descriptorCounter) {
-                    GPUDescriptors.push_back({});
-                    GPUDescriptors[GPUDescriptors.size() - 1].GPUBuffer =
+                for (unsigned int descriptor_counter = 0; descriptor_counter
+                     < DESCRIPTOR_BINDINGS_CONFIG[ds_sum_bindings_counter]
+                           .shader_descriptors_number;
+                     ++descriptor_counter) {
+                    GPU_DESCRIPTORS.push_back({});
+                    GPU_DESCRIPTORS[GPU_DESCRIPTORS.size() - 1].gpu_buffer =
                         new GPUBuffer;
-                    ++globalDescriptorsOffset;
+                    ++GLOBAL_DESCRIPTORS_OFFSET;
                 }
             } else if (
-                descriptorBindingsConfig[DS_sumBindingsCounter].vkType
+                DESCRIPTOR_BINDINGS_CONFIG[ds_sum_bindings_counter].vk_type
                 == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
             ) {
-                for (unsigned int descriptorCounter = 0; descriptorCounter
-                     < descriptorBindingsConfig[DS_sumBindingsCounter]
-                           .shaderDescriptorsNumber;
-                     ++descriptorCounter) {
-                    GPUDescriptors.push_back({});
-                    GPUDescriptors[GPUDescriptors.size() - 1].GPUImage =
-                        new VK_Image;
-                    ++globalDescriptorsOffset;
+                for (unsigned int descriptor_counter = 0; descriptor_counter
+                     < DESCRIPTOR_BINDINGS_CONFIG[ds_sum_bindings_counter]
+                           .shader_descriptors_number;
+                     ++descriptor_counter) {
+                    GPU_DESCRIPTORS.push_back({});
+                    GPU_DESCRIPTORS[GPU_DESCRIPTORS.size() - 1].gpu_image =
+                        new GpuImage;
+                    ++GLOBAL_DESCRIPTORS_OFFSET;
                 }
             }
         }
-        DS_globalBindingsCounter +=
-            descriptorSetsConfig[dsCounter].actualLinkedDescriptorBindingsNumber;
+        DS_GLOBAL_BINDINGS_COUNTER +=
+            DESCRIPTOR_SETS_CONFIG[ds_counter]
+                .actual_linked_descriptor_bindings_number;
     }
-    descriptorSetsChunks.resize(DS_hostNumber);
+    DESCRIPTOR_SETS_CHUNKS.resize(DS_HOST_NUMBER);
 }
 
-void pipelineBuilder() {
-    static unsigned int descriptorSetsLayoutIdCounter = 0;
-    for (unsigned int pipelineCounter = 0;
-         pipelineCounter < SpecificPipeline::PIPELINES_NUMBER;
-         ++pipelineCounter) {
-        for (unsigned int linkedDSLayoutCounter = 0; linkedDSLayoutCounter
-             < pipelineConfigs[pipelineCounter].actualLinkedDescriptorSetsNumber;
-             ++linkedDSLayoutCounter) {
-            pipelineConfigs[pipelineCounter]
-                .linkedDescriptorSetIDs[linkedDSLayoutCounter] =
-                descriptorSetsLayoutIdCounter + linkedDSLayoutCounter;
+void pipeline_builder() {
+    static unsigned int DESCRIPTOR_SETS_LAYOUT_ID_COUNTER = 0;
+    for (unsigned int pipeline_counter = 0;
+         pipeline_counter < SpecificPipeline::PipelinesNumber;
+         ++pipeline_counter) {
+        for (unsigned int linked_ds_layout_counter = 0; linked_ds_layout_counter
+             < PIPELINE_CONFIGS[pipeline_counter]
+                   .actual_linked_descriptor_sets_number;
+             ++linked_ds_layout_counter) {
+            PIPELINE_CONFIGS[pipeline_counter]
+                .linked_descriptor_set_i_ds[linked_ds_layout_counter] =
+                DESCRIPTOR_SETS_LAYOUT_ID_COUNTER + linked_ds_layout_counter;
         }
-        descriptorSetsLayoutIdCounter +=
-            pipelineConfigs[pipelineCounter].actualLinkedDescriptorSetsNumber;
+        DESCRIPTOR_SETS_LAYOUT_ID_COUNTER +=
+            PIPELINE_CONFIGS[pipeline_counter]
+                .actual_linked_descriptor_sets_number;
     }
 }
 
-void renderPassesBuilder() {
-    renderPasses.resize(SpecificPipeline::PIPELINES_NUMBER);
+void render_passes_builder() {
+    RENDER_PASSES.resize(SpecificPipeline::PipelinesNumber);
 }
 }; // namespace glvm
 
 namespace glvm {
-VkResult CreateDebugUtilsMessengerEXT(
+VkResult create_debug_utils_messenger_ext(
     VkInstance instance,
-    const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-    const VkAllocationCallbacks* pAllocator,
-    VkDebugUtilsMessengerEXT* pDebugMessenger
+    const VkDebugUtilsMessengerCreateInfoEXT* p_create_info,
+    const VkAllocationCallbacks* p_allocator,
+    VkDebugUtilsMessengerEXT* p_debug_messenger
 ) {
-    static auto func = (PFN_vkCreateDebugUtilsMessengerEXT)
+    static auto FUNC = (PFN_vkCreateDebugUtilsMessengerEXT)
         vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-    if (func != nullptr) {
-        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+    if (FUNC != nullptr) {
+        return FUNC(instance, p_create_info, p_allocator, p_debug_messenger);
     } else {
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 }
 
-void CreateBeginDebugUtilsLabelEXT(
+void create_begin_debug_utils_label_ext(
     [[maybe_unused]] VkInstance instance,
-    [[maybe_unused]] VkCommandBuffer commandBuffer,
-    [[maybe_unused]] const VkDebugUtilsLabelEXT* labelInfo
+    [[maybe_unused]] VkCommandBuffer command_buffer,
+    [[maybe_unused]] const VkDebugUtilsLabelEXT* label_info
 ) {
 #ifndef NDEBUG
-    static auto func = (PFN_vkCmdBeginDebugUtilsLabelEXT)
+    static auto FUNC = (PFN_vkCmdBeginDebugUtilsLabelEXT)
         vkGetInstanceProcAddr(instance, "vkCmdBeginDebugUtilsLabelEXT");
-    func(commandBuffer, labelInfo);
+    FUNC(command_buffer, label_info);
 #endif
 }
 
-void CreateEndDebugUtilsLabelEXT(
+void create_end_debug_utils_label_ext(
     [[maybe_unused]] VkInstance instance,
-    [[maybe_unused]] VkCommandBuffer commandBuffer
+    [[maybe_unused]] VkCommandBuffer command_buffer
 ) {
 #ifndef NDEBUG
-    static auto func = (PFN_vkCmdEndDebugUtilsLabelEXT)
+    static auto FUNC = (PFN_vkCmdEndDebugUtilsLabelEXT)
         vkGetInstanceProcAddr(instance, "vkCmdEndDebugUtilsLabelEXT");
-    func(commandBuffer);
+    FUNC(command_buffer);
 #endif
 }
 
-void DestroyDebugUtilsMessengerEXT(
+void destroy_debug_utils_messenger_ext(
     VkInstance instance,
-    VkDebugUtilsMessengerEXT debugMessenger,
-    const VkAllocationCallbacks* pAllocator
+    VkDebugUtilsMessengerEXT debug_messenger,
+    const VkAllocationCallbacks* p_allocator
 ) {
-    static auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)
+    static auto FUNC = (PFN_vkDestroyDebugUtilsMessengerEXT)
         vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-    if (func != nullptr) {
-        func(instance, debugMessenger, pAllocator);
+    if (FUNC != nullptr) {
+        FUNC(instance, debug_messenger, p_allocator);
     }
 }
 
-VkResult SetDebugObjectName(
+VkResult set_debug_object_name(
     VkDevice device,
-    const VkDebugUtilsObjectNameInfoEXT* objectNameInfo
+    const VkDebugUtilsObjectNameInfoEXT* object_name_info
 ) {
-    static auto func = (PFN_vkSetDebugUtilsObjectNameEXT)
+    static auto FUNC = (PFN_vkSetDebugUtilsObjectNameEXT)
         vkGetDeviceProcAddr(device, "vkSetDebugUtilsObjectNameEXT");
-    if (func != nullptr) {
-        return func(device, objectNameInfo);
+    if (FUNC != nullptr) {
+        return FUNC(device, object_name_info);
     } else {
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 }
 
-void setImageDebugObjectName(
+void set_image_debug_object_name(
     VkDevice device,
-    VK_Image image,
-    std::string imageName
+    GpuImage image,
+    std::string image_name
 ) {
-    VkDebugUtilsObjectNameInfoEXT imageObjectInfo {};
-    imageObjectInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string imageName1 = std::string(VK_DEBUG_IMAGE_SET_RED) + " \x1b[31m"
-        + imageName + " pipeline #\x1b[0m " + std::to_string(0);
-    const char* strImageName = imageName1.c_str();
-    imageObjectInfo.pObjectName = strImageName;
-    imageObjectInfo.objectType = VK_OBJECT_TYPE_IMAGE;
-    imageObjectInfo.objectHandle = (uint64_t)image.image;
-    SetDebugObjectName(device, &imageObjectInfo);
+    VkDebugUtilsObjectNameInfoEXT image_object_info {};
+    image_object_info.sType =
+        VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+    std::string image_name1 = std::string(VK_DEBUG_IMAGE_SET_RED) + " \x1b[31m"
+        + image_name + " pipeline #\x1b[0m " + std::to_string(0);
+    const char* str_image_name = image_name1.c_str();
+    image_object_info.pObjectName = str_image_name;
+    image_object_info.objectType = VK_OBJECT_TYPE_IMAGE;
+    image_object_info.objectHandle = (uint64_t)image.image;
+    set_debug_object_name(device, &image_object_info);
 }
 
-void setPipelineDebugObjectName(
+void set_pipeline_debug_object_name(
     VkDevice device,
     VkPipeline pipeline,
-    std::string pipelineName
+    std::string pipeline_name
 ) {
-    VkDebugUtilsObjectNameInfoEXT mainPipelineObjectInfo {};
-    mainPipelineObjectInfo.sType =
+    VkDebugUtilsObjectNameInfoEXT main_pipeline_object_info {};
+    main_pipeline_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string mainPipeLineImageName = std::string(VK_DEBUG_PIPELINE_RED)
-        + " \x1b[31m" + pipelineName + " pipeline #\x1b[0m "
+    std::string main_pipe_line_image_name = std::string(VK_DEBUG_PIPELINE_RED)
+        + " \x1b[31m" + pipeline_name + " pipeline #\x1b[0m "
         + std::to_string(0);
-    const char* mainPipeLineStrImageName = mainPipeLineImageName.c_str();
-    mainPipelineObjectInfo.pObjectName = mainPipeLineStrImageName;
-    mainPipelineObjectInfo.objectType = VK_OBJECT_TYPE_PIPELINE;
-    mainPipelineObjectInfo.objectHandle = (uint64_t)pipeline;
-    SetDebugObjectName(device, &mainPipelineObjectInfo);
+    const char* main_pipe_line_str_image_name =
+        main_pipe_line_image_name.c_str();
+    main_pipeline_object_info.pObjectName = main_pipe_line_str_image_name;
+    main_pipeline_object_info.objectType = VK_OBJECT_TYPE_PIPELINE;
+    main_pipeline_object_info.objectHandle = (uint64_t)pipeline;
+    set_debug_object_name(device, &main_pipeline_object_info);
 }
 
-void setDescriptorSetObjectName(
+void set_descriptor_set_object_name(
     VkDevice device,
-    VkDescriptorSet descriptorSet,
-    std::string descriptorSetName,
+    VkDescriptorSet descriptor_set,
+    std::string descriptor_set_name,
     unsigned int index
 ) {
-    VkDebugUtilsObjectNameInfoEXT descriptorSetObjectInfo {};
-    descriptorSetObjectInfo.sType =
+    VkDebugUtilsObjectNameInfoEXT descriptor_set_object_info {};
+    descriptor_set_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
     std::string name = std::string(VK_DEBUG_DESCRIPTOR_SET_RED) + " \x1b[31m"
-        + descriptorSetName + " descriptor set #\x1b[0m "
+        + descriptor_set_name + " descriptor set #\x1b[0m "
         + std::to_string(index);
-    const char* strName = name.c_str();
-    descriptorSetObjectInfo.pObjectName = strName;
-    descriptorSetObjectInfo.objectType = VK_OBJECT_TYPE_DESCRIPTOR_SET;
-    descriptorSetObjectInfo.objectHandle = (uint64_t)descriptorSet;
-    SetDebugObjectName(device, &descriptorSetObjectInfo);
+    const char* str_name = name.c_str();
+    descriptor_set_object_info.pObjectName = str_name;
+    descriptor_set_object_info.objectType = VK_OBJECT_TYPE_DESCRIPTOR_SET;
+    descriptor_set_object_info.objectHandle = (uint64_t)descriptor_set;
+    set_debug_object_name(device, &descriptor_set_object_info);
 }
 
-void setDebugObjectNames(
+void set_debug_object_names(
     VkDevice device,
-    const std::vector<VkBuffer>& vertexBufferContainer,
-    const std::vector<VkBuffer>& indexBufferContainer,
-    const std::vector<Descriptor>& GPUDescriptors,
-    const std::vector<unsigned int>& fontIndicesContainer,
-    const std::vector<VkBuffer>& fontVertexBufferContainer,
-    const std::vector<VkBuffer>& fontIndexBufferContainer
+    const std::vector<VkBuffer>& vertex_buffer_container,
+    const std::vector<VkBuffer>& index_buffer_container,
+    const std::vector<Descriptor>& gpu_descriptors,
+    const std::vector<unsigned int>& font_indices_container,
+    const std::vector<VkBuffer>& font_vertex_buffer_container,
+    const std::vector<VkBuffer>& font_index_buffer_container
 ) {
-    setPipelineDebugObjectName(
+    set_pipeline_debug_object_name(
         device,
-        pipelineConfigs[SpecificPipeline::FONT_PIPELINE].pipeline,
+        PIPELINE_CONFIGS[SpecificPipeline::FontPipeline].pipeline,
         "fontPipeline"
     );
-    setPipelineDebugObjectName(
+    set_pipeline_debug_object_name(
         device,
-        pipelineConfigs[SpecificPipeline::UI_PIPELINE].pipeline,
+        PIPELINE_CONFIGS[SpecificPipeline::UiPipeline].pipeline,
         "uiPipeline"
     );
-    setPipelineDebugObjectName(
+    set_pipeline_debug_object_name(
         device,
-        pipelineConfigs[SpecificPipeline::UI_ICONS_PIPELINE].pipeline,
+        PIPELINE_CONFIGS[SpecificPipeline::UiIconsPipeline].pipeline,
         "uiIconsPipeline"
     );
 
-    VkDebugUtilsObjectNameInfoEXT mainPipelineObjectInfo {};
-    mainPipelineObjectInfo.sType =
+    VkDebugUtilsObjectNameInfoEXT main_pipeline_object_info {};
+    main_pipeline_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string mainPipeLineImageName = std::string(VK_DEBUG_PIPELINE_RED)
+    std::string main_pipe_line_image_name = std::string(VK_DEBUG_PIPELINE_RED)
         + " \x1b[31mMain pipeline #\x1b[0m " + std::to_string(0);
-    const char* mainPipeLineStrImageName = mainPipeLineImageName.c_str();
-    mainPipelineObjectInfo.pObjectName = mainPipeLineStrImageName;
-    mainPipelineObjectInfo.objectType = VK_OBJECT_TYPE_PIPELINE;
-    mainPipelineObjectInfo.objectHandle =
-        (uint64_t)pipelineConfigs[SpecificPipeline::MAIN_RENDER_PIPELINE]
+    const char* main_pipe_line_str_image_name =
+        main_pipe_line_image_name.c_str();
+    main_pipeline_object_info.pObjectName = main_pipe_line_str_image_name;
+    main_pipeline_object_info.objectType = VK_OBJECT_TYPE_PIPELINE;
+    main_pipeline_object_info.objectHandle =
+        (uint64_t)PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline]
             .pipeline;
-    SetDebugObjectName(device, &mainPipelineObjectInfo);
+    set_debug_object_name(device, &main_pipeline_object_info);
 
-    VkDebugUtilsObjectNameInfoEXT mainPipelineLayoutObjectInfo {};
-    mainPipelineLayoutObjectInfo.sType =
+    VkDebugUtilsObjectNameInfoEXT main_pipeline_layout_object_info {};
+    main_pipeline_layout_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string mainPipelineLayoutImageName =
+    std::string main_pipeline_layout_image_name =
         std::string(VK_DEBUG_PIPELINE_LAYOUT_RED)
         + " \x1b[31mMain pipeline layout #\x1b[0m " + std::to_string(0);
-    const char* mainPipelineLayoutStrImageName =
-        mainPipelineLayoutImageName.c_str();
-    mainPipelineLayoutObjectInfo.pObjectName = mainPipelineLayoutStrImageName;
-    mainPipelineLayoutObjectInfo.objectType = VK_OBJECT_TYPE_PIPELINE_LAYOUT;
-    mainPipelineLayoutObjectInfo.objectHandle =
-        (uint64_t)pipelineConfigs[SpecificPipeline::MAIN_RENDER_PIPELINE]
-            .pipelineLayout;
-    SetDebugObjectName(device, &mainPipelineObjectInfo);
+    const char* main_pipeline_layout_str_image_name =
+        main_pipeline_layout_image_name.c_str();
+    main_pipeline_layout_object_info.pObjectName =
+        main_pipeline_layout_str_image_name;
+    main_pipeline_layout_object_info.objectType =
+        VK_OBJECT_TYPE_PIPELINE_LAYOUT;
+    main_pipeline_layout_object_info.objectHandle =
+        (uint64_t)PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline]
+            .pipeline_layout;
+    set_debug_object_name(device, &main_pipeline_object_info);
 
-    VkDebugUtilsObjectNameInfoEXT directionalLightPipelineObjectInfo {};
-    directionalLightPipelineObjectInfo.sType =
+    VkDebugUtilsObjectNameInfoEXT directional_light_pipeline_object_info {};
+    directional_light_pipeline_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string directionalLightPipeLineImageName =
+    std::string directional_light_pipe_line_image_name =
         std::string(VK_DEBUG_PIPELINE_RED)
         + " \x1b[31mDirectional light pipeline #\x1b[0m " + std::to_string(0);
-    const char* directionalLightPipeLineStrImageName =
-        directionalLightPipeLineImageName.c_str();
-    directionalLightPipelineObjectInfo.pObjectName =
-        directionalLightPipeLineStrImageName;
-    directionalLightPipelineObjectInfo.objectType = VK_OBJECT_TYPE_PIPELINE;
-    directionalLightPipelineObjectInfo.objectHandle =
-        (uint64_t)pipelineConfigs[SpecificPipeline::DIRECTIONAL_LIGHT_PIPELINE]
+    const char* directional_light_pipe_line_str_image_name =
+        directional_light_pipe_line_image_name.c_str();
+    directional_light_pipeline_object_info.pObjectName =
+        directional_light_pipe_line_str_image_name;
+    directional_light_pipeline_object_info.objectType = VK_OBJECT_TYPE_PIPELINE;
+    directional_light_pipeline_object_info.objectHandle =
+        (uint64_t)PIPELINE_CONFIGS[SpecificPipeline::DirectionalLightPipeline]
             .pipeline;
-    SetDebugObjectName(device, &directionalLightPipelineObjectInfo);
+    set_debug_object_name(device, &directional_light_pipeline_object_info);
 
-    VkDebugUtilsObjectNameInfoEXT directionalLightPipelineLayoutObjectInfo {};
-    directionalLightPipelineLayoutObjectInfo.sType =
+    VkDebugUtilsObjectNameInfoEXT
+        directional_light_pipeline_layout_object_info {};
+    directional_light_pipeline_layout_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string directionalLightPipelineLayoutImageName =
+    std::string directional_light_pipeline_layout_image_name =
         std::string(VK_DEBUG_PIPELINE_LAYOUT_RED)
         + " \x1b[31mDirectional light pipeline layout #\x1b[0m "
         + std::to_string(0);
-    const char* directionalLightPipelineLayoutStrImageName =
-        directionalLightPipelineLayoutImageName.c_str();
-    directionalLightPipelineLayoutObjectInfo.pObjectName =
-        directionalLightPipelineLayoutStrImageName;
-    directionalLightPipelineLayoutObjectInfo.objectType =
+    const char* directional_light_pipeline_layout_str_image_name =
+        directional_light_pipeline_layout_image_name.c_str();
+    directional_light_pipeline_layout_object_info.pObjectName =
+        directional_light_pipeline_layout_str_image_name;
+    directional_light_pipeline_layout_object_info.objectType =
         VK_OBJECT_TYPE_PIPELINE_LAYOUT;
-    directionalLightPipelineLayoutObjectInfo.objectHandle =
-        (uint64_t)pipelineConfigs[SpecificPipeline::DIRECTIONAL_LIGHT_PIPELINE]
-            .pipelineLayout;
-    SetDebugObjectName(device, &directionalLightPipelineLayoutObjectInfo);
+    directional_light_pipeline_layout_object_info.objectHandle =
+        (uint64_t)PIPELINE_CONFIGS[SpecificPipeline::DirectionalLightPipeline]
+            .pipeline_layout;
+    set_debug_object_name(
+        device,
+        &directional_light_pipeline_layout_object_info
+    );
 
-    VkDebugUtilsObjectNameInfoEXT spotLightPipelineObjectInfo {};
-    spotLightPipelineObjectInfo.sType =
+    VkDebugUtilsObjectNameInfoEXT spot_light_pipeline_object_info {};
+    spot_light_pipeline_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string spotLightPipeLineImageName = std::string(VK_DEBUG_PIPELINE_RED)
+    std::string spot_light_pipe_line_image_name =
+        std::string(VK_DEBUG_PIPELINE_RED)
         + " \x1b[31mSpot light pipeline #\x1b[0m " + std::to_string(0);
-    const char* spotLightPipeLineStrImageName =
-        spotLightPipeLineImageName.c_str();
-    spotLightPipelineObjectInfo.pObjectName = spotLightPipeLineStrImageName;
-    spotLightPipelineObjectInfo.objectType = VK_OBJECT_TYPE_PIPELINE;
-    spotLightPipelineObjectInfo.objectHandle =
-        (uint64_t)pipelineConfigs[SpecificPipeline::SPOT_LIGHT_PIPELINE]
-            .pipeline;
-    SetDebugObjectName(device, &spotLightPipelineObjectInfo);
+    const char* spot_light_pipe_line_str_image_name =
+        spot_light_pipe_line_image_name.c_str();
+    spot_light_pipeline_object_info.pObjectName =
+        spot_light_pipe_line_str_image_name;
+    spot_light_pipeline_object_info.objectType = VK_OBJECT_TYPE_PIPELINE;
+    spot_light_pipeline_object_info.objectHandle =
+        (uint64_t)PIPELINE_CONFIGS[SpecificPipeline::SpotLightPipeline].pipeline;
+    set_debug_object_name(device, &spot_light_pipeline_object_info);
 
-    VkDebugUtilsObjectNameInfoEXT spotLightPipelineLayoutObjectInfo {};
-    spotLightPipelineLayoutObjectInfo.sType =
+    VkDebugUtilsObjectNameInfoEXT spot_light_pipeline_layout_object_info {};
+    spot_light_pipeline_layout_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string spotLightPipelineLayoutImageName =
+    std::string spot_light_pipeline_layout_image_name =
         std::string(VK_DEBUG_PIPELINE_LAYOUT_RED)
         + " \x1b[31mSpot light pipeline layout #\x1b[0m " + std::to_string(0);
-    const char* spotLightPipelineLayoutStrImageName =
-        spotLightPipelineLayoutImageName.c_str();
-    spotLightPipelineLayoutObjectInfo.pObjectName =
-        spotLightPipelineLayoutStrImageName;
-    spotLightPipelineLayoutObjectInfo.objectType =
+    const char* spot_light_pipeline_layout_str_image_name =
+        spot_light_pipeline_layout_image_name.c_str();
+    spot_light_pipeline_layout_object_info.pObjectName =
+        spot_light_pipeline_layout_str_image_name;
+    spot_light_pipeline_layout_object_info.objectType =
         VK_OBJECT_TYPE_PIPELINE_LAYOUT;
-    spotLightPipelineLayoutObjectInfo.objectHandle =
-        (uint64_t)pipelineConfigs[SpecificPipeline::SPOT_LIGHT_PIPELINE]
-            .pipelineLayout;
-    SetDebugObjectName(device, &spotLightPipelineLayoutObjectInfo);
+    spot_light_pipeline_layout_object_info.objectHandle =
+        (uint64_t)PIPELINE_CONFIGS[SpecificPipeline::SpotLightPipeline]
+            .pipeline_layout;
+    set_debug_object_name(device, &spot_light_pipeline_layout_object_info);
 
-    VkDebugUtilsObjectNameInfoEXT pointLightPipelineObjectInfo {};
-    pointLightPipelineObjectInfo.sType =
+    VkDebugUtilsObjectNameInfoEXT point_light_pipeline_object_info {};
+    point_light_pipeline_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string pointLightPipeLineImageName = std::string(VK_DEBUG_PIPELINE_RED)
+    std::string point_light_pipe_line_image_name =
+        std::string(VK_DEBUG_PIPELINE_RED)
         + " \x1b[31mPoint light pipeline #\x1b[0m " + std::to_string(0);
-    const char* pointLightPipeLineStrImageName =
-        pointLightPipeLineImageName.c_str();
-    pointLightPipelineObjectInfo.pObjectName = pointLightPipeLineStrImageName;
-    pointLightPipelineObjectInfo.objectType = VK_OBJECT_TYPE_PIPELINE;
-    pointLightPipelineObjectInfo.objectHandle =
-        (uint64_t)pipelineConfigs[SpecificPipeline::POINT_LIGHT_PIPELINE]
+    const char* point_light_pipe_line_str_image_name =
+        point_light_pipe_line_image_name.c_str();
+    point_light_pipeline_object_info.pObjectName =
+        point_light_pipe_line_str_image_name;
+    point_light_pipeline_object_info.objectType = VK_OBJECT_TYPE_PIPELINE;
+    point_light_pipeline_object_info.objectHandle =
+        (uint64_t)PIPELINE_CONFIGS[SpecificPipeline::PointLightPipeline]
             .pipeline;
-    SetDebugObjectName(device, &pointLightPipelineObjectInfo);
+    set_debug_object_name(device, &point_light_pipeline_object_info);
 
-    VkDebugUtilsObjectNameInfoEXT pointLightPipelineLayoutObjectInfo {};
-    pointLightPipelineLayoutObjectInfo.sType =
+    VkDebugUtilsObjectNameInfoEXT point_light_pipeline_layout_object_info {};
+    point_light_pipeline_layout_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string pointLightPipelineLayoutImageName =
+    std::string point_light_pipeline_layout_image_name =
         std::string(VK_DEBUG_PIPELINE_LAYOUT_RED)
         + " \x1b[31mPoint light pipeline layout #\x1b[0m " + std::to_string(0);
-    const char* pointLightPipelineLayoutStrImageName =
-        pointLightPipelineLayoutImageName.c_str();
-    pointLightPipelineLayoutObjectInfo.pObjectName =
-        pointLightPipelineLayoutStrImageName;
-    pointLightPipelineLayoutObjectInfo.objectType =
+    const char* point_light_pipeline_layout_str_image_name =
+        point_light_pipeline_layout_image_name.c_str();
+    point_light_pipeline_layout_object_info.pObjectName =
+        point_light_pipeline_layout_str_image_name;
+    point_light_pipeline_layout_object_info.objectType =
         VK_OBJECT_TYPE_PIPELINE_LAYOUT;
-    pointLightPipelineLayoutObjectInfo.objectHandle =
-        (uint64_t)pipelineConfigs[SpecificPipeline::POINT_LIGHT_PIPELINE]
-            .pipelineLayout;
-    SetDebugObjectName(device, &pointLightPipelineLayoutObjectInfo);
+    point_light_pipeline_layout_object_info.objectHandle =
+        (uint64_t)PIPELINE_CONFIGS[SpecificPipeline::PointLightPipeline]
+            .pipeline_layout;
+    set_debug_object_name(device, &point_light_pipeline_layout_object_info);
 
-    VkDebugUtilsObjectNameInfoEXT hudUniformBufferObjectInfo {};
-    hudUniformBufferObjectInfo.sType =
+    VkDebugUtilsObjectNameInfoEXT hud_uniform_buffer_object_info {};
+    hud_uniform_buffer_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string hudImageName = std::string(VK_DEBUG_IMAGE_SET_RED)
+    std::string hud_image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
         + " Hud uniform buffer # " + std::to_string(0);
-    const char* hudStrImageName = hudImageName.c_str();
-    hudUniformBufferObjectInfo.pObjectName = hudStrImageName;
-    hudUniformBufferObjectInfo.objectType = VK_OBJECT_TYPE_BUFFER;
-    unsigned int hudUboDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::HUD]
-            .descriptorsBindingsIDs[0];
-    hudUniformBufferObjectInfo.objectHandle =
-        (uint64_t)
-            GPUDescriptors[descriptorBindingsConfig[hudUboDescriptorBindingIndex]
-                               .globalDescriptorOffset]
-                .GPUBuffer->buffer;
-    SetDebugObjectName(device, &hudUniformBufferObjectInfo);
+    const char* hud_str_image_name = hud_image_name.c_str();
+    hud_uniform_buffer_object_info.pObjectName = hud_str_image_name;
+    hud_uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
+    unsigned int hud_ubo_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::HUD]
+            .descriptors_bindings_i_ds[0];
+    hud_uniform_buffer_object_info.objectHandle =
+        (uint64_t)gpu_descriptors
+            [DESCRIPTOR_BINDINGS_CONFIG[hud_ubo_descriptor_binding_index]
+                 .global_descriptor_offset]
+                .gpu_buffer->buffer;
+    set_debug_object_name(device, &hud_uniform_buffer_object_info);
 
-    VkDebugUtilsObjectNameInfoEXT fontUniformBufferObjectInfo {};
-    fontUniformBufferObjectInfo.sType =
+    VkDebugUtilsObjectNameInfoEXT font_uniform_buffer_object_info {};
+    font_uniform_buffer_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string fontImageName = std::string(VK_DEBUG_IMAGE_SET_RED)
+    std::string font_image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
         + " Font uniform buffer # " + std::to_string(0);
-    const char* fontStrImageName = fontImageName.c_str();
-    fontUniformBufferObjectInfo.pObjectName = fontStrImageName;
-    fontUniformBufferObjectInfo.objectType = VK_OBJECT_TYPE_BUFFER;
-    unsigned int fontUboDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::FONT_RENDER_UBO]
-            .descriptorsBindingsIDs[0];
-    fontUniformBufferObjectInfo.objectHandle =
-        (uint64_t)
-            GPUDescriptors[descriptorBindingsConfig[fontUboDescriptorBindingIndex]
-                               .globalDescriptorOffset]
-                .GPUBuffer->buffer;
-    SetDebugObjectName(device, &fontUniformBufferObjectInfo);
-    VkDebugUtilsObjectNameInfoEXT uiUniformBufferObjectInfo {};
-    uiUniformBufferObjectInfo.sType =
+    const char* font_str_image_name = font_image_name.c_str();
+    font_uniform_buffer_object_info.pObjectName = font_str_image_name;
+    font_uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
+    unsigned int font_ubo_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::FontRenderUbo]
+            .descriptors_bindings_i_ds[0];
+    font_uniform_buffer_object_info.objectHandle =
+        (uint64_t)gpu_descriptors
+            [DESCRIPTOR_BINDINGS_CONFIG[font_ubo_descriptor_binding_index]
+                 .global_descriptor_offset]
+                .gpu_buffer->buffer;
+    set_debug_object_name(device, &font_uniform_buffer_object_info);
+    VkDebugUtilsObjectNameInfoEXT ui_uniform_buffer_object_info {};
+    ui_uniform_buffer_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string uiImageName = std::string(VK_DEBUG_IMAGE_SET_RED)
+    std::string ui_image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
         + " UI uniform buffer # " + std::to_string(0);
-    const char* uiStrImageName = uiImageName.c_str();
-    uiUniformBufferObjectInfo.pObjectName = uiStrImageName;
-    uiUniformBufferObjectInfo.objectType = VK_OBJECT_TYPE_BUFFER;
-    unsigned int uiUboDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::UI]
-            .descriptorsBindingsIDs[0];
-    uiUniformBufferObjectInfo.objectHandle =
-        (uint64_t)
-            GPUDescriptors[descriptorBindingsConfig[uiUboDescriptorBindingIndex]
-                               .globalDescriptorOffset]
-                .GPUBuffer->buffer;
-    SetDebugObjectName(device, &uiUniformBufferObjectInfo);
-    VkDebugUtilsObjectNameInfoEXT uiIconsUniformBufferObjectInfo {};
-    uiIconsUniformBufferObjectInfo.sType =
+    const char* ui_str_image_name = ui_image_name.c_str();
+    ui_uniform_buffer_object_info.pObjectName = ui_str_image_name;
+    ui_uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
+    unsigned int ui_ubo_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::UI]
+            .descriptors_bindings_i_ds[0];
+    ui_uniform_buffer_object_info.objectHandle =
+        (uint64_t)gpu_descriptors
+            [DESCRIPTOR_BINDINGS_CONFIG[ui_ubo_descriptor_binding_index]
+                 .global_descriptor_offset]
+                .gpu_buffer->buffer;
+    set_debug_object_name(device, &ui_uniform_buffer_object_info);
+    VkDebugUtilsObjectNameInfoEXT ui_icons_uniform_buffer_object_info {};
+    ui_icons_uniform_buffer_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string uiIconsImageName = std::string(VK_DEBUG_IMAGE_SET_RED)
+    std::string ui_icons_image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
         + " UI icons uniform buffer # " + std::to_string(0);
-    const char* uiIconsStrImageName = uiIconsImageName.c_str();
-    uiIconsUniformBufferObjectInfo.pObjectName = uiIconsStrImageName;
-    uiIconsUniformBufferObjectInfo.objectType = VK_OBJECT_TYPE_BUFFER;
-    unsigned int uiIconsUboDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::UI_ICONS]
-            .descriptorsBindingsIDs[0];
-    uiIconsUniformBufferObjectInfo.objectHandle =
-        (uint64_t)GPUDescriptors
-            [descriptorBindingsConfig[uiIconsUboDescriptorBindingIndex]
-                 .globalDescriptorOffset]
-                .GPUBuffer->buffer;
-    SetDebugObjectName(device, &uiIconsUniformBufferObjectInfo);
-    VkDebugUtilsObjectNameInfoEXT directionalLightUniformBufferObjectInfo {};
-    directionalLightUniformBufferObjectInfo.sType =
+    const char* ui_icons_str_image_name = ui_icons_image_name.c_str();
+    ui_icons_uniform_buffer_object_info.pObjectName = ui_icons_str_image_name;
+    ui_icons_uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
+    unsigned int ui_icons_ubo_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::UiIcons]
+            .descriptors_bindings_i_ds[0];
+    ui_icons_uniform_buffer_object_info.objectHandle =
+        (uint64_t)gpu_descriptors
+            [DESCRIPTOR_BINDINGS_CONFIG[ui_icons_ubo_descriptor_binding_index]
+                 .global_descriptor_offset]
+                .gpu_buffer->buffer;
+    set_debug_object_name(device, &ui_icons_uniform_buffer_object_info);
+    VkDebugUtilsObjectNameInfoEXT
+        directional_light_uniform_buffer_object_info {};
+    directional_light_uniform_buffer_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string directionalLightImageName = std::string(VK_DEBUG_IMAGE_SET_RED)
+    std::string directional_light_image_name =
+        std::string(VK_DEBUG_IMAGE_SET_RED)
         + " Shadow map directional light model matrix uniform buffer # "
         + std::to_string(0);
-    const char* directionalLightStrImageName =
-        directionalLightImageName.c_str();
-    directionalLightUniformBufferObjectInfo.pObjectName =
-        directionalLightStrImageName;
-    directionalLightUniformBufferObjectInfo.objectType = VK_OBJECT_TYPE_BUFFER;
-    unsigned int shadowMapDirectionalLightDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::SHADOW_MAP_DIRECTIONAL_LIGHT]
-            .descriptorsBindingsIDs[0];
-    directionalLightUniformBufferObjectInfo.objectHandle =
-        (uint64_t)
-            GPUDescriptors[descriptorBindingsConfig
-                               [shadowMapDirectionalLightDescriptorBindingIndex]
-                                   .globalDescriptorOffset]
-                .GPUBuffer->buffer;
-    SetDebugObjectName(device, &directionalLightUniformBufferObjectInfo);
-    VkDebugUtilsObjectNameInfoEXT pointLightUniformBufferObjectInfo {};
-    pointLightUniformBufferObjectInfo.sType =
+    const char* directional_light_str_image_name =
+        directional_light_image_name.c_str();
+    directional_light_uniform_buffer_object_info.pObjectName =
+        directional_light_str_image_name;
+    directional_light_uniform_buffer_object_info.objectType =
+        VK_OBJECT_TYPE_BUFFER;
+    unsigned int shadow_map_directional_light_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ShadowMapDirectionalLight]
+            .descriptors_bindings_i_ds[0];
+    directional_light_uniform_buffer_object_info.objectHandle =
+        (uint64_t)gpu_descriptors
+            [DESCRIPTOR_BINDINGS_CONFIG
+                 [shadow_map_directional_light_descriptor_binding_index]
+                     .global_descriptor_offset]
+                .gpu_buffer->buffer;
+    set_debug_object_name(device, &directional_light_uniform_buffer_object_info);
+    VkDebugUtilsObjectNameInfoEXT point_light_uniform_buffer_object_info {};
+    point_light_uniform_buffer_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string pointLightImageName = std::string(VK_DEBUG_IMAGE_SET_RED)
+    std::string point_light_image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
         + " Shadow map point light model matrix uniform buffer # "
         + std::to_string(0);
-    const char* pointLightStrImageName = pointLightImageName.c_str();
-    pointLightUniformBufferObjectInfo.pObjectName = pointLightStrImageName;
-    pointLightUniformBufferObjectInfo.objectType = VK_OBJECT_TYPE_BUFFER;
-    unsigned int shadowMapPointLightDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::SHADOW_MAP_POINT_LIGHT]
-            .descriptorsBindingsIDs[0];
-    pointLightUniformBufferObjectInfo.objectHandle =
-        (uint64_t)GPUDescriptors
-            [descriptorBindingsConfig[shadowMapPointLightDescriptorBindingIndex]
-                 .globalDescriptorOffset]
-                .GPUBuffer->buffer;
-    SetDebugObjectName(device, &pointLightUniformBufferObjectInfo);
-    VkDebugUtilsObjectNameInfoEXT spotLightUniformBufferObjectInfo {};
-    spotLightUniformBufferObjectInfo.sType =
+    const char* point_light_str_image_name = point_light_image_name.c_str();
+    point_light_uniform_buffer_object_info.pObjectName =
+        point_light_str_image_name;
+    point_light_uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
+    unsigned int shadow_map_point_light_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ShadowMapPointLight]
+            .descriptors_bindings_i_ds[0];
+    point_light_uniform_buffer_object_info.objectHandle =
+        (uint64_t)
+            gpu_descriptors[DESCRIPTOR_BINDINGS_CONFIG
+                                [shadow_map_point_light_descriptor_binding_index]
+                                    .global_descriptor_offset]
+                .gpu_buffer->buffer;
+    set_debug_object_name(device, &point_light_uniform_buffer_object_info);
+    VkDebugUtilsObjectNameInfoEXT spot_light_uniform_buffer_object_info {};
+    spot_light_uniform_buffer_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string spotLightImageName = std::string(VK_DEBUG_IMAGE_SET_RED)
+    std::string spot_light_image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
         + " Shadow map spot light model matrix uniform buffer # "
         + std::to_string(0);
-    const char* spotLightStrImageName = spotLightImageName.c_str();
-    spotLightUniformBufferObjectInfo.pObjectName = spotLightStrImageName;
-    spotLightUniformBufferObjectInfo.objectType = VK_OBJECT_TYPE_BUFFER;
-    unsigned int shadowMapSpotLightDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::SHADOW_MAP_SPOT_LIGHT]
-            .descriptorsBindingsIDs[0];
-    spotLightUniformBufferObjectInfo.objectHandle =
-        (uint64_t)GPUDescriptors
-            [descriptorBindingsConfig[shadowMapSpotLightDescriptorBindingIndex]
-                 .globalDescriptorOffset]
-                .GPUBuffer->buffer;
-    SetDebugObjectName(device, &spotLightUniformBufferObjectInfo);
-    for (unsigned long i = 0; i < vertexBufferContainer.size(); ++i) {
-        VkDebugUtilsObjectNameInfoEXT uniformBufferObjectInfo {};
-        uniformBufferObjectInfo.sType =
+    const char* spot_light_str_image_name = spot_light_image_name.c_str();
+    spot_light_uniform_buffer_object_info.pObjectName =
+        spot_light_str_image_name;
+    spot_light_uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
+    unsigned int shadow_map_spot_light_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ShadowMapSpotLight]
+            .descriptors_bindings_i_ds[0];
+    spot_light_uniform_buffer_object_info.objectHandle =
+        (uint64_t)
+            gpu_descriptors[DESCRIPTOR_BINDINGS_CONFIG
+                                [shadow_map_spot_light_descriptor_binding_index]
+                                    .global_descriptor_offset]
+                .gpu_buffer->buffer;
+    set_debug_object_name(device, &spot_light_uniform_buffer_object_info);
+    for (unsigned long i = 0; i < vertex_buffer_container.size(); ++i) {
+        VkDebugUtilsObjectNameInfoEXT uniform_buffer_object_info {};
+        uniform_buffer_object_info.sType =
             VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-        std::string imageName = std::string(VK_DEBUG_IMAGE_SET_RED)
+        std::string image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
             + " Vertex uniform buffer # " + std::to_string(i);
-        const char* strImageName = imageName.c_str();
-        uniformBufferObjectInfo.pObjectName = strImageName;
-        uniformBufferObjectInfo.objectType = VK_OBJECT_TYPE_BUFFER;
-        uniformBufferObjectInfo.objectHandle =
-            (uint64_t)vertexBufferContainer[i];
-        SetDebugObjectName(device, &uniformBufferObjectInfo);
+        const char* str_image_name = image_name.c_str();
+        uniform_buffer_object_info.pObjectName = str_image_name;
+        uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
+        uniform_buffer_object_info.objectHandle =
+            (uint64_t)vertex_buffer_container[i];
+        set_debug_object_name(device, &uniform_buffer_object_info);
     }
-    for (unsigned long i = 0; i < indexBufferContainer.size(); ++i) {
-        VkDebugUtilsObjectNameInfoEXT uniformBufferObjectInfo {};
-        uniformBufferObjectInfo.sType =
+    for (unsigned long i = 0; i < index_buffer_container.size(); ++i) {
+        VkDebugUtilsObjectNameInfoEXT uniform_buffer_object_info {};
+        uniform_buffer_object_info.sType =
             VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-        std::string imageName = std::string(VK_DEBUG_IMAGE_SET_RED)
+        std::string image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
             + " Index uniform buffer # " + std::to_string(i);
-        const char* strImageName = imageName.c_str();
-        uniformBufferObjectInfo.pObjectName = strImageName;
-        uniformBufferObjectInfo.objectType = VK_OBJECT_TYPE_BUFFER;
-        uniformBufferObjectInfo.objectHandle =
-            (uint64_t)indexBufferContainer[i];
-        SetDebugObjectName(device, &uniformBufferObjectInfo);
+        const char* str_image_name = image_name.c_str();
+        uniform_buffer_object_info.pObjectName = str_image_name;
+        uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
+        uniform_buffer_object_info.objectHandle =
+            (uint64_t)index_buffer_container[i];
+        set_debug_object_name(device, &uniform_buffer_object_info);
     }
-    for (unsigned long i = 0; i < fontIndicesContainer.size(); ++i) {
-        VkDebugUtilsObjectNameInfoEXT uniformBufferObjectInfo {};
-        uniformBufferObjectInfo.sType =
+    for (unsigned long i = 0; i < font_indices_container.size(); ++i) {
+        VkDebugUtilsObjectNameInfoEXT uniform_buffer_object_info {};
+        uniform_buffer_object_info.sType =
             VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-        std::string imageName = std::string(VK_DEBUG_IMAGE_SET_RED)
+        std::string image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
             + " Font vertex uniform buffer # "
-            + std::to_string(fontIndicesContainer[i]);
-        const char* strImageName = imageName.c_str();
-        uniformBufferObjectInfo.pObjectName = strImageName;
-        uniformBufferObjectInfo.objectType = VK_OBJECT_TYPE_BUFFER;
-        uniformBufferObjectInfo.objectHandle =
-            (uint64_t)fontVertexBufferContainer[fontIndicesContainer[i]];
-        SetDebugObjectName(device, &uniformBufferObjectInfo);
+            + std::to_string(font_indices_container[i]);
+        const char* str_image_name = image_name.c_str();
+        uniform_buffer_object_info.pObjectName = str_image_name;
+        uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
+        uniform_buffer_object_info.objectHandle =
+            (uint64_t)font_vertex_buffer_container[font_indices_container[i]];
+        set_debug_object_name(device, &uniform_buffer_object_info);
     }
-    for (unsigned long i = 0; i < fontIndicesContainer.size(); ++i) {
-        VkDebugUtilsObjectNameInfoEXT uniformBufferObjectInfo {};
-        uniformBufferObjectInfo.sType =
+    for (unsigned long i = 0; i < font_indices_container.size(); ++i) {
+        VkDebugUtilsObjectNameInfoEXT uniform_buffer_object_info {};
+        uniform_buffer_object_info.sType =
             VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-        std::string imageName = std::string(VK_DEBUG_IMAGE_SET_RED)
+        std::string image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
             + " Font index uniform buffer # "
-            + std::to_string(fontIndicesContainer[i]);
-        const char* strImageName = imageName.c_str();
-        uniformBufferObjectInfo.pObjectName = strImageName;
-        uniformBufferObjectInfo.objectType = VK_OBJECT_TYPE_BUFFER;
-        uniformBufferObjectInfo.objectHandle =
-            (uint64_t)fontIndexBufferContainer[fontIndicesContainer[i]];
-        SetDebugObjectName(device, &uniformBufferObjectInfo);
+            + std::to_string(font_indices_container[i]);
+        const char* str_image_name = image_name.c_str();
+        uniform_buffer_object_info.pObjectName = str_image_name;
+        uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
+        uniform_buffer_object_info.objectHandle =
+            (uint64_t)font_index_buffer_container[font_indices_container[i]];
+        set_debug_object_name(device, &uniform_buffer_object_info);
     }
-    VkDebugUtilsObjectNameInfoEXT uniformBufferObjectInfo {};
-    uniformBufferObjectInfo.sType =
+    VkDebugUtilsObjectNameInfoEXT uniform_buffer_object_info {};
+    uniform_buffer_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string imageName = std::string(VK_DEBUG_IMAGE_SET_RED)
+    std::string image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
         + " Model matrix uniform buffer # " + std::to_string(0);
-    const char* strImageName = imageName.c_str();
-    uniformBufferObjectInfo.pObjectName = strImageName;
-    uniformBufferObjectInfo.objectType = VK_OBJECT_TYPE_BUFFER;
-    uniformBufferObjectInfo.objectHandle =
-        (uint64_t)GPUDescriptors[DescriptorSetDataLink::MAIN_RENDER_MATRIX_UBO]
-            .GPUBuffer->buffer;
-    SetDebugObjectName(device, &uniformBufferObjectInfo);
-    VkDebugUtilsObjectNameInfoEXT lightDataUniformBufferObjectInfo {};
-    lightDataUniformBufferObjectInfo.sType =
+    const char* str_image_name = image_name.c_str();
+    uniform_buffer_object_info.pObjectName = str_image_name;
+    uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
+    uniform_buffer_object_info.objectHandle =
+        (uint64_t)gpu_descriptors[DescriptorSetDataLink::MainRenderMatrixUbo]
+            .gpu_buffer->buffer;
+    set_debug_object_name(device, &uniform_buffer_object_info);
+    VkDebugUtilsObjectNameInfoEXT light_data_uniform_buffer_object_info {};
+    light_data_uniform_buffer_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string lightDataImageName = std::string(VK_DEBUG_IMAGE_SET_RED)
+    std::string light_data_image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
         + " Light data uniform buffer # " + std::to_string(0);
-    const char* lightDataStrImageName = lightDataImageName.c_str();
-    lightDataUniformBufferObjectInfo.pObjectName = lightDataStrImageName;
-    lightDataUniformBufferObjectInfo.objectType = VK_OBJECT_TYPE_BUFFER;
-    unsigned int lightDataUboDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::MAIN_RENDER_LIGHT_DATA_UBO]
-            .descriptorsBindingsIDs[0];
-    lightDataUniformBufferObjectInfo.objectHandle =
-        (uint64_t)GPUDescriptors
-            [descriptorBindingsConfig[lightDataUboDescriptorBindingIndex]
-                 .globalDescriptorOffset]
-                .GPUBuffer->buffer;
-    SetDebugObjectName(device, &lightDataUniformBufferObjectInfo);
+    const char* light_data_str_image_name = light_data_image_name.c_str();
+    light_data_uniform_buffer_object_info.pObjectName =
+        light_data_str_image_name;
+    light_data_uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
+    unsigned int light_data_ubo_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
+            .descriptors_bindings_i_ds[0];
+    light_data_uniform_buffer_object_info.objectHandle =
+        (uint64_t)gpu_descriptors
+            [DESCRIPTOR_BINDINGS_CONFIG[light_data_ubo_descriptor_binding_index]
+                 .global_descriptor_offset]
+                .gpu_buffer->buffer;
+    set_debug_object_name(device, &light_data_uniform_buffer_object_info);
 }
 }; // namespace glvm
 
 namespace glvm {
 namespace {
 // 16k verts, shared line + quad buffer.
-constexpr uint32_t kMaxDebugVertices = 1 << 14;
+constexpr uint32_t K_MAX_DEBUG_VERTICES = 1 << 14;
 
-void pushLine(
+void push_line(
     std::vector<DebugVertex>& out,
     const Vector<float, 3>& a,
     const Vector<float, 3>& b,
@@ -3345,12 +3464,12 @@ void pushLine(
     out.push_back({b[0], b[1], b[2], color[0], color[1], color[2]});
 }
 
-void pushBox(
+void push_box(
     std::vector<DebugVertex>& out,
     const Vector<float, 3> corners[8],
     const Vector<float, 3>& color
 ) {
-    static const unsigned int edges[12][2] = {
+    static const unsigned int EDGES[12][2] = {
         {0, 1},
         {1, 2},
         {2, 3},
@@ -3364,24 +3483,24 @@ void pushBox(
         {2, 6},
         {3, 7}
     };
-    for (const auto& edge : edges) {
-        pushLine(out, corners[edge[0]], corners[edge[1]], color);
+    for (const auto& edge : EDGES) {
+        push_line(out, corners[edge[0]], corners[edge[1]], color);
     }
 }
 
-Vector<float, 4> toVec4(const Vector<float, 3>& v, float w) {
+Vector<float, 4> to_vec4(const Vector<float, 3>& v, float w) {
     return Vector<float, 4>(v[0], v[1], v[2], w);
 }
 
-Vector<float, 3> fromVec4(const Vector<float, 4>& v) {
+Vector<float, 3> from_vec4(const Vector<float, 4>& v) {
     return Vector<float, 3>(v[0], v[1], v[2]);
 }
 } // namespace
 
-ImGuiOverlay::ImGuiOverlay(CVulkanRenderer& renderer) : renderer_(renderer) {}
+ImGuiOverlay::ImGuiOverlay(CVulkanRenderer& renderer) : renderer(renderer) {}
 
-bool ImGuiOverlay::wantsMouse() const {
-    if (!initialized_) {
+bool ImGuiOverlay::wants_mouse() const {
+    if (!initialized) {
         return false;
     }
     ImGuiIO& io = ImGui::GetIO();
@@ -3389,79 +3508,79 @@ bool ImGuiOverlay::wantsMouse() const {
 }
 
 void ImGuiOverlay::init() {
-    if (initialized_) {
+    if (initialized) {
         return;
     }
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.IniFilename = nullptr;
-    createRenderPass();
-    createVertexBuffer();
-    createLinePipeline();
-    ImGui_ImplWin32_Init(renderer_.Window->GetModernWindowHWND());
-    ImGui_ImplVulkan_InitInfo initInfo {};
-    initInfo.ApiVersion = VK_API_VERSION_1_0;
-    initInfo.Instance = renderer_.instance;
-    initInfo.PhysicalDevice = renderer_.physicalDevice;
-    initInfo.Device = renderer_.device;
-    initInfo.QueueFamily = renderer_.findQueueFamilies(renderer_.physicalDevice)
-                               .graphics_family.value();
-    initInfo.Queue = renderer_.graphicsQueue;
-    initInfo.DescriptorPoolSize = 512;
-    initInfo.MinImageCount = MAX_FRAMES_IN_FLIGHT;
-    initInfo.ImageCount =
-        static_cast<uint32_t>(renderer_.swapChainImages.size());
-    initInfo.PipelineInfoMain.RenderPass = renderPass_;
-    initInfo.PipelineInfoMain.Subpass = 0;
-    if (!ImGui_ImplVulkan_Init(&initInfo)) {
+    create_render_pass();
+    create_vertex_buffer();
+    create_line_pipeline();
+#ifdef _WIN32
+    ImGui_ImplWin32_Init(renderer.window->get_modern_window_hwnd());
+#endif
+    ImGui_ImplVulkan_InitInfo init_info {};
+    init_info.ApiVersion = VK_API_VERSION_1_0;
+    init_info.Instance = renderer.instance;
+    init_info.PhysicalDevice = renderer.physical_device;
+    init_info.Device = renderer.device;
+    init_info.QueueFamily =
+        renderer.find_queue_families(renderer.physical_device)
+            .graphics_family.value();
+    init_info.Queue = renderer.graphics_queue;
+    init_info.DescriptorPoolSize = 512;
+    init_info.MinImageCount = MAX_FRAMES_IN_FLIGHT;
+    init_info.ImageCount =
+        static_cast<uint32_t>(renderer.swap_chain_images.size());
+    init_info.PipelineInfoMain.RenderPass = render_pass;
+    init_info.PipelineInfoMain.Subpass = 0;
+    if (!ImGui_ImplVulkan_Init(&init_info)) {
         throw std::runtime_error("failed to init ImGui vulkan backend!");
     }
-    initialized_ = true;
-    createSwapChainResources();
+    initialized = true;
+    create_swap_chain_resources();
 }
 
 void ImGuiOverlay::shutdown() {
-    if (!initialized_) {
+    if (!initialized) {
         return;
     }
-    vkDeviceWaitIdle(renderer_.device);
-    destroySwapChainResources();
-    vkDestroyBuffer(renderer_.device, vertexBuffer_, nullptr);
-    vkFreeMemory(renderer_.device, vertexBufferMemory_, nullptr);
-    vertexBuffer_ = VK_NULL_HANDLE;
-    vertexBufferMapped_ = nullptr;
-    vkDestroyPipeline(renderer_.device, linePipeline_, nullptr);
-    vkDestroyPipelineLayout(renderer_.device, lineLayout_, nullptr);
-    vkDestroyRenderPass(renderer_.device, renderPass_, nullptr);
-    renderPass_ = VK_NULL_HANDLE;
+    vkDeviceWaitIdle(renderer.device);
+    destroy_swap_chain_resources();
+    vkDestroyBuffer(renderer.device, vertex_buffer, nullptr);
+    vkFreeMemory(renderer.device, vertex_buffer_memory, nullptr);
+    vertex_buffer = VK_NULL_HANDLE;
+    vertex_buffer_mapped = nullptr;
+    vkDestroyPipeline(renderer.device, line_pipeline, nullptr);
+    vkDestroyPipelineLayout(renderer.device, line_layout, nullptr);
+    vkDestroyRenderPass(renderer.device, render_pass, nullptr);
+    render_pass = VK_NULL_HANDLE;
     ImGui_ImplVulkan_Shutdown();
+#ifdef _WIN32
     ImGui_ImplWin32_Shutdown();
+#endif
     ImGui::DestroyContext();
-    initialized_ = false;
+    initialized = false;
 }
 
-void ImGuiOverlay::createSwapChainResources() {
-    if (!initialized_) {
+void ImGuiOverlay::create_swap_chain_resources() {
+    if (!initialized) {
         return;
     }
-    framebuffers_.resize(renderer_.swapChainImageViews.size());
-    for (size_t i = 0; i < framebuffers_.size(); ++i) {
-        VkImageView attachment = renderer_.swapChainImageViews[i];
+    framebuffers.resize(renderer.swap_chain_image_views.size());
+    for (size_t i = 0; i < framebuffers.size(); ++i) {
+        VkImageView attachment = renderer.swap_chain_image_views[i];
         VkFramebufferCreateInfo info {};
         info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        info.renderPass = renderPass_;
+        info.renderPass = render_pass;
         info.attachmentCount = 1;
         info.pAttachments = &attachment;
-        info.width = renderer_.swapChainExtent.width;
-        info.height = renderer_.swapChainExtent.height;
+        info.width = renderer.swap_chain_extent.width;
+        info.height = renderer.swap_chain_extent.height;
         info.layers = 1;
-        if (vkCreateFramebuffer(
-                renderer_.device,
-                &info,
-                nullptr,
-                &framebuffers_[i]
-            )
+        if (vkCreateFramebuffer(renderer.device, &info, nullptr, &framebuffers[i])
             != VK_SUCCESS) {
             throw std::runtime_error(
                 "failed to create imgui overlay framebuffer!"
@@ -3470,144 +3589,170 @@ void ImGuiOverlay::createSwapChainResources() {
     }
 }
 
-void ImGuiOverlay::destroySwapChainResources() {
-    for (VkFramebuffer& framebuffer : framebuffers_) {
-        vkDestroyFramebuffer(renderer_.device, framebuffer, nullptr);
+void ImGuiOverlay::destroy_swap_chain_resources() {
+    for (VkFramebuffer& framebuffer : framebuffers) {
+        vkDestroyFramebuffer(renderer.device, framebuffer, nullptr);
     }
-    framebuffers_.clear();
+    framebuffers.clear();
 }
 
-void ImGuiOverlay::newFrame() {
-    if (!initialized_) {
+void ImGuiOverlay::new_frame() {
+    if (!initialized) {
         return;
     }
+#ifdef _WIN32
     ImGui_ImplWin32_NewFrame();
+#else
+    ImGuiIO& io = ImGui::GetIO();
+    io.DisplaySize =
+        ImVec2((float)renderer.window->width, (float)renderer.window->height);
+    static auto last_frame_time = std::chrono::steady_clock::now();
+    const auto now_time = std::chrono::steady_clock::now();
+    io.DeltaTime =
+        std::chrono::duration<float>(now_time - last_frame_time).count();
+    last_frame_time = now_time;
+    // No OS cursor plumbing yet: let ImGui draw its own cursor.
+    io.MouseDrawCursor = true;
+    io.AddMousePosEvent(
+        G_E_EVENT.mouse_pointer_position.offset_x,
+        G_E_EVENT.mouse_pointer_position.offset_y
+    );
+    io.AddMouseButtonEvent(
+        ImGuiMouseButton_Left,
+        !G_E_EVENT.is_left_mouse_button_released
+    );
+#endif
     ImGui_ImplVulkan_NewFrame();
     ImGui::NewFrame();
 
     if (ImGui::IsKeyPressed(ImGuiKey_F1, false)) {
-        showPanel = !showPanel;
+        show_panel = !show_panel;
     }
-    buildPanel();
-    buildDebugVertices();
+    build_panel();
+    build_debug_vertices();
     ImGui::Render();
 }
 
-void ImGuiOverlay::recordCommandBuffer(
-    VkCommandBuffer commandBuffer,
-    uint32_t imageIndex
+void ImGuiOverlay::record_command_buffer(
+    VkCommandBuffer command_buffer,
+    uint32_t image_index
 ) {
-    if (!initialized_) {
+    if (!initialized) {
         return;
     }
-    VkRenderPassBeginInfo renderPassInfo {};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = renderPass_;
-    renderPassInfo.framebuffer = framebuffers_[imageIndex];
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = renderer_.swapChainExtent;
-    renderPassInfo.clearValueCount = 0;
-    renderPassInfo.pClearValues = nullptr;
+    VkRenderPassBeginInfo render_pass_info {};
+    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    render_pass_info.renderPass = render_pass;
+    render_pass_info.framebuffer = framebuffers[image_index];
+    render_pass_info.renderArea.offset = {0, 0};
+    render_pass_info.renderArea.extent = renderer.swap_chain_extent;
+    render_pass_info.clearValueCount = 0;
+    render_pass_info.pClearValues = nullptr;
     vkCmdBeginRenderPass(
-        commandBuffer,
-        &renderPassInfo,
+        command_buffer,
+        &render_pass_info,
         VK_SUBPASS_CONTENTS_INLINE
     );
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = static_cast<float>(renderer_.swapChainExtent.width);
-    viewport.height = static_cast<float>(renderer_.swapChainExtent.height);
+    viewport.width = static_cast<float>(renderer.swap_chain_extent.width);
+    viewport.height = static_cast<float>(renderer.swap_chain_extent.height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+    vkCmdSetViewport(command_buffer, 0, 1, &viewport);
     VkRect2D scissor {};
     scissor.offset = {0, 0};
-    scissor.extent = renderer_.swapChainExtent;
-    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-    if (lineVertexCount_ > 0) {
+    scissor.extent = renderer.swap_chain_extent;
+    vkCmdSetScissor(command_buffer, 0, 1, &scissor);
+    if (line_vertex_count > 0) {
         vkCmdBindPipeline(
-            commandBuffer,
+            command_buffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
-            linePipeline_
+            line_pipeline
         );
         VkDeviceSize offset = 0;
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer_, &offset);
-        Matrix<float, 4> viewProj =
-            renderer_.viewMatrix * renderer_.projectionMatrix;
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, &vertex_buffer, &offset);
+        Matrix<float, 4> view_proj =
+            renderer.view_matrix * renderer.projection_matrix;
         vkCmdPushConstants(
-            commandBuffer,
-            lineLayout_,
+            command_buffer,
+            line_layout,
             VK_SHADER_STAGE_VERTEX_BIT,
             0,
             sizeof(Matrix<float, 4>),
-            &viewProj
+            &view_proj
         );
-        vkCmdDraw(commandBuffer, lineVertexCount_, 1, 0, 0);
+        vkCmdDraw(command_buffer, line_vertex_count, 1, 0, 0);
     }
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
-    vkCmdEndRenderPass(commandBuffer);
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer);
+    vkCmdEndRenderPass(command_buffer);
 }
 
-void ImGuiOverlay::buildPanel() {
-    if (!showPanel) {
+void ImGuiOverlay::build_panel() {
+    if (!show_panel) {
         return;
     }
     ImGui::Begin("Debug overlay", nullptr, ImGuiWindowFlags_NoCollapse);
     ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
     ImGui::Separator();
-    ImGui::Checkbox("Actor bounds", &showActorBounds);
-    ImGui::Checkbox("Light frustums", &showLightFrustums);
-    ImGui::Checkbox("Spatial grid", &showSpatialGrid);
-    ImGui::Checkbox("Shadows", &shadowsEnabled);
-    ImGui::Checkbox("Shadow maps", &showShadowMaps);
-    if (showShadowMaps) {
-        ImGui::RadioButton("Directional", &shadowMapMode, 0);
+    ImGui::Checkbox("Actor bounds", &show_actor_bounds);
+    ImGui::Checkbox("Light frustums", &show_light_frustums);
+    ImGui::Checkbox("Spatial grid", &show_spatial_grid);
+    ImGui::Checkbox("Shadows", &shadows_enabled);
+    ImGui::Checkbox("Shadow maps", &show_shadow_maps);
+    if (show_shadow_maps) {
+        ImGui::RadioButton("Directional", &shadow_map_mode, 0);
         ImGui::SameLine();
-        ImGui::RadioButton("Spot", &shadowMapMode, 1);
-        int maxLight = (shadowMapMode == 0)
-            ? static_cast<int>(renderer_.directionalLightNumber)
-            : static_cast<int>(renderer_.spotLightNumber);
-        ImGui::SliderInt("Light", &shadowMapLight, 0, std::max(0, maxLight - 1));
+        ImGui::RadioButton("Spot", &shadow_map_mode, 1);
+        int max_light = (shadow_map_mode == 0)
+            ? static_cast<int>(renderer.directional_light_number)
+            : static_cast<int>(renderer.spot_light_number);
+        ImGui::SliderInt(
+            "Light",
+            &shadow_map_light,
+            0,
+            std::max(0, max_light - 1)
+        );
         ImGui::Text(
             "Shadow map #%d of %d",
-            shadowMapLight,
-            std::max(1, maxLight)
+            shadow_map_light,
+            std::max(1, max_light)
         );
     }
-    ImGui::Text("Actors: %zu", renderer_.actors.size());
+    ImGui::Text("Actors: %zu", renderer.actors.size());
     ImGui::Text(
         "Dir lights: %u, Spot lights: %u",
-        renderer_.directionalLightNumber,
-        renderer_.spotLightNumber
+        renderer.directional_light_number,
+        renderer.spot_light_number
     );
     ImGui::Separator();
     if (ImGui::Button("Hide panel (F1)")) {
-        showPanel = false;
+        show_panel = false;
     }
     ImGui::End();
 }
 
-void ImGuiOverlay::buildDebugVertices() {
+void ImGuiOverlay::build_debug_vertices() {
     std::vector<DebugVertex> vertices;
-    vertices.reserve(kMaxDebugVertices);
-    lineVertexCount_ = 0;
-    if (showActorBounds) {
+    vertices.reserve(K_MAX_DEBUG_VERTICES);
+    line_vertex_count = 0;
+    if (show_actor_bounds) {
         const Vector<float, 3> green = {0.0f, 1.0f, 0.0f};
         const Vector<float, 3> red = {1.0f, 0.0f, 0.0f};
         std::vector<Vector<float, 3>> mins;
         std::vector<Vector<float, 3>> maxs;
-        mins.reserve(renderer_.actors.size());
-        maxs.reserve(renderer_.actors.size());
-        for (size_t i = 0; i < renderer_.actors.size(); ++i) {
-            RenderActor actor = renderer_.actors[i];
-            if (actor.meshID >= allMeshMaxAbsoluteValues.size()) {
+        mins.reserve(renderer.actors.size());
+        maxs.reserve(renderer.actors.size());
+        for (size_t i = 0; i < renderer.actors.size(); ++i) {
+            RenderActor actor = renderer.actors[i];
+            if (actor.mesh_id >= ALL_MESH_MAX_ABSOLUTE_VALUES.size()) {
                 mins.push_back({0, 0, 0});
                 maxs.push_back({0, 0, 0});
                 continue;
             }
             const MeshAxisMaxAbsoluteValues& bounds =
-                allMeshMaxAbsoluteValues[actor.meshID];
+                ALL_MESH_MAX_ABSOLUTE_VALUES[actor.mesh_id];
             const Vector<float, 3> center = {
                 bounds.origin_offset_x,
                 bounds.origin_offset_y,
@@ -3615,7 +3760,7 @@ void ImGuiOverlay::buildDebugVertices() {
             };
             const Vector<float, 3> half =
                 {bounds.absolute_x, bounds.absolute_y, bounds.absolute_z};
-            Vector<float, 3> localCorners[8] = {
+            Vector<float, 3> local_corners[8] = {
                 center + Vector<float, 3>(-half[0], -half[1], -half[2]),
                 center + Vector<float, 3>(half[0], -half[1], -half[2]),
                 center + Vector<float, 3>(half[0], half[1], -half[2]),
@@ -3626,11 +3771,12 @@ void ImGuiOverlay::buildDebugVertices() {
                 center + Vector<float, 3>(-half[0], half[1], half[2])
             };
             Vector<float, 3> mn =
-                fromVec4(toVec4(localCorners[0], 1.0f) * actor.modelMatrix);
+                from_vec4(to_vec4(local_corners[0], 1.0f) * actor.model_matrix);
             Vector<float, 3> mx = mn;
             for (int c = 1; c < 8; ++c) {
-                Vector<float, 3> w =
-                    fromVec4(toVec4(localCorners[c], 1.0f) * actor.modelMatrix);
+                Vector<float, 3> w = from_vec4(
+                    to_vec4(local_corners[c], 1.0f) * actor.model_matrix
+                );
                 for (int a = 0; a < 3; ++a) {
                     mn[a] = std::min(mn[a], w[a]);
                     mx[a] = std::max(mx[a], w[a]);
@@ -3639,9 +3785,9 @@ void ImGuiOverlay::buildDebugVertices() {
             mins.push_back(mn);
             maxs.push_back(mx);
         }
-        std::vector<bool> collides(renderer_.actors.size(), false);
-        for (size_t i = 0; i < renderer_.actors.size(); ++i) {
-            for (size_t j = i + 1; j < renderer_.actors.size(); ++j) {
+        std::vector<bool> collides(renderer.actors.size(), false);
+        for (size_t i = 0; i < renderer.actors.size(); ++i) {
+            for (size_t j = i + 1; j < renderer.actors.size(); ++j) {
                 // Non-strict: the collision system resolves contact by pushing
                 // the mover back to exactly touch the target, so overlapping
                 // boxes (<) alone misses face-to-face contact.
@@ -3653,12 +3799,13 @@ void ImGuiOverlay::buildDebugVertices() {
                 }
             }
         }
-        for (size_t i = 0; i < renderer_.actors.size(); ++i) {
-            if (renderer_.actors[i].meshID >= allMeshMaxAbsoluteValues.size()) {
+        for (size_t i = 0; i < renderer.actors.size(); ++i) {
+            if (renderer.actors[i].mesh_id
+                >= ALL_MESH_MAX_ABSOLUTE_VALUES.size()) {
                 continue;
             }
             const MeshAxisMaxAbsoluteValues& bounds =
-                allMeshMaxAbsoluteValues[renderer_.actors[i].meshID];
+                ALL_MESH_MAX_ABSOLUTE_VALUES[renderer.actors[i].mesh_id];
             const Vector<float, 3> center = {
                 bounds.origin_offset_x,
                 bounds.origin_offset_y,
@@ -3666,7 +3813,7 @@ void ImGuiOverlay::buildDebugVertices() {
             };
             const Vector<float, 3> half =
                 {bounds.absolute_x, bounds.absolute_y, bounds.absolute_z};
-            Vector<float, 3> localCorners[8] = {
+            Vector<float, 3> local_corners[8] = {
                 center + Vector<float, 3>(-half[0], -half[1], -half[2]),
                 center + Vector<float, 3>(half[0], -half[1], -half[2]),
                 center + Vector<float, 3>(half[0], half[1], -half[2]),
@@ -3676,51 +3823,51 @@ void ImGuiOverlay::buildDebugVertices() {
                 center + Vector<float, 3>(half[0], half[1], half[2]),
                 center + Vector<float, 3>(-half[0], half[1], half[2])
             };
-            Vector<float, 3> worldCorners[8];
+            Vector<float, 3> world_corners[8];
             for (int c = 0; c < 8; ++c) {
-                worldCorners[c] = fromVec4(
-                    toVec4(localCorners[c], 1.0f)
-                    * renderer_.actors[i].modelMatrix
+                world_corners[c] = from_vec4(
+                    to_vec4(local_corners[c], 1.0f)
+                    * renderer.actors[i].model_matrix
                 );
             }
-            pushBox(vertices, worldCorners, collides[i] ? red : green);
+            push_box(vertices, world_corners, collides[i] ? red : green);
         }
     }
 
-    if (showLightFrustums) {
+    if (show_light_frustums) {
         const Vector<float, 3> yellow = {1.0f, 1.0f, 0.0f};
-        for (uint32_t i = 0; i < renderer_.directionalLightNumber; ++i) {
+        for (uint32_t i = 0; i < renderer.directional_light_number; ++i) {
             Vector<float, 3> corners[8];
-            Matrix<float, 4> inverseLight =
-                inverse_matrix_4x4(renderer_.dirLightSpaceMatrix[i]);
+            Matrix<float, 4> inverse_light =
+                inverse_matrix_4x4(renderer.dir_light_space_matrix[i]);
             for (int c = 0; c < 8; ++c) {
                 const float s = (c & 4) ? 1.0f : -1.0f; // z (near/far).
                 const float u = (c & 2) ? 1.0f : -1.0f; // y.
                 const float v = (c & 1) ? 1.0f : -1.0f; // x.
                 corners[c] =
-                    fromVec4(Vector<float, 4>(u, v, s, 1.0f) * inverseLight);
+                    from_vec4(Vector<float, 4>(u, v, s, 1.0f) * inverse_light);
             }
-            pushBox(vertices, corners, yellow);
+            push_box(vertices, corners, yellow);
         }
         const Vector<float, 3> cyan = {0.0f, 1.0f, 1.0f};
-        for (uint32_t i = 0; i < renderer_.spotLightNumber; ++i) {
+        for (uint32_t i = 0; i < renderer.spot_light_number; ++i) {
             Vector<float, 3> corners[8];
-            Matrix<float, 4> inverseLight =
-                inverse_matrix_4x4(renderer_.spotLightSpaceMatrix[i]);
+            Matrix<float, 4> inverse_light =
+                inverse_matrix_4x4(renderer.spot_light_space_matrix[i]);
             for (int c = 0; c < 8; ++c) {
                 const float s = (c & 4) ? 1.0f : -1.0f;
                 const float u = (c & 2) ? 1.0f : -1.0f;
                 const float v = (c & 1) ? 1.0f : -1.0f;
                 corners[c] =
-                    fromVec4(Vector<float, 4>(u, v, s, 1.0f) * inverseLight);
+                    from_vec4(Vector<float, 4>(u, v, s, 1.0f) * inverse_light);
             }
-            pushBox(vertices, corners, cyan);
+            push_box(vertices, corners, cyan);
         }
     }
 
-    if (showSpatialGrid) {
-        const auto& grid = glvm::world.spatialGrid;
-        const float halfChunk = grid.grid[0][0][0].size * 0.5f;
+    if (show_spatial_grid) {
+        const auto& grid = glvm::WORLD.spatial_grid;
+        const float half_chunk = grid.grid[0][0][0].SIZE * 0.5f;
         const float cross = 1.5f;
         for (uint32_t z = 0; z < grid.depth; ++z) {
             for (uint32_t y = 0; y < grid.height; ++y) {
@@ -3736,20 +3883,20 @@ void ImGuiOverlay::buildDebugVertices() {
                         : count <= 3 ? Vector<float, 3>(1.0f, 1.0f, 0.0f)
                                      : Vector<float, 3>(1.0f, 0.0f, 0.0f);
                     const Vector<float, 3> center = chunk.position
-                        + Vector<float, 3>(halfChunk, halfChunk, halfChunk);
-                    pushLine(
+                        + Vector<float, 3>(half_chunk, half_chunk, half_chunk);
+                    push_line(
                         vertices,
                         center - Vector<float, 3>(cross, 0, 0),
                         center + Vector<float, 3>(cross, 0, 0),
                         color
                     );
-                    pushLine(
+                    push_line(
                         vertices,
                         center - Vector<float, 3>(0, cross, 0),
                         center + Vector<float, 3>(0, cross, 0),
                         color
                     );
-                    pushLine(
+                    push_line(
                         vertices,
                         center - Vector<float, 3>(0, 0, cross),
                         center + Vector<float, 3>(0, 0, cross),
@@ -3760,32 +3907,32 @@ void ImGuiOverlay::buildDebugVertices() {
         }
     }
 
-    lineVertexCount_ = static_cast<uint32_t>(vertices.size());
+    line_vertex_count = static_cast<uint32_t>(vertices.size());
 
-    if (!vertices.empty() && vertexBufferMapped_) {
+    if (!vertices.empty() && vertex_buffer_mapped) {
         const size_t bytes = vertices.size() * sizeof(DebugVertex);
-        const size_t capacity = kMaxDebugVertices * sizeof(DebugVertex);
-        memcpy(vertexBufferMapped_, vertices.data(), std::min(bytes, capacity));
+        const size_t capacity = K_MAX_DEBUG_VERTICES * sizeof(DebugVertex);
+        memcpy(vertex_buffer_mapped, vertices.data(), std::min(bytes, capacity));
     }
 }
 
-void ImGuiOverlay::createRenderPass() {
-    VkAttachmentDescription colorAttachment {};
-    colorAttachment.format = renderer_.swapChainImageFormat;
-    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    VkAttachmentReference colorReference {};
-    colorReference.attachment = 0;
-    colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+void ImGuiOverlay::create_render_pass() {
+    VkAttachmentDescription color_attachment {};
+    color_attachment.format = renderer.swap_chain_image_format;
+    color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    color_attachment.initialLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    VkAttachmentReference color_reference {};
+    color_reference.attachment = 0;
+    color_reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     VkSubpassDescription subpass {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &colorReference;
+    subpass.pColorAttachments = &color_reference;
     VkSubpassDependency dependencies[2] {};
     dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
     dependencies[0].dstSubpass = 0;
@@ -3803,27 +3950,27 @@ void ImGuiOverlay::createRenderPass() {
     dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
     dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     dependencies[1].dstAccessMask = 0;
-    VkRenderPassCreateInfo renderPassInfo {};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = 1;
-    renderPassInfo.pAttachments = &colorAttachment;
-    renderPassInfo.subpassCount = 1;
-    renderPassInfo.pSubpasses = &subpass;
-    renderPassInfo.dependencyCount = 2;
-    renderPassInfo.pDependencies = dependencies;
+    VkRenderPassCreateInfo render_pass_info {};
+    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    render_pass_info.attachmentCount = 1;
+    render_pass_info.pAttachments = &color_attachment;
+    render_pass_info.subpassCount = 1;
+    render_pass_info.pSubpasses = &subpass;
+    render_pass_info.dependencyCount = 2;
+    render_pass_info.pDependencies = dependencies;
     if (vkCreateRenderPass(
-            renderer_.device,
-            &renderPassInfo,
+            renderer.device,
+            &render_pass_info,
             nullptr,
-            &renderPass_
+            &render_pass
         )
         != VK_SUCCESS) {
         throw std::runtime_error("failed to create imgui overlay render pass!");
     }
 }
 
-void ImGuiOverlay::createLinePipeline() {
-    auto createShaderModule = [&](const char* path) {
+void ImGuiOverlay::create_line_pipeline() {
+    auto create_shader_module = [&](const char* path) {
         std::ifstream file(path, std::ios::ate | std::ios::binary);
         if (!file.is_open()) {
             throw std::runtime_error(
@@ -3835,69 +3982,73 @@ void ImGuiOverlay::createLinePipeline() {
             (std::istreambuf_iterator<char>(file)),
             std::istreambuf_iterator<char>()
         );
-        VkShaderModuleCreateInfo createInfo {};
-        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        createInfo.codeSize = code.size();
-        createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+        VkShaderModuleCreateInfo create_info {};
+        create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        create_info.codeSize = code.size();
+        create_info.pCode = reinterpret_cast<const uint32_t*>(code.data());
         VkShaderModule module;
-        if (vkCreateShaderModule(renderer_.device, &createInfo, nullptr, &module)
+        if (vkCreateShaderModule(renderer.device, &create_info, nullptr, &module)
             != VK_SUCCESS) {
             throw std::runtime_error("failed to create shader module!");
         }
         return module;
     };
 
-    VkShaderModule vert = createShaderModule(
+    VkShaderModule vert = create_shader_module(
         "../../../crates/glvm2/assets/shaders/debug/debug_vert.spv"
     );
-    VkShaderModule frag = createShaderModule(
+    VkShaderModule frag = create_shader_module(
         "../../../crates/glvm2/assets/shaders/debug/debug_frag.spv"
     );
 
-    VkPipelineShaderStageCreateInfo shaderStages[2] {};
-    shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-    shaderStages[0].module = vert;
-    shaderStages[0].pName = "main";
-    shaderStages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    shaderStages[1].module = frag;
-    shaderStages[1].pName = "main";
+    VkPipelineShaderStageCreateInfo shader_stages[2] {};
+    shader_stages[0].sType =
+        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shader_stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+    shader_stages[0].module = vert;
+    shader_stages[0].pName = "main";
+    shader_stages[1].sType =
+        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shader_stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    shader_stages[1].module = frag;
+    shader_stages[1].pName = "main";
 
-    VkVertexInputBindingDescription bindingDescription {};
-    bindingDescription.binding = 0;
-    bindingDescription.stride = sizeof(DebugVertex);
-    bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    VkVertexInputBindingDescription binding_description {};
+    binding_description.binding = 0;
+    binding_description.stride = sizeof(DebugVertex);
+    binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-    std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions {};
-    attributeDescriptions[0].binding = 0;
-    attributeDescriptions[0].location = 0;
-    attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attributeDescriptions[0].offset = offsetof(DebugVertex, x);
-    attributeDescriptions[1].binding = 0;
-    attributeDescriptions[1].location = 1;
-    attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attributeDescriptions[1].offset = offsetof(DebugVertex, r);
+    std::array<VkVertexInputAttributeDescription, 2> attribute_descriptions {};
+    attribute_descriptions[0].binding = 0;
+    attribute_descriptions[0].location = 0;
+    attribute_descriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attribute_descriptions[0].offset = offsetof(DebugVertex, x);
+    attribute_descriptions[1].binding = 0;
+    attribute_descriptions[1].location = 1;
+    attribute_descriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attribute_descriptions[1].offset = offsetof(DebugVertex, r);
 
-    VkPipelineVertexInputStateCreateInfo vertexInputInfo {};
-    vertexInputInfo.sType =
+    VkPipelineVertexInputStateCreateInfo vertex_input_info {};
+    vertex_input_info.sType =
         VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 1;
-    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-    vertexInputInfo.vertexAttributeDescriptionCount =
-        static_cast<uint32_t>(attributeDescriptions.size());
-    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+    vertex_input_info.vertexBindingDescriptionCount = 1;
+    vertex_input_info.pVertexBindingDescriptions = &binding_description;
+    vertex_input_info.vertexAttributeDescriptionCount =
+        static_cast<uint32_t>(attribute_descriptions.size());
+    vertex_input_info.pVertexAttributeDescriptions =
+        attribute_descriptions.data();
 
-    VkPipelineInputAssemblyStateCreateInfo inputAssembly {};
-    inputAssembly.sType =
+    VkPipelineInputAssemblyStateCreateInfo input_assembly {};
+    input_assembly.sType =
         VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-    inputAssembly.primitiveRestartEnable = VK_FALSE;
+    input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    input_assembly.primitiveRestartEnable = VK_FALSE;
 
-    VkPipelineViewportStateCreateInfo viewportState {};
-    viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    viewportState.viewportCount = 1;
-    viewportState.scissorCount = 1;
+    VkPipelineViewportStateCreateInfo viewport_state {};
+    viewport_state.sType =
+        VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewport_state.viewportCount = 1;
+    viewport_state.scissorCount = 1;
 
     VkPipelineRasterizationStateCreateInfo rasterizer {};
     rasterizer.sType =
@@ -3916,113 +4067,113 @@ void ImGuiOverlay::createLinePipeline() {
     multisampling.sampleShadingEnable = VK_FALSE;
     multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-    VkPipelineColorBlendAttachmentState colorBlendAttachment {};
-    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT
+    VkPipelineColorBlendAttachmentState color_blend_attachment {};
+    color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT
         | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT
         | VK_COLOR_COMPONENT_A_BIT;
-    colorBlendAttachment.blendEnable = VK_TRUE;
-    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-    colorBlendAttachment.dstColorBlendFactor =
+    color_blend_attachment.blendEnable = VK_TRUE;
+    color_blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    color_blend_attachment.dstColorBlendFactor =
         VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
-    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-    colorBlendAttachment.dstAlphaBlendFactor =
+    color_blend_attachment.colorBlendOp = VK_BLEND_OP_ADD;
+    color_blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    color_blend_attachment.dstAlphaBlendFactor =
         VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+    color_blend_attachment.alphaBlendOp = VK_BLEND_OP_ADD;
 
-    VkPipelineColorBlendStateCreateInfo colorBlending {};
-    colorBlending.sType =
+    VkPipelineColorBlendStateCreateInfo color_blending {};
+    color_blending.sType =
         VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colorBlending.logicOpEnable = VK_FALSE;
-    colorBlending.attachmentCount = 1;
-    colorBlending.pAttachments = &colorBlendAttachment;
+    color_blending.logicOpEnable = VK_FALSE;
+    color_blending.attachmentCount = 1;
+    color_blending.pAttachments = &color_blend_attachment;
 
-    VkPushConstantRange pushConstantRange {};
-    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    pushConstantRange.offset = 0;
-    pushConstantRange.size = sizeof(Matrix<float, 4>);
+    VkPushConstantRange push_constant_range {};
+    push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    push_constant_range.offset = 0;
+    push_constant_range.size = sizeof(Matrix<float, 4>);
 
-    VkPipelineLayoutCreateInfo layoutInfo {};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    layoutInfo.setLayoutCount = 0;
-    layoutInfo.pSetLayouts = nullptr;
-    layoutInfo.pushConstantRangeCount = 1;
-    layoutInfo.pPushConstantRanges = &pushConstantRange;
+    VkPipelineLayoutCreateInfo layout_info {};
+    layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    layout_info.setLayoutCount = 0;
+    layout_info.pSetLayouts = nullptr;
+    layout_info.pushConstantRangeCount = 1;
+    layout_info.pPushConstantRanges = &push_constant_range;
 
     if (vkCreatePipelineLayout(
-            renderer_.device,
-            &layoutInfo,
+            renderer.device,
+            &layout_info,
             nullptr,
-            &lineLayout_
+            &line_layout
         )
         != VK_SUCCESS) {
         throw std::runtime_error("failed to create debug line pipeline layout!");
     }
 
-    VkPipelineDepthStencilStateCreateInfo depthStencil {};
-    depthStencil.sType =
+    VkPipelineDepthStencilStateCreateInfo depth_stencil {};
+    depth_stencil.sType =
         VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depthStencil.depthTestEnable = VK_FALSE;
-    depthStencil.depthWriteEnable = VK_FALSE;
+    depth_stencil.depthTestEnable = VK_FALSE;
+    depth_stencil.depthWriteEnable = VK_FALSE;
 
-    VkDynamicState dynamicStates[] = {
+    VkDynamicState dynamic_states[] = {
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR
     };
-    VkPipelineDynamicStateCreateInfo dynamicState {};
-    dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamicState.dynamicStateCount = 2;
-    dynamicState.pDynamicStates = dynamicStates;
+    VkPipelineDynamicStateCreateInfo dynamic_state {};
+    dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamic_state.dynamicStateCount = 2;
+    dynamic_state.pDynamicStates = dynamic_states;
 
-    VkGraphicsPipelineCreateInfo pipelineInfo {};
-    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipelineInfo.stageCount = 2;
-    pipelineInfo.pStages = shaderStages;
-    pipelineInfo.pVertexInputState = &vertexInputInfo;
-    pipelineInfo.pInputAssemblyState = &inputAssembly;
-    pipelineInfo.pViewportState = &viewportState;
-    pipelineInfo.pRasterizationState = &rasterizer;
-    pipelineInfo.pMultisampleState = &multisampling;
-    pipelineInfo.pDepthStencilState = &depthStencil;
-    pipelineInfo.pColorBlendState = &colorBlending;
-    pipelineInfo.pDynamicState = &dynamicState;
-    pipelineInfo.layout = lineLayout_;
-    pipelineInfo.renderPass = renderPass_;
-    pipelineInfo.subpass = 0;
+    VkGraphicsPipelineCreateInfo pipeline_info {};
+    pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipeline_info.stageCount = 2;
+    pipeline_info.pStages = shader_stages;
+    pipeline_info.pVertexInputState = &vertex_input_info;
+    pipeline_info.pInputAssemblyState = &input_assembly;
+    pipeline_info.pViewportState = &viewport_state;
+    pipeline_info.pRasterizationState = &rasterizer;
+    pipeline_info.pMultisampleState = &multisampling;
+    pipeline_info.pDepthStencilState = &depth_stencil;
+    pipeline_info.pColorBlendState = &color_blending;
+    pipeline_info.pDynamicState = &dynamic_state;
+    pipeline_info.layout = line_layout;
+    pipeline_info.renderPass = render_pass;
+    pipeline_info.subpass = 0;
 
     if (vkCreateGraphicsPipelines(
-            renderer_.device,
+            renderer.device,
             VK_NULL_HANDLE,
             1,
-            &pipelineInfo,
+            &pipeline_info,
             nullptr,
-            &linePipeline_
+            &line_pipeline
         )
         != VK_SUCCESS) {
         throw std::runtime_error("failed to create debug line pipeline!");
     }
 
-    vkDestroyShaderModule(renderer_.device, vert, nullptr);
-    vkDestroyShaderModule(renderer_.device, frag, nullptr);
+    vkDestroyShaderModule(renderer.device, vert, nullptr);
+    vkDestroyShaderModule(renderer.device, frag, nullptr);
 }
 
-void ImGuiOverlay::createVertexBuffer() {
-    const VkDeviceSize bufferSize = kMaxDebugVertices * sizeof(DebugVertex);
-    renderer_.createBuffer(
-        bufferSize,
+void ImGuiOverlay::create_vertex_buffer() {
+    const VkDeviceSize buffer_size = K_MAX_DEBUG_VERTICES * sizeof(DebugVertex);
+    renderer.create_buffer(
+        buffer_size,
         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
             | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        vertexBuffer_,
-        vertexBufferMemory_
+        vertex_buffer,
+        vertex_buffer_memory
     );
     vkMapMemory(
-        renderer_.device,
-        vertexBufferMemory_,
+        renderer.device,
+        vertex_buffer_memory,
         0,
-        bufferSize,
+        buffer_size,
         0,
-        &vertexBufferMapped_
+        &vertex_buffer_mapped
     );
 }
 
@@ -4033,45 +4184,47 @@ void ImGuiOverlay::createVertexBuffer() {
 
 namespace glvm {
 CVulkanRenderer::CVulkanRenderer() {
-    imguiOverlay = new ImGuiOverlay(*this);
+    imgui_overlay = new ImGuiOverlay(*this);
 }
 
 CVulkanRenderer::~CVulkanRenderer() {
     cleanup();
-    delete imguiOverlay;
-    imguiOverlay = nullptr;
+    delete imgui_overlay;
+    imgui_overlay = nullptr;
 }
 
 void CVulkanRenderer::draw() {
-    imguiOverlay->newFrame();
-    mainRenderDrawFrame();
+    imgui_overlay->new_frame();
+    main_render_draw_frame();
 }
 
-void CVulkanRenderer::SetViewMatrix(Matrix<float, 4> _viewMatrix) {
-    viewMatrix = _viewMatrix;
+void CVulkanRenderer::set_view_matrix(Matrix<float, 4> new_view_matrix) {
+    view_matrix = new_view_matrix;
 }
 
-void CVulkanRenderer::SetProjectionMatrix(Matrix<float, 4> _projectionMatrix) {
-    projectionMatrix = _projectionMatrix;
+void CVulkanRenderer::set_projection_matrix(
+    Matrix<float, 4> new_projection_matrix
+) {
+    projection_matrix = new_projection_matrix;
 }
 
-void CVulkanRenderer::createTextureImage() {
-    uint32_t texWidth, texHeight;
-    [[maybe_unused]] uint32_t texChannels;
+void CVulkanRenderer::create_texture_image() {
+    uint32_t tex_width, tex_height;
+    [[maybe_unused]] uint32_t tex_channels;
 
-    unsigned int readableTextureDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::RIDABLE_TEXTURES]
-            .descriptorsBindingsIDs[0];
-    for (unsigned int i = 0; i < initializeTextureData_.size(); ++i) {
-        VkDeviceSize imageSize {};
+    unsigned int readable_texture_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::RidableTextures]
+            .descriptors_bindings_i_ds[0];
+    for (unsigned int i = 0; i < initialize_texture_data.size(); ++i) {
+        VkDeviceSize image_size {};
         unsigned char* pixels;
         [[maybe_unused]] const char* path_to_stb_image = nullptr;
 
 #ifndef STB_IMAGE_IMPLEMENTATION
-        imageSize = initializeTextureData_[i].dat_length_;
-        pixels = initializeTextureData_[i].u_iData_;
-        texWidth = initializeTextureData_[i].iWidth_;
-        texHeight = initializeTextureData_[i].iHeight_;
+        image_size = initialize_texture_data[i].dat_length;
+        pixels = initialize_texture_data[i].u_i_data;
+        tex_width = initialize_texture_data[i].i_width;
+        tex_height = initialize_texture_data[i].i_height;
 #endif
 
 #ifdef STB_IMAGE_IMPLEMENTATION
@@ -4090,140 +4243,148 @@ void CVulkanRenderer::createTextureImage() {
             throw std::runtime_error("failed to load texture image!");
         }
 
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
-        createBuffer(
-            imageSize,
+        VkBuffer staging_buffer;
+        VkDeviceMemory staging_buffer_memory;
+        create_buffer(
+            image_size,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
                 | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            stagingBuffer,
-            stagingBufferMemory
+            staging_buffer,
+            staging_buffer_memory
         );
 
         void* data;
-        vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
-        memcpy(data, pixels, static_cast<size_t>(imageSize));
-        vkUnmapMemory(device, stagingBufferMemory);
-        VK_Image textureImage = {
+        vkMapMemory(device, staging_buffer_memory, 0, image_size, 0, &data);
+        memcpy(data, pixels, static_cast<size_t>(image_size));
+        vkUnmapMemory(device, staging_buffer_memory);
+        GpuImage texture_image = {
             .image = VkImage {},
-            .deviceMemory = VkDeviceMemory {},
-            .viewType = VK_IMAGE_VIEW_TYPE_2D,
-            .createFlags = 0,
-            .memoryPropertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            .usageFlags =
+            .device_memory = VkDeviceMemory {},
+            .view_type = VK_IMAGE_VIEW_TYPE_2D,
+            .create_flags = 0,
+            .memory_property_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            .usage_flags =
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-            .aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT,
+            .aspect_flags = VK_IMAGE_ASPECT_COLOR_BIT,
             .format = VK_FORMAT_R8G8B8A8_SRGB,
             .tiling = VK_IMAGE_TILING_OPTIMAL,
-            .arrayLayers = 1,
-            .width = texWidth,
-            .height = texHeight
+            .array_layers = 1,
+            .width = tex_width,
+            .height = tex_height
         };
 
-        createImage(textureImage);
+        create_image(texture_image);
 
-        transitionImageLayout(
-            textureImage.image,
+        transition_image_layout(
+            texture_image.image,
             VK_IMAGE_LAYOUT_UNDEFINED,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
         );
-        copyBufferToImage(
-            stagingBuffer,
-            textureImage.image,
-            static_cast<uint32_t>(texWidth),
-            static_cast<uint32_t>(texHeight)
+        copy_buffer_to_image(
+            staging_buffer,
+            texture_image.image,
+            static_cast<uint32_t>(tex_width),
+            static_cast<uint32_t>(tex_height)
         );
-        transitionImageLayout(
-            textureImage.image,
+        transition_image_layout(
+            texture_image.image,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
         );
-        *GPUDescriptors
-             [descriptorBindingsConfig[readableTextureDescriptorBindingIndex]
-                  .globalDescriptorOffset
+        *GPU_DESCRIPTORS
+             [DESCRIPTOR_BINDINGS_CONFIG[readable_texture_descriptor_binding_index]
+                  .global_descriptor_offset
               + i]
-                 .GPUImage = textureImage;
+                 .gpu_image = texture_image;
 
-        vkDestroyBuffer(device, stagingBuffer, nullptr);
-        vkFreeMemory(device, stagingBufferMemory, nullptr);
+        vkDestroyBuffer(device, staging_buffer, nullptr);
+        vkFreeMemory(device, staging_buffer_memory, nullptr);
     }
 }
 
-void CVulkanRenderer::recreateSwapChain() {
+void CVulkanRenderer::recreate_swap_chain() {
     vkDeviceWaitIdle(device);
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
-    Window->configureWindow();
+    window->configure_window();
 #endif
 
-    imguiOverlay->destroySwapChainResources();
-    cleanupSwapChain();
+    imgui_overlay->destroy_swap_chain_resources();
+    cleanup_swap_chain();
 
-    createSwapChain();
-    Window->width = swapChainExtent.width;
-    Window->height = swapChainExtent.height;
-    aspectRate = (float)Window->width / (float)Window->height;
-    createImageViews();
-    createDepthResources();
-    createDirectionalLightShadowMapDepthResources();
-    createSpotLightShadowMapDepthResources();
-    createPointLightShadowMapDepthResources();
-    createFramebuffers();
-    createMainRenderDescriptorSets();
-    imguiOverlay->createSwapChainResources();
+    create_swap_chain();
+    std::cout << "[stage] create_swap_chain" << std::flush;
+    window->width = swap_chain_extent.width;
+    window->height = swap_chain_extent.height;
+    aspect_rate = (float)window->width / (float)window->height;
+    create_image_views();
+    std::cout << "[stage] create_image_views" << std::flush;
+    create_depth_resources();
+    std::cout << "[stage] create_depth_resources()" << std::flush;
+    std::cout << "[stage] create_depth_resources" << std::flush;
+    create_directional_light_shadow_map_depth_resources();
+    std::cout << "[stage] create_directional_light_shadow_map_depth_resources()" << std::flush;
+    create_spot_light_shadow_map_depth_resources();
+    std::cout << "[stage] create_spot_light_shadow_map_depth_resources()" << std::flush;
+    create_point_light_shadow_map_depth_resources();
+    std::cout << "[stage] create_point_light_shadow_map_depth_resources()" << std::flush;
+    create_framebuffers();
+    std::cout << "[stage] create_framebuffers" << std::flush;
+    create_main_render_descriptor_sets();
+    imgui_overlay->create_swap_chain_resources();
 }
 
-void CVulkanRenderer::SetMeshData(
-    std::vector<const char*> _pathsArray,
-    std::vector<const char*> pathsGLTF
+void CVulkanRenderer::set_mesh_data(
+    std::vector<const char*> paths,
+    std::vector<const char*> paths_gltf
 ) {
-    for (unsigned int i = 0; i < _pathsArray.size(); ++i) {
-        pathsArray_.push_back(_pathsArray[i]);
+    for (unsigned int i = 0; i < paths.size(); ++i) {
+        paths_array.push_back(paths[i]);
     }
 
-    for (unsigned int i = 0; i < pathsGLTF.size(); ++i) {
-        pathsGLTF_.push_back(pathsGLTF[i]);
+    for (unsigned int i = 0; i < paths_gltf.size(); ++i) {
+        paths_gltf.push_back(paths_gltf[i]);
     }
 }
 
 void CVulkanRenderer::run() {
-    VkConfigInitializer();
-    descriptorSetBuilder();
-    pipelineBuilder();
-    renderPassesBuilder();
-    renderThreadPool = new ThreadPool(3);
-    startTime = std::chrono::steady_clock::now();
+    vk_config_initializer();
+    descriptor_set_builder();
+    pipeline_builder();
+    render_passes_builder();
+    render_thread_pool = new ThreadPool(3);
+    start_time = std::chrono::steady_clock::now();
 
-    initWindow();
-    initVulkan();
+    init_window();
+    init_vulkan();
 }
 
-void CVulkanRenderer::initWindow() {
+void CVulkanRenderer::init_window() {
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-    Window = initializeWaylandWindow();
+    window = initialize_wayland_window();
 
-    createWaylandSurfaceInfo.display = Window->display;
-    createWaylandSurfaceInfo.surface = Window->wl_surface;
-    aspectRate = (float)Window->width / (float)Window->height;
+    create_wayland_surface_info.display = window->display;
+    create_wayland_surface_info.surface = window->wl_surface;
+    aspect_rate = (float)window->width / (float)window->height;
 
-    if (createWaylandSurfaceInfo.display == NULL) {
+    if (create_wayland_surface_info.display == NULL) {
         std::cout << "DISPLAY NULL" << std::endl;
-    } else if (createWaylandSurfaceInfo.surface == NULL) {
+    } else if (create_wayland_surface_info.surface == NULL) {
         std::cout << "SURFACE NULL" << std::endl;
     }
 
-    createWaylandSurfaceInfo.sType =
+    create_wayland_surface_info.sType =
         VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
-    createWaylandSurfaceInfo.pNext = nullptr;
-    createWaylandSurfaceInfo.flags = 0;
+    create_wayland_surface_info.pNext = nullptr;
+    create_wayland_surface_info.flags = 0;
 #endif
 
 #ifdef VK_USE_PLATFORM_XLIB_KHR
-    Window = new glvm::WindowXVulkan();
-    createXlibSurfaceInfo.dpy = Window->GetDisplay();
-    createXlibSurfaceInfo.window = Window->GetWindow();
-    aspectRate = (float)Window->width / (float)Window->height;
+    window = new glvm::WindowXVulkan();
+    createXlibSurfaceInfo.dpy = window->GetDisplay();
+    createXlibSurfaceInfo.window = window->GetWindow();
+    aspect_rate = (float)window->width / (float)window->height;
 
     createXlibSurfaceInfo.sType =
         VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
@@ -4232,10 +4393,10 @@ void CVulkanRenderer::initWindow() {
 #endif
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
-    Window = new glvm::WindowXCBVulkan();
-    createXcbSurfaceInfo.window = Window->GetWindow();
-    createXcbSurfaceInfo.connection = Window->GetConnection();
-    aspectRate = (float)Window->width / (float)Window->height;
+    window = new glvm::WindowXCBVulkan();
+    createXcbSurfaceInfo.window = window->GetWindow();
+    createXcbSurfaceInfo.connection = window->GetConnection();
+    aspect_rate = (float)window->width / (float)window->height;
 
     createXcbSurfaceInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
     createXcbSurfaceInfo.pNext = nullptr;
@@ -4243,508 +4404,530 @@ void CVulkanRenderer::initWindow() {
 #endif
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    Window = new glvm::WindowWinVulkan();
-    createWin32SurfaceInfo.hwnd = Window->GetModernWindowHWND();
-    aspectRate = (float)Window->width / (float)Window->height;
+    window = new glvm::WindowWinVulkan();
+    create_win32_surface_info.hwnd = window->get_modern_window_hwnd();
+    aspect_rate = (float)window->width / (float)window->height;
 
-    createWin32SurfaceInfo.sType =
+    create_win32_surface_info.sType =
         VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-    createWin32SurfaceInfo.pNext = nullptr;
-    createWin32SurfaceInfo.flags = 0;
+    create_win32_surface_info.pNext = nullptr;
+    create_win32_surface_info.flags = 0;
 #endif
 }
 
-void CVulkanRenderer::initializeGameLevelVertices() {
-    for (unsigned int m = 0; m < levelGeneratedVertices.size(); ++m) {
-        aVertices_.push_back(levelGeneratedVertices[m]);
-        aIndices_.push_back(levelGeneratedIndices[m]);
-        jointMatricesPerMesh.push_back({});
+void CVulkanRenderer::initialize_game_level_vertices() {
+    for (unsigned int m = 0; m < level_generated_vertices.size(); ++m) {
+        a_vertices.push_back(level_generated_vertices[m]);
+        a_indices.push_back(level_generated_indices[m]);
+        joint_matrices_per_mesh.push_back({});
         frames.push_back({});
         for (int i = 0; i < 64; ++i) {
             frames[frames.size() - 1].push_back(0.0f);
         }
-        int maximumJoints = 64;
-        std::vector<std::vector<Matrix<float, 4>>> jointMatrices;
-        for (int i = 0; i < maximumJoints; ++i) {
-            std::vector<Matrix<float, 4>> globalAllFrameNodeMatrix;
-            int numberOfFrames = 64;
-            for (int j = 0; j < numberOfFrames; ++j) {
-                Matrix<float, 4> unitMatrix(1.0f);
-                globalAllFrameNodeMatrix.push_back(unitMatrix);
+        int maximum_joints = 64;
+        std::vector<std::vector<Matrix<float, 4>>> joint_matrices;
+        for (int i = 0; i < maximum_joints; ++i) {
+            std::vector<Matrix<float, 4>> global_all_frame_node_matrix;
+            int number_of_frames = 64;
+            for (int j = 0; j < number_of_frames; ++j) {
+                Matrix<float, 4> unit_matrix(1.0f);
+                global_all_frame_node_matrix.push_back(unit_matrix);
             }
 
-            jointMatrices.push_back(globalAllFrameNodeMatrix);
+            joint_matrices.push_back(global_all_frame_node_matrix);
         }
-        jointMatricesPerMesh[jointMatricesPerMesh.size() - 1] = jointMatrices;
+        joint_matrices_per_mesh[joint_matrices_per_mesh.size() - 1] =
+            joint_matrices;
 
-        uint32_t nextIndexGLTF = wavefrontObjCounter + gltfCounter + m;
+        uint32_t next_index_gltf = wavefront_obj_counter + gltf_counter + m;
 
-        vertexBufferContainer.emplace_back();
-        vertexBufferMemoryContainer.emplace_back();
-        createVertexBuffer(
-            vertexBufferContainer[nextIndexGLTF],
-            vertexBufferMemoryContainer[nextIndexGLTF],
-            aVertices_[nextIndexGLTF]
+        vertex_buffer_container.emplace_back();
+        vertex_buffer_memory_container.emplace_back();
+        create_vertex_buffer(
+            vertex_buffer_container[next_index_gltf],
+            vertex_buffer_memory_container[next_index_gltf],
+            a_vertices[next_index_gltf]
         );
 
-        indexBufferContainer.emplace_back();
-        indexBufferMemoryContaner.emplace_back();
-        createIndexBuffer(
-            indexBufferContainer[nextIndexGLTF],
-            indexBufferMemoryContaner[nextIndexGLTF],
-            aIndices_[nextIndexGLTF]
+        index_buffer_container.emplace_back();
+        index_buffer_memory_contaner.emplace_back();
+        create_index_buffer(
+            index_buffer_container[next_index_gltf],
+            index_buffer_memory_contaner[next_index_gltf],
+            a_indices[next_index_gltf]
         );
     }
 }
 
-void CVulkanRenderer::initVulkan() {
-    createInstance();
-    setupDebugMessenger();
-    createSurface();
-    pickPhysicalDevice();
-    createLogicalDevice();
-    createSwapChain();
-    createImageViews();
-    createMainRenderPass();
-    createDescriptorSetLayout();
-    createGraphicsPipeline();
-    createCommandPool(mainRenderCommandPool);
-    const uint32_t secondaryBuffersCommandPoolsNumber = 3;
-    secondaryBuffersCommandPools.resize(secondaryBuffersCommandPoolsNumber);
-    for (uint32_t i = 0; i < secondaryBuffersCommandPools.size(); ++i) {
-        createCommandPool(secondaryBuffersCommandPools[i]);
-    }
-    createDepthResources();
-    createDirectionalLightShadowMapDepthResources();
-    createSpotLightShadowMapDepthResources();
-    createPointLightShadowMapDepthResources();
-    createFramebuffers();
-    createTextureImage();
-    createTextureImageView();
-    createTextureSampler();
-    createShadowMapSampler();
-    initializeVertexBuffersWithWavefrontData();
-    initializeVertexBuffersWithGLTFData();
-    initializeVertexBuffersWithFontData();
-
-    createMainRenderUniformBuffers();
-    createMainRenderDescriptorPool();
-    createMainRenderDescriptorSets();
-    imguiOverlay->init();
-    setDebugObjectNames(
-        device,
-        vertexBufferContainer,
-        indexBufferContainer,
-        GPUDescriptors,
-        fontIndicesContainer,
-        fontVertexBufferContainer,
-        fontIndexBufferContainer
+void CVulkanRenderer::init_vulkan() {
+    create_instance();
+    std::cout << "[stage] create_instance" << std::flush;
+    setup_debug_messenger();
+    create_surface();
+    std::cout << "[stage] create_surface" << std::flush;
+    pick_physical_device();
+    std::cout << "[stage] pick_physical_device" << std::flush;
+    create_logical_device();
+    std::cout << "[stage] create_logical_device" << std::flush;
+    create_swap_chain();
+    create_image_views();
+    create_main_render_pass();
+    std::cout << "[stage] create_main_render_pass" << std::flush;
+    create_descriptor_set_layout();
+    std::cout << "[stage] create_descriptor_set_layout" << std::flush;
+    create_graphics_pipeline();
+    std::cout << "[stage] create_graphics_pipeline" << std::flush;
+    create_command_pool(main_render_command_pool);
+    std::cout << "[stage2] create_command_pool(main_render_command_pool)" << std::flush;    std::cout << "[stage] create_command_pool(main_render_command_pool)" << std::flush;
+    const uint32_t secondary_buffers_command_pools_number = 3;
+    secondary_buffers_command_pools.resize(
+        secondary_buffers_command_pools_number
     );
-    const uint32_t mainRenderCommandBuffersNumber = 1;
-    createCommandBuffers(
-        mainRenderCommandPool,
-        mainRenderCommandBuffers,
-        mainRenderCommandBuffersNumber,
+    for (uint32_t i = 0; i < secondary_buffers_command_pools.size(); ++i) {
+        create_command_pool(secondary_buffers_command_pools[i]);
+    }
+    create_depth_resources();
+    std::cout << "[stage2] create_depth_resources()" << std::flush;    create_directional_light_shadow_map_depth_resources();
+    std::cout << "[stage2] create_directional_light_shadow_map_depth_resources()" << std::flush;    create_spot_light_shadow_map_depth_resources();
+    std::cout << "[stage2] create_spot_light_shadow_map_depth_resources()" << std::flush;    create_point_light_shadow_map_depth_resources();
+    std::cout << "[stage2] create_point_light_shadow_map_depth_resources()" << std::flush;    create_framebuffers();
+    std::cout << "[stage2] create_framebuffers()" << std::flush;    create_texture_image();
+    std::cout << "[stage] create_texture_image" << std::flush;
+    create_texture_image_view();
+    std::cout << "[stage3] create_texture_image_view()" << std::flush;    create_texture_sampler();
+    std::cout << "[stage3] create_texture_sampler()" << std::flush;    create_shadow_map_sampler();
+    std::cout << "[stage3] create_shadow_map_sampler()" << std::flush;    initialize_vertex_buffers_with_wavefront_data();
+    std::cout << "[stage3] initialize_vertex_buffers_with_wavefront_data()" << std::flush;    initialize_vertex_buffers_with_gltf_data();
+    std::cout << "[stage3] initialize_vertex_buffers_with_gltf_data()" << std::flush;    initialize_vertex_buffers_with_font_data();
+    std::cout << "[stage3] initialize_vertex_buffers_with_font_data()" << std::flush;
+    create_main_render_uniform_buffers();
+    std::cout << "[stage3] create_main_render_uniform_buffers()" << std::flush;    create_main_render_descriptor_pool();
+    create_main_render_descriptor_sets();
+    imgui_overlay->init();
+    std::cout << "[stage3] imgui_overlay->init()" << std::flush;    set_debug_object_names(
+        device,
+        vertex_buffer_container,
+        index_buffer_container,
+        GPU_DESCRIPTORS,
+        font_indices_container,
+        font_vertex_buffer_container,
+        font_index_buffer_container
+    );
+    const uint32_t main_render_command_buffers_number = 1;
+    create_command_buffers(
+        main_render_command_pool,
+        main_render_command_buffers,
+        main_render_command_buffers_number,
         VK_COMMAND_BUFFER_LEVEL_PRIMARY
     );
 
-    createCommandBuffers(
-        secondaryBuffersCommandPools[0],
-        directionalLightSecondaryCommandBuffers,
-        directionalLightNumber,
+    create_command_buffers(
+        secondary_buffers_command_pools[0],
+        directional_light_secondary_command_buffers,
+        directional_light_number,
         VK_COMMAND_BUFFER_LEVEL_SECONDARY
     );
-    createCommandBuffers(
-        secondaryBuffersCommandPools[1],
-        spotLightSecondaryCommandBuffers,
-        spotLightNumber,
+    create_command_buffers(
+        secondary_buffers_command_pools[1],
+        spot_light_secondary_command_buffers,
+        spot_light_number,
         VK_COMMAND_BUFFER_LEVEL_SECONDARY
     );
-    createCommandBuffers(
-        secondaryBuffersCommandPools[2],
-        pointLightSecondaryCommandBuffers,
-        pointLightNumber * 6 * 16,
+    create_command_buffers(
+        secondary_buffers_command_pools[2],
+        point_light_secondary_command_buffers,
+        point_light_number * 6 * 16,
         VK_COMMAND_BUFFER_LEVEL_SECONDARY
     );
-    createSyncObjects(
-        imageAvailableSemaphores,
-        renderFinishedSemaphores,
-        inFlightFences
+    create_sync_objects(
+        image_available_semaphores,
+        render_finished_semaphores,
+        in_flight_fences
     );
 }
 
-void CVulkanRenderer::initializeVertexBuffersWithWavefrontData() {
-    for (unsigned int m = 0; m < pathsArray_.size(); ++m) {
-        vertexBufferContainer.emplace_back();
-        vertexBufferMemoryContainer.emplace_back();
-        createVertexBuffer(
-            vertexBufferContainer[m],
-            vertexBufferMemoryContainer[m],
-            aVertices_[m]
+void CVulkanRenderer::initialize_vertex_buffers_with_wavefront_data() {
+    for (unsigned int m = 0; m < paths_array.size(); ++m) {
+        vertex_buffer_container.emplace_back();
+        vertex_buffer_memory_container.emplace_back();
+        create_vertex_buffer(
+            vertex_buffer_container[m],
+            vertex_buffer_memory_container[m],
+            a_vertices[m]
         );
 
-        indexBufferContainer.emplace_back();
-        indexBufferMemoryContaner.emplace_back();
-        createIndexBuffer(
-            indexBufferContainer[m],
-            indexBufferMemoryContaner[m],
-            aIndices_[m]
+        index_buffer_container.emplace_back();
+        index_buffer_memory_contaner.emplace_back();
+        create_index_buffer(
+            index_buffer_container[m],
+            index_buffer_memory_contaner[m],
+            a_indices[m]
         );
-        ++wavefrontObjCounter;
+        ++wavefront_obj_counter;
     }
 }
 
-void CVulkanRenderer::initializeVertexBuffersWithGLTFData() {
-    for (unsigned int m = 0; m < pathsGLTF_.size(); ++m) {
-        uint32_t nextIndexGLTF = wavefrontObjCounter + m;
-        vertexBufferContainer.emplace_back();
-        vertexBufferMemoryContainer.emplace_back();
-        createVertexBuffer(
-            vertexBufferContainer[nextIndexGLTF],
-            vertexBufferMemoryContainer[nextIndexGLTF],
-            aVertices_[nextIndexGLTF]
+void CVulkanRenderer::initialize_vertex_buffers_with_gltf_data() {
+    for (unsigned int m = 0; m < paths_gltf.size(); ++m) {
+        uint32_t next_index_gltf = wavefront_obj_counter + m;
+        vertex_buffer_container.emplace_back();
+        vertex_buffer_memory_container.emplace_back();
+        create_vertex_buffer(
+            vertex_buffer_container[next_index_gltf],
+            vertex_buffer_memory_container[next_index_gltf],
+            a_vertices[next_index_gltf]
         );
 
-        indexBufferContainer.emplace_back();
-        indexBufferMemoryContaner.emplace_back();
-        createIndexBuffer(
-            indexBufferContainer[nextIndexGLTF],
-            indexBufferMemoryContaner[nextIndexGLTF],
-            aIndices_[nextIndexGLTF]
+        index_buffer_container.emplace_back();
+        index_buffer_memory_contaner.emplace_back();
+        create_index_buffer(
+            index_buffer_container[next_index_gltf],
+            index_buffer_memory_contaner[next_index_gltf],
+            a_indices[next_index_gltf]
         );
-        ++gltfCounter;
+        ++gltf_counter;
     }
 }
 
-void CVulkanRenderer::initializeVertexBuffersWithFontData() {
-    for (unsigned int i = 0; i < symbolGVerticesContainer.size(); ++i) {
-        const unsigned int nextBufferIndex = fontIndicesContainer[i];
-        std::vector<Vertex> symbol_g_vertices = symbolGVerticesContainer[i];
+void CVulkanRenderer::initialize_vertex_buffers_with_font_data() {
+    for (unsigned int i = 0; i < symbol_g_vertices_container.size(); ++i) {
+        const unsigned int next_buffer_index = font_indices_container[i];
+        std::vector<Vertex> symbol_g_vertices = symbol_g_vertices_container[i];
 
-        createVertexBuffer(
-            fontVertexBufferContainer[nextBufferIndex],
-            fontVertexBufferMemoryContainer[nextBufferIndex],
+        create_vertex_buffer(
+            font_vertex_buffer_container[next_buffer_index],
+            font_vertex_buffer_memory_container[next_buffer_index],
             symbol_g_vertices
         );
-        createIndexBuffer(
-            fontIndexBufferContainer[nextBufferIndex],
-            fontIndexBufferMemoryContaner[nextBufferIndex],
+        create_index_buffer(
+            font_index_buffer_container[next_buffer_index],
+            font_index_buffer_memory_contaner[next_buffer_index],
             symbol_g_indices
         );
     }
 }
 
-void CVulkanRenderer::clearVK_Image(VK_Image* textureImages) {
-    vkDestroySampler(device, textureImages->sampler, nullptr);
-    for (unsigned int j = 0; j < textureImages->views.size(); ++j) {
-        vkDestroyImageView(device, textureImages->views[j], nullptr);
+void CVulkanRenderer::clear_vk_image(GpuImage* texture_images) {
+    vkDestroySampler(device, texture_images->sampler, nullptr);
+    for (unsigned int j = 0; j < texture_images->views.size(); ++j) {
+        vkDestroyImageView(device, texture_images->views[j], nullptr);
     }
 
-    textureImages->views.clear();
+    texture_images->views.clear();
 
-    vkDestroyImage(device, textureImages->image, nullptr);
-    vkFreeMemory(device, textureImages->deviceMemory, nullptr);
+    vkDestroyImage(device, texture_images->image, nullptr);
+    vkFreeMemory(device, texture_images->device_memory, nullptr);
 }
 
-void CVulkanRenderer::cleanupSwapChain() {
+void CVulkanRenderer::cleanup_swap_chain() {
     vkDeviceWaitIdle(device);
-    vkDestroyImageView(device, mainDepthImageView, nullptr);
-    vkDestroyImage(device, mainDepthPipelineImage, nullptr);
-    vkFreeMemory(device, mainDepthPipelineImageMemory, nullptr);
+    vkDestroyImageView(device, main_depth_image_view, nullptr);
+    vkDestroyImage(device, main_depth_pipeline_image, nullptr);
+    vkFreeMemory(device, main_depth_pipeline_image_memory, nullptr);
 
-    for (VkFramebuffer& framebuffer : swapChainFramebuffers) {
+    for (VkFramebuffer& framebuffer : swap_chain_framebuffers) {
         vkDestroyFramebuffer(device, framebuffer, nullptr);
     }
 
-    for (VkFramebuffer& framebuffer : directionalLightShadowMapFrameBuffers) {
+    for (VkFramebuffer& framebuffer :
+         directional_light_shadow_map_frame_buffers) {
         vkDestroyFramebuffer(device, framebuffer, nullptr);
     }
 
-    for (VkFramebuffer& framebuffer : spotLightShadowMapFrameBuffers) {
+    for (VkFramebuffer& framebuffer : spot_light_shadow_map_frame_buffers) {
         vkDestroyFramebuffer(device, framebuffer, nullptr);
     }
 
     for (std::vector<VkFramebuffer>& inner_vector :
-         pointLightShadowMapFrameBuffers) {
+         point_light_shadow_map_frame_buffers) {
         for (VkFramebuffer& framebuffer : inner_vector) {
             vkDestroyFramebuffer(device, framebuffer, nullptr);
         }
     }
 
-    for (VkImageView& imageView : swapChainImageViews) {
-        vkDestroyImageView(device, imageView, nullptr);
+    for (VkImageView& image_view : swap_chain_image_views) {
+        vkDestroyImageView(device, image_view, nullptr);
     }
 
-    vkDestroySwapchainKHR(device, swapChain, nullptr);
+    vkDestroySwapchainKHR(device, swap_chain, nullptr);
 }
 
 void CVulkanRenderer::cleanup() {
-    cleanupSwapChain();
-    imguiOverlay->shutdown();
+    cleanup_swap_chain();
+    imgui_overlay->shutdown();
 
-    for (unsigned int i = 0, j = 0; i < GPUDescriptors.size(); ++j) {
-        if (descriptorBindingsConfig[j].vkType
+    for (unsigned int i = 0, j = 0; i < GPU_DESCRIPTORS.size(); ++j) {
+        if (DESCRIPTOR_BINDINGS_CONFIG[j].vk_type
             == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
             vkDestroyBuffer(
                 device,
-                GPUDescriptors[i].GPUBuffer->buffer,
+                GPU_DESCRIPTORS[i].gpu_buffer->buffer,
                 nullptr
             );
             vkFreeMemory(
                 device,
-                GPUDescriptors[i].GPUBuffer->deviceMemory,
+                GPU_DESCRIPTORS[i].gpu_buffer->device_memory,
                 nullptr
             );
-            delete GPUDescriptors[i].GPUBuffer;
-            GPUDescriptors[i].GPUBuffer = nullptr;
+            delete GPU_DESCRIPTORS[i].gpu_buffer;
+            GPU_DESCRIPTORS[i].gpu_buffer = nullptr;
         } else if (
-            descriptorBindingsConfig[j].vkType
+            DESCRIPTOR_BINDINGS_CONFIG[j].vk_type
             == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
         ) {
-            for (unsigned int n = i;
-                 n < i + descriptorBindingsConfig[j].shaderDescriptorsNumber;
+            for (unsigned int n = i; n
+                 < i + DESCRIPTOR_BINDINGS_CONFIG[j].shader_descriptors_number;
                  ++n) {
-                if (GPUDescriptors[n].GPUImage->views.size()) {
-                    clearVK_Image(GPUDescriptors[n].GPUImage);
+                if (GPU_DESCRIPTORS[n].gpu_image->views.size()) {
+                    clear_vk_image(GPU_DESCRIPTORS[n].gpu_image);
                 }
 
-                delete GPUDescriptors[n].GPUImage;
-                GPUDescriptors[n].GPUImage = nullptr;
+                delete GPU_DESCRIPTORS[n].gpu_image;
+                GPU_DESCRIPTORS[n].gpu_image = nullptr;
             }
         }
-        i = i + descriptorBindingsConfig[j].shaderDescriptorsNumber;
+        i = i + DESCRIPTOR_BINDINGS_CONFIG[j].shader_descriptors_number;
     }
 
-    vkDestroyBuffer(device, hudUniformBuffer, nullptr);
-    vkFreeMemory(device, hudUniformBuffersMemory, nullptr);
-    vkDestroyBuffer(device, fontUniformBuffer, nullptr);
-    vkFreeMemory(device, fontUniformBuffersMemory, nullptr);
-    vkDestroyBuffer(device, hudScreenUniformBuffer, nullptr);
-    vkFreeMemory(device, hudScreenUniformBuffersMemory, nullptr);
-    vkDestroyBuffer(device, uiUniformBuffer, nullptr);
-    vkFreeMemory(device, uiUniformBuffersMemory, nullptr);
-    vkDestroyBuffer(device, uiIconsUniformBuffer, nullptr);
-    vkFreeMemory(device, uiIconsUniformBuffersMemory, nullptr);
+    vkDestroyBuffer(device, hud_uniform_buffer, nullptr);
+    vkFreeMemory(device, hud_uniform_buffers_memory, nullptr);
+    vkDestroyBuffer(device, font_uniform_buffer, nullptr);
+    vkFreeMemory(device, font_uniform_buffers_memory, nullptr);
+    vkDestroyBuffer(device, hud_screen_uniform_buffer, nullptr);
+    vkFreeMemory(device, hud_screen_uniform_buffers_memory, nullptr);
+    vkDestroyBuffer(device, ui_uniform_buffer, nullptr);
+    vkFreeMemory(device, ui_uniform_buffers_memory, nullptr);
+    vkDestroyBuffer(device, ui_icons_uniform_buffer, nullptr);
+    vkFreeMemory(device, ui_icons_uniform_buffers_memory, nullptr);
     vkDestroyBuffer(
         device,
-        shadowMapDirectionalLightModelMatrixUniformBuffer,
+        shadow_map_directional_light_model_matrix_uniform_buffer,
         nullptr
     );
     vkFreeMemory(
         device,
-        shadowMapDirectionalLightModelMatrixUniformBuffersMemory,
+        shadow_map_directional_light_model_matrix_uniform_buffers_memory,
         nullptr
     );
     vkDestroyBuffer(
         device,
-        shadowMapPointLightModelMatrixUniformBuffer,
+        shadow_map_point_light_model_matrix_uniform_buffer,
         nullptr
     );
     vkFreeMemory(
         device,
-        shadowMapPointLightModelMatrixUniformBuffersMemory,
+        shadow_map_point_light_model_matrix_uniform_buffers_memory,
         nullptr
     );
-    vkDestroyBuffer(device, shadowMapSpotLightModelMatrixUniformBuffer, nullptr);
+    vkDestroyBuffer(
+        device,
+        shadow_map_spot_light_model_matrix_uniform_buffer,
+        nullptr
+    );
     vkFreeMemory(
         device,
-        shadowMapSpotLightModelMatrixUniformBuffersMemory,
+        shadow_map_spot_light_model_matrix_uniform_buffers_memory,
         nullptr
     );
-    vkDestroyBuffer(device, virtualTexturesUniformBuffer, nullptr);
-    vkFreeMemory(device, virtualTexturesUniformBufferMemory, nullptr);
+    vkDestroyBuffer(device, virtual_textures_uniform_buffer, nullptr);
+    vkFreeMemory(device, virtual_textures_uniform_buffer_memory, nullptr);
 
-    for (size_t j = 0; j < vertexBufferContainer.size(); ++j) {
-        vkDestroyBuffer(device, vertexBufferContainer[j], nullptr);
-        vkFreeMemory(device, vertexBufferMemoryContainer[j], nullptr);
+    for (size_t j = 0; j < vertex_buffer_container.size(); ++j) {
+        vkDestroyBuffer(device, vertex_buffer_container[j], nullptr);
+        vkFreeMemory(device, vertex_buffer_memory_container[j], nullptr);
     }
-    for (size_t j = 0; j < indexBufferContainer.size(); ++j) {
-        vkDestroyBuffer(device, indexBufferContainer[j], nullptr);
-        vkFreeMemory(device, indexBufferMemoryContaner[j], nullptr);
+    for (size_t j = 0; j < index_buffer_container.size(); ++j) {
+        vkDestroyBuffer(device, index_buffer_container[j], nullptr);
+        vkFreeMemory(device, index_buffer_memory_contaner[j], nullptr);
     }
-    for (size_t j = 0; j < fontIndicesContainer.size(); ++j) {
+    for (size_t j = 0; j < font_indices_container.size(); ++j) {
         vkDestroyBuffer(
             device,
-            fontVertexBufferContainer[fontIndicesContainer[j]],
+            font_vertex_buffer_container[font_indices_container[j]],
             nullptr
         );
         vkFreeMemory(
             device,
-            fontVertexBufferMemoryContainer[fontIndicesContainer[j]],
+            font_vertex_buffer_memory_container[font_indices_container[j]],
             nullptr
         );
     }
-    for (size_t j = 0; j < fontIndicesContainer.size(); ++j) {
+    for (size_t j = 0; j < font_indices_container.size(); ++j) {
         vkDestroyBuffer(
             device,
-            fontIndexBufferContainer[fontIndicesContainer[j]],
+            font_index_buffer_container[font_indices_container[j]],
             nullptr
         );
         vkFreeMemory(
             device,
-            fontIndexBufferMemoryContaner[fontIndicesContainer[j]],
+            font_index_buffer_memory_contaner[font_indices_container[j]],
             nullptr
         );
     }
-    vkDestroyBuffer(device, modelMatrixUniformBuffer, nullptr);
-    vkFreeMemory(device, modelMatrixUniformBuffersMemory, nullptr);
-    vkDestroyBuffer(device, lightDataUniformBuffer, nullptr);
-    vkFreeMemory(device, lightDataUniformBuffersMemory, nullptr);
+    vkDestroyBuffer(device, model_matrix_uniform_buffer, nullptr);
+    vkFreeMemory(device, model_matrix_uniform_buffers_memory, nullptr);
+    vkDestroyBuffer(device, light_data_uniform_buffer, nullptr);
+    vkFreeMemory(device, light_data_uniform_buffers_memory, nullptr);
 
     vkDeviceWaitIdle(device);
 
-    for (int i = 0; i < SpecificPipeline::PIPELINES_NUMBER; ++i) {
-        vkDestroyRenderPass(device, renderPasses[i], nullptr);
+    for (int i = 0; i < SpecificPipeline::PipelinesNumber; ++i) {
+        vkDestroyRenderPass(device, RENDER_PASSES[i], nullptr);
     }
 
-    for (unsigned int i = 0;
-         i < DescriptorSetDataLink::DESCRIPTOR_CHUNKS_NUMBER;
+    for (unsigned int i = 0; i < DescriptorSetDataLink::DescriptorChunksNumber;
          ++i) {
         vkDestroyDescriptorSetLayout(
             device,
-            descriptorSetsConfig[i].setLayout,
+            DESCRIPTOR_SETS_CONFIG[i].set_layout,
             nullptr
         );
     }
-    for (unsigned int i = 0; i < SpecificPipeline::PIPELINES_NUMBER; ++i) {
-        vkDestroyPipeline(device, pipelineConfigs[i].pipeline, nullptr);
+    for (unsigned int i = 0; i < SpecificPipeline::PipelinesNumber; ++i) {
+        vkDestroyPipeline(device, PIPELINE_CONFIGS[i].pipeline, nullptr);
         vkDestroyPipelineLayout(
             device,
-            pipelineConfigs[i].pipelineLayout,
+            PIPELINE_CONFIGS[i].pipeline_layout,
             nullptr
         );
     }
 
-    vkDestroySampler(device, textureSampler, nullptr);
-    vkDestroySampler(device, shadowMapSampler, nullptr);
-    for (unsigned int i = 0; i < textureImages.size(); ++i) {
-        vkDestroySampler(device, textureImages[i].sampler, nullptr);
-        for (unsigned int j = 0; j < textureImages[i].views.size(); ++j) {
-            vkDestroyImageView(device, textureImages[i].views[j], nullptr);
+    vkDestroySampler(device, texture_sampler, nullptr);
+    vkDestroySampler(device, shadow_map_sampler, nullptr);
+    for (unsigned int i = 0; i < texture_images.size(); ++i) {
+        vkDestroySampler(device, texture_images[i].sampler, nullptr);
+        for (unsigned int j = 0; j < texture_images[i].views.size(); ++j) {
+            vkDestroyImageView(device, texture_images[i].views[j], nullptr);
         }
 
-        vkDestroyImage(device, textureImages[i].image, nullptr);
-        vkFreeMemory(device, textureImages[i].deviceMemory, nullptr);
+        vkDestroyImage(device, texture_images[i].image, nullptr);
+        vkFreeMemory(device, texture_images[i].device_memory, nullptr);
     }
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
-        vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
-        vkDestroyFence(device, inFlightFences[i], nullptr);
+        vkDestroySemaphore(device, image_available_semaphores[i], nullptr);
+        vkDestroyFence(device, in_flight_fences[i], nullptr);
     }
 
-    for (size_t i = 0; i < swapChainImages.size(); ++i) {
-        vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
+    for (size_t i = 0; i < swap_chain_images.size(); ++i) {
+        vkDestroySemaphore(device, render_finished_semaphores[i], nullptr);
     }
 
-    vkDestroyCommandPool(device, directionalLightCommandPool, nullptr);
-    vkDestroyCommandPool(device, spotLightCommandPool, nullptr);
-    vkDestroyCommandPool(device, pointLightCommandPool, nullptr);
-    vkDestroyCommandPool(device, mainRenderCommandPool, nullptr);
-    vkDestroyCommandPool(device, fontCommandPool, nullptr);
-    vkDestroyCommandPool(device, hudCommandPool, nullptr);
-    vkDestroyCommandPool(device, hudScreenCommandPool, nullptr);
-    vkDestroyCommandPool(device, uiCommandPool, nullptr);
-    vkDestroyCommandPool(device, uiIconsCommandPool, nullptr);
-    vkDestroyCommandPool(device, virtualTexturesCommandPool, nullptr);
-    for (uint32_t i = 0; i < secondaryBuffersCommandPools.size(); ++i) {
-        vkDestroyCommandPool(device, secondaryBuffersCommandPools[i], nullptr);
+    vkDestroyCommandPool(device, directional_light_command_pool, nullptr);
+    vkDestroyCommandPool(device, spot_light_command_pool, nullptr);
+    vkDestroyCommandPool(device, point_light_command_pool, nullptr);
+    vkDestroyCommandPool(device, main_render_command_pool, nullptr);
+    vkDestroyCommandPool(device, font_command_pool, nullptr);
+    vkDestroyCommandPool(device, hud_command_pool, nullptr);
+    vkDestroyCommandPool(device, hud_screen_command_pool, nullptr);
+    vkDestroyCommandPool(device, ui_command_pool, nullptr);
+    vkDestroyCommandPool(device, ui_icons_command_pool, nullptr);
+    vkDestroyCommandPool(device, virtual_textures_command_pool, nullptr);
+    for (uint32_t i = 0; i < secondary_buffers_command_pools.size(); ++i) {
+        vkDestroyCommandPool(
+            device,
+            secondary_buffers_command_pools[i],
+            nullptr
+        );
     }
-    vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+    vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
 
     vkDeviceWaitIdle(device);
     vkDestroyDevice(device, nullptr);
 
-    if (enableValidationLayers) {
-        DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+    if (ENABLE_VALIDATION_LAYERS) {
+        destroy_debug_utils_messenger_ext(instance, debug_messenger, nullptr);
     }
 
     vkDestroySurfaceKHR(instance, surface, nullptr);
     vkDestroyInstance(instance, nullptr);
-    Window->Close();
+    window->close();
 }
 
-void CVulkanRenderer::createInstance() {
-    if (enableValidationLayers && !checkValidationLayerSupport()) {
+void CVulkanRenderer::create_instance() {
+    if (ENABLE_VALIDATION_LAYERS && !check_validation_layer_support()) {
         throw std::runtime_error(
             "validation layers requested, but not available!"
         );
     }
 
-    VkApplicationInfo appInfo {};
-    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = "Hello Triangle";
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = "Grey Lane Vertex Machine";
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_0;
+    VkApplicationInfo app_info {};
+    app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    app_info.pApplicationName = "Hello Triangle";
+    app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+    app_info.pEngineName = "Grey Lane Vertex Machine";
+    app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+    app_info.apiVersion = VK_API_VERSION_1_0;
 
-    VkInstanceCreateInfo createInfo {};
-    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    createInfo.pApplicationInfo = &appInfo;
+    VkInstanceCreateInfo create_info {};
+    create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    create_info.pApplicationInfo = &app_info;
 
-    std::vector<const char*> extensions = getRequiredExtensions();
+    std::vector<const char*> extensions = get_required_extensions();
 
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-    createInfo.ppEnabledExtensionNames = extensions.data();
+    create_info.enabledExtensionCount =
+        static_cast<uint32_t>(extensions.size());
+    create_info.ppEnabledExtensionNames = extensions.data();
 
-    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo {};
-    if (enableValidationLayers) {
-        createInfo.enabledLayerCount =
-            static_cast<uint32_t>(validationLayers.size());
-        createInfo.ppEnabledLayerNames = validationLayers.data();
+    VkDebugUtilsMessengerCreateInfoEXT debug_create_info {};
+    if (ENABLE_VALIDATION_LAYERS) {
+        create_info.enabledLayerCount =
+            static_cast<uint32_t>(VALIDATION_LAYERS.size());
+        create_info.ppEnabledLayerNames = VALIDATION_LAYERS.data();
 
-        populateDebugMessengerCreateInfo(debugCreateInfo);
-        createInfo.pNext =
-            (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+        populate_debug_messenger_create_info(debug_create_info);
+        create_info.pNext =
+            (VkDebugUtilsMessengerCreateInfoEXT*)&debug_create_info;
     } else {
-        createInfo.enabledLayerCount = 0;
+        create_info.enabledLayerCount = 0;
 
-        createInfo.pNext = nullptr;
+        create_info.pNext = nullptr;
     }
 
-    if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
+    if (vkCreateInstance(&create_info, nullptr, &instance) != VK_SUCCESS) {
         throw std::runtime_error("failed to create instance!");
     }
 }
 
-void CVulkanRenderer::populateDebugMessengerCreateInfo(
-    VkDebugUtilsMessengerCreateInfoEXT& createInfo
+void CVulkanRenderer::populate_debug_messenger_create_info(
+    VkDebugUtilsMessengerCreateInfoEXT& create_info
 ) {
-    createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-    createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
+    create_info = {};
+    create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    create_info.messageSeverity =
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
         | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
         | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
+    create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
         | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
         | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    createInfo.pfnUserCallback = debugCallback;
+    create_info.pfnUserCallback = debug_callback;
 }
 
-void CVulkanRenderer::setupDebugMessenger() {
-    if (!enableValidationLayers) {
+void CVulkanRenderer::setup_debug_messenger() {
+    if (!ENABLE_VALIDATION_LAYERS) {
         return;
     }
 
-    VkDebugUtilsMessengerCreateInfoEXT createInfo;
-    populateDebugMessengerCreateInfo(createInfo);
+    VkDebugUtilsMessengerCreateInfoEXT create_info;
+    populate_debug_messenger_create_info(create_info);
 
-    if (CreateDebugUtilsMessengerEXT(
+    if (create_debug_utils_messenger_ext(
             instance,
-            &createInfo,
+            &create_info,
             nullptr,
-            &debugMessenger
+            &debug_messenger
         )
         != VK_SUCCESS) {
         throw std::runtime_error("failed to set up debug messenger!");
     }
 }
 
-void CVulkanRenderer::createSurface() {
+void CVulkanRenderer::create_surface() {
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
     if (vkCreateWaylandSurfaceKHR(
             instance,
-            &createWaylandSurfaceInfo,
+            &create_wayland_surface_info,
             nullptr,
             &surface
         )
@@ -4775,7 +4958,7 @@ void CVulkanRenderer::createSurface() {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     if (vkCreateWin32SurfaceKHR(
             instance,
-            &createWin32SurfaceInfo,
+            &create_win32_surface_info,
             nullptr,
             &surface
         )
@@ -4785,265 +4968,281 @@ void CVulkanRenderer::createSurface() {
 #endif
 }
 
-void CVulkanRenderer::pickPhysicalDevice() {
-    uint32_t deviceCount = 0;
-    vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+void CVulkanRenderer::pick_physical_device() {
+    uint32_t device_count = 0;
+    vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
 
-    if (deviceCount == 0) {
+    if (device_count == 0) {
         throw std::runtime_error("failed to find GPUs with Vulkan support!");
     }
 
-    std::vector<VkPhysicalDevice> devices(deviceCount);
-    vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+    std::vector<VkPhysicalDevice> devices(device_count);
+    vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
 
     for (const VkPhysicalDevice& device : devices) {
         VkPhysicalDeviceProperties prop;
         vkGetPhysicalDeviceProperties(device, &prop);
 
-        if (isDeviceSuitable(device)) {
-            physicalDevice = device;
+        if (is_device_suitable(device)) {
+            physical_device = device;
             break;
         }
     }
 
-    if (physicalDevice == VK_NULL_HANDLE) {
+    if (physical_device == VK_NULL_HANDLE) {
         throw std::runtime_error("failed to find a suitable GPU!");
     }
 }
 
-void CVulkanRenderer::createLogicalDevice() {
-    QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+void CVulkanRenderer::create_logical_device() {
+    QueueFamilyIndices indices = find_queue_families(physical_device);
 
-    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    std::set<uint32_t> uniqueQueueFamilies = {
+    std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
+    std::set<uint32_t> unique_queue_families = {
         indices.graphics_family.value(),
         indices.present_family.value()
     };
 
-    float queuePriority = 1.0f;
-    for (uint32_t queueFamily : uniqueQueueFamilies) {
-        VkDeviceQueueCreateInfo queueCreateInfo {};
-        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queueCreateInfo.queueFamilyIndex = queueFamily;
-        queueCreateInfo.queueCount = 1;
-        queueCreateInfo.pQueuePriorities = &queuePriority;
-        queueCreateInfos.push_back(queueCreateInfo);
+    float queue_priority = 1.0f;
+    for (uint32_t queue_family : unique_queue_families) {
+        VkDeviceQueueCreateInfo queue_create_info {};
+        queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queue_create_info.queueFamilyIndex = queue_family;
+        queue_create_info.queueCount = 1;
+        queue_create_info.pQueuePriorities = &queue_priority;
+        queue_create_infos.push_back(queue_create_info);
     }
 
-    VkPhysicalDeviceFeatures deviceFeatures {};
-    deviceFeatures.samplerAnisotropy = VK_TRUE;
+    VkPhysicalDeviceFeatures device_features {};
+    device_features.samplerAnisotropy = VK_TRUE;
 
-    VkDeviceCreateInfo createInfo {};
-    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    VkDeviceCreateInfo create_info {};
+    create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
-    createInfo.queueCreateInfoCount =
-        static_cast<uint32_t>(queueCreateInfos.size());
-    createInfo.pQueueCreateInfos = queueCreateInfos.data();
+    create_info.queueCreateInfoCount =
+        static_cast<uint32_t>(queue_create_infos.size());
+    create_info.pQueueCreateInfos = queue_create_infos.data();
 
-    createInfo.pEnabledFeatures = &deviceFeatures;
+    create_info.pEnabledFeatures = &device_features;
 
-    createInfo.enabledExtensionCount =
-        static_cast<uint32_t>(deviceExtensions.size());
-    createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+    create_info.enabledExtensionCount =
+        static_cast<uint32_t>(DEVICE_EXTENSIONS.size());
+    create_info.ppEnabledExtensionNames = DEVICE_EXTENSIONS.data();
 
-    if (enableValidationLayers) {
-        createInfo.enabledLayerCount =
-            static_cast<uint32_t>(validationLayers.size());
-        createInfo.ppEnabledLayerNames = validationLayers.data();
+    if (ENABLE_VALIDATION_LAYERS) {
+        create_info.enabledLayerCount =
+            static_cast<uint32_t>(VALIDATION_LAYERS.size());
+        create_info.ppEnabledLayerNames = VALIDATION_LAYERS.data();
     } else {
-        createInfo.enabledLayerCount = 0;
+        create_info.enabledLayerCount = 0;
     }
 
-    if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device)
+    if (vkCreateDevice(physical_device, &create_info, nullptr, &device)
         != VK_SUCCESS) {
         throw std::runtime_error("failed to create logical device!");
     }
 
-    vkGetDeviceQueue(device, indices.graphics_family.value(), 0, &graphicsQueue);
-    vkGetDeviceQueue(device, indices.present_family.value(), 0, &presentQueue);
+    vkGetDeviceQueue(
+        device,
+        indices.graphics_family.value(),
+        0,
+        &graphics_queue
+    );
+    vkGetDeviceQueue(device, indices.present_family.value(), 0, &present_queue);
 }
 
-void CVulkanRenderer::createSwapChain() {
-    SwapChainSupportDetails swapChainSupport =
-        querySwapChainSupport(physicalDevice);
+void CVulkanRenderer::create_swap_chain() {
+    SwapChainSupportDetails swap_chain_support =
+        query_swap_chain_support(physical_device);
 
-    VkSurfaceFormatKHR surfaceFormat =
-        chooseSwapSurfaceFormat(swapChainSupport.formats);
-    VkPresentModeKHR presentMode =
-        chooseSwapPresentMode(swapChainSupport.presentModes);
-    VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
+    VkSurfaceFormatKHR surface_format =
+        choose_swap_surface_format(swap_chain_support.formats);
+    VkPresentModeKHR present_mode =
+        choose_swap_present_mode(swap_chain_support.present_modes);
+    VkExtent2D extent = choose_swap_extent(swap_chain_support.capabilities);
+    std::cout << "[diag] window=" << window->width << "x" << window->height
+              << " swapchain=" << extent.width << "x" << extent.height
+              << " formats=" << swap_chain_support.formats.size() << std::endl;
 
-    uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
-    if (swapChainSupport.capabilities.maxImageCount > 0
-        && imageCount > swapChainSupport.capabilities.maxImageCount) {
-        imageCount = swapChainSupport.capabilities.maxImageCount;
+    uint32_t image_count = swap_chain_support.capabilities.minImageCount + 1;
+    if (swap_chain_support.capabilities.maxImageCount > 0
+        && image_count > swap_chain_support.capabilities.maxImageCount) {
+        image_count = swap_chain_support.capabilities.maxImageCount;
     }
 
-    VkSwapchainCreateInfoKHR createInfo {};
-    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.surface = surface;
+    VkSwapchainCreateInfoKHR create_info {};
+    create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    create_info.surface = surface;
 
-    createInfo.minImageCount = imageCount;
-    createInfo.imageFormat = surfaceFormat.format;
-    createInfo.imageColorSpace = surfaceFormat.colorSpace;
-    createInfo.imageExtent = extent;
-    createInfo.imageArrayLayers = 1;
-    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    create_info.minImageCount = image_count;
+    create_info.imageFormat = surface_format.format;
+    create_info.imageColorSpace = surface_format.colorSpace;
+    create_info.imageExtent = extent;
+    create_info.imageArrayLayers = 1;
+    create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
-    uint32_t queueFamilyIndices[] = {
+    QueueFamilyIndices indices = find_queue_families(physical_device);
+    uint32_t queue_family_indices[] = {
         indices.graphics_family.value(),
         indices.present_family.value()
     };
 
     if (indices.graphics_family != indices.present_family) {
-        createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-        createInfo.queueFamilyIndexCount = 2;
-        createInfo.pQueueFamilyIndices = queueFamilyIndices;
+        create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        create_info.queueFamilyIndexCount = 2;
+        create_info.pQueueFamilyIndices = queue_family_indices;
     } else {
-        createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     }
 
-    createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
-    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    createInfo.presentMode = presentMode;
-    createInfo.clipped = VK_TRUE;
+    create_info.preTransform = swap_chain_support.capabilities.currentTransform;
+    create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    create_info.presentMode = present_mode;
+    create_info.clipped = VK_TRUE;
 
-    if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain)
+    if (vkCreateSwapchainKHR(device, &create_info, nullptr, &swap_chain)
         != VK_SUCCESS) {
         throw std::runtime_error("failed to create swap chain!");
     }
 
-    vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
-    swapChainImages.resize(imageCount);
+    vkGetSwapchainImagesKHR(device, swap_chain, &image_count, nullptr);
+    swap_chain_images.resize(image_count);
     vkGetSwapchainImagesKHR(
         device,
-        swapChain,
-        &imageCount,
-        swapChainImages.data()
+        swap_chain,
+        &image_count,
+        swap_chain_images.data()
     );
 
-    swapChainImageFormat = surfaceFormat.format;
-    swapChainExtent = extent;
-    Window->width = swapChainExtent.width;
-    Window->height = swapChainExtent.height;
+    swap_chain_image_format = surface_format.format;
+    swap_chain_extent = extent;
+    window->width = swap_chain_extent.width;
+    window->height = swap_chain_extent.height;
 }
 
-void CVulkanRenderer::createImageViews() {
-    swapChainImageViews.resize(swapChainImages.size());
+void CVulkanRenderer::create_image_views() {
+    swap_chain_image_views.resize(swap_chain_images.size());
 
-    for (uint32_t i = 0; i < swapChainImages.size(); i++) {
-        VK_Image swapChainImage = {
-            .image = swapChainImages[i],
-            .viewType = VK_IMAGE_VIEW_TYPE_2D,
-            .aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT,
-            .format = swapChainImageFormat,
+    for (uint32_t i = 0; i < swap_chain_images.size(); i++) {
+        GpuImage swap_chain_image = {
+            .image = swap_chain_images[i],
+            .view_type = VK_IMAGE_VIEW_TYPE_2D,
+            .aspect_flags = VK_IMAGE_ASPECT_COLOR_BIT,
+            .format = swap_chain_image_format,
             .red = VK_COMPONENT_SWIZZLE_IDENTITY,
             .green = VK_COMPONENT_SWIZZLE_IDENTITY,
             .blue = VK_COMPONENT_SWIZZLE_IDENTITY,
             .alpha = VK_COMPONENT_SWIZZLE_IDENTITY,
-            .arrayLayers = 1,
-            .width = swapChainExtent.width,
-            .height = swapChainExtent.height
+            .array_layers = 1,
+            .width = swap_chain_extent.width,
+            .height = swap_chain_extent.height
         };
 
-        swapChainImageViews[i] = createImageView(swapChainImage, 0, 1);
+        swap_chain_image_views[i] = create_image_view(swap_chain_image, 0, 1);
     }
 }
 
-void CVulkanRenderer::createMainRenderPass() {
-    for (unsigned int j = 0; j < SpecificPipeline::PIPELINES_NUMBER; ++j) {
+void CVulkanRenderer::create_main_render_pass() {
+    for (unsigned int j = 0; j < SpecificPipeline::PipelinesNumber; ++j) {
         for (unsigned int i = 0;
-             i < renderPassConfigs[j].actualAttachmentDescriptionNumber;
+             i < RENDER_PASS_CONFIGS[j].actual_attachment_description_number;
              ++i) {
-            if (renderPassConfigs[j].attachmentDescriptions[i].finalLayout
+            if (RENDER_PASS_CONFIGS[j].attachment_descriptions[i].finalLayout
                     == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-                || renderPassConfigs[j].attachmentDescriptions[i].finalLayout
+                || RENDER_PASS_CONFIGS[j].attachment_descriptions[i].finalLayout
                     == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) {
-                renderPassConfigs[j].attachmentDescriptions[i].format =
-                    findDepthFormat();
+                RENDER_PASS_CONFIGS[j].attachment_descriptions[i].format =
+                    find_depth_format();
             } else {
-                renderPassConfigs[j].attachmentDescriptions[i].format =
-                    swapChainImageFormat;
+                RENDER_PASS_CONFIGS[j].attachment_descriptions[i].format =
+                    swap_chain_image_format;
             }
         }
 
         VkSubpassDescription subpass {};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         for (unsigned int i = 0;
-             i < renderPassConfigs[j].actualAttachmentReferenceNumber;
+             i < RENDER_PASS_CONFIGS[j].actual_attachment_reference_number;
              ++i) {
-            if (renderPassConfigs[j].attachmentReferences[i].layout
+            if (RENDER_PASS_CONFIGS[j].attachment_references[i].layout
                 == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
                 subpass.colorAttachmentCount = 1;
                 subpass.pColorAttachments =
-                    &renderPassConfigs[j].attachmentReferences[i];
+                    &RENDER_PASS_CONFIGS[j].attachment_references[i];
             } else if (
-                renderPassConfigs[j].attachmentReferences[i].layout
+                RENDER_PASS_CONFIGS[j].attachment_references[i].layout
                 == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
             ) {
                 subpass.pDepthStencilAttachment =
-                    &renderPassConfigs[j].attachmentReferences[i];
+                    &RENDER_PASS_CONFIGS[j].attachment_references[i];
             }
         }
 
-        VkRenderPassCreateInfo renderPassInfo {};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassInfo.attachmentCount = static_cast<uint32_t>(
-            renderPassConfigs[j].actualAttachmentDescriptionNumber
+        VkRenderPassCreateInfo render_pass_info {};
+        render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        render_pass_info.attachmentCount = static_cast<uint32_t>(
+            RENDER_PASS_CONFIGS[j].actual_attachment_description_number
         );
-        renderPassInfo.pAttachments =
-            renderPassConfigs[j].attachmentDescriptions;
-        renderPassInfo.subpassCount = 1;
-        renderPassInfo.pSubpasses = &subpass;
-        renderPassInfo.dependencyCount =
-            renderPassConfigs[j].actualSubpassDependencyNumber;
-        renderPassInfo.pDependencies = renderPassConfigs[j].subpassDependencies;
-        if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPasses[j])
+        render_pass_info.pAttachments =
+            RENDER_PASS_CONFIGS[j].attachment_descriptions;
+        render_pass_info.subpassCount = 1;
+        render_pass_info.pSubpasses = &subpass;
+        render_pass_info.dependencyCount =
+            RENDER_PASS_CONFIGS[j].actual_subpass_dependency_number;
+        render_pass_info.pDependencies =
+            RENDER_PASS_CONFIGS[j].subpass_dependencies;
+        if (vkCreateRenderPass(
+                device,
+                &render_pass_info,
+                nullptr,
+                &RENDER_PASSES[j]
+            )
             != VK_SUCCESS) {
             throw std::runtime_error("failed to create render pass!");
         }
     }
 }
 
-void CVulkanRenderer::createDescriptorSetLayout() {
-    for (int descriptorSetCounter = 0;
-         descriptorSetCounter < DescriptorSetDataLink::DESCRIPTOR_CHUNKS_NUMBER;
-         ++descriptorSetCounter) {
-        DescriptorSet& descriptorSet =
-            descriptorSetsConfig[descriptorSetCounter];
+void CVulkanRenderer::create_descriptor_set_layout() {
+    for (int descriptor_set_counter = 0;
+         descriptor_set_counter < DescriptorSetDataLink::DescriptorChunksNumber;
+         ++descriptor_set_counter) {
+        DescriptorSet& descriptor_set =
+            DESCRIPTOR_SETS_CONFIG[descriptor_set_counter];
         std::vector<VkDescriptorSetLayoutBinding> bindings;
         for (uint32_t j = 0;
-             j < descriptorSet.actualLinkedDescriptorBindingsNumber;
+             j < descriptor_set.actual_linked_descriptor_bindings_number;
              ++j) {
-            uint32_t currentDescriptorBindingID =
-                descriptorSet.descriptorsBindingsIDs[j];
-            VkDescriptorSetLayoutBinding modelMatrixUboLayout {};
-            modelMatrixUboLayout.binding =
-                descriptorBindingsConfig[currentDescriptorBindingID].binding;
-            modelMatrixUboLayout.descriptorCount =
-                descriptorBindingsConfig[currentDescriptorBindingID]
-                    .shaderDescriptorsNumber;
-            modelMatrixUboLayout.descriptorType =
-                descriptorBindingsConfig[currentDescriptorBindingID].vkType;
-            modelMatrixUboLayout.pImmutableSamplers = nullptr;
-            modelMatrixUboLayout.stageFlags =
-                descriptorBindingsConfig[currentDescriptorBindingID]
-                    .shaderStageFlag;
+            uint32_t current_descriptor_binding_id =
+                descriptor_set.descriptors_bindings_i_ds[j];
+            VkDescriptorSetLayoutBinding model_matrix_ubo_layout {};
+            model_matrix_ubo_layout.binding =
+                DESCRIPTOR_BINDINGS_CONFIG[current_descriptor_binding_id]
+                    .binding;
+            model_matrix_ubo_layout.descriptorCount =
+                DESCRIPTOR_BINDINGS_CONFIG[current_descriptor_binding_id]
+                    .shader_descriptors_number;
+            model_matrix_ubo_layout.descriptorType =
+                DESCRIPTOR_BINDINGS_CONFIG[current_descriptor_binding_id]
+                    .vk_type;
+            model_matrix_ubo_layout.pImmutableSamplers = nullptr;
+            model_matrix_ubo_layout.stageFlags =
+                DESCRIPTOR_BINDINGS_CONFIG[current_descriptor_binding_id]
+                    .shader_stage_flag;
 
-            bindings.push_back(modelMatrixUboLayout);
+            bindings.push_back(model_matrix_ubo_layout);
         }
 
-        VkDescriptorSetLayoutCreateInfo layoutInfo {};
-        layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layoutInfo.flags = 0;
-        layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-        layoutInfo.pBindings = bindings.data();
+        VkDescriptorSetLayoutCreateInfo layout_info {};
+        layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layout_info.flags = 0;
+        layout_info.bindingCount = static_cast<uint32_t>(bindings.size());
+        layout_info.pBindings = bindings.data();
         if (vkCreateDescriptorSetLayout(
                 device,
-                &layoutInfo,
+                &layout_info,
                 nullptr,
-                &descriptorSet.setLayout
+                &descriptor_set.set_layout
             )
             != VK_SUCCESS) {
             throw std::runtime_error("failed to create descriptor set layout!");
@@ -5051,67 +5250,69 @@ void CVulkanRenderer::createDescriptorSetLayout() {
     }
 }
 
-void CVulkanRenderer::createGraphicsPipeline() {
-    for (int graphicsPipelineCounter = 0;
-         graphicsPipelineCounter < SpecificPipeline::PIPELINES_NUMBER;
-         ++graphicsPipelineCounter) {
-        Pipeline& pipeline = pipelineConfigs[graphicsPipelineCounter];
-        VkRenderPass renderPass = renderPasses[graphicsPipelineCounter];
-        std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+void CVulkanRenderer::create_graphics_pipeline() {
+    for (int graphics_pipeline_counter = 0;
+         graphics_pipeline_counter < SpecificPipeline::PipelinesNumber;
+         ++graphics_pipeline_counter) {
+        Pipeline& pipeline = PIPELINE_CONFIGS[graphics_pipeline_counter];
+        VkRenderPass render_pass = RENDER_PASSES[graphics_pipeline_counter];
+        std::vector<VkPipelineShaderStageCreateInfo> shader_stages;
 
-        VkShaderModule vertShaderModule;
-        VkShaderModule fragShaderModule;
-        if (pipeline.vertShader != nullptr) {
-            std::vector<char> vertShaderCode = readFile(pipeline.vertShader);
-            vertShaderModule = createShaderModule(vertShaderCode);
+        VkShaderModule vert_shader_module;
+        VkShaderModule frag_shader_module;
+        if (pipeline.vert_shader != nullptr) {
+            std::vector<char> vert_shader_code =
+                read_file(pipeline.vert_shader);
+            vert_shader_module = create_shader_module(vert_shader_code);
 
-            VkPipelineShaderStageCreateInfo vertShaderStageInfo {};
-            vertShaderStageInfo.sType =
+            VkPipelineShaderStageCreateInfo vert_shader_stage_info {};
+            vert_shader_stage_info.sType =
                 VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-            vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-            vertShaderStageInfo.module = vertShaderModule;
-            vertShaderStageInfo.pName = "main";
+            vert_shader_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+            vert_shader_stage_info.module = vert_shader_module;
+            vert_shader_stage_info.pName = "main";
 
-            shaderStages.push_back(vertShaderStageInfo);
+            shader_stages.push_back(vert_shader_stage_info);
         }
 
-        if (pipeline.fragShader != nullptr) {
-            std::vector<char> fragShaderCode = readFile(pipeline.fragShader);
-            fragShaderModule = createShaderModule(fragShaderCode);
+        if (pipeline.frag_shader != nullptr) {
+            std::vector<char> frag_shader_code =
+                read_file(pipeline.frag_shader);
+            frag_shader_module = create_shader_module(frag_shader_code);
 
-            VkPipelineShaderStageCreateInfo fragShaderStageInfo {};
-            fragShaderStageInfo.sType =
+            VkPipelineShaderStageCreateInfo frag_shader_stage_info {};
+            frag_shader_stage_info.sType =
                 VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-            fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-            fragShaderStageInfo.module = fragShaderModule;
-            fragShaderStageInfo.pName = "main";
+            frag_shader_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+            frag_shader_stage_info.module = frag_shader_module;
+            frag_shader_stage_info.pName = "main";
 
-            shaderStages.push_back(fragShaderStageInfo);
+            shader_stages.push_back(frag_shader_stage_info);
         }
 
-        VkPipelineVertexInputStateCreateInfo vertexInputInfo {};
-        vertexInputInfo.sType =
+        VkPipelineVertexInputStateCreateInfo vertex_input_info {};
+        vertex_input_info.sType =
             VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-        vertexInputInfo.vertexBindingDescriptionCount = 1;
-        vertexInputInfo.vertexAttributeDescriptionCount =
-            static_cast<uint32_t>(pipeline.attributeDescriptions.size());
-        vertexInputInfo.pVertexBindingDescriptions =
-            &pipeline.bindingDescription;
-        vertexInputInfo.pVertexAttributeDescriptions =
-            pipeline.attributeDescriptions.data();
+        vertex_input_info.vertexBindingDescriptionCount = 1;
+        vertex_input_info.vertexAttributeDescriptionCount =
+            static_cast<uint32_t>(pipeline.attribute_descriptions.size());
+        vertex_input_info.pVertexBindingDescriptions =
+            &pipeline.binding_description;
+        vertex_input_info.pVertexAttributeDescriptions =
+            pipeline.attribute_descriptions.data();
 
-        VkPipelineInputAssemblyStateCreateInfo inputAssembly {};
-        inputAssembly.sType =
+        VkPipelineInputAssemblyStateCreateInfo input_assembly {};
+        input_assembly.sType =
             VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-        inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        inputAssembly.primitiveRestartEnable = VK_FALSE;
+        input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        input_assembly.primitiveRestartEnable = VK_FALSE;
 
-        VkPipelineViewportStateCreateInfo viewportState {};
-        viewportState.sType =
+        VkPipelineViewportStateCreateInfo viewport_state {};
+        viewport_state.sType =
             VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-        viewportState.viewportCount = 1;
-        viewportState.scissorCount = 1;
+        viewport_state.viewportCount = 1;
+        viewport_state.scissorCount = 1;
 
         VkPipelineRasterizationStateCreateInfo rasterizer {};
         rasterizer.sType =
@@ -5120,18 +5321,18 @@ void CVulkanRenderer::createGraphicsPipeline() {
         rasterizer.rasterizerDiscardEnable = VK_FALSE;
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
         rasterizer.lineWidth = 1.0f;
-        bool isShadowMapPipeline = graphicsPipelineCounter
-                == SpecificPipeline::DIRECTIONAL_LIGHT_PIPELINE
-            || graphicsPipelineCounter == SpecificPipeline::SPOT_LIGHT_PIPELINE
-            || graphicsPipelineCounter
-                == SpecificPipeline::POINT_LIGHT_PIPELINE;
+        bool is_shadow_map_pipeline = graphics_pipeline_counter
+                == SpecificPipeline::DirectionalLightPipeline
+            || graphics_pipeline_counter == SpecificPipeline::SpotLightPipeline
+            || graphics_pipeline_counter
+                == SpecificPipeline::PointLightPipeline;
         // Meshes are CW-wound; main pass keeps outer faces (cull "front"),
         // shadow pass keeps far-side faces (cull "back") so objects do not
         // self-shadow.
-        if (isShadowMapPipeline) {
+        if (is_shadow_map_pipeline) {
             rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
         } else if (
-            graphicsPipelineCounter == SpecificPipeline::MAIN_RENDER_PIPELINE
+            graphics_pipeline_counter == SpecificPipeline::MainRenderPipeline
         ) {
             rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
         } else {
@@ -5148,93 +5349,94 @@ void CVulkanRenderer::createGraphicsPipeline() {
         multisampling.sampleShadingEnable = VK_FALSE;
         multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-        VkPipelineDepthStencilStateCreateInfo depthStencil {};
-        depthStencil.sType =
+        VkPipelineDepthStencilStateCreateInfo depth_stencil {};
+        depth_stencil.sType =
             VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-        depthStencil.depthTestEnable = VK_TRUE;
-        depthStencil.depthWriteEnable = VK_TRUE;
-        depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
-        depthStencil.depthBoundsTestEnable = VK_FALSE;
-        depthStencil.stencilTestEnable = VK_FALSE;
+        depth_stencil.depthTestEnable = VK_TRUE;
+        depth_stencil.depthWriteEnable = VK_TRUE;
+        depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS;
+        depth_stencil.depthBoundsTestEnable = VK_FALSE;
+        depth_stencil.stencilTestEnable = VK_FALSE;
 
-        VkPipelineColorBlendAttachmentState colorBlendAttachment {};
-        colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT
+        VkPipelineColorBlendAttachmentState color_blend_attachment {};
+        color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT
             | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT
             | VK_COLOR_COMPONENT_A_BIT;
-        colorBlendAttachment.blendEnable = VK_FALSE;
+        color_blend_attachment.blendEnable = VK_FALSE;
 
-        VkPipelineColorBlendStateCreateInfo colorBlending {};
-        colorBlending.sType =
+        VkPipelineColorBlendStateCreateInfo color_blending {};
+        color_blending.sType =
             VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-        colorBlending.logicOpEnable = VK_FALSE;
-        colorBlending.logicOp = VK_LOGIC_OP_COPY;
-        colorBlending.attachmentCount = 1;
-        colorBlending.pAttachments = &colorBlendAttachment;
-        colorBlending.blendConstants[0] = 0.0f;
-        colorBlending.blendConstants[1] = 0.0f;
-        colorBlending.blendConstants[2] = 0.0f;
-        colorBlending.blendConstants[3] = 0.0f;
+        color_blending.logicOpEnable = VK_FALSE;
+        color_blending.logicOp = VK_LOGIC_OP_COPY;
+        color_blending.attachmentCount = 1;
+        color_blending.pAttachments = &color_blend_attachment;
+        color_blending.blendConstants[0] = 0.0f;
+        color_blending.blendConstants[1] = 0.0f;
+        color_blending.blendConstants[2] = 0.0f;
+        color_blending.blendConstants[3] = 0.0f;
 
-        std::vector<VkDynamicState> dynamicStates = {
+        std::vector<VkDynamicState> dynamic_states = {
             VK_DYNAMIC_STATE_VIEWPORT,
             VK_DYNAMIC_STATE_SCISSOR
         };
-        VkPipelineDynamicStateCreateInfo dynamicState {};
-        dynamicState.sType =
+        VkPipelineDynamicStateCreateInfo dynamic_state {};
+        dynamic_state.sType =
             VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-        dynamicState.dynamicStateCount =
-            static_cast<uint32_t>(dynamicStates.size());
-        dynamicState.pDynamicStates = dynamicStates.data();
+        dynamic_state.dynamicStateCount =
+            static_cast<uint32_t>(dynamic_states.size());
+        dynamic_state.pDynamicStates = dynamic_states.data();
 
         // Need to access inside pipeline and take ID for specific descriptor
         // set, then with that ID we got descriptor set and take it's layout.
-        unsigned int descriptorLayoutsNumber =
-            pipeline.actualLinkedDescriptorSetsNumber;
-        std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
-        for (unsigned i = 0; i < descriptorLayoutsNumber; ++i) {
-            descriptorSetLayouts.push_back(
-                descriptorSetsConfig[pipeline.linkedDescriptorSetIDs[i]].setLayout
+        unsigned int descriptor_layouts_number =
+            pipeline.actual_linked_descriptor_sets_number;
+        std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
+        for (unsigned i = 0; i < descriptor_layouts_number; ++i) {
+            descriptor_set_layouts.push_back(
+                DESCRIPTOR_SETS_CONFIG[pipeline.linked_descriptor_set_i_ds[i]]
+                    .set_layout
             );
         }
 
-        VkPipelineLayoutCreateInfo pipelineLayoutInfo {};
-        pipelineLayoutInfo.sType =
+        VkPipelineLayoutCreateInfo pipeline_layout_info {};
+        pipeline_layout_info.sType =
             VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = descriptorLayoutsNumber;
-        pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
+        pipeline_layout_info.setLayoutCount = descriptor_layouts_number;
+        pipeline_layout_info.pSetLayouts = descriptor_set_layouts.data();
 
         if (vkCreatePipelineLayout(
                 device,
-                &pipelineLayoutInfo,
+                &pipeline_layout_info,
                 nullptr,
-                &pipeline.pipelineLayout
+                &pipeline.pipeline_layout
             )
             != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout!");
         }
 
-        VkGraphicsPipelineCreateInfo pipelineInfo {};
-        pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        pipelineInfo.stageCount = shaderStages.size();
-        pipelineInfo.pStages = shaderStages.data();
-        pipelineInfo.pVertexInputState = &vertexInputInfo;
-        pipelineInfo.pInputAssemblyState = &inputAssembly;
-        pipelineInfo.pViewportState = &viewportState;
-        pipelineInfo.pRasterizationState = &rasterizer;
-        pipelineInfo.pMultisampleState = &multisampling;
-        pipelineInfo.pDepthStencilState = &depthStencil;
-        pipelineInfo.pColorBlendState = &colorBlending;
-        pipelineInfo.pDynamicState = &dynamicState;
-        pipelineInfo.layout = pipeline.pipelineLayout;
-        pipelineInfo.renderPass = renderPass;
-        pipelineInfo.subpass = 0;
-        pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+        VkGraphicsPipelineCreateInfo pipeline_info {};
+        pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        pipeline_info.stageCount = shader_stages.size();
+        pipeline_info.pStages = shader_stages.data();
+        pipeline_info.pVertexInputState = &vertex_input_info;
+        pipeline_info.pInputAssemblyState = &input_assembly;
+        pipeline_info.pViewportState = &viewport_state;
+        pipeline_info.pRasterizationState = &rasterizer;
+        pipeline_info.pMultisampleState = &multisampling;
+        pipeline_info.pDepthStencilState = &depth_stencil;
+        pipeline_info.pColorBlendState = &color_blending;
+        pipeline_info.pDynamicState = &dynamic_state;
+        pipeline_info.layout = pipeline.pipeline_layout;
+        pipeline_info.renderPass = render_pass;
+        pipeline_info.subpass = 0;
+        pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
 
         if (vkCreateGraphicsPipelines(
                 device,
                 VK_NULL_HANDLE,
                 1,
-                &pipelineInfo,
+                &pipeline_info,
                 nullptr,
                 &pipeline.pipeline
             )
@@ -5242,103 +5444,104 @@ void CVulkanRenderer::createGraphicsPipeline() {
             throw std::runtime_error("failed to create graphics pipeline!");
         }
 
-        if (pipeline.vertShader != nullptr) {
-            vkDestroyShaderModule(device, vertShaderModule, nullptr);
+        if (pipeline.vert_shader != nullptr) {
+            vkDestroyShaderModule(device, vert_shader_module, nullptr);
         }
 
-        if (pipeline.fragShader != nullptr) {
-            vkDestroyShaderModule(device, fragShaderModule, nullptr);
+        if (pipeline.frag_shader != nullptr) {
+            vkDestroyShaderModule(device, frag_shader_module, nullptr);
         }
     }
 }
 
-void CVulkanRenderer::createFramebuffers() {
+void CVulkanRenderer::create_framebuffers() {
     // Main renderer frame buffers initialization.
-    swapChainFramebuffers.resize(swapChainImageViews.size());
-    for (size_t i = 0; i < swapChainImageViews.size(); ++i) {
-        std::vector<VkImageView> mainRenderAttachments;
-        mainRenderAttachments.push_back(swapChainImageViews[i]);
-        mainRenderAttachments.push_back(mainDepthImageView);
+    swap_chain_framebuffers.resize(swap_chain_image_views.size());
+    for (size_t i = 0; i < swap_chain_image_views.size(); ++i) {
+        std::vector<VkImageView> main_render_attachments;
+        main_render_attachments.push_back(swap_chain_image_views[i]);
+        main_render_attachments.push_back(main_depth_image_view);
 
-        createRenderPassFramebuffers(
-            mainRenderAttachments,
-            renderPasses[SpecificPipeline::MAIN_RENDER_PIPELINE],
-            swapChainFramebuffers[i],
-            swapChainExtent.width,
-            swapChainExtent.height
+        create_render_pass_framebuffers(
+            main_render_attachments,
+            RENDER_PASSES[SpecificPipeline::MainRenderPipeline],
+            swap_chain_framebuffers[i],
+            swap_chain_extent.width,
+            swap_chain_extent.height
         );
     }
 
     // Directional lights shadow map renderer frame buffers initialization.
-    unsigned int directionalLightDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::MAIN_RENDER_LIGHT_DATA_UBO]
-            .descriptorsBindingsIDs[1];
-    directionalLightShadowMapFrameBuffers.resize(DIRECTIONAL_LIGHTS_NUMBER);
+    unsigned int directional_light_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
+            .descriptors_bindings_i_ds[1];
+    directional_light_shadow_map_frame_buffers.resize(DIRECTIONAL_LIGHTS_NUMBER);
     for (size_t i = 0; i < DIRECTIONAL_LIGHTS_NUMBER; ++i) {
-        std::vector<VkImageView> directionalLightsRenderAttachments;
-        directionalLightsRenderAttachments.push_back(
-            (*GPUDescriptors
-                  [descriptorBindingsConfig[directionalLightDescriptorBindingIndex]
-                       .globalDescriptorOffset
+        std::vector<VkImageView> directional_lights_render_attachments;
+        directional_lights_render_attachments.push_back(
+            (*GPU_DESCRIPTORS
+                  [DESCRIPTOR_BINDINGS_CONFIG
+                       [directional_light_descriptor_binding_index]
+                           .global_descriptor_offset
                    + i]
-                      .GPUImage)
+                      .gpu_image)
                 .views[0]
         );
-        createRenderPassFramebuffers(
-            directionalLightsRenderAttachments,
-            renderPasses[SpecificPipeline::DIRECTIONAL_LIGHT_PIPELINE],
-            directionalLightShadowMapFrameBuffers[i],
+        create_render_pass_framebuffers(
+            directional_lights_render_attachments,
+            RENDER_PASSES[SpecificPipeline::DirectionalLightPipeline],
+            directional_light_shadow_map_frame_buffers[i],
             FLAT_SHADOW_MAP_SIZE,
             FLAT_SHADOW_MAP_SIZE
         );
     }
 
     // Spot lights shadow map renderer frame buffers initialization.
-    unsigned int spotLightDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::MAIN_RENDER_LIGHT_DATA_UBO]
-            .descriptorsBindingsIDs[3];
-    spotLightShadowMapFrameBuffers.resize(SPOT_LIGHTS_NUMBER);
+    unsigned int spot_light_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
+            .descriptors_bindings_i_ds[3];
+    spot_light_shadow_map_frame_buffers.resize(SPOT_LIGHTS_NUMBER);
     for (size_t i = 0; i < SPOT_LIGHTS_NUMBER; ++i) {
-        std::vector<VkImageView> spotLightsRenderAttachments;
-        spotLightsRenderAttachments.push_back(
-            (*GPUDescriptors
-                  [descriptorBindingsConfig[spotLightDescriptorBindingIndex]
-                       .globalDescriptorOffset
+        std::vector<VkImageView> spot_lights_render_attachments;
+        spot_lights_render_attachments.push_back(
+            (*GPU_DESCRIPTORS
+                  [DESCRIPTOR_BINDINGS_CONFIG[spot_light_descriptor_binding_index]
+                       .global_descriptor_offset
                    + i]
-                      .GPUImage)
+                      .gpu_image)
                 .views[0]
         );
 
-        createRenderPassFramebuffers(
-            spotLightsRenderAttachments,
-            renderPasses[SpecificPipeline::SPOT_LIGHT_PIPELINE],
-            spotLightShadowMapFrameBuffers[i],
+        create_render_pass_framebuffers(
+            spot_lights_render_attachments,
+            RENDER_PASSES[SpecificPipeline::SpotLightPipeline],
+            spot_light_shadow_map_frame_buffers[i],
             FLAT_SHADOW_MAP_SIZE,
             FLAT_SHADOW_MAP_SIZE
         );
     }
 
     // Point lights shadow map renderer frame buffers initialization.
-    unsigned int descriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::MAIN_RENDER_LIGHT_DATA_UBO]
-            .descriptorsBindingsIDs[2];
-    pointLightShadowMapFrameBuffers.resize(POINT_LIGHTS_NUMBER);
+    unsigned int descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
+            .descriptors_bindings_i_ds[2];
+    point_light_shadow_map_frame_buffers.resize(POINT_LIGHTS_NUMBER);
     for (size_t j = 0; j < POINT_LIGHTS_NUMBER; ++j) {
         for (size_t m = 0; m < 6; ++m) {
-            std::vector<VkImageView> pointLightsRenderAttachments;
-            pointLightsRenderAttachments.push_back(
-                (*GPUDescriptors
-                      [descriptorBindingsConfig[descriptorBindingIndex]
-                           .globalDescriptorOffset
+            std::vector<VkImageView> point_lights_render_attachments;
+            point_lights_render_attachments.push_back(
+                (*GPU_DESCRIPTORS
+                      [DESCRIPTOR_BINDINGS_CONFIG[descriptor_binding_index]
+                           .global_descriptor_offset
                        + j]
-                          .GPUImage)
+                          .gpu_image)
                     .views[m]
             );
-            pointLightShadowMapFrameBuffers[j].push_back({});
-            createRenderPassFramebuffers(
-                pointLightsRenderAttachments,
-                renderPasses[SpecificPipeline::POINT_LIGHT_PIPELINE],
-                pointLightShadowMapFrameBuffers[j][m],
+            point_light_shadow_map_frame_buffers[j].push_back({});
+            create_render_pass_framebuffers(
+                point_lights_render_attachments,
+                RENDER_PASSES[SpecificPipeline::PointLightPipeline],
+                point_light_shadow_map_frame_buffers[j][m],
                 SHADOW_MAP_SIZE,
                 SHADOW_MAP_SIZE
             );
@@ -5346,97 +5549,99 @@ void CVulkanRenderer::createFramebuffers() {
     }
 }
 
-void CVulkanRenderer::createRenderPassFramebuffers(
+void CVulkanRenderer::create_render_pass_framebuffers(
     std::vector<VkImageView>& attachments,
-    VkRenderPass& renderPass_,
-    VkFramebuffer& swapChainFramebuffer,
+    VkRenderPass& render_pass,
+    VkFramebuffer& swap_chain_framebuffer,
     uint32_t width,
     uint32_t height
 ) {
-    VkFramebufferCreateInfo framebufferInfo {};
-    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebufferInfo.renderPass = renderPass_;
-    framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-    framebufferInfo.pAttachments = attachments.data();
-    framebufferInfo.width = width;
-    framebufferInfo.height = height;
-    framebufferInfo.layers = 1;
+    VkFramebufferCreateInfo framebuffer_info {};
+    framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebuffer_info.renderPass = render_pass;
+    framebuffer_info.attachmentCount =
+        static_cast<uint32_t>(attachments.size());
+    framebuffer_info.pAttachments = attachments.data();
+    framebuffer_info.width = width;
+    framebuffer_info.height = height;
+    framebuffer_info.layers = 1;
 
     if (vkCreateFramebuffer(
             device,
-            &framebufferInfo,
+            &framebuffer_info,
             nullptr,
-            &swapChainFramebuffer
+            &swap_chain_framebuffer
         )
         != VK_SUCCESS) {
         throw std::runtime_error("failed to create framebuffer!");
     }
 }
 
-void CVulkanRenderer::createCommandPool(VkCommandPool& commandPools) {
-    QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
+void CVulkanRenderer::create_command_pool(VkCommandPool& command_pools) {
+    QueueFamilyIndices queue_family_indices =
+        find_queue_families(physical_device);
 
-    VkCommandPoolCreateInfo poolInfo {};
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    poolInfo.queueFamilyIndex = queueFamilyIndices.graphics_family.value();
+    VkCommandPoolCreateInfo pool_info {};
+    pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    pool_info.queueFamilyIndex = queue_family_indices.graphics_family.value();
 
-    if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPools)
+    if (vkCreateCommandPool(device, &pool_info, nullptr, &command_pools)
         != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics command pool!");
     }
 }
 
-void CVulkanRenderer::createDepthResources() {
-    VkFormat depthFormat = findDepthFormat();
+void CVulkanRenderer::create_depth_resources() {
+    VkFormat depth_format = find_depth_format();
 
-    VK_Image depthImage = {
+    GpuImage depth_image = {
         .image = VkImage {},
-        .deviceMemory = VkDeviceMemory {},
-        .viewType = VK_IMAGE_VIEW_TYPE_2D,
-        .createFlags = 0,
-        .memoryPropertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        .usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+        .device_memory = VkDeviceMemory {},
+        .view_type = VK_IMAGE_VIEW_TYPE_2D,
+        .create_flags = 0,
+        .memory_property_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        .usage_flags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
             | VK_IMAGE_USAGE_SAMPLED_BIT,
-        .aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT,
-        .format = depthFormat,
+        .aspect_flags = VK_IMAGE_ASPECT_DEPTH_BIT,
+        .format = depth_format,
         .tiling = VK_IMAGE_TILING_OPTIMAL,
-        .arrayLayers = 1,
-        .width = swapChainExtent.width,
-        .height = swapChainExtent.height,
+        .array_layers = 1,
+        .width = swap_chain_extent.width,
+        .height = swap_chain_extent.height,
     };
 
-    createImage(depthImage);
-    mainDepthPipelineImage = depthImage.image;
-    mainDepthPipelineImageMemory = depthImage.deviceMemory;
-    mainDepthImageView = createImageView(depthImage, 0, 1);
+    create_image(depth_image);
+    main_depth_pipeline_image = depth_image.image;
+    main_depth_pipeline_image_memory = depth_image.device_memory;
+    main_depth_image_view = create_image_view(depth_image, 0, 1);
 }
 
-void CVulkanRenderer::createDirectionalLightShadowMapDepthResources() {
-    unsigned int directionalLightDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::MAIN_RENDER_LIGHT_DATA_UBO]
-            .descriptorsBindingsIDs[1];
+void CVulkanRenderer::create_directional_light_shadow_map_depth_resources() {
+    unsigned int directional_light_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
+            .descriptors_bindings_i_ds[1];
     for (unsigned int i = 0; i < DIRECTIONAL_LIGHTS_NUMBER; ++i) {
-        VK_Image depthImage = {
+        GpuImage depth_image = {
             .image = VkImage {},
-            .deviceMemory = VkDeviceMemory {},
-            .viewType = VK_IMAGE_VIEW_TYPE_2D,
-            .createFlags = 0,
-            .memoryPropertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            .usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+            .device_memory = VkDeviceMemory {},
+            .view_type = VK_IMAGE_VIEW_TYPE_2D,
+            .create_flags = 0,
+            .memory_property_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            .usage_flags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
                 | VK_IMAGE_USAGE_SAMPLED_BIT,
-            .aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT,
-            .format = findDepthFormat(),
+            .aspect_flags = VK_IMAGE_ASPECT_DEPTH_BIT,
+            .format = find_depth_format(),
             .tiling = VK_IMAGE_TILING_OPTIMAL,
-            .arrayLayers = 1,
+            .array_layers = 1,
             .width = FLAT_SHADOW_MAP_SIZE,
             .height = FLAT_SHADOW_MAP_SIZE,
         };
 
-        createImage(depthImage);
+        create_image(depth_image);
 
-        VkCommandBuffer commandBuffer =
-            beginSingleTimeCommands(mainRenderCommandPool);
+        VkCommandBuffer command_buffer =
+            begin_single_time_commands(main_render_command_pool);
 
         VkImageMemoryBarrier barrier {};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -5444,26 +5649,26 @@ void CVulkanRenderer::createDirectionalLightShadowMapDepthResources() {
         barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = depthImage.image;
+        barrier.image = depth_image.image;
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
         barrier.subresourceRange.baseMipLevel = 0;
         barrier.subresourceRange.levelCount = 1;
         barrier.subresourceRange.baseArrayLayer = 0;
         barrier.subresourceRange.layerCount = 1;
 
-        VkPipelineStageFlags sourceStage;
-        VkPipelineStageFlags destinationStage;
+        VkPipelineStageFlags source_stage;
+        VkPipelineStageFlags destination_stage;
 
         barrier.srcAccessMask = 0;
         barrier.dstAccessMask = 0;
 
-        sourceStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-        destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        source_stage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 
         vkCmdPipelineBarrier(
-            commandBuffer,
-            sourceStage,
-            destinationStage,
+            command_buffer,
+            source_stage,
+            destination_stage,
             0,
             0,
             nullptr,
@@ -5473,43 +5678,43 @@ void CVulkanRenderer::createDirectionalLightShadowMapDepthResources() {
             &barrier
         );
 
-        endSingleTimeCommands(mainRenderCommandPool, commandBuffer);
+        end_single_time_commands(main_render_command_pool, command_buffer);
 
-        depthImage.views.push_back(createImageView(depthImage, 0, 1));
-        setImageDebugObjectName(device, depthImage, "directional light");
-        *GPUDescriptors
-             [descriptorBindingsConfig[directionalLightDescriptorBindingIndex]
-                  .globalDescriptorOffset
+        depth_image.views.push_back(create_image_view(depth_image, 0, 1));
+        set_image_debug_object_name(device, depth_image, "directional light");
+        *GPU_DESCRIPTORS
+             [DESCRIPTOR_BINDINGS_CONFIG[directional_light_descriptor_binding_index]
+                  .global_descriptor_offset
               + i]
-                 .GPUImage = depthImage;
+                 .gpu_image = depth_image;
     }
 }
 
-void CVulkanRenderer::createSpotLightShadowMapDepthResources() {
-    unsigned int spotLightDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::MAIN_RENDER_LIGHT_DATA_UBO]
-            .descriptorsBindingsIDs[3];
+void CVulkanRenderer::create_spot_light_shadow_map_depth_resources() {
+    unsigned int spot_light_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
+            .descriptors_bindings_i_ds[3];
     for (unsigned int i = 0; i < SPOT_LIGHTS_NUMBER; ++i) {
-        VK_Image depthImage = {
+        GpuImage depth_image = {
             .image = VkImage {},
-            .deviceMemory = VkDeviceMemory {},
-            .viewType = VK_IMAGE_VIEW_TYPE_2D,
-            .createFlags = 0,
-            .memoryPropertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            .usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+            .device_memory = VkDeviceMemory {},
+            .view_type = VK_IMAGE_VIEW_TYPE_2D,
+            .create_flags = 0,
+            .memory_property_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            .usage_flags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
                 | VK_IMAGE_USAGE_SAMPLED_BIT,
-            .aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT,
-            .format = findDepthFormat(),
+            .aspect_flags = VK_IMAGE_ASPECT_DEPTH_BIT,
+            .format = find_depth_format(),
             .tiling = VK_IMAGE_TILING_OPTIMAL,
-            .arrayLayers = 1,
+            .array_layers = 1,
             .width = FLAT_SHADOW_MAP_SIZE,
             .height = FLAT_SHADOW_MAP_SIZE,
         };
 
-        createImage(depthImage);
+        create_image(depth_image);
 
-        VkCommandBuffer commandBuffer =
-            beginSingleTimeCommands(mainRenderCommandPool);
+        VkCommandBuffer command_buffer =
+            begin_single_time_commands(main_render_command_pool);
 
         VkImageMemoryBarrier barrier {};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -5517,26 +5722,26 @@ void CVulkanRenderer::createSpotLightShadowMapDepthResources() {
         barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = depthImage.image;
+        barrier.image = depth_image.image;
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
         barrier.subresourceRange.baseMipLevel = 0;
         barrier.subresourceRange.levelCount = 1;
         barrier.subresourceRange.baseArrayLayer = 0;
         barrier.subresourceRange.layerCount = 1;
 
-        VkPipelineStageFlags sourceStage;
-        VkPipelineStageFlags destinationStage;
+        VkPipelineStageFlags source_stage;
+        VkPipelineStageFlags destination_stage;
 
         barrier.srcAccessMask = 0;
         barrier.dstAccessMask = 0;
 
-        sourceStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-        destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        source_stage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 
         vkCmdPipelineBarrier(
-            commandBuffer,
-            sourceStage,
-            destinationStage,
+            command_buffer,
+            source_stage,
+            destination_stage,
             0,
             0,
             nullptr,
@@ -5546,44 +5751,44 @@ void CVulkanRenderer::createSpotLightShadowMapDepthResources() {
             &barrier
         );
 
-        endSingleTimeCommands(mainRenderCommandPool, commandBuffer);
+        end_single_time_commands(main_render_command_pool, command_buffer);
 
-        depthImage.views.push_back(createImageView(depthImage, 0, 1));
-        setImageDebugObjectName(device, depthImage, "spot light");
-        *GPUDescriptors
-             [descriptorBindingsConfig[spotLightDescriptorBindingIndex]
-                  .globalDescriptorOffset
+        depth_image.views.push_back(create_image_view(depth_image, 0, 1));
+        set_image_debug_object_name(device, depth_image, "spot light");
+        *GPU_DESCRIPTORS
+             [DESCRIPTOR_BINDINGS_CONFIG[spot_light_descriptor_binding_index]
+                  .global_descriptor_offset
               + i]
-                 .GPUImage = depthImage;
+                 .gpu_image = depth_image;
     }
 }
 
-void CVulkanRenderer::createPointLightShadowMapDepthResources() {
-    unsigned int descriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::MAIN_RENDER_LIGHT_DATA_UBO]
-            .descriptorsBindingsIDs[2];
+void CVulkanRenderer::create_point_light_shadow_map_depth_resources() {
+    unsigned int descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
+            .descriptors_bindings_i_ds[2];
     for (unsigned int i = 0; i < POINT_LIGHTS_NUMBER; ++i) {
-        VK_Image depthImage = {
+        GpuImage depth_image = {
             .image = VkImage {},
-            .deviceMemory = VkDeviceMemory {},
-            .viewType = VK_IMAGE_VIEW_TYPE_2D,
-            .createFlags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
-            .memoryPropertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            .usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+            .device_memory = VkDeviceMemory {},
+            .view_type = VK_IMAGE_VIEW_TYPE_2D,
+            .create_flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
+            .memory_property_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            .usage_flags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
                 | VK_IMAGE_USAGE_SAMPLED_BIT,
-            .aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT,
-            .format = findDepthFormat(),
+            .aspect_flags = VK_IMAGE_ASPECT_DEPTH_BIT,
+            .format = find_depth_format(),
             .tiling = VK_IMAGE_TILING_OPTIMAL,
-            .arrayLayers = 6,
+            .array_layers = 6,
             .width = SHADOW_MAP_SIZE,
             .height = SHADOW_MAP_SIZE
         };
 
-        createImage(depthImage);
+        create_image(depth_image);
 
         for (unsigned int j = 0; j < 6; ++j) {
-            VkCommandBuffer commandBuffer =
-                beginSingleTimeCommands(mainRenderCommandPool);
+            VkCommandBuffer command_buffer =
+                begin_single_time_commands(main_render_command_pool);
 
             VkImageMemoryBarrier barrier {};
             barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -5591,26 +5796,26 @@ void CVulkanRenderer::createPointLightShadowMapDepthResources() {
             barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
             barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.image = depthImage.image;
+            barrier.image = depth_image.image;
             barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
             barrier.subresourceRange.baseMipLevel = 0;
             barrier.subresourceRange.levelCount = 1;
             barrier.subresourceRange.baseArrayLayer = 0;
             barrier.subresourceRange.layerCount = 6;
 
-            VkPipelineStageFlags sourceStage;
-            VkPipelineStageFlags destinationStage;
+            VkPipelineStageFlags source_stage;
+            VkPipelineStageFlags destination_stage;
 
             barrier.srcAccessMask = 0;
             barrier.dstAccessMask = 0;
 
-            sourceStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            source_stage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+            destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 
             vkCmdPipelineBarrier(
-                commandBuffer,
-                sourceStage,
-                destinationStage,
+                command_buffer,
+                source_stage,
+                destination_stage,
                 0,
                 0,
                 nullptr,
@@ -5620,61 +5825,61 @@ void CVulkanRenderer::createPointLightShadowMapDepthResources() {
                 &barrier
             );
 
-            endSingleTimeCommands(mainRenderCommandPool, commandBuffer);
+            end_single_time_commands(main_render_command_pool, command_buffer);
 
-            depthImage.views.push_back(createImageView(depthImage, j, 1));
+            depth_image.views.push_back(create_image_view(depth_image, j, 1));
         }
 
-        setImageDebugObjectName(device, depthImage, "point light laryer");
-        *GPUDescriptors
-             [descriptorBindingsConfig[descriptorBindingIndex]
-                  .globalDescriptorOffset
+        set_image_debug_object_name(device, depth_image, "point light laryer");
+        *GPU_DESCRIPTORS
+             [DESCRIPTOR_BINDINGS_CONFIG[descriptor_binding_index]
+                  .global_descriptor_offset
               + i]
-                 .GPUImage = depthImage;
+                 .gpu_image = depth_image;
     }
 
     for (unsigned int i = 0; i < POINT_LIGHTS_NUMBER; ++i) {
-        (*GPUDescriptors
-              [descriptorBindingsConfig[descriptorBindingIndex]
-                   .globalDescriptorOffset
+        (*GPU_DESCRIPTORS
+              [DESCRIPTOR_BINDINGS_CONFIG[descriptor_binding_index]
+                   .global_descriptor_offset
                + i]
-                  .GPUImage)
-            .viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+                  .gpu_image)
+            .view_type = VK_IMAGE_VIEW_TYPE_CUBE;
 
-        setImageDebugObjectName(
+        set_image_debug_object_name(
             device,
-            *GPUDescriptors
-                 [descriptorBindingsConfig[descriptorBindingIndex]
-                      .globalDescriptorOffset
+            *GPU_DESCRIPTORS
+                 [DESCRIPTOR_BINDINGS_CONFIG[descriptor_binding_index]
+                      .global_descriptor_offset
                   + i]
-                     .GPUImage,
+                     .gpu_image,
             "point light cube"
         );
-        (*GPUDescriptors
-              [descriptorBindingsConfig[descriptorBindingIndex]
-                   .globalDescriptorOffset
+        (*GPU_DESCRIPTORS
+              [DESCRIPTOR_BINDINGS_CONFIG[descriptor_binding_index]
+                   .global_descriptor_offset
                + i]
-                  .GPUImage)
-            .views.push_back(createImageView(
-                *GPUDescriptors
-                     [descriptorBindingsConfig[descriptorBindingIndex]
-                          .globalDescriptorOffset
+                  .gpu_image)
+            .views.push_back(create_image_view(
+                *GPU_DESCRIPTORS
+                     [DESCRIPTOR_BINDINGS_CONFIG[descriptor_binding_index]
+                          .global_descriptor_offset
                       + i]
-                         .GPUImage,
+                         .gpu_image,
                 0,
                 6
             ));
     }
 }
 
-VkFormat CVulkanRenderer::findSupportedFormat(
+VkFormat CVulkanRenderer::find_supported_format(
     const std::vector<VkFormat>& candidates,
     VkImageTiling tiling,
     VkFormatFeatureFlags features
 ) {
     for (VkFormat format : candidates) {
         VkFormatProperties props;
-        vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+        vkGetPhysicalDeviceFormatProperties(physical_device, format, &props);
 
         if (tiling == VK_IMAGE_TILING_LINEAR
             && (props.linearTilingFeatures & features) == features) {
@@ -5690,8 +5895,8 @@ VkFormat CVulkanRenderer::findSupportedFormat(
     throw std::runtime_error("failed to find supported format!");
 }
 
-VkFormat CVulkanRenderer::findDepthFormat() {
-    return findSupportedFormat(
+VkFormat CVulkanRenderer::find_depth_format() {
+    return find_supported_format(
         {VK_FORMAT_D32_SFLOAT,
          VK_FORMAT_D32_SFLOAT_S8_UINT,
          VK_FORMAT_D24_UNORM_S8_UINT},
@@ -5700,152 +5905,152 @@ VkFormat CVulkanRenderer::findDepthFormat() {
     );
 }
 
-bool CVulkanRenderer::hasStencilComponent(VkFormat format) {
+bool CVulkanRenderer::has_stencil_component(VkFormat format) {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT
         || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-void CVulkanRenderer::createTextureImageView() {
-    unsigned int readableTextureDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::RIDABLE_TEXTURES]
-            .descriptorsBindingsIDs[0];
-    for (unsigned int i = 0; i < initializeTextureData_.size(); ++i) {
-        VK_Image* image =
-            GPUDescriptors
-                [descriptorBindingsConfig[readableTextureDescriptorBindingIndex]
-                     .globalDescriptorOffset
-                 + i]
-                    .GPUImage;
-        image->views.push_back(createImageView(*image, 0, 1));
+void CVulkanRenderer::create_texture_image_view() {
+    unsigned int readable_texture_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::RidableTextures]
+            .descriptors_bindings_i_ds[0];
+    for (unsigned int i = 0; i < initialize_texture_data.size(); ++i) {
+        GpuImage* image = GPU_DESCRIPTORS
+                              [DESCRIPTOR_BINDINGS_CONFIG
+                                   [readable_texture_descriptor_binding_index]
+                                       .global_descriptor_offset
+                               + i]
+                                  .gpu_image;
+        image->views.push_back(create_image_view(*image, 0, 1));
     }
 }
 
-void CVulkanRenderer::createTextureSampler() {
+void CVulkanRenderer::create_texture_sampler() {
     VkPhysicalDeviceProperties properties {};
-    vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+    vkGetPhysicalDeviceProperties(physical_device, &properties);
 
-    VkSamplerCreateInfo samplerInfo {};
-    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerInfo.magFilter = VK_FILTER_NEAREST;
-    samplerInfo.minFilter = VK_FILTER_NEAREST;
-    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.anisotropyEnable = VK_TRUE;
-    samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-    samplerInfo.unnormalizedCoordinates = VK_FALSE;
-    samplerInfo.compareEnable = VK_FALSE;
-    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    VkSamplerCreateInfo sampler_info {};
+    sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    sampler_info.magFilter = VK_FILTER_NEAREST;
+    sampler_info.minFilter = VK_FILTER_NEAREST;
+    sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_info.anisotropyEnable = VK_TRUE;
+    sampler_info.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+    sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    sampler_info.unnormalizedCoordinates = VK_FALSE;
+    sampler_info.compareEnable = VK_FALSE;
+    sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;
+    sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
-    textureSampler = {}; /// TODO: Is it realy need here?
-    if (vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler)
+    texture_sampler = {}; /// TODO: Is it realy need here?
+    if (vkCreateSampler(device, &sampler_info, nullptr, &texture_sampler)
         != VK_SUCCESS) {
         throw std::runtime_error("failed to create texture sampler!");
     }
 }
 
-void CVulkanRenderer::createShadowMapSampler() {
-    VkSamplerCreateInfo samplerInfo {};
-    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerInfo.magFilter = VK_FILTER_LINEAR;
-    samplerInfo.minFilter = VK_FILTER_LINEAR;
-    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-    samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-    samplerInfo.unnormalizedCoordinates = VK_FALSE;
-    samplerInfo.compareEnable = VK_FALSE;
-    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+void CVulkanRenderer::create_shadow_map_sampler() {
+    VkSamplerCreateInfo sampler_info {};
+    sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    sampler_info.magFilter = VK_FILTER_LINEAR;
+    sampler_info.minFilter = VK_FILTER_LINEAR;
+    sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    sampler_info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+    sampler_info.unnormalizedCoordinates = VK_FALSE;
+    sampler_info.compareEnable = VK_FALSE;
+    sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;
+    sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
 
-    if (vkCreateSampler(device, &samplerInfo, nullptr, &shadowMapSampler)
+    if (vkCreateSampler(device, &sampler_info, nullptr, &shadow_map_sampler)
         != VK_SUCCESS) {
         throw std::runtime_error("failed to create shadow map sampler!");
     }
 }
 
-VkImageView CVulkanRenderer::createImageView(
-    VK_Image image,
-    uint32_t baseArrayLayers,
-    uint32_t layerCount
+VkImageView CVulkanRenderer::create_image_view(
+    GpuImage image,
+    uint32_t base_array_layers,
+    uint32_t layer_count
 ) {
-    VkImageViewCreateInfo viewInfo {};
-    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewInfo.image = image.image;
-    viewInfo.viewType = image.viewType;
-    viewInfo.format = image.format;
-    viewInfo.components.r = image.red;
-    viewInfo.components.g = image.green;
-    viewInfo.components.b = image.blue;
-    viewInfo.components.a = image.alpha;
-    viewInfo.subresourceRange.aspectMask = image.aspectFlags;
-    viewInfo.subresourceRange.baseMipLevel = 0;
-    viewInfo.subresourceRange.levelCount = 1;
-    viewInfo.subresourceRange.baseArrayLayer = baseArrayLayers;
-    viewInfo.subresourceRange.layerCount = layerCount;
+    VkImageViewCreateInfo view_info {};
+    view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    view_info.image = image.image;
+    view_info.viewType = image.view_type;
+    view_info.format = image.format;
+    view_info.components.r = image.red;
+    view_info.components.g = image.green;
+    view_info.components.b = image.blue;
+    view_info.components.a = image.alpha;
+    view_info.subresourceRange.aspectMask = image.aspect_flags;
+    view_info.subresourceRange.baseMipLevel = 0;
+    view_info.subresourceRange.levelCount = 1;
+    view_info.subresourceRange.baseArrayLayer = base_array_layers;
+    view_info.subresourceRange.layerCount = layer_count;
 
-    VkImageView imageView;
-    if (vkCreateImageView(device, &viewInfo, nullptr, &imageView)
+    VkImageView image_view;
+    if (vkCreateImageView(device, &view_info, nullptr, &image_view)
         != VK_SUCCESS) {
         throw std::runtime_error("failed to create texture image view!");
     }
 
-    return imageView;
+    return image_view;
 }
 
-void CVulkanRenderer::createImage(VK_Image& image) {
-    VkImageCreateInfo imageInfo {};
-    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.extent.width = image.width;
-    imageInfo.extent.height = image.height;
-    imageInfo.extent.depth = 1;
-    imageInfo.mipLevels = 1;
-    imageInfo.arrayLayers = image.arrayLayers;
-    imageInfo.format = image.format;
-    imageInfo.tiling = image.tiling;
-    imageInfo.usage = image.usageFlags;
-    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-    imageInfo.flags = image.createFlags;
+void CVulkanRenderer::create_image(GpuImage& image) {
+    VkImageCreateInfo image_info {};
+    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.extent.width = image.width;
+    image_info.extent.height = image.height;
+    image_info.extent.depth = 1;
+    image_info.mipLevels = 1;
+    image_info.arrayLayers = image.array_layers;
+    image_info.format = image.format;
+    image_info.tiling = image.tiling;
+    image_info.usage = image.usage_flags;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.flags = image.create_flags;
 
-    if (vkCreateImage(device, &imageInfo, nullptr, &image.image)
+    if (vkCreateImage(device, &image_info, nullptr, &image.image)
         != VK_SUCCESS) {
         throw std::runtime_error("failed to create image!");
     }
 
-    VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(device, image.image, &memRequirements);
+    VkMemoryRequirements mem_requirements;
+    vkGetImageMemoryRequirements(device, image.image, &mem_requirements);
 
-    VkMemoryAllocateInfo allocInfo {};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(
-        memRequirements.memoryTypeBits,
-        image.memoryPropertyFlags
+    VkMemoryAllocateInfo alloc_info {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.allocationSize = mem_requirements.size;
+    alloc_info.memoryTypeIndex = find_memory_type(
+        mem_requirements.memoryTypeBits,
+        image.memory_property_flags
     );
 
-    if (vkAllocateMemory(device, &allocInfo, nullptr, &image.deviceMemory)
+    if (vkAllocateMemory(device, &alloc_info, nullptr, &image.device_memory)
         != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate image memory!");
     }
 
-    vkBindImageMemory(device, image.image, image.deviceMemory, 0);
+    vkBindImageMemory(device, image.image, image.device_memory, 0);
 }
 
-void CVulkanRenderer::transitionImageLayout(
+void CVulkanRenderer::transition_image_layout(
     VkImage image,
-    VkImageLayout oldLayout,
-    VkImageLayout newLayout
+    VkImageLayout old_layout,
+    VkImageLayout new_layout
 ) {
-    VkCommandBuffer commandBuffer =
-        beginSingleTimeCommands(mainRenderCommandPool);
+    VkCommandBuffer command_buffer =
+        begin_single_time_commands(main_render_command_pool);
 
     VkImageMemoryBarrier barrier {};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    barrier.oldLayout = oldLayout;
-    barrier.newLayout = newLayout;
+    barrier.oldLayout = old_layout;
+    barrier.newLayout = new_layout;
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.image = image;
@@ -5855,33 +6060,33 @@ void CVulkanRenderer::transitionImageLayout(
     barrier.subresourceRange.baseArrayLayer = 0;
     barrier.subresourceRange.layerCount = 1;
 
-    VkPipelineStageFlags sourceStage;
-    VkPipelineStageFlags destinationStage;
+    VkPipelineStageFlags source_stage;
+    VkPipelineStageFlags destination_stage;
 
-    if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED
-        && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+    if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED
+        && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
         barrier.srcAccessMask = 0;
         barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
-        sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        destination_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
     } else if (
-        oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-        && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+        && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
     ) {
         barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-        sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     } else {
         throw std::invalid_argument("unsupported layout transition!");
     }
 
     vkCmdPipelineBarrier(
-        commandBuffer,
-        sourceStage,
-        destinationStage,
+        command_buffer,
+        source_stage,
+        destination_stage,
         0,
         0,
         nullptr,
@@ -5891,21 +6096,21 @@ void CVulkanRenderer::transitionImageLayout(
         &barrier
     );
 
-    endSingleTimeCommands(mainRenderCommandPool, commandBuffer);
+    end_single_time_commands(main_render_command_pool, command_buffer);
 }
 
-void CVulkanRenderer::transitionShadowMapImageLayout(
+void CVulkanRenderer::transition_shadow_map_image_layout(
     VkImage image,
-    VkImageLayout oldLayout,
-    VkImageLayout newLayout
+    VkImageLayout old_layout,
+    VkImageLayout new_layout
 ) {
-    VkCommandBuffer commandBuffer =
-        beginSingleTimeCommands(directionalLightCommandPool);
+    VkCommandBuffer command_buffer =
+        begin_single_time_commands(directional_light_command_pool);
 
     VkImageMemoryBarrier barrier {};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    barrier.oldLayout = oldLayout;
-    barrier.newLayout = newLayout;
+    barrier.oldLayout = old_layout;
+    barrier.newLayout = new_layout;
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.image = image;
@@ -5915,33 +6120,33 @@ void CVulkanRenderer::transitionShadowMapImageLayout(
     barrier.subresourceRange.baseArrayLayer = 0;
     barrier.subresourceRange.layerCount = 1;
 
-    VkPipelineStageFlags sourceStage;
-    VkPipelineStageFlags destinationStage;
+    VkPipelineStageFlags source_stage;
+    VkPipelineStageFlags destination_stage;
 
-    if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED
-        && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+    if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED
+        && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
         barrier.srcAccessMask = 0;
         barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
-        sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        destination_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
     } else if (
-        oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-        && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+        && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
     ) {
         barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-        sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     } else {
         throw std::invalid_argument("unsupported layout transition!");
     }
 
     vkCmdPipelineBarrier(
-        commandBuffer,
-        sourceStage,
-        destinationStage,
+        command_buffer,
+        source_stage,
+        destination_stage,
         0,
         0,
         nullptr,
@@ -5951,17 +6156,17 @@ void CVulkanRenderer::transitionShadowMapImageLayout(
         &barrier
     );
 
-    endSingleTimeCommands(directionalLightCommandPool, commandBuffer);
+    end_single_time_commands(directional_light_command_pool, command_buffer);
 }
 
-void CVulkanRenderer::copyBufferToImage(
+void CVulkanRenderer::copy_buffer_to_image(
     VkBuffer& buffer,
     VkImage image,
     uint32_t width,
     uint32_t height
 ) {
-    VkCommandBuffer commandBuffer =
-        beginSingleTimeCommands(mainRenderCommandPool);
+    VkCommandBuffer command_buffer =
+        begin_single_time_commands(main_render_command_pool);
 
     VkBufferImageCopy region {};
     region.bufferOffset = 0;
@@ -5975,7 +6180,7 @@ void CVulkanRenderer::copyBufferToImage(
     region.imageExtent = {width, height, 1};
 
     vkCmdCopyBufferToImage(
-        commandBuffer,
+        command_buffer,
         buffer,
         image,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -5983,126 +6188,130 @@ void CVulkanRenderer::copyBufferToImage(
         &region
     );
 
-    endSingleTimeCommands(mainRenderCommandPool, commandBuffer);
+    end_single_time_commands(main_render_command_pool, command_buffer);
 }
 
-void CVulkanRenderer::createVertexBuffer(
-    VkBuffer& _vertexBuffer,
-    VkDeviceMemory& _vertexBufferMemory,
-    std::vector<Vertex>& _vertices
+void CVulkanRenderer::create_vertex_buffer(
+    VkBuffer& dst_vertex_buffer,
+    VkDeviceMemory& dst_vertex_buffer_memory,
+    std::vector<Vertex>& vertex_data
 ) {
-    VkDeviceSize bufferSize = sizeof(_vertices[0]) * _vertices.size();
-    if (_vertices.size() == 0) {
+    VkDeviceSize buffer_size = sizeof(vertex_data[0]) * vertex_data.size();
+    if (vertex_data.size() == 0) {
         std::cout << "warning: empty vertex mesh, skipping buffer copy"
                   << std::endl;
-        bufferSize = 1;
+        buffer_size = 1;
     }
 
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-    createBuffer(
-        bufferSize,
+    VkBuffer staging_buffer;
+    VkDeviceMemory staging_buffer_memory;
+    create_buffer(
+        buffer_size,
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
             | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        stagingBuffer,
-        stagingBufferMemory
+        staging_buffer,
+        staging_buffer_memory
     );
 
     void* data;
-    vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-    if (_vertices.size() > 0) {
-        memcpy(data, _vertices.data(), (size_t)bufferSize);
+    vkMapMemory(device, staging_buffer_memory, 0, buffer_size, 0, &data);
+    if (vertex_data.size() > 0) {
+        memcpy(data, vertex_data.data(), (size_t)buffer_size);
     }
-    vkUnmapMemory(device, stagingBufferMemory);
+    vkUnmapMemory(device, staging_buffer_memory);
 
-    createBuffer(
-        bufferSize,
+    create_buffer(
+        buffer_size,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        _vertexBuffer,
-        _vertexBufferMemory
+        dst_vertex_buffer,
+        dst_vertex_buffer_memory
     );
 
-    copyBuffer(stagingBuffer, _vertexBuffer, bufferSize);
+    copy_buffer(staging_buffer, dst_vertex_buffer, buffer_size);
 
-    vkDestroyBuffer(device, stagingBuffer, nullptr);
-    vkFreeMemory(device, stagingBufferMemory, nullptr);
+    vkDestroyBuffer(device, staging_buffer, nullptr);
+    vkFreeMemory(device, staging_buffer_memory, nullptr);
 }
 
-void CVulkanRenderer::createIndexBuffer(
-    VkBuffer& _indexBuffer,
-    VkDeviceMemory& _indexBufferMemory,
-    const std::vector<uint32_t>& _indices
+void CVulkanRenderer::create_index_buffer(
+    VkBuffer& dst_index_buffer,
+    VkDeviceMemory& dst_index_buffer_memory,
+    const std::vector<uint32_t>& index_data
 ) {
-    VkDeviceSize bufferSize = sizeof(_indices[0]) * _indices.size();
-    if (_indices.empty()) {
+    VkDeviceSize buffer_size = sizeof(index_data[0]) * index_data.size();
+    if (index_data.empty()) {
         std::cout << "warning: empty index mesh, skipping buffer copy"
                   << std::endl;
-        bufferSize = 1;
+        buffer_size = 1;
     }
 
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-    createBuffer(
-        bufferSize,
+    VkBuffer staging_buffer;
+    VkDeviceMemory staging_buffer_memory;
+    create_buffer(
+        buffer_size,
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
             | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        stagingBuffer,
-        stagingBufferMemory
+        staging_buffer,
+        staging_buffer_memory
     );
 
     void* data;
-    vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-    if (!_indices.empty()) {
-        memcpy(data, _indices.data(), (size_t)bufferSize);
+    vkMapMemory(device, staging_buffer_memory, 0, buffer_size, 0, &data);
+    if (!index_data.empty()) {
+        memcpy(data, index_data.data(), (size_t)buffer_size);
     }
-    vkUnmapMemory(device, stagingBufferMemory);
+    vkUnmapMemory(device, staging_buffer_memory);
 
-    createBuffer(
-        bufferSize,
+    create_buffer(
+        buffer_size,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        _indexBuffer,
-        _indexBufferMemory
+        dst_index_buffer,
+        dst_index_buffer_memory
     );
 
-    copyBuffer(stagingBuffer, _indexBuffer, bufferSize);
+    copy_buffer(staging_buffer, dst_index_buffer, buffer_size);
 
-    vkDestroyBuffer(device, stagingBuffer, nullptr);
-    vkFreeMemory(device, stagingBufferMemory, nullptr);
+    vkDestroyBuffer(device, staging_buffer, nullptr);
+    vkFreeMemory(device, staging_buffer_memory, nullptr);
 }
 
-void CVulkanRenderer::createMainRenderUniformBuffers() {
-    for (unsigned int descriptorSetConfigCounter = 0; descriptorSetConfigCounter
-         < DescriptorSetDataLink::DESCRIPTOR_CHUNKS_NUMBER;
-         ++descriptorSetConfigCounter) {
+void CVulkanRenderer::create_main_render_uniform_buffers() {
+    for (unsigned int descriptor_set_config_counter = 0;
+         descriptor_set_config_counter
+         < DescriptorSetDataLink::DescriptorChunksNumber;
+         ++descriptor_set_config_counter) {
         for (unsigned int j = 0;
-             j < descriptorSetsConfig[descriptorSetConfigCounter]
-                     .actualLinkedDescriptorBindingsNumber;
+             j < DESCRIPTOR_SETS_CONFIG[descriptor_set_config_counter]
+                     .actual_linked_descriptor_bindings_number;
              ++j) {
-            unsigned int descriptorBindingIndex =
-                descriptorSetsConfig[descriptorSetConfigCounter]
-                    .descriptorsBindingsIDs[j];
-            VkDescriptorType descriptorType =
-                descriptorBindingsConfig[descriptorBindingIndex].vkType;
-            if (descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+            unsigned int descriptor_binding_index =
+                DESCRIPTOR_SETS_CONFIG[descriptor_set_config_counter]
+                    .descriptors_bindings_i_ds[j];
+            VkDescriptorType descriptor_type =
+                DESCRIPTOR_BINDINGS_CONFIG[descriptor_binding_index].vk_type;
+            if (descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
                 uint32_t memory =
-                    descriptorBindingsConfig[descriptorBindingIndex].uboChunkSize
-                    * descriptorSetsConfig[descriptorSetConfigCounter]
-                          .hostDescriptorNumber;
-                createBuffer(
+                    DESCRIPTOR_BINDINGS_CONFIG[descriptor_binding_index]
+                        .ubo_chunk_size
+                    * DESCRIPTOR_SETS_CONFIG[descriptor_set_config_counter]
+                          .host_descriptor_number;
+                create_buffer(
                     memory,
                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
                         | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                    GPUDescriptors[descriptorBindingsConfig[descriptorBindingIndex]
-                                       .globalDescriptorOffset]
-                        .GPUBuffer->buffer,
-                    GPUDescriptors[descriptorBindingsConfig[descriptorBindingIndex]
-                                       .globalDescriptorOffset]
-                        .GPUBuffer->deviceMemory
+                    GPU_DESCRIPTORS
+                        [DESCRIPTOR_BINDINGS_CONFIG[descriptor_binding_index]
+                             .global_descriptor_offset]
+                            .gpu_buffer->buffer,
+                    GPU_DESCRIPTORS
+                        [DESCRIPTOR_BINDINGS_CONFIG[descriptor_binding_index]
+                             .global_descriptor_offset]
+                            .gpu_buffer->device_memory
                 );
             } else {
                 continue;
@@ -6111,379 +6320,395 @@ void CVulkanRenderer::createMainRenderUniformBuffers() {
     }
 }
 
-void CVulkanRenderer::createMainRenderDescriptorPool() {
-    std::array<VkDescriptorPoolSize, 2> poolSizes {};
+void CVulkanRenderer::create_main_render_descriptor_pool() {
+    std::array<VkDescriptorPoolSize, 2> pool_sizes {};
 
-    uint32_t descriptorCount = 10000;
-    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount = static_cast<uint32_t>(descriptorCount);
-    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = static_cast<uint32_t>(descriptorCount);
+    uint32_t descriptor_count = 10000;
+    pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    pool_sizes[0].descriptorCount = static_cast<uint32_t>(descriptor_count);
+    pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    pool_sizes[1].descriptorCount = static_cast<uint32_t>(descriptor_count);
 
-    VkDescriptorPoolCreateInfo poolInfo {};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-    poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = static_cast<uint32_t>(descriptorCount);
+    VkDescriptorPoolCreateInfo pool_info {};
+    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    pool_info.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
+    pool_info.pPoolSizes = pool_sizes.data();
+    pool_info.maxSets = static_cast<uint32_t>(descriptor_count);
 
-    if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool)
+    if (vkCreateDescriptorPool(device, &pool_info, nullptr, &descriptor_pool)
         != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool!");
     }
 }
 
-void CVulkanRenderer::allocateDescriptorSets(
-    std::vector<VkDescriptorSet>& descriptorSets,
-    VkDescriptorSetLayout setLayout,
-    const unsigned int descriptorSetsNumber,
-    const unsigned int descriptorOffset
+void CVulkanRenderer::allocate_descriptor_sets(
+    std::vector<VkDescriptorSet>& descriptor_sets,
+    VkDescriptorSetLayout set_layout,
+    const unsigned int descriptor_sets_number,
+    const unsigned int descriptor_offset
 ) {
-    std::vector<VkDescriptorSetLayout> matrixUboLayouts(
-        descriptorSetsNumber,
-        setLayout
+    std::vector<VkDescriptorSetLayout> matrix_ubo_layouts(
+        descriptor_sets_number,
+        set_layout
     );
-    VkDescriptorSetAllocateInfo allocInfo {};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = descriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(descriptorSetsNumber);
-    allocInfo.pSetLayouts = matrixUboLayouts.data();
+    VkDescriptorSetAllocateInfo alloc_info {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    alloc_info.descriptorPool = descriptor_pool;
+    alloc_info.descriptorSetCount =
+        static_cast<uint32_t>(descriptor_sets_number);
+    alloc_info.pSetLayouts = matrix_ubo_layouts.data();
     if (vkAllocateDescriptorSets(
             device,
-            &allocInfo,
-            descriptorSets.data() + descriptorOffset
+            &alloc_info,
+            descriptor_sets.data() + descriptor_offset
         )
         != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
 }
 
-void CVulkanRenderer::updateDescriptorSetsUBO(
+void CVulkanRenderer::update_descriptor_sets_ubo(
     VkBuffer ubo,
-    const VkDeviceSize& uboStructSize,
-    const unsigned int& uboDescriptorsNumber,
-    int uboBinding,
-    [[maybe_unused]] std::vector<VkDescriptorSet>& uboDescriptorSets,
+    const VkDeviceSize& ubo_struct_size,
+    const unsigned int& ubo_descriptors_number,
+    int ubo_binding,
+    [[maybe_unused]] std::vector<VkDescriptorSet>& ubo_descriptor_sets,
     const unsigned int offset
 ) {
-    for (size_t i = 0; i < uboDescriptorsNumber; ++i) {
-        VkDescriptorBufferInfo modelMatrixBufferInfo =
-            createDescriptorBufferInfo(ubo, uboStructSize, i);
-        std::array<VkWriteDescriptorSet, 1> descriptorWrites {};
+    for (size_t i = 0; i < ubo_descriptors_number; ++i) {
+        VkDescriptorBufferInfo model_matrix_buffer_info =
+            create_descriptor_buffer_info(ubo, ubo_struct_size, i);
+        std::array<VkWriteDescriptorSet, 1> descriptor_writes {};
 
-        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[0].dstSet =
-            *(descriptorSetsChunks.data() + offset + i);
-        descriptorWrites[0].dstBinding = uboBinding;
-        descriptorWrites[0].dstArrayElement = 0;
-        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[0].descriptorCount = 1;
-        descriptorWrites[0].pBufferInfo = &modelMatrixBufferInfo;
+        descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_writes[0].dstSet =
+            *(DESCRIPTOR_SETS_CHUNKS.data() + offset + i);
+        descriptor_writes[0].dstBinding = ubo_binding;
+        descriptor_writes[0].dstArrayElement = 0;
+        descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_writes[0].descriptorCount = 1;
+        descriptor_writes[0].pBufferInfo = &model_matrix_buffer_info;
 
         vkUpdateDescriptorSets(
             device,
-            static_cast<uint32_t>(descriptorWrites.size()),
-            descriptorWrites.data(),
+            static_cast<uint32_t>(descriptor_writes.size()),
+            descriptor_writes.data(),
             0,
             nullptr
         );
     }
 }
 
-void CVulkanRenderer::updateLightDataDescriptorSets(
-    const DescriptorSet& currentDescriptorSet1
+void CVulkanRenderer::update_light_data_descriptor_sets(
+    const DescriptorSet& current_descriptor_set1
 ) {
-    const unsigned int linkedDescriptorSetBindingsNumber =
-        currentDescriptorSet1.actualLinkedDescriptorBindingsNumber;
-    std::vector<uint32_t> shaderBindings;
-    std::vector<uint32_t> descriptorNumberPerBinding;
-    std::vector<uint32_t> bindingsIDs;
-    for (size_t j = 0; j < linkedDescriptorSetBindingsNumber; ++j) {
-        shaderBindings.push_back(
-            descriptorBindingsConfig[currentDescriptorSet1
-                                         .descriptorsBindingsIDs[j]]
+    const unsigned int linked_descriptor_set_bindings_number =
+        current_descriptor_set1.actual_linked_descriptor_bindings_number;
+    std::vector<uint32_t> shader_bindings;
+    std::vector<uint32_t> descriptor_number_per_binding;
+    std::vector<uint32_t> bindings_i_ds;
+    for (size_t j = 0; j < linked_descriptor_set_bindings_number; ++j) {
+        shader_bindings.push_back(
+            DESCRIPTOR_BINDINGS_CONFIG[current_descriptor_set1
+                                           .descriptors_bindings_i_ds[j]]
                 .binding
         );
-        bindingsIDs.push_back(currentDescriptorSet1.descriptorsBindingsIDs[j]);
+        bindings_i_ds.push_back(
+            current_descriptor_set1.descriptors_bindings_i_ds[j]
+        );
     }
 
-    for (size_t i = 0; i < currentDescriptorSet1.hostDescriptorNumber; ++i) {
-        std::vector<VkWriteDescriptorSet> descriptorWrites;
-        descriptorWrites.resize(shaderBindings.size());
-        std::vector<VkDescriptorBufferInfo> descriptorBufferInfos;
-        std::vector<std::vector<VkDescriptorImageInfo>> descriptorImageInfos;
-        for (size_t j = 0; j < shaderBindings.size(); ++j) {
-            if (descriptorBindingsConfig[bindingsIDs[j]].vkType
+    for (size_t i = 0; i < current_descriptor_set1.host_descriptor_number;
+         ++i) {
+        std::vector<VkWriteDescriptorSet> descriptor_writes;
+        descriptor_writes.resize(shader_bindings.size());
+        std::vector<VkDescriptorBufferInfo> descriptor_buffer_infos;
+        std::vector<std::vector<VkDescriptorImageInfo>> descriptor_image_infos;
+        for (size_t j = 0; j < shader_bindings.size(); ++j) {
+            if (DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]].vk_type
                 == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
-                descriptorBufferInfos.push_back({});
+                descriptor_buffer_infos.push_back({});
 
-                for (size_t m = 0; m < descriptorBindingsConfig[bindingsIDs[j]]
-                                           .shaderDescriptorsNumber;
+                for (size_t m = 0;
+                     m < DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]]
+                             .shader_descriptors_number;
                      ++m) {
-                    descriptorBufferInfos[j] = createDescriptorBufferInfo(
-                        GPUDescriptors[descriptorBindingsConfig[bindingsIDs[j]]
-                                           .globalDescriptorOffset]
-                            .GPUBuffer->buffer,
-                        descriptorBindingsConfig[bindingsIDs[j]].uboChunkSize,
+                    descriptor_buffer_infos[j] = create_descriptor_buffer_info(
+                        GPU_DESCRIPTORS
+                            [DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]]
+                                 .global_descriptor_offset]
+                                .gpu_buffer->buffer,
+                        DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]]
+                            .ubo_chunk_size,
                         i
                     );
                 }
-                descriptorWrites[j].pBufferInfo = descriptorBufferInfos.data();
+                descriptor_writes[j].pBufferInfo =
+                    descriptor_buffer_infos.data();
             } else if (
-                descriptorBindingsConfig[bindingsIDs[j]].vkType
+                DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]].vk_type
                 == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
             ) {
-                descriptorImageInfos.push_back({});
+                descriptor_image_infos.push_back({});
 
-                for (size_t m = 0; m < descriptorBindingsConfig[bindingsIDs[j]]
-                                           .shaderDescriptorsNumber;
+                for (size_t m = 0;
+                     m < DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]]
+                             .shader_descriptors_number;
                      ++m) {
-                    uint32_t imageViewIndex =
-                        GPUDescriptors
-                            [descriptorBindingsConfig[bindingsIDs[j]]
-                                 .globalDescriptorOffset
+                    uint32_t image_view_index =
+                        GPU_DESCRIPTORS
+                            [DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]]
+                                 .global_descriptor_offset
                              + m]
-                                .GPUImage->views.size()
+                                .gpu_image->views.size()
                         - 1;
 
-                    descriptorImageInfos[descriptorImageInfos.size() - 1]
+                    descriptor_image_infos[descriptor_image_infos.size() - 1]
                         .push_back({});
-                    descriptorImageInfos[descriptorImageInfos.size() - 1][m] =
-                        createDescriptorImageInfo(
-                            *GPUDescriptors
-                                 [descriptorBindingsConfig[bindingsIDs[j]]
-                                      .globalDescriptorOffset
+                    descriptor_image_infos[descriptor_image_infos.size() - 1][m] =
+                        create_descriptor_image_info(
+                            *GPU_DESCRIPTORS
+                                 [DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]]
+                                      .global_descriptor_offset
                                   + m]
-                                     .GPUImage,
+                                     .gpu_image,
                             VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-                            imageViewIndex,
-                            shadowMapSampler
+                            image_view_index,
+                            shadow_map_sampler
                         );
                 }
-                descriptorWrites[j].pImageInfo =
-                    descriptorImageInfos[descriptorImageInfos.size() - 1].data();
+                descriptor_writes[j].pImageInfo =
+                    descriptor_image_infos[descriptor_image_infos.size() - 1]
+                        .data();
             }
-            descriptorWrites[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[j].dstSet =
-                *(descriptorSetsChunks.data()
-                  + currentDescriptorSet1.descriptorSetOffset + i);
-            descriptorWrites[j].dstBinding = shaderBindings[j];
-            descriptorWrites[j].dstArrayElement = 0;
-            descriptorWrites[j].descriptorType =
-                descriptorBindingsConfig[bindingsIDs[j]].vkType;
-            descriptorWrites[j].descriptorCount =
-                descriptorBindingsConfig[bindingsIDs[j]].shaderDescriptorsNumber;
+            descriptor_writes[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptor_writes[j].dstSet =
+                *(DESCRIPTOR_SETS_CHUNKS.data()
+                  + current_descriptor_set1.descriptor_set_offset + i);
+            descriptor_writes[j].dstBinding = shader_bindings[j];
+            descriptor_writes[j].dstArrayElement = 0;
+            descriptor_writes[j].descriptorType =
+                DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]].vk_type;
+            descriptor_writes[j].descriptorCount =
+                DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]]
+                    .shader_descriptors_number;
         }
 
         vkUpdateDescriptorSets(
             device,
-            static_cast<uint32_t>(descriptorWrites.size()),
-            descriptorWrites.data(),
+            static_cast<uint32_t>(descriptor_writes.size()),
+            descriptor_writes.data(),
             0,
             nullptr
         );
     }
 }
 
-void CVulkanRenderer::updateDescriptorSetsCombinedImageSampler(
-    const DescriptorSet& descriptorSet
+void CVulkanRenderer::update_descriptor_sets_combined_image_sampler(
+    const DescriptorSet& descriptor_set
 ) {
-    std::vector<uint32_t> bindingsIDs;
-    for (size_t j = 0; j < descriptorSet.actualLinkedDescriptorBindingsNumber;
+    std::vector<uint32_t> bindings_i_ds;
+    for (size_t j = 0;
+         j < descriptor_set.actual_linked_descriptor_bindings_number;
          ++j) {
-        bindingsIDs.push_back(descriptorSet.descriptorsBindingsIDs[j]);
+        bindings_i_ds.push_back(descriptor_set.descriptors_bindings_i_ds[j]);
     }
 
-    unsigned int readableTextureDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::RIDABLE_TEXTURES]
-            .descriptorsBindingsIDs[0];
-    for (size_t i = 0; i < descriptorSet.hostDescriptorNumber; ++i) {
-        const unsigned int textureIndex = i / 2;
-        constexpr unsigned int textureViewIndex = 0;
-        VkDescriptorImageInfo imageInfo = createDescriptorImageInfo(
-            *GPUDescriptors
-                 [descriptorBindingsConfig[readableTextureDescriptorBindingIndex]
-                      .globalDescriptorOffset
-                  + textureIndex]
-                     .GPUImage,
+    unsigned int readable_texture_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::RidableTextures]
+            .descriptors_bindings_i_ds[0];
+    for (size_t i = 0; i < descriptor_set.host_descriptor_number; ++i) {
+        const unsigned int texture_index = i / 2;
+        constexpr unsigned int TEXTURE_VIEW_INDEX = 0;
+        VkDescriptorImageInfo image_info = create_descriptor_image_info(
+            *GPU_DESCRIPTORS
+                 [DESCRIPTOR_BINDINGS_CONFIG
+                      [readable_texture_descriptor_binding_index]
+                          .global_descriptor_offset
+                  + texture_index]
+                     .gpu_image,
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            textureViewIndex,
-            textureSampler
+            TEXTURE_VIEW_INDEX,
+            texture_sampler
         );
-        std::vector<VkWriteDescriptorSet> descriptorWrites {};
+        std::vector<VkWriteDescriptorSet> descriptor_writes {};
 
-        for (unsigned int j = 0; j < bindingsIDs.size(); ++j) {
-            descriptorWrites.push_back({});
-            const unsigned int lastElement = descriptorWrites.size() - 1;
-            descriptorWrites[lastElement].sType =
+        for (unsigned int j = 0; j < bindings_i_ds.size(); ++j) {
+            descriptor_writes.push_back({});
+            const unsigned int last_element = descriptor_writes.size() - 1;
+            descriptor_writes[last_element].sType =
                 VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[lastElement].dstSet =
-                *(descriptorSetsChunks.data()
-                  + descriptorSet.descriptorSetOffset + i);
-            descriptorWrites[lastElement].dstBinding =
-                descriptorBindingsConfig[bindingsIDs[j]].binding;
-            descriptorWrites[lastElement].dstArrayElement = 0;
-            descriptorWrites[lastElement].descriptorType =
+            descriptor_writes[last_element].dstSet =
+                *(DESCRIPTOR_SETS_CHUNKS.data()
+                  + descriptor_set.descriptor_set_offset + i);
+            descriptor_writes[last_element].dstBinding =
+                DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]].binding;
+            descriptor_writes[last_element].dstArrayElement = 0;
+            descriptor_writes[last_element].descriptorType =
                 VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites[lastElement].descriptorCount = 1;
-            descriptorWrites[lastElement].pImageInfo = &imageInfo;
+            descriptor_writes[last_element].descriptorCount = 1;
+            descriptor_writes[last_element].pImageInfo = &image_info;
         }
         vkUpdateDescriptorSets(
             device,
-            static_cast<uint32_t>(descriptorWrites.size()),
-            descriptorWrites.data(),
+            static_cast<uint32_t>(descriptor_writes.size()),
+            descriptor_writes.data(),
             0,
             nullptr
         );
     }
 }
 
-void CVulkanRenderer::createDescriptorImageInfo(
-    const unsigned int descriptorNumber,
-    VkImageLayout imageLayout,
-    std::vector<VK_Image>& textureImages,
-    const unsigned int imageViewIndex,
-    VkDescriptorImageInfo descriptorImageInfos[]
+void CVulkanRenderer::create_descriptor_image_info(
+    const unsigned int descriptor_number,
+    VkImageLayout image_layout,
+    std::vector<GpuImage>& texture_images,
+    const unsigned int image_view_index,
+    VkDescriptorImageInfo descriptor_image_infos[]
 ) {
-    for (size_t i = 0; i < descriptorNumber; ++i) {
-        descriptorImageInfos[i] = {};
-        descriptorImageInfos[i].imageLayout = imageLayout;
-        descriptorImageInfos[i].imageView =
-            textureImages[i].views[imageViewIndex];
-        descriptorImageInfos[i].sampler = textureSampler;
+    for (size_t i = 0; i < descriptor_number; ++i) {
+        descriptor_image_infos[i] = {};
+        descriptor_image_infos[i].imageLayout = image_layout;
+        descriptor_image_infos[i].imageView =
+            texture_images[i].views[image_view_index];
+        descriptor_image_infos[i].sampler = texture_sampler;
     }
 }
 
-void CVulkanRenderer::createMainRenderDescriptorSets() {
-    vkResetDescriptorPool(device, descriptorPool, 0);
-    for (unsigned int pipelineCounter = 0;
-         pipelineCounter < SpecificPipeline::PIPELINES_NUMBER;
-         ++pipelineCounter) {
-        for (unsigned int descriptorSetCounter = 0; descriptorSetCounter
-             < pipelineConfigs[pipelineCounter].actualLinkedDescriptorSetsNumber;
-             ++descriptorSetCounter) {
-            const unsigned int linkedDescriptorSetMatrixUboID =
-                pipelineConfigs[pipelineCounter]
-                    .linkedDescriptorSetIDs[descriptorSetCounter];
-            const DescriptorSet& currentDescriptorSet0 =
-                descriptorSetsConfig[linkedDescriptorSetMatrixUboID];
-            allocateDescriptorSets(
-                descriptorSetsChunks,
-                currentDescriptorSet0.setLayout,
-                currentDescriptorSet0.hostDescriptorNumber,
-                currentDescriptorSet0.descriptorSetOffset
+void CVulkanRenderer::create_main_render_descriptor_sets() {
+    vkResetDescriptorPool(device, descriptor_pool, 0);
+    for (unsigned int pipeline_counter = 0;
+         pipeline_counter < SpecificPipeline::PipelinesNumber;
+         ++pipeline_counter) {
+        for (unsigned int descriptor_set_counter = 0;
+             descriptor_set_counter < PIPELINE_CONFIGS[pipeline_counter]
+                                          .actual_linked_descriptor_sets_number;
+             ++descriptor_set_counter) {
+            const unsigned int linked_descriptor_set_matrix_ubo_id =
+                PIPELINE_CONFIGS[pipeline_counter]
+                    .linked_descriptor_set_i_ds[descriptor_set_counter];
+            const DescriptorSet& current_descriptor_set0 =
+                DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_matrix_ubo_id];
+            allocate_descriptor_sets(
+                DESCRIPTOR_SETS_CHUNKS,
+                current_descriptor_set0.set_layout,
+                current_descriptor_set0.host_descriptor_number,
+                current_descriptor_set0.descriptor_set_offset
             );
-            if (currentDescriptorSet0.isTexture) {
-                updateDescriptorSetsCombinedImageSampler(currentDescriptorSet0);
+            if (current_descriptor_set0.is_texture) {
+                update_descriptor_sets_combined_image_sampler(
+                    current_descriptor_set0
+                );
             } else {
-                updateLightDataDescriptorSets(currentDescriptorSet0);
+                update_light_data_descriptor_sets(current_descriptor_set0);
             }
         }
     }
 }
 
-void CVulkanRenderer::createBuffer(
+void CVulkanRenderer::create_buffer(
     VkDeviceSize size,
     VkBufferUsageFlags usage,
     VkMemoryPropertyFlags properties,
     VkBuffer& buffer,
-    VkDeviceMemory& bufferMemory
+    VkDeviceMemory& buffer_memory
 ) {
-    VkBufferCreateInfo bufferInfo {};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    VkBufferCreateInfo buffer_info {};
+    buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     if (size == 0) {
         std::cout << "warning: createBuffer with size 0, clamped to 1"
                   << std::endl;
         size = 1;
     }
-    bufferInfo.size = size;
-    bufferInfo.usage = usage;
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    buffer_info.size = size;
+    buffer_info.usage = usage;
+    buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+    if (vkCreateBuffer(device, &buffer_info, nullptr, &buffer) != VK_SUCCESS) {
         throw std::runtime_error("failed to create buffer!");
     }
 
-    VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
+    VkMemoryRequirements mem_requirements;
+    vkGetBufferMemoryRequirements(device, buffer, &mem_requirements);
 
-    VkMemoryAllocateInfo allocInfo {};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex =
-        findMemoryType(memRequirements.memoryTypeBits, properties);
+    VkMemoryAllocateInfo alloc_info {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.allocationSize = mem_requirements.size;
+    alloc_info.memoryTypeIndex =
+        find_memory_type(mem_requirements.memoryTypeBits, properties);
 
     int32_t result =
-        vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory);
+        vkAllocateMemory(device, &alloc_info, nullptr, &buffer_memory);
     if (result != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate buffer memory!");
     }
 
-    vkBindBufferMemory(device, buffer, bufferMemory, 0);
+    vkBindBufferMemory(device, buffer, buffer_memory, 0);
 }
 
-VkCommandBuffer CVulkanRenderer::beginSingleTimeCommands(
-    VkCommandPool& commandPool
+VkCommandBuffer CVulkanRenderer::begin_single_time_commands(
+    VkCommandPool& command_pool
 ) {
-    VkCommandBufferAllocateInfo allocInfo {};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool = commandPool;
-    allocInfo.commandBufferCount = 1;
+    VkCommandBufferAllocateInfo alloc_info {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    alloc_info.commandPool = command_pool;
+    alloc_info.commandBufferCount = 1;
 
-    VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
+    VkCommandBuffer command_buffer;
+    vkAllocateCommandBuffers(device, &alloc_info, &command_buffer);
 
-    VkCommandBufferBeginInfo beginInfo {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    VkCommandBufferBeginInfo begin_info {};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+    vkBeginCommandBuffer(command_buffer, &begin_info);
 
-    return commandBuffer;
+    return command_buffer;
 }
 
-void CVulkanRenderer::endSingleTimeCommands(
-    VkCommandPool& commandPool,
-    VkCommandBuffer& commandBuffer
+void CVulkanRenderer::end_single_time_commands(
+    VkCommandPool& command_pool,
+    VkCommandBuffer& command_buffer
 ) {
-    vkEndCommandBuffer(commandBuffer);
+    vkEndCommandBuffer(command_buffer);
 
-    VkSubmitInfo submitInfo {};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer;
+    VkSubmitInfo submit_info {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &command_buffer;
 
-    vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(graphicsQueue);
+    vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vkQueueWaitIdle(graphics_queue);
 
-    vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+    vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
 }
 
-void CVulkanRenderer::copyBuffer(
-    VkBuffer& srcBuffer,
-    VkBuffer& dstBuffer,
+void CVulkanRenderer::copy_buffer(
+    VkBuffer& src_buffer,
+    VkBuffer& dst_buffer,
     VkDeviceSize size
 ) {
-    VkCommandBuffer commandBuffer =
-        beginSingleTimeCommands(mainRenderCommandPool);
+    VkCommandBuffer command_buffer =
+        begin_single_time_commands(main_render_command_pool);
 
-    VkBufferCopy copyRegion {};
-    copyRegion.size = size;
-    vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+    VkBufferCopy copy_region {};
+    copy_region.size = size;
+    vkCmdCopyBuffer(command_buffer, src_buffer, dst_buffer, 1, &copy_region);
 
-    endSingleTimeCommands(mainRenderCommandPool, commandBuffer);
+    end_single_time_commands(main_render_command_pool, command_buffer);
 }
 
-uint32_t CVulkanRenderer::findMemoryType(
-    uint32_t typeFilter,
+uint32_t CVulkanRenderer::find_memory_type(
+    uint32_t type_filter,
     VkMemoryPropertyFlags properties
 ) {
-    VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+    VkPhysicalDeviceMemoryProperties mem_properties;
+    vkGetPhysicalDeviceMemoryProperties(physical_device, &mem_properties);
 
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-        if ((typeFilter & (1 << i))
-            && (memProperties.memoryTypes[i].propertyFlags & properties)
+    for (uint32_t i = 0; i < mem_properties.memoryTypeCount; i++) {
+        if ((type_filter & (1 << i))
+            && (mem_properties.memoryTypes[i].propertyFlags & properties)
                 == properties) {
             return i;
         }
@@ -6492,311 +6717,321 @@ uint32_t CVulkanRenderer::findMemoryType(
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
-void CVulkanRenderer::createCommandBuffers(
-    VkCommandPool& commandPool,
-    std::vector<VkCommandBuffer>& commandBuffers,
-    uint32_t commandBuffersNumber,
-    VkCommandBufferLevel commandBufferLevelFlag
+void CVulkanRenderer::create_command_buffers(
+    VkCommandPool& command_pool,
+    std::vector<VkCommandBuffer>& command_buffers,
+    uint32_t command_buffers_number,
+    VkCommandBufferLevel command_buffer_level_flag
 ) {
-    commandBuffers.resize(commandBuffersNumber * MAX_FRAMES_IN_FLIGHT);
+    command_buffers.resize(command_buffers_number * MAX_FRAMES_IN_FLIGHT);
 
-    VkCommandBufferAllocateInfo allocInfo {};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = commandPool;
-    allocInfo.level = commandBufferLevelFlag;
-    allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
+    VkCommandBufferAllocateInfo alloc_info {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    alloc_info.commandPool = command_pool;
+    alloc_info.level = command_buffer_level_flag;
+    alloc_info.commandBufferCount = (uint32_t)command_buffers.size();
 
-    if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data())
+    if (vkAllocateCommandBuffers(device, &alloc_info, command_buffers.data())
         != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate command buffers!");
     }
 }
 
-void CVulkanRenderer::executeSecondaryCommandBuffer(
-    VkRenderPass renderPass,
-    VkFramebuffer frameBuffer,
+void CVulkanRenderer::execute_secondary_command_buffer(
+    VkRenderPass render_pass,
+    VkFramebuffer frame_buffer,
     VkExtent2D extent,
-    VkCommandBuffer primaryCommandBuffer,
-    VkCommandBuffer secondaryCommandBuffer
+    VkCommandBuffer primary_command_buffer,
+    VkCommandBuffer secondary_command_buffer
 ) {
-    VkClearValue shadowMapClearValues[1];
-    shadowMapClearValues[0].depthStencil.depth = 1.0f;
-    shadowMapClearValues[0].depthStencil.stencil = 0;
+    VkClearValue shadow_map_clear_values[1];
+    shadow_map_clear_values[0].depthStencil.depth = 1.0f;
+    shadow_map_clear_values[0].depthStencil.stencil = 0;
 
-    VkRenderPassBeginInfo shadowMapRenderPassInfo {};
-    shadowMapRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    shadowMapRenderPassInfo.pNext = NULL;
-    shadowMapRenderPassInfo.renderPass = renderPass;
-    shadowMapRenderPassInfo.framebuffer = frameBuffer;
-    shadowMapRenderPassInfo.renderArea.offset.x = 0;
-    shadowMapRenderPassInfo.renderArea.offset.y = 0;
-    shadowMapRenderPassInfo.renderArea.extent.width = extent.width;
-    shadowMapRenderPassInfo.renderArea.extent.height = extent.height;
-    shadowMapRenderPassInfo.clearValueCount = 1;
-    shadowMapRenderPassInfo.pClearValues = shadowMapClearValues;
+    VkRenderPassBeginInfo shadow_map_render_pass_info {};
+    shadow_map_render_pass_info.sType =
+        VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    shadow_map_render_pass_info.pNext = NULL;
+    shadow_map_render_pass_info.renderPass = render_pass;
+    shadow_map_render_pass_info.framebuffer = frame_buffer;
+    shadow_map_render_pass_info.renderArea.offset.x = 0;
+    shadow_map_render_pass_info.renderArea.offset.y = 0;
+    shadow_map_render_pass_info.renderArea.extent.width = extent.width;
+    shadow_map_render_pass_info.renderArea.extent.height = extent.height;
+    shadow_map_render_pass_info.clearValueCount = 1;
+    shadow_map_render_pass_info.pClearValues = shadow_map_clear_values;
 
     vkCmdBeginRenderPass(
-        primaryCommandBuffer,
-        &shadowMapRenderPassInfo,
+        primary_command_buffer,
+        &shadow_map_render_pass_info,
         VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS
     );
-    vkCmdExecuteCommands(primaryCommandBuffer, 1, &secondaryCommandBuffer);
-    vkCmdEndRenderPass(primaryCommandBuffer);
+    vkCmdExecuteCommands(primary_command_buffer, 1, &secondary_command_buffer);
+    vkCmdEndRenderPass(primary_command_buffer);
 }
 
-void CVulkanRenderer::updateHudUBO(
+void CVulkanRenderer::update_hud_ubo(
     uint32_t offset,
-    bool isHudExists,
-    float highestY,
-    uint32_t healthCounter
+    bool is_hud_exists,
+    float highest_y,
+    uint32_t health_counter
 ) {
-    HUD_UBO hudUBO {};
+    HudUbo hud_ubo {};
 
-    hudUBO.view = viewMatrix;
-    hudUBO.proj = projectionMatrix;
+    hud_ubo.view = view_matrix;
+    hud_ubo.proj = projection_matrix;
 
-    hudUBO.isHudExists = isHudExists;
-    hudUBO.currentHP = healthBars[healthCounter].currentHealth;
-    hudUBO.maxHP = healthBars[healthCounter].maxHealth;
-    hudUBO.entityPosition = healthBars[healthCounter].position;
-    hudUBO.highestY = highestY;
+    hud_ubo.is_hud_exists = is_hud_exists;
+    hud_ubo.current_hp = health_bars[health_counter].current_health;
+    hud_ubo.max_hp = health_bars[health_counter].max_health;
+    hud_ubo.entity_position = health_bars[health_counter].position;
+    hud_ubo.highest_y = highest_y;
 
-    void* hudMatrixData;
-    unsigned int hudUboDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::HUD]
-            .descriptorsBindingsIDs[0];
+    void* hud_matrix_data;
+    unsigned int hud_ubo_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::HUD]
+            .descriptors_bindings_i_ds[0];
     vkMapMemory(
         device,
-        GPUDescriptors[descriptorBindingsConfig[hudUboDescriptorBindingIndex]
-                           .globalDescriptorOffset]
-            .GPUBuffer->deviceMemory,
-        sizeof(HUD_UBO) * offset,
-        sizeof(HUD_UBO),
+        GPU_DESCRIPTORS
+            [DESCRIPTOR_BINDINGS_CONFIG[hud_ubo_descriptor_binding_index]
+                 .global_descriptor_offset]
+                .gpu_buffer->device_memory,
+        sizeof(HudUbo) * offset,
+        sizeof(HudUbo),
         0,
-        &hudMatrixData
+        &hud_matrix_data
     );
-    memcpy(hudMatrixData, &hudUBO, sizeof(HUD_UBO));
+    memcpy(hud_matrix_data, &hud_ubo, sizeof(HudUbo));
     vkUnmapMemory(
         device,
-        GPUDescriptors[descriptorBindingsConfig[hudUboDescriptorBindingIndex]
-                           .globalDescriptorOffset]
-            .GPUBuffer->deviceMemory
+        GPU_DESCRIPTORS
+            [DESCRIPTOR_BINDINGS_CONFIG[hud_ubo_descriptor_binding_index]
+                 .global_descriptor_offset]
+                .gpu_buffer->device_memory
     );
 }
 
-void CVulkanRenderer::updateHudScreenUBO(uint32_t offset, uint32_t crosshair) {
-    HUD_SCREEN_UBO hudUBO {};
-    hudUBO.model = crosshairs[crosshair].model;
+void CVulkanRenderer::update_hud_screen_ubo(uint32_t offset, uint32_t crosshair) {
+    HudScreenUbo hud_ubo {};
+    hud_ubo.model = crosshairs[crosshair].model;
 
-    void* hudMatrixData;
-    unsigned int hudScreenUboDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::HUD_SCREEN]
-            .descriptorsBindingsIDs[0];
+    void* hud_matrix_data;
+    unsigned int hud_screen_ubo_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::HudScreen]
+            .descriptors_bindings_i_ds[0];
     vkMapMemory(
         device,
-        GPUDescriptors[descriptorBindingsConfig[hudScreenUboDescriptorBindingIndex]
-                           .globalDescriptorOffset]
-            .GPUBuffer->deviceMemory,
-        sizeof(HUD_SCREEN_UBO) * offset,
-        sizeof(HUD_SCREEN_UBO),
+        GPU_DESCRIPTORS
+            [DESCRIPTOR_BINDINGS_CONFIG[hud_screen_ubo_descriptor_binding_index]
+                 .global_descriptor_offset]
+                .gpu_buffer->device_memory,
+        sizeof(HudScreenUbo) * offset,
+        sizeof(HudScreenUbo),
         0,
-        &hudMatrixData
+        &hud_matrix_data
     );
-    memcpy(hudMatrixData, &hudUBO, sizeof(HUD_SCREEN_UBO));
+    memcpy(hud_matrix_data, &hud_ubo, sizeof(HudScreenUbo));
     vkUnmapMemory(
         device,
-        GPUDescriptors[descriptorBindingsConfig[hudScreenUboDescriptorBindingIndex]
-                           .globalDescriptorOffset]
-            .GPUBuffer->deviceMemory
+        GPU_DESCRIPTORS
+            [DESCRIPTOR_BINDINGS_CONFIG[hud_screen_ubo_descriptor_binding_index]
+                 .global_descriptor_offset]
+                .gpu_buffer->device_memory
     );
 }
 
-void CVulkanRenderer::updateSdfUBO(uint32_t offset, uint32_t crosshair) {
-    SDF_UBO hudUBO {};
-    hudUBO.model = crosshairs[crosshair].model;
+void CVulkanRenderer::update_sdf_ubo(uint32_t offset, uint32_t crosshair) {
+    SdfUbo hud_ubo {};
+    hud_ubo.model = crosshairs[crosshair].model;
 
-    float currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(
-                            std::chrono::steady_clock::now() - startTime
-                        )
-                            .count()
+    float current_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+                             std::chrono::steady_clock::now() - start_time
+                         )
+                             .count()
         * 0.001;
-    hudUBO.iTime = currentTime;
+    hud_ubo.i_time = current_time;
 
-    void* hudMatrixData;
-    unsigned int hudScreenUboDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::SDF_DATA]
-            .descriptorsBindingsIDs[0];
+    void* hud_matrix_data;
+    unsigned int hud_screen_ubo_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::SdfData]
+            .descriptors_bindings_i_ds[0];
     vkMapMemory(
         device,
-        GPUDescriptors[descriptorBindingsConfig[hudScreenUboDescriptorBindingIndex]
-                           .globalDescriptorOffset]
-            .GPUBuffer->deviceMemory,
-        sizeof(SDF_UBO) * offset,
-        sizeof(SDF_UBO),
+        GPU_DESCRIPTORS
+            [DESCRIPTOR_BINDINGS_CONFIG[hud_screen_ubo_descriptor_binding_index]
+                 .global_descriptor_offset]
+                .gpu_buffer->device_memory,
+        sizeof(SdfUbo) * offset,
+        sizeof(SdfUbo),
         0,
-        &hudMatrixData
+        &hud_matrix_data
     );
-    memcpy(hudMatrixData, &hudUBO, sizeof(SDF_UBO));
+    memcpy(hud_matrix_data, &hud_ubo, sizeof(SdfUbo));
     vkUnmapMemory(
         device,
-        GPUDescriptors[descriptorBindingsConfig[hudScreenUboDescriptorBindingIndex]
-                           .globalDescriptorOffset]
-            .GPUBuffer->deviceMemory
+        GPU_DESCRIPTORS
+            [DESCRIPTOR_BINDINGS_CONFIG[hud_screen_ubo_descriptor_binding_index]
+                 .global_descriptor_offset]
+                .gpu_buffer->device_memory
     );
 }
 
-void CVulkanRenderer::updateUBO_UI(
-    const unsigned int currentInventoryRow,
-    const unsigned int currentInventoryColumn,
+void CVulkanRenderer::update_ubo_ui(
+    const unsigned int current_inventory_row,
+    const unsigned int current_inventory_column,
     const unsigned int inventory,
     uint32_t offset
 ) {
-    UI_UBO hudUBO {};
+    UiUbo hud_ubo {};
 
-    const unsigned int colSize = inventories[inventory].col;
-    hudUBO.model =
+    const unsigned int col_size = inventories[inventory].col;
+    hud_ubo.model =
         inventories[inventory]
-            .slotData[colSize * currentInventoryRow + currentInventoryColumn]
+            .slot_data[col_size * current_inventory_row + current_inventory_column]
             .model;
-    hudUBO.color =
+    hud_ubo.color =
         inventories[inventory]
-            .slotData[colSize * currentInventoryRow + currentInventoryColumn]
+            .slot_data[col_size * current_inventory_row + current_inventory_column]
             .color;
 
-    void* hudMatrixData;
-    unsigned int uiUboDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::UI]
-            .descriptorsBindingsIDs[0];
+    void* hud_matrix_data;
+    unsigned int ui_ubo_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::UI]
+            .descriptors_bindings_i_ds[0];
     vkMapMemory(
         device,
-        GPUDescriptors[descriptorBindingsConfig[uiUboDescriptorBindingIndex]
-                           .globalDescriptorOffset]
-            .GPUBuffer->deviceMemory,
-        sizeof(UI_UBO) * offset,
-        sizeof(UI_UBO),
+        GPU_DESCRIPTORS[DESCRIPTOR_BINDINGS_CONFIG[ui_ubo_descriptor_binding_index]
+                            .global_descriptor_offset]
+            .gpu_buffer->device_memory,
+        sizeof(UiUbo) * offset,
+        sizeof(UiUbo),
         0,
-        &hudMatrixData
+        &hud_matrix_data
     );
-    memcpy(hudMatrixData, &hudUBO, sizeof(UI_UBO));
+    memcpy(hud_matrix_data, &hud_ubo, sizeof(UiUbo));
     vkUnmapMemory(
         device,
-        GPUDescriptors[descriptorBindingsConfig[uiUboDescriptorBindingIndex]
-                           .globalDescriptorOffset]
-            .GPUBuffer->deviceMemory
+        GPU_DESCRIPTORS[DESCRIPTOR_BINDINGS_CONFIG[ui_ubo_descriptor_binding_index]
+                            .global_descriptor_offset]
+            .gpu_buffer->device_memory
     );
 }
 
-void CVulkanRenderer::updateUBO_IconsUI(uint32_t offset, uint32_t item) {
-    UI_UBO hudUBO {};
-    hudUBO.model = items[item].model;
+void CVulkanRenderer::update_ubo_icons_ui(uint32_t offset, uint32_t item) {
+    UiUbo hud_ubo {};
+    hud_ubo.model = items[item].model;
 
-    void* hudMatrixData;
-    unsigned int uiIconsUboDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::UI_ICONS]
-            .descriptorsBindingsIDs[0];
+    void* hud_matrix_data;
+    unsigned int ui_icons_ubo_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::UiIcons]
+            .descriptors_bindings_i_ds[0];
     vkMapMemory(
         device,
-        GPUDescriptors[descriptorBindingsConfig[uiIconsUboDescriptorBindingIndex]
-                           .globalDescriptorOffset]
-            .GPUBuffer->deviceMemory,
-        sizeof(UI_UBO) * offset,
-        sizeof(UI_UBO),
+        GPU_DESCRIPTORS
+            [DESCRIPTOR_BINDINGS_CONFIG[ui_icons_ubo_descriptor_binding_index]
+                 .global_descriptor_offset]
+                .gpu_buffer->device_memory,
+        sizeof(UiUbo) * offset,
+        sizeof(UiUbo),
         0,
-        &hudMatrixData
+        &hud_matrix_data
     );
-    memcpy(hudMatrixData, &hudUBO, sizeof(UI_UBO));
+    memcpy(hud_matrix_data, &hud_ubo, sizeof(UiUbo));
     vkUnmapMemory(
         device,
-        GPUDescriptors[descriptorBindingsConfig[uiIconsUboDescriptorBindingIndex]
-                           .globalDescriptorOffset]
-            .GPUBuffer->deviceMemory
+        GPU_DESCRIPTORS
+            [DESCRIPTOR_BINDINGS_CONFIG[ui_icons_ubo_descriptor_binding_index]
+                 .global_descriptor_offset]
+                .gpu_buffer->device_memory
     );
 }
 
-void CVulkanRenderer::hudRecordCommandBuffer(
-    VkCommandBuffer& commandBuffer,
-    uint32_t imageIndex
+void CVulkanRenderer::hud_record_command_buffer(
+    VkCommandBuffer& command_buffer,
+    uint32_t image_index
 ) {
-    VkCommandBufferBeginInfo beginInfo {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    VkRenderPassBeginInfo renderPassInfo {};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = renderPasses[SpecificPipeline::HUD_PIPELINE];
-    renderPassInfo.framebuffer = swapChainFramebuffers[imageIndex];
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent.height = swapChainExtent.height;
-    renderPassInfo.renderArea.extent.width = swapChainExtent.width;
+    VkCommandBufferBeginInfo begin_info {};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    VkRenderPassBeginInfo render_pass_info {};
+    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    render_pass_info.renderPass = RENDER_PASSES[SpecificPipeline::HudPipeline];
+    render_pass_info.framebuffer = swap_chain_framebuffers[image_index];
+    render_pass_info.renderArea.offset = {0, 0};
+    render_pass_info.renderArea.extent.height = swap_chain_extent.height;
+    render_pass_info.renderArea.extent.width = swap_chain_extent.width;
 
-    std::array<VkClearValue, 2> clearValues {};
-    clearValues[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
-    clearValues[1].depthStencil = {1.0f, 0};
+    std::array<VkClearValue, 2> clear_values {};
+    clear_values[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
+    clear_values[1].depthStencil = {1.0f, 0};
 
-    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    renderPassInfo.pClearValues = clearValues.data();
+    render_pass_info.clearValueCount =
+        static_cast<uint32_t>(clear_values.size());
+    render_pass_info.pClearValues = clear_values.data();
 
     vkCmdBeginRenderPass(
-        commandBuffer,
-        &renderPassInfo,
+        command_buffer,
+        &render_pass_info,
         VK_SUBPASS_CONTENTS_INLINE
     );
 
     vkCmdBindPipeline(
-        commandBuffer,
+        command_buffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
-        pipelineConfigs[SpecificPipeline::HUD_PIPELINE].pipeline
+        PIPELINE_CONFIGS[SpecificPipeline::HudPipeline].pipeline
     );
 
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)swapChainExtent.width;
-    viewport.height = (float)swapChainExtent.height;
+    viewport.width = (float)swap_chain_extent.width;
+    viewport.height = (float)swap_chain_extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+    vkCmdSetViewport(command_buffer, 0, 1, &viewport);
 
     VkRect2D scissor {};
     scissor.offset = {0, 0};
-    scissor.extent = swapChainExtent;
-    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+    scissor.extent = swap_chain_extent;
+    vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
-    for (unsigned int i = 0; i < healthBars.size(); ++i) {
-        unsigned int uiVertexId = healthBars[i].meshID;
-        unsigned int uboIndex = currentFrame * hudUboDescriptorNumber + i;
-        updateHudUBO(uboIndex, true, highest_gltf_Y[uiVertexId], i);
-        const unsigned int linkedDescriptorSetID =
-            pipelineConfigs[SpecificPipeline::HUD_PIPELINE]
-                .linkedDescriptorSetIDs[0];
-        const DescriptorSet& currentDescriptorSet =
-            descriptorSetsConfig[linkedDescriptorSetID];
+    for (unsigned int i = 0; i < health_bars.size(); ++i) {
+        unsigned int ui_vertex_id = health_bars[i].mesh_id;
+        unsigned int ubo_index = current_frame * hud_ubo_descriptor_number + i;
+        update_hud_ubo(ubo_index, true, highest_gltf_y[ui_vertex_id], i);
+        const unsigned int linked_descriptor_set_id =
+            PIPELINE_CONFIGS[SpecificPipeline::HudPipeline]
+                .linked_descriptor_set_i_ds[0];
+        const DescriptorSet& current_descriptor_set =
+            DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id];
         vkCmdBindDescriptorSets(
-            commandBuffer,
+            command_buffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
-            pipelineConfigs[SpecificPipeline::HUD_PIPELINE].pipelineLayout,
+            PIPELINE_CONFIGS[SpecificPipeline::HudPipeline].pipeline_layout,
             0,
             1,
-            &(*(descriptorSetsChunks.data()
-                + currentDescriptorSet.descriptorSetOffset + i)),
+            &(*(DESCRIPTOR_SETS_CHUNKS.data()
+                + current_descriptor_set.descriptor_set_offset + i)),
             0,
             nullptr
         );
 
-        VkBuffer vertexBuffers[] = {vertexBufferContainer[uiVertexId]};
+        VkBuffer vertex_buffers[] = {vertex_buffer_container[ui_vertex_id]};
         VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
 
         vkCmdBindIndexBuffer(
-            commandBuffer,
-            indexBufferContainer[uiVertexId],
+            command_buffer,
+            index_buffer_container[ui_vertex_id],
             0,
             VK_INDEX_TYPE_UINT32
         );
 
-        unsigned int indicesContainerSize = aIndices_[uiVertexId].size();
+        unsigned int indices_container_size = a_indices[ui_vertex_id].size();
 
         vkCmdDrawIndexed(
-            commandBuffer,
-            static_cast<uint32_t>(indicesContainerSize),
+            command_buffer,
+            static_cast<uint32_t>(indices_container_size),
             1,
             0,
             0,
@@ -6804,126 +7039,131 @@ void CVulkanRenderer::hudRecordCommandBuffer(
         );
     }
 
-    vkCmdEndRenderPass(commandBuffer);
+    vkCmdEndRenderPass(command_buffer);
 }
 
-void CVulkanRenderer::uiRecordCommandBuffer(
-    VkCommandBuffer& commandBuffer,
-    uint32_t imageIndex
+void CVulkanRenderer::ui_record_command_buffer(
+    VkCommandBuffer& command_buffer,
+    uint32_t image_index
 ) {
-    VkCommandBufferBeginInfo beginInfo {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    VkRenderPassBeginInfo renderPassInfo {};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = renderPasses[SpecificPipeline::UI_PIPELINE];
-    renderPassInfo.framebuffer = swapChainFramebuffers[imageIndex];
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent.height = swapChainExtent.height;
-    renderPassInfo.renderArea.extent.width = swapChainExtent.width;
+    VkCommandBufferBeginInfo begin_info {};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    VkRenderPassBeginInfo render_pass_info {};
+    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    render_pass_info.renderPass = RENDER_PASSES[SpecificPipeline::UiPipeline];
+    render_pass_info.framebuffer = swap_chain_framebuffers[image_index];
+    render_pass_info.renderArea.offset = {0, 0};
+    render_pass_info.renderArea.extent.height = swap_chain_extent.height;
+    render_pass_info.renderArea.extent.width = swap_chain_extent.width;
 
-    std::array<VkClearValue, 2> clearValues {};
-    clearValues[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
-    clearValues[1].depthStencil = {1.0f, 0};
+    std::array<VkClearValue, 2> clear_values {};
+    clear_values[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
+    clear_values[1].depthStencil = {1.0f, 0};
 
-    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    renderPassInfo.pClearValues = clearValues.data();
+    render_pass_info.clearValueCount =
+        static_cast<uint32_t>(clear_values.size());
+    render_pass_info.pClearValues = clear_values.data();
 
     vkCmdBeginRenderPass(
-        commandBuffer,
-        &renderPassInfo,
+        command_buffer,
+        &render_pass_info,
         VK_SUBPASS_CONTENTS_INLINE
     );
 
     vkCmdBindPipeline(
-        commandBuffer,
+        command_buffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
-        pipelineConfigs[SpecificPipeline::UI_PIPELINE].pipeline
+        PIPELINE_CONFIGS[SpecificPipeline::UiPipeline].pipeline
     );
 
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)swapChainExtent.width;
-    viewport.height = (float)swapChainExtent.height;
+    viewport.width = (float)swap_chain_extent.width;
+    viewport.height = (float)swap_chain_extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+    vkCmdSetViewport(command_buffer, 0, 1, &viewport);
 
     VkRect2D scissor {};
     scissor.offset = {0, 0};
-    scissor.extent = swapChainExtent;
-    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+    scissor.extent = swap_chain_extent;
+    vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
     for (unsigned int i = 0; i < inventories.size(); ++i) {
         RenderInventory inventory = inventories[i];
-        unsigned int inventoryTextureID = inventory.inventoryTextureID;
-        unsigned int uiVertexId = inventory.meshID;
+        unsigned int inventory_texture_id = inventory.inventory_texture_id;
+        unsigned int ui_vertex_id = inventory.mesh_id;
         for (unsigned int j = 0; j < inventory.row; ++j) {
             for (unsigned int m = 0; m < inventory.col; ++m) {
-                unsigned int uboIndex = currentFrame * uiUboDescriptorsNumber
+                unsigned int ubo_index =
+                    current_frame * ui_ubo_descriptors_number
                     + j * inventory.col + m;
-                updateUBO_UI(j, m, i, uboIndex);
-                const unsigned int linkedDescriptorSetID =
-                    pipelineConfigs[SpecificPipeline::UI_PIPELINE]
-                        .linkedDescriptorSetIDs[0];
-                const DescriptorSet& currentDescriptorSet =
-                    descriptorSetsConfig[linkedDescriptorSetID];
+                update_ubo_ui(j, m, i, ubo_index);
+                const unsigned int linked_descriptor_set_id =
+                    PIPELINE_CONFIGS[SpecificPipeline::UiPipeline]
+                        .linked_descriptor_set_i_ds[0];
+                const DescriptorSet& current_descriptor_set =
+                    DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id];
                 vkCmdBindDescriptorSets(
-                    commandBuffer,
+                    command_buffer,
                     VK_PIPELINE_BIND_POINT_GRAPHICS,
-                    pipelineConfigs[SpecificPipeline::UI_PIPELINE]
-                        .pipelineLayout,
+                    PIPELINE_CONFIGS[SpecificPipeline::UiPipeline]
+                        .pipeline_layout,
                     0,
                     1,
-                    &(*(descriptorSetsChunks.data()
-                        + currentDescriptorSet.descriptorSetOffset + uboIndex)),
+                    &(*(DESCRIPTOR_SETS_CHUNKS.data()
+                        + current_descriptor_set.descriptor_set_offset
+                        + ubo_index)),
                     0,
                     nullptr
                 );
 
-                const unsigned int linkedDescriptorSetID1 =
-                    pipelineConfigs[SpecificPipeline::UI_PIPELINE]
-                        .linkedDescriptorSetIDs[1];
-                const DescriptorSet& currentDescriptorSet1 =
-                    descriptorSetsConfig[linkedDescriptorSetID1];
+                const unsigned int linked_descriptor_set_i_d1 =
+                    PIPELINE_CONFIGS[SpecificPipeline::UiPipeline]
+                        .linked_descriptor_set_i_ds[1];
+                const DescriptorSet& current_descriptor_set1 =
+                    DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_i_d1];
                 vkCmdBindDescriptorSets(
-                    commandBuffer,
+                    command_buffer,
                     VK_PIPELINE_BIND_POINT_GRAPHICS,
-                    pipelineConfigs[SpecificPipeline::UI_PIPELINE]
-                        .pipelineLayout,
+                    PIPELINE_CONFIGS[SpecificPipeline::UiPipeline]
+                        .pipeline_layout,
                     1,
                     1,
-                    &(*(descriptorSetsChunks.data()
-                        + currentDescriptorSet1.descriptorSetOffset
-                        + MAX_FRAMES_IN_FLIGHT * inventoryTextureID
-                        + currentFrame)),
+                    &(*(DESCRIPTOR_SETS_CHUNKS.data()
+                        + current_descriptor_set1.descriptor_set_offset
+                        + MAX_FRAMES_IN_FLIGHT * inventory_texture_id
+                        + current_frame)),
                     0,
                     nullptr
                 );
 
-                VkBuffer vertexBuffers[] = {vertexBufferContainer[uiVertexId]};
+                VkBuffer vertex_buffers[] = {
+                    vertex_buffer_container[ui_vertex_id]
+                };
                 VkDeviceSize offsets[] = {0};
                 vkCmdBindVertexBuffers(
-                    commandBuffer,
+                    command_buffer,
                     0,
                     1,
-                    vertexBuffers,
+                    vertex_buffers,
                     offsets
                 );
 
                 vkCmdBindIndexBuffer(
-                    commandBuffer,
-                    indexBufferContainer[uiVertexId],
+                    command_buffer,
+                    index_buffer_container[ui_vertex_id],
                     0,
                     VK_INDEX_TYPE_UINT32
                 );
 
-                unsigned int indicesContainerSize =
-                    aIndices_[uiVertexId].size();
+                unsigned int indices_container_size =
+                    a_indices[ui_vertex_id].size();
 
                 vkCmdDrawIndexed(
-                    commandBuffer,
-                    static_cast<uint32_t>(indicesContainerSize),
+                    command_buffer,
+                    static_cast<uint32_t>(indices_container_size),
                     1,
                     0,
                     0,
@@ -6933,115 +7173,116 @@ void CVulkanRenderer::uiRecordCommandBuffer(
         }
     }
 
-    vkCmdEndRenderPass(commandBuffer);
+    vkCmdEndRenderPass(command_buffer);
 }
 
-void CVulkanRenderer::uiIconsRecordCommandBuffer(
-    VkCommandBuffer& commandBuffer,
-    uint32_t imageIndex
+void CVulkanRenderer::ui_icons_record_command_buffer(
+    VkCommandBuffer& command_buffer,
+    uint32_t image_index
 ) {
-    VkCommandBufferBeginInfo beginInfo {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    VkRenderPassBeginInfo renderPassInfo {};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass =
-        renderPasses[SpecificPipeline::UI_ICONS_PIPELINE];
-    renderPassInfo.framebuffer = swapChainFramebuffers[imageIndex];
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent.height = swapChainExtent.height;
-    renderPassInfo.renderArea.extent.width = swapChainExtent.width;
+    VkCommandBufferBeginInfo begin_info {};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    VkRenderPassBeginInfo render_pass_info {};
+    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    render_pass_info.renderPass =
+        RENDER_PASSES[SpecificPipeline::UiIconsPipeline];
+    render_pass_info.framebuffer = swap_chain_framebuffers[image_index];
+    render_pass_info.renderArea.offset = {0, 0};
+    render_pass_info.renderArea.extent.height = swap_chain_extent.height;
+    render_pass_info.renderArea.extent.width = swap_chain_extent.width;
 
-    std::array<VkClearValue, 2> clearValues {};
-    clearValues[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
-    clearValues[1].depthStencil = {1.0f, 0};
+    std::array<VkClearValue, 2> clear_values {};
+    clear_values[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
+    clear_values[1].depthStencil = {1.0f, 0};
 
-    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    renderPassInfo.pClearValues = clearValues.data();
+    render_pass_info.clearValueCount =
+        static_cast<uint32_t>(clear_values.size());
+    render_pass_info.pClearValues = clear_values.data();
 
     vkCmdBeginRenderPass(
-        commandBuffer,
-        &renderPassInfo,
+        command_buffer,
+        &render_pass_info,
         VK_SUBPASS_CONTENTS_INLINE
     );
 
     vkCmdBindPipeline(
-        commandBuffer,
+        command_buffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
-        pipelineConfigs[SpecificPipeline::UI_ICONS_PIPELINE].pipeline
+        PIPELINE_CONFIGS[SpecificPipeline::UiIconsPipeline].pipeline
     );
 
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)swapChainExtent.width;
-    viewport.height = (float)swapChainExtent.height;
+    viewport.width = (float)swap_chain_extent.width;
+    viewport.height = (float)swap_chain_extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+    vkCmdSetViewport(command_buffer, 0, 1, &viewport);
 
     VkRect2D scissor {};
     scissor.offset = {0, 0};
-    scissor.extent = swapChainExtent;
-    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+    scissor.extent = swap_chain_extent;
+    vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
     for (unsigned int i = 0; i < items.size(); ++i) {
         RenderItem item = items[i];
-        unsigned int uiVertexId = item.meshID;
-        unsigned int diffuseTextureID = item.diffuseTextureID;
-        unsigned int uboIndex = currentFrame * items.size() + i;
+        unsigned int ui_vertex_id = item.mesh_id;
+        unsigned int diffuse_texture_id = item.diffuse_texture_id;
+        unsigned int ubo_index = current_frame * items.size() + i;
 
-        updateUBO_IconsUI(uboIndex, i);
-        const unsigned int linkedDescriptorSetID =
-            pipelineConfigs[SpecificPipeline::UI_ICONS_PIPELINE]
-                .linkedDescriptorSetIDs[0];
-        const DescriptorSet& currentDescriptorSet =
-            descriptorSetsConfig[linkedDescriptorSetID];
+        update_ubo_icons_ui(ubo_index, i);
+        const unsigned int linked_descriptor_set_id =
+            PIPELINE_CONFIGS[SpecificPipeline::UiIconsPipeline]
+                .linked_descriptor_set_i_ds[0];
+        const DescriptorSet& current_descriptor_set =
+            DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id];
         vkCmdBindDescriptorSets(
-            commandBuffer,
+            command_buffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
-            pipelineConfigs[SpecificPipeline::UI_ICONS_PIPELINE].pipelineLayout,
+            PIPELINE_CONFIGS[SpecificPipeline::UiIconsPipeline].pipeline_layout,
             0,
             1,
-            &(*(descriptorSetsChunks.data()
-                + currentDescriptorSet.descriptorSetOffset + uboIndex)),
+            &(*(DESCRIPTOR_SETS_CHUNKS.data()
+                + current_descriptor_set.descriptor_set_offset + ubo_index)),
             0,
             nullptr
         );
 
-        const unsigned int linkedDescriptorSetID1 =
-            pipelineConfigs[SpecificPipeline::UI_ICONS_PIPELINE]
-                .linkedDescriptorSetIDs[1];
-        const DescriptorSet& currentDescriptorSet1 =
-            descriptorSetsConfig[linkedDescriptorSetID1];
+        const unsigned int linked_descriptor_set_i_d1 =
+            PIPELINE_CONFIGS[SpecificPipeline::UiIconsPipeline]
+                .linked_descriptor_set_i_ds[1];
+        const DescriptorSet& current_descriptor_set1 =
+            DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_i_d1];
         vkCmdBindDescriptorSets(
-            commandBuffer,
+            command_buffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
-            pipelineConfigs[SpecificPipeline::UI_ICONS_PIPELINE].pipelineLayout,
+            PIPELINE_CONFIGS[SpecificPipeline::UiIconsPipeline].pipeline_layout,
             1,
             1,
-            &(*(descriptorSetsChunks.data()
-                + currentDescriptorSet1.descriptorSetOffset
-                + MAX_FRAMES_IN_FLIGHT * diffuseTextureID + currentFrame)),
+            &(*(DESCRIPTOR_SETS_CHUNKS.data()
+                + current_descriptor_set1.descriptor_set_offset
+                + MAX_FRAMES_IN_FLIGHT * diffuse_texture_id + current_frame)),
             0,
             nullptr
         );
 
-        VkBuffer vertexBuffers[] = {vertexBufferContainer[uiVertexId]};
+        VkBuffer vertex_buffers[] = {vertex_buffer_container[ui_vertex_id]};
         VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
 
         vkCmdBindIndexBuffer(
-            commandBuffer,
-            indexBufferContainer[uiVertexId],
+            command_buffer,
+            index_buffer_container[ui_vertex_id],
             0,
             VK_INDEX_TYPE_UINT32
         );
 
-        unsigned int indicesContainerSize = aIndices_[uiVertexId].size();
+        unsigned int indices_container_size = a_indices[ui_vertex_id].size();
 
         vkCmdDrawIndexed(
-            commandBuffer,
-            static_cast<uint32_t>(indicesContainerSize),
+            command_buffer,
+            static_cast<uint32_t>(indices_container_size),
             1,
             0,
             0,
@@ -7049,98 +7290,100 @@ void CVulkanRenderer::uiIconsRecordCommandBuffer(
         );
     }
 
-    vkCmdEndRenderPass(commandBuffer);
+    vkCmdEndRenderPass(command_buffer);
 }
 
-void CVulkanRenderer::hudScreenRecordCommandBuffer(
-    VkCommandBuffer& commandBuffer,
-    uint32_t imageIndex
+void CVulkanRenderer::hud_screen_record_command_buffer(
+    VkCommandBuffer& command_buffer,
+    uint32_t image_index
 ) {
-    VkCommandBufferBeginInfo beginInfo {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    VkCommandBufferBeginInfo begin_info {};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-    VkRenderPassBeginInfo renderPassInfo {};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass =
-        renderPasses[SpecificPipeline::HUD_SCREEN_PIPELINE];
-    renderPassInfo.framebuffer = swapChainFramebuffers[imageIndex];
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent.height = swapChainExtent.height;
-    renderPassInfo.renderArea.extent.width = swapChainExtent.width;
+    VkRenderPassBeginInfo render_pass_info {};
+    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    render_pass_info.renderPass =
+        RENDER_PASSES[SpecificPipeline::HudScreenPipeline];
+    render_pass_info.framebuffer = swap_chain_framebuffers[image_index];
+    render_pass_info.renderArea.offset = {0, 0};
+    render_pass_info.renderArea.extent.height = swap_chain_extent.height;
+    render_pass_info.renderArea.extent.width = swap_chain_extent.width;
 
-    std::array<VkClearValue, 2> clearValues {};
-    clearValues[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
-    clearValues[1].depthStencil = {1.0f, 0};
+    std::array<VkClearValue, 2> clear_values {};
+    clear_values[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
+    clear_values[1].depthStencil = {1.0f, 0};
 
-    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    renderPassInfo.pClearValues = clearValues.data();
+    render_pass_info.clearValueCount =
+        static_cast<uint32_t>(clear_values.size());
+    render_pass_info.pClearValues = clear_values.data();
 
     vkCmdBeginRenderPass(
-        commandBuffer,
-        &renderPassInfo,
+        command_buffer,
+        &render_pass_info,
         VK_SUBPASS_CONTENTS_INLINE
     );
 
     vkCmdBindPipeline(
-        commandBuffer,
+        command_buffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
-        pipelineConfigs[SpecificPipeline::HUD_SCREEN_PIPELINE].pipeline
+        PIPELINE_CONFIGS[SpecificPipeline::HudScreenPipeline].pipeline
     );
 
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)swapChainExtent.width;
-    viewport.height = (float)swapChainExtent.height;
+    viewport.width = (float)swap_chain_extent.width;
+    viewport.height = (float)swap_chain_extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+    vkCmdSetViewport(command_buffer, 0, 1, &viewport);
 
     VkRect2D scissor {};
     scissor.offset = {0, 0};
-    scissor.extent = swapChainExtent;
-    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+    scissor.extent = swap_chain_extent;
+    vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
     for (unsigned int i = 0; i < crosshairs.size(); ++i) {
         RenderCrosshair crosshair = crosshairs[i];
-        unsigned int uiVertexId = crosshair.meshID;
+        unsigned int ui_vertex_id = crosshair.mesh_id;
 
-        unsigned int uboIndex = currentFrame * hudScreenUboDescriptorNumber + i;
-        updateHudScreenUBO(uboIndex, i);
-        const unsigned int linkedDescriptorSetID =
-            pipelineConfigs[SpecificPipeline::HUD_SCREEN_PIPELINE]
-                .linkedDescriptorSetIDs[0];
-        const DescriptorSet& currentDescriptorSet =
-            descriptorSetsConfig[linkedDescriptorSetID];
+        unsigned int ubo_index =
+            current_frame * hud_screen_ubo_descriptor_number + i;
+        update_hud_screen_ubo(ubo_index, i);
+        const unsigned int linked_descriptor_set_id =
+            PIPELINE_CONFIGS[SpecificPipeline::HudScreenPipeline]
+                .linked_descriptor_set_i_ds[0];
+        const DescriptorSet& current_descriptor_set =
+            DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id];
         vkCmdBindDescriptorSets(
-            commandBuffer,
+            command_buffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
-            pipelineConfigs[SpecificPipeline::HUD_SCREEN_PIPELINE]
-                .pipelineLayout,
+            PIPELINE_CONFIGS[SpecificPipeline::HudScreenPipeline]
+                .pipeline_layout,
             0,
             1,
-            &(*(descriptorSetsChunks.data()
-                + currentDescriptorSet.descriptorSetOffset + uboIndex)),
+            &(*(DESCRIPTOR_SETS_CHUNKS.data()
+                + current_descriptor_set.descriptor_set_offset + ubo_index)),
             0,
             nullptr
         );
 
-        VkBuffer vertexBuffers[] = {vertexBufferContainer[uiVertexId]};
+        VkBuffer vertex_buffers[] = {vertex_buffer_container[ui_vertex_id]};
         VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
 
         vkCmdBindIndexBuffer(
-            commandBuffer,
-            indexBufferContainer[uiVertexId],
+            command_buffer,
+            index_buffer_container[ui_vertex_id],
             0,
             VK_INDEX_TYPE_UINT32
         );
 
-        unsigned int indicesContainerSize = aIndices_[uiVertexId].size();
+        unsigned int indices_container_size = a_indices[ui_vertex_id].size();
 
         vkCmdDrawIndexed(
-            commandBuffer,
-            static_cast<uint32_t>(indicesContainerSize),
+            command_buffer,
+            static_cast<uint32_t>(indices_container_size),
             1,
             0,
             0,
@@ -7148,179 +7391,190 @@ void CVulkanRenderer::hudScreenRecordCommandBuffer(
         );
     }
 
-    vkCmdEndRenderPass(commandBuffer);
+    vkCmdEndRenderPass(command_buffer);
 
-    if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+    if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS) {
         throw std::runtime_error("failed to record command buffer!");
     }
 }
 
-void CVulkanRenderer::sdfRecordCommandBuffer(
-    VkCommandBuffer& commandBuffer,
-    uint32_t imageIndex
+void CVulkanRenderer::sdf_record_command_buffer(
+    VkCommandBuffer& command_buffer,
+    uint32_t image_index
 ) {
-    VkCommandBufferBeginInfo beginInfo {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    VkRenderPassBeginInfo renderPassInfo {};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = renderPasses[SpecificPipeline::SDF_PIPELINE];
-    renderPassInfo.framebuffer = swapChainFramebuffers[imageIndex];
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent.height = swapChainExtent.height;
-    renderPassInfo.renderArea.extent.width = swapChainExtent.width;
+    VkCommandBufferBeginInfo begin_info {};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    VkRenderPassBeginInfo render_pass_info {};
+    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    render_pass_info.renderPass = RENDER_PASSES[SpecificPipeline::SdfPipeline];
+    render_pass_info.framebuffer = swap_chain_framebuffers[image_index];
+    render_pass_info.renderArea.offset = {0, 0};
+    render_pass_info.renderArea.extent.height = swap_chain_extent.height;
+    render_pass_info.renderArea.extent.width = swap_chain_extent.width;
 
-    std::array<VkClearValue, 2> clearValues {};
-    clearValues[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
-    clearValues[1].depthStencil = {1.0f, 0};
+    std::array<VkClearValue, 2> clear_values {};
+    clear_values[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
+    clear_values[1].depthStencil = {1.0f, 0};
 
-    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    renderPassInfo.pClearValues = clearValues.data();
+    render_pass_info.clearValueCount =
+        static_cast<uint32_t>(clear_values.size());
+    render_pass_info.pClearValues = clear_values.data();
 
     vkCmdBeginRenderPass(
-        commandBuffer,
-        &renderPassInfo,
+        command_buffer,
+        &render_pass_info,
         VK_SUBPASS_CONTENTS_INLINE
     );
 
     vkCmdBindPipeline(
-        commandBuffer,
+        command_buffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
-        pipelineConfigs[SpecificPipeline::SDF_PIPELINE].pipeline
+        PIPELINE_CONFIGS[SpecificPipeline::SdfPipeline].pipeline
     );
 
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)swapChainExtent.width;
-    viewport.height = (float)swapChainExtent.height;
+    viewport.width = (float)swap_chain_extent.width;
+    viewport.height = (float)swap_chain_extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+    vkCmdSetViewport(command_buffer, 0, 1, &viewport);
 
     VkRect2D scissor {};
     scissor.offset = {0, 0};
-    scissor.extent = swapChainExtent;
-    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+    scissor.extent = swap_chain_extent;
+    vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
     for (unsigned int i = 0; i < crosshairs.size(); ++i) {
         RenderCrosshair crosshair = crosshairs[i];
-        unsigned int uiVertexId = crosshair.meshID;
+        unsigned int ui_vertex_id = crosshair.mesh_id;
 
-        unsigned int uboIndex = currentFrame * hudScreenUboDescriptorNumber + i;
-        updateSdfUBO(uboIndex, i);
-        const unsigned int linkedDescriptorSetID =
-            pipelineConfigs[SpecificPipeline::SDF_PIPELINE]
-                .linkedDescriptorSetIDs[0];
-        const DescriptorSet& currentDescriptorSet =
-            descriptorSetsConfig[linkedDescriptorSetID];
+        unsigned int ubo_index =
+            current_frame * hud_screen_ubo_descriptor_number + i;
+        update_sdf_ubo(ubo_index, i);
+        const unsigned int linked_descriptor_set_id =
+            PIPELINE_CONFIGS[SpecificPipeline::SdfPipeline]
+                .linked_descriptor_set_i_ds[0];
+        const DescriptorSet& current_descriptor_set =
+            DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id];
         vkCmdBindDescriptorSets(
-            commandBuffer,
+            command_buffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
-            pipelineConfigs[SpecificPipeline::SDF_PIPELINE].pipelineLayout,
+            PIPELINE_CONFIGS[SpecificPipeline::SdfPipeline].pipeline_layout,
             0,
             1,
-            &(*(descriptorSetsChunks.data()
-                + currentDescriptorSet.descriptorSetOffset + uboIndex)),
+            &(*(DESCRIPTOR_SETS_CHUNKS.data()
+                + current_descriptor_set.descriptor_set_offset + ubo_index)),
             0,
             nullptr
         );
 
-        VkBuffer vertexBuffers[] = {vertexBufferContainer[uiVertexId]};
+        VkBuffer vertex_buffers[] = {vertex_buffer_container[ui_vertex_id]};
         VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
 
         vkCmdBindIndexBuffer(
-            commandBuffer,
-            indexBufferContainer[uiVertexId],
+            command_buffer,
+            index_buffer_container[ui_vertex_id],
             0,
             VK_INDEX_TYPE_UINT32
         );
-        vkCmdDrawIndexed(commandBuffer, 3, 1, 0, 0, 0);
+        vkCmdDrawIndexed(command_buffer, 3, 1, 0, 0, 0);
     }
 
-    vkCmdEndRenderPass(commandBuffer);
+    vkCmdEndRenderPass(command_buffer);
 
-    if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+    if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS) {
         throw std::runtime_error("failed to record command buffer!");
     }
 }
 
-void CVulkanRenderer::fontRecordCommandBuffer(
-    VkCommandBuffer& commandBuffer,
-    uint32_t imageIndex
+void CVulkanRenderer::font_record_command_buffer(
+    VkCommandBuffer& command_buffer,
+    uint32_t image_index
 ) {
-    VkCommandBufferBeginInfo beginInfo {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    VkRenderPassBeginInfo renderPassInfo {};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = renderPasses[SpecificPipeline::FONT_PIPELINE];
-    renderPassInfo.framebuffer = swapChainFramebuffers[imageIndex];
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent.height = swapChainExtent.height;
-    renderPassInfo.renderArea.extent.width = swapChainExtent.width;
-    std::array<VkClearValue, 2> clearValues {};
-    clearValues[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
-    clearValues[1].depthStencil = {1.0f, 0};
+    VkCommandBufferBeginInfo begin_info {};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    VkRenderPassBeginInfo render_pass_info {};
+    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    render_pass_info.renderPass = RENDER_PASSES[SpecificPipeline::FontPipeline];
+    render_pass_info.framebuffer = swap_chain_framebuffers[image_index];
+    render_pass_info.renderArea.offset = {0, 0};
+    render_pass_info.renderArea.extent.height = swap_chain_extent.height;
+    render_pass_info.renderArea.extent.width = swap_chain_extent.width;
+    std::array<VkClearValue, 2> clear_values {};
+    clear_values[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
+    clear_values[1].depthStencil = {1.0f, 0};
 
-    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    renderPassInfo.pClearValues = clearValues.data();
+    render_pass_info.clearValueCount =
+        static_cast<uint32_t>(clear_values.size());
+    render_pass_info.pClearValues = clear_values.data();
 
     vkCmdBeginRenderPass(
-        commandBuffer,
-        &renderPassInfo,
+        command_buffer,
+        &render_pass_info,
         VK_SUBPASS_CONTENTS_INLINE
     );
 
     vkCmdBindPipeline(
-        commandBuffer,
+        command_buffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
-        pipelineConfigs[SpecificPipeline::FONT_PIPELINE].pipeline
+        PIPELINE_CONFIGS[SpecificPipeline::FontPipeline].pipeline
     );
 
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)swapChainExtent.width;
-    viewport.height = (float)swapChainExtent.height;
+    viewport.width = (float)swap_chain_extent.width;
+    viewport.height = (float)swap_chain_extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+    vkCmdSetViewport(command_buffer, 0, 1, &viewport);
 
     VkRect2D scissor {};
     scissor.offset = {0, 0};
-    scissor.extent = swapChainExtent;
-    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-    for (unsigned int playerCounter = 0; playerCounter < players.size();
-         ++playerCounter) {
-        player = players[playerCounter];
+    scissor.extent = swap_chain_extent;
+    vkCmdSetScissor(command_buffer, 0, 1, &scissor);
+    for (unsigned int player_counter = 0; player_counter < players.size();
+         ++player_counter) {
+        player = players[player_counter];
     }
-    unsigned int currentActorMemoryOffset =
-        currentFrame * fontUboDescriptorNumber;
+    unsigned int current_actor_memory_offset =
+        current_frame * font_ubo_descriptor_number;
     for (unsigned int i = 0; i < fonts.size(); ++i) {
         RenderFont font = fonts[i];
-        Vector<float, 3> playerTragetDirection =
+        Vector<float, 3> player_traget_direction =
             font.position - player.position;
-        float dotProduct = Dot(playerTragetDirection, player.forward);
-        if (dotProduct <= 0) {
+        float dot_product = dot(player_traget_direction, player.forward);
+        if (dot_product <= 0) {
             continue;
         }
 
         for (unsigned int j = 0; j < font.font_string.size(); ++j) {
             unsigned int ascii_code =
                 static_cast<unsigned int>(font.font_string[j]);
-            VkBuffer vertexBuffers[] = {fontVertexBufferContainer[ascii_code]};
+            VkBuffer vertex_buffers[] = {
+                font_vertex_buffer_container[ascii_code]
+            };
             VkDeviceSize offsets[] = {0};
 
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+            vkCmdBindVertexBuffers(
+                command_buffer,
+                0,
+                1,
+                vertex_buffers,
+                offsets
+            );
             vkCmdBindIndexBuffer(
-                commandBuffer,
-                fontIndexBufferContainer[ascii_code],
+                command_buffer,
+                font_index_buffer_container[ascii_code],
                 0,
                 VK_INDEX_TYPE_UINT32
             );
 
-            unsigned int indicesContainerSize = symbol_g_indices.size();
-            FONT_UBO fontUBO {};
+            unsigned int indices_container_size = symbol_g_indices.size();
+            FontUbo font_ubo {};
             Vector<float, 3> result;
             Vector<float, 4> pos = Vector<float, 4>(
                 font.position[0],
@@ -7329,282 +7583,287 @@ void CVulkanRenderer::fontRecordCommandBuffer(
                 1.0f
             );
 
-            Vector<float, 4> clipSpacePosition =
-                pos * viewMatrix * projectionMatrix;
-            Vector<float, 3> ndcPosition = Vector<float, 3>(
-                clipSpacePosition[0] / clipSpacePosition[3],
-                clipSpacePosition[1] / clipSpacePosition[3],
-                clipSpacePosition[2] / clipSpacePosition[3]
+            Vector<float, 4> clip_space_position =
+                pos * view_matrix * projection_matrix;
+            Vector<float, 3> ndc_position = Vector<float, 3>(
+                clip_space_position[0] / clip_space_position[3],
+                clip_space_position[1] / clip_space_position[3],
+                clip_space_position[2] / clip_space_position[3]
             );
 
-            fontUBO.view = viewMatrix;
-            fontUBO.proj = projectionMatrix;
+            font_ubo.view = view_matrix;
+            font_ubo.proj = projection_matrix;
 
-            fontUBO.scale = 0.3f;
-            ndcPosition[0] += (float)j * 0.17f * fontUBO.scale;
-            ndcPosition[1] -= font.lifeTime / 5.0f;
-            fontUBO.position = ndcPosition;
+            font_ubo.scale = 0.3f;
+            ndc_position[0] += (float)j * 0.17f * font_ubo.scale;
+            ndc_position[1] -= font.life_time / 5.0f;
+            font_ubo.position = ndc_position;
 
-            void* modelMatrixData;
-            unsigned int fontUboDescriptorBindingIndex =
-                descriptorSetsConfig[DescriptorSetDataLink::FONT_RENDER_UBO]
-                    .descriptorsBindingsIDs[0];
+            void* model_matrix_data;
+            unsigned int font_ubo_descriptor_binding_index =
+                DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::FontRenderUbo]
+                    .descriptors_bindings_i_ds[0];
             vkMapMemory(
                 device,
-                GPUDescriptors
-                    [descriptorBindingsConfig[fontUboDescriptorBindingIndex]
-                         .globalDescriptorOffset]
-                        .GPUBuffer->deviceMemory,
-                sizeof(fontUBO) * (currentActorMemoryOffset + j),
-                sizeof(fontUBO),
+                GPU_DESCRIPTORS[DESCRIPTOR_BINDINGS_CONFIG
+                                    [font_ubo_descriptor_binding_index]
+                                        .global_descriptor_offset]
+                    .gpu_buffer->device_memory,
+                sizeof(font_ubo) * (current_actor_memory_offset + j),
+                sizeof(font_ubo),
                 0,
-                &modelMatrixData
+                &model_matrix_data
             );
-            memcpy(modelMatrixData, &fontUBO, sizeof(fontUBO));
+            memcpy(model_matrix_data, &font_ubo, sizeof(font_ubo));
             vkUnmapMemory(
                 device,
-                GPUDescriptors
-                    [descriptorBindingsConfig[fontUboDescriptorBindingIndex]
-                         .globalDescriptorOffset]
-                        .GPUBuffer->deviceMemory
+                GPU_DESCRIPTORS[DESCRIPTOR_BINDINGS_CONFIG
+                                    [font_ubo_descriptor_binding_index]
+                                        .global_descriptor_offset]
+                    .gpu_buffer->device_memory
             );
 
-            const unsigned int linkedDescriptorSetID =
-                pipelineConfigs[SpecificPipeline::FONT_PIPELINE]
-                    .linkedDescriptorSetIDs[0];
-            const DescriptorSet& currentDescriptorSet =
-                descriptorSetsConfig[linkedDescriptorSetID];
+            const unsigned int linked_descriptor_set_id =
+                PIPELINE_CONFIGS[SpecificPipeline::FontPipeline]
+                    .linked_descriptor_set_i_ds[0];
+            const DescriptorSet& current_descriptor_set =
+                DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id];
             vkCmdBindDescriptorSets(
-                commandBuffer,
+                command_buffer,
                 VK_PIPELINE_BIND_POINT_GRAPHICS,
-                pipelineConfigs[SpecificPipeline::FONT_PIPELINE].pipelineLayout,
+                PIPELINE_CONFIGS[SpecificPipeline::FontPipeline].pipeline_layout,
                 0,
                 1,
-                &(*(descriptorSetsChunks.data()
-                    + currentDescriptorSet.descriptorSetOffset
-                    + currentActorMemoryOffset + j)),
+                &(*(DESCRIPTOR_SETS_CHUNKS.data()
+                    + current_descriptor_set.descriptor_set_offset
+                    + current_actor_memory_offset + j)),
                 0,
                 nullptr
             );
-            const unsigned int linkedDescriptorSetID1 =
-                pipelineConfigs[SpecificPipeline::FONT_PIPELINE]
-                    .linkedDescriptorSetIDs[1];
-            const unsigned int fontAtlasTextureID = 6;
-            const DescriptorSet& currentDescriptorSet1 =
-                descriptorSetsConfig[linkedDescriptorSetID1];
+            const unsigned int linked_descriptor_set_i_d1 =
+                PIPELINE_CONFIGS[SpecificPipeline::FontPipeline]
+                    .linked_descriptor_set_i_ds[1];
+            const unsigned int font_atlas_texture_id = 6;
+            const DescriptorSet& current_descriptor_set1 =
+                DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_i_d1];
             vkCmdBindDescriptorSets(
-                commandBuffer,
+                command_buffer,
                 VK_PIPELINE_BIND_POINT_GRAPHICS,
-                pipelineConfigs[SpecificPipeline::FONT_PIPELINE].pipelineLayout,
+                PIPELINE_CONFIGS[SpecificPipeline::FontPipeline].pipeline_layout,
                 1,
                 1,
-                &(*(descriptorSetsChunks.data()
-                    + currentDescriptorSet1.descriptorSetOffset
-                    + MAX_FRAMES_IN_FLIGHT * fontAtlasTextureID
-                    + currentFrame)),
+                &(*(DESCRIPTOR_SETS_CHUNKS.data()
+                    + current_descriptor_set1.descriptor_set_offset
+                    + MAX_FRAMES_IN_FLIGHT * font_atlas_texture_id
+                    + current_frame)),
                 0,
                 nullptr
             );
 
             vkCmdDrawIndexed(
-                commandBuffer,
-                static_cast<uint32_t>(indicesContainerSize),
+                command_buffer,
+                static_cast<uint32_t>(indices_container_size),
                 1,
                 0,
                 0,
                 0
             );
         }
-        currentActorMemoryOffset += font.font_string.size();
+        current_actor_memory_offset += font.font_string.size();
     }
-    vkCmdEndRenderPass(commandBuffer);
+    vkCmdEndRenderPass(command_buffer);
 }
 
-void CVulkanRenderer::recordCommandBuffer(
-    VkCommandBuffer& commandBuffer,
-    uint32_t imageIndex
+void CVulkanRenderer::record_command_buffer(
+    VkCommandBuffer& command_buffer,
+    uint32_t image_index
 ) {
-    VkRenderPassBeginInfo renderPassInfo {};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass =
-        renderPasses[SpecificPipeline::MAIN_RENDER_PIPELINE];
-    renderPassInfo.framebuffer = swapChainFramebuffers[imageIndex];
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent.height = swapChainExtent.height;
-    renderPassInfo.renderArea.extent.width = swapChainExtent.width;
+    VkRenderPassBeginInfo render_pass_info {};
+    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    render_pass_info.renderPass =
+        RENDER_PASSES[SpecificPipeline::MainRenderPipeline];
+    render_pass_info.framebuffer = swap_chain_framebuffers[image_index];
+    render_pass_info.renderArea.offset = {0, 0};
+    render_pass_info.renderArea.extent.height = swap_chain_extent.height;
+    render_pass_info.renderArea.extent.width = swap_chain_extent.width;
 
     for (unsigned int player = 0; player < players.size(); ++player) {
-        updateViewPositionUniformBuffer(currentFrame, player);
+        update_view_position_uniform_buffer(current_frame, player);
     }
 
-    std::array<VkClearValue, 2> clearValues {};
+    std::array<VkClearValue, 2> clear_values {};
     // Player death screen.
     if (players.size() == 0) {
-        clearValues[0].color = {{0.7f, 0.2f, 0.2f, 1.0f}};
+        clear_values[0].color = {{0.7f, 0.2f, 0.2f, 1.0f}};
     } else {
-        clearValues[0].color = {{0.2f, 0.2f, 0.2f, 1.0f}};
+        clear_values[0].color = {{0.2f, 0.2f, 0.2f, 1.0f}};
     }
-    clearValues[1].depthStencil = {1.0f, 0};
+    clear_values[1].depthStencil = {1.0f, 0};
 
-    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    renderPassInfo.pClearValues = clearValues.data();
+    render_pass_info.clearValueCount =
+        static_cast<uint32_t>(clear_values.size());
+    render_pass_info.pClearValues = clear_values.data();
 
     vkCmdBeginRenderPass(
-        commandBuffer,
-        &renderPassInfo,
+        command_buffer,
+        &render_pass_info,
         VK_SUBPASS_CONTENTS_INLINE
     );
 
     vkCmdBindPipeline(
-        commandBuffer,
+        command_buffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
-        pipelineConfigs[SpecificPipeline::MAIN_RENDER_PIPELINE].pipeline
+        PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline].pipeline
     );
 
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)swapChainExtent.width;
-    viewport.height = (float)swapChainExtent.height;
+    viewport.width = (float)swap_chain_extent.width;
+    viewport.height = (float)swap_chain_extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+    vkCmdSetViewport(command_buffer, 0, 1, &viewport);
 
     VkRect2D scissor {};
     scissor.offset = {0, 0};
-    scissor.extent = swapChainExtent;
-    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+    scissor.extent = swap_chain_extent;
+    vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
     for (unsigned int i = 0; i < actors.size(); ++i) {
         RenderActor actor = actors[i];
-        unsigned int uiVertexId = actor.meshID;
-        unsigned int diffuseTextureIndex = actor.diffuseTextureIndex;
-        unsigned int specularTextureIndex = actor.specularTextureIndex;
+        unsigned int ui_vertex_id = actor.mesh_id;
+        unsigned int diffuse_texture_index = actor.diffuse_texture_index;
+        unsigned int specular_texture_index = actor.specular_texture_index;
 
-        unsigned int uboIndex = currentFrame * matrixUboDescriptorsNumber + i;
-        updateMatrixUniformBuffer(uboIndex, i);
-        const unsigned int linkedDescriptorSetID =
-            pipelineConfigs[SpecificPipeline::MAIN_RENDER_PIPELINE]
-                .linkedDescriptorSetIDs[0];
-        const DescriptorSet& currentDescriptorSet =
-            descriptorSetsConfig[linkedDescriptorSetID];
+        unsigned int ubo_index =
+            current_frame * matrix_ubo_descriptors_number + i;
+        update_matrix_uniform_buffer(ubo_index, i);
+        const unsigned int linked_descriptor_set_id =
+            PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline]
+                .linked_descriptor_set_i_ds[0];
+        const DescriptorSet& current_descriptor_set =
+            DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id];
         vkCmdBindDescriptorSets(
-            commandBuffer,
+            command_buffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
-            pipelineConfigs[SpecificPipeline::MAIN_RENDER_PIPELINE]
-                .pipelineLayout,
+            PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline]
+                .pipeline_layout,
             0,
             1,
-            &(*(descriptorSetsChunks.data()
-                + currentDescriptorSet.descriptorSetOffset + uboIndex)),
+            &(*(DESCRIPTOR_SETS_CHUNKS.data()
+                + current_descriptor_set.descriptor_set_offset + ubo_index)),
             0,
             nullptr
         );
 
-        const unsigned int linkedDescriptorSetID1 =
-            pipelineConfigs[SpecificPipeline::MAIN_RENDER_PIPELINE]
-                .linkedDescriptorSetIDs[1];
-        const DescriptorSet& currentDescriptorSet1 =
-            descriptorSetsConfig[linkedDescriptorSetID1];
+        const unsigned int linked_descriptor_set_i_d1 =
+            PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline]
+                .linked_descriptor_set_i_ds[1];
+        const DescriptorSet& current_descriptor_set1 =
+            DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_i_d1];
         vkCmdBindDescriptorSets(
-            commandBuffer,
+            command_buffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
-            pipelineConfigs[SpecificPipeline::MAIN_RENDER_PIPELINE]
-                .pipelineLayout,
+            PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline]
+                .pipeline_layout,
             1,
             1,
-            &(*(descriptorSetsChunks.data()
-                + currentDescriptorSet1.descriptorSetOffset + currentFrame)),
+            &(*(DESCRIPTOR_SETS_CHUNKS.data()
+                + current_descriptor_set1.descriptor_set_offset
+                + current_frame)),
             0,
             nullptr
         );
 
-        VkBuffer vertexBuffers[] = {vertexBufferContainer[uiVertexId]};
+        VkBuffer vertex_buffers[] = {vertex_buffer_container[ui_vertex_id]};
         VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
 
         vkCmdBindIndexBuffer(
-            commandBuffer,
-            indexBufferContainer[uiVertexId],
+            command_buffer,
+            index_buffer_container[ui_vertex_id],
             0,
             VK_INDEX_TYPE_UINT32
         );
 
-        unsigned int indicesContainerSize = aIndices_[uiVertexId].size();
+        unsigned int indices_container_size = a_indices[ui_vertex_id].size();
 
-        const unsigned int linkedDescriptorSetID2 =
-            pipelineConfigs[SpecificPipeline::MAIN_RENDER_PIPELINE]
-                .linkedDescriptorSetIDs[2];
-        const DescriptorSet& currentDescriptorSet2 =
-            descriptorSetsConfig[linkedDescriptorSetID2];
+        const unsigned int linked_descriptor_set_i_d2 =
+            PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline]
+                .linked_descriptor_set_i_ds[2];
+        const DescriptorSet& current_descriptor_set2 =
+            DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_i_d2];
         vkCmdBindDescriptorSets(
-            commandBuffer,
+            command_buffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
-            pipelineConfigs[SpecificPipeline::MAIN_RENDER_PIPELINE]
-                .pipelineLayout,
+            PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline]
+                .pipeline_layout,
             2,
             1,
-            &(*(descriptorSetsChunks.data()
-                + currentDescriptorSet2.descriptorSetOffset
-                + MAX_FRAMES_IN_FLIGHT * specularTextureIndex + currentFrame)),
+            &(*(DESCRIPTOR_SETS_CHUNKS.data()
+                + current_descriptor_set2.descriptor_set_offset
+                + MAX_FRAMES_IN_FLIGHT * specular_texture_index
+                + current_frame)),
             0,
             nullptr
         );
-        const unsigned int linkedDescriptorSetID3 =
-            pipelineConfigs[SpecificPipeline::MAIN_RENDER_PIPELINE]
-                .linkedDescriptorSetIDs[3];
-        const DescriptorSet& currentDescriptorSet3 =
-            descriptorSetsConfig[linkedDescriptorSetID3];
+        const unsigned int linked_descriptor_set_i_d3 =
+            PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline]
+                .linked_descriptor_set_i_ds[3];
+        const DescriptorSet& current_descriptor_set3 =
+            DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_i_d3];
         vkCmdBindDescriptorSets(
-            commandBuffer,
+            command_buffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
-            pipelineConfigs[SpecificPipeline::MAIN_RENDER_PIPELINE]
-                .pipelineLayout,
+            PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline]
+                .pipeline_layout,
             3,
             1,
-            &(*(descriptorSetsChunks.data()
-                + currentDescriptorSet3.descriptorSetOffset
-                + MAX_FRAMES_IN_FLIGHT * diffuseTextureIndex + currentFrame)),
+            &(*(DESCRIPTOR_SETS_CHUNKS.data()
+                + current_descriptor_set3.descriptor_set_offset
+                + MAX_FRAMES_IN_FLIGHT * diffuse_texture_index
+                + current_frame)),
             0,
             nullptr
         );
 
         vkCmdDrawIndexed(
-            commandBuffer,
-            static_cast<uint32_t>(indicesContainerSize),
+            command_buffer,
+            static_cast<uint32_t>(indices_container_size),
             1,
             0,
             0,
             0
         );
     }
-    vkCmdEndRenderPass(commandBuffer);
+    vkCmdEndRenderPass(command_buffer);
 }
 
-void CVulkanRenderer::createSyncObjects(
-    std::vector<VkSemaphore>& imageAvailableSemaphores,
-    std::vector<VkSemaphore>& renderFinishedSemaphores,
-    std::vector<VkFence>& inFlightFences
+void CVulkanRenderer::create_sync_objects(
+    std::vector<VkSemaphore>& image_available_semaphores,
+    std::vector<VkSemaphore>& render_finished_semaphores,
+    std::vector<VkFence>& in_flight_fences
 ) {
-    imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    renderFinishedSemaphores.resize(swapChainImages.size());
-    inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+    image_available_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    render_finished_semaphores.resize(swap_chain_images.size());
+    in_flight_fences.resize(MAX_FRAMES_IN_FLIGHT);
 
-    VkSemaphoreCreateInfo semaphoreInfo {};
-    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    VkSemaphoreCreateInfo semaphore_info {};
+    semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-    VkFenceCreateInfo fenceInfo {};
-    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    VkFenceCreateInfo fence_info {};
+    fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
         if (vkCreateSemaphore(
                 device,
-                &semaphoreInfo,
+                &semaphore_info,
                 nullptr,
-                &imageAvailableSemaphores[i]
+                &image_available_semaphores[i]
             ) != VK_SUCCESS
-            || vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i])
+            || vkCreateFence(device, &fence_info, nullptr, &in_flight_fences[i])
                 != VK_SUCCESS) {
             throw std::runtime_error(
                 "failed to create synchronization objects for a frame!"
@@ -7612,12 +7871,12 @@ void CVulkanRenderer::createSyncObjects(
         }
     }
 
-    for (size_t i = 0; i < swapChainImages.size(); ++i) {
+    for (size_t i = 0; i < swap_chain_images.size(); ++i) {
         if (vkCreateSemaphore(
                 device,
-                &semaphoreInfo,
+                &semaphore_info,
                 nullptr,
-                &renderFinishedSemaphores[i]
+                &render_finished_semaphores[i]
             )
             != VK_SUCCESS) {
             throw std::runtime_error(
@@ -7627,247 +7886,249 @@ void CVulkanRenderer::createSyncObjects(
     }
 }
 
-void CVulkanRenderer::updateDirectionalLightShadowMapMatrixUBO(
-    uint32_t currentImage,
-    uint32_t currentLight,
+void CVulkanRenderer::update_directional_light_shadow_map_matrix_ubo(
+    uint32_t current_image,
+    uint32_t current_light,
     unsigned int actor
 ) {
-    ShadowMapMatrixUBO modelMatrixUBO {};
+    ShadowMapMatrixUBO model_matrix_ubo {};
 
-    modelMatrixUBO.model = actors[actor].modelMatrix;
-    modelMatrixUBO.lightSpaceMatrix = dirLightSpaceMatrix[currentLight];
+    model_matrix_ubo.model = actors[actor].model_matrix;
+    model_matrix_ubo.light_space_matrix = dir_light_space_matrix[current_light];
 
     for (unsigned int j = 0; j < MAX_JOINTS_NUMBER; ++j) {
-        modelMatrixUBO.jointMatrices[j] = actors[actor].jointMatrices[j];
+        model_matrix_ubo.joint_matrices[j] = actors[actor].joint_matrices[j];
     }
 
-    void* modelMatrixData = nullptr;
-    unsigned int shadowMapDirectionalLightDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::SHADOW_MAP_DIRECTIONAL_LIGHT]
-            .descriptorsBindingsIDs[0];
+    void* model_matrix_data = nullptr;
+    unsigned int shadow_map_directional_light_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ShadowMapDirectionalLight]
+            .descriptors_bindings_i_ds[0];
     vkMapMemory(
         device,
-        GPUDescriptors[descriptorBindingsConfig
-                           [shadowMapDirectionalLightDescriptorBindingIndex]
-                               .globalDescriptorOffset]
-            .GPUBuffer->deviceMemory,
-        currentImage * sizeof(modelMatrixUBO),
-        sizeof(modelMatrixUBO),
+        GPU_DESCRIPTORS[DESCRIPTOR_BINDINGS_CONFIG
+                            [shadow_map_directional_light_descriptor_binding_index]
+                                .global_descriptor_offset]
+            .gpu_buffer->device_memory,
+        current_image * sizeof(model_matrix_ubo),
+        sizeof(model_matrix_ubo),
         0,
-        &modelMatrixData
+        &model_matrix_data
     );
-    memcpy(modelMatrixData, &modelMatrixUBO, sizeof(modelMatrixUBO));
+    memcpy(model_matrix_data, &model_matrix_ubo, sizeof(model_matrix_ubo));
     vkUnmapMemory(
         device,
-        GPUDescriptors[descriptorBindingsConfig
-                           [shadowMapDirectionalLightDescriptorBindingIndex]
-                               .globalDescriptorOffset]
-            .GPUBuffer->deviceMemory
+        GPU_DESCRIPTORS[DESCRIPTOR_BINDINGS_CONFIG
+                            [shadow_map_directional_light_descriptor_binding_index]
+                                .global_descriptor_offset]
+            .gpu_buffer->device_memory
     );
 }
 
-void CVulkanRenderer::updateSpotLightShadowMapMatrixUBO(
-    uint32_t currentImage,
-    uint32_t currentLight,
+void CVulkanRenderer::update_spot_light_shadow_map_matrix_ubo(
+    uint32_t current_image,
+    uint32_t current_light,
     unsigned int actor
 ) {
-    ShadowMapMatrixUBO modelMatrixUBO {};
+    ShadowMapMatrixUBO model_matrix_ubo {};
 
-    modelMatrixUBO.model = actors[actor].modelMatrix;
-    modelMatrixUBO.lightSpaceMatrix = spotLightSpaceMatrix[currentLight];
+    model_matrix_ubo.model = actors[actor].model_matrix;
+    model_matrix_ubo.light_space_matrix =
+        spot_light_space_matrix[current_light];
 
     for (unsigned int j = 0; j < MAX_JOINTS_NUMBER; ++j) {
-        modelMatrixUBO.jointMatrices[j] = actors[actor].jointMatrices[j];
+        model_matrix_ubo.joint_matrices[j] = actors[actor].joint_matrices[j];
     }
 
-    void* modelMatrixData;
-    unsigned int shadowMapSpotLightDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::SHADOW_MAP_SPOT_LIGHT]
-            .descriptorsBindingsIDs[0];
+    void* model_matrix_data;
+    unsigned int shadow_map_spot_light_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ShadowMapSpotLight]
+            .descriptors_bindings_i_ds[0];
     vkMapMemory(
         device,
-        GPUDescriptors
-            [descriptorBindingsConfig[shadowMapSpotLightDescriptorBindingIndex]
-                 .globalDescriptorOffset]
-                .GPUBuffer->deviceMemory,
-        currentImage * sizeof(modelMatrixUBO),
-        sizeof(modelMatrixUBO),
+        GPU_DESCRIPTORS[DESCRIPTOR_BINDINGS_CONFIG
+                            [shadow_map_spot_light_descriptor_binding_index]
+                                .global_descriptor_offset]
+            .gpu_buffer->device_memory,
+        current_image * sizeof(model_matrix_ubo),
+        sizeof(model_matrix_ubo),
         0,
-        &modelMatrixData
+        &model_matrix_data
     );
-    memcpy(modelMatrixData, &modelMatrixUBO, sizeof(modelMatrixUBO));
+    memcpy(model_matrix_data, &model_matrix_ubo, sizeof(model_matrix_ubo));
     vkUnmapMemory(
         device,
-        GPUDescriptors
-            [descriptorBindingsConfig[shadowMapSpotLightDescriptorBindingIndex]
-                 .globalDescriptorOffset]
-                .GPUBuffer->deviceMemory
+        GPU_DESCRIPTORS[DESCRIPTOR_BINDINGS_CONFIG
+                            [shadow_map_spot_light_descriptor_binding_index]
+                                .global_descriptor_offset]
+            .gpu_buffer->device_memory
     );
 }
 
-void CVulkanRenderer::updatePointLightShadowMapMatrixUBO(
-    [[maybe_unused]] uint32_t currentImage,
-    uint32_t currentLight,
+void CVulkanRenderer::update_point_light_shadow_map_matrix_ubo(
+    [[maybe_unused]] uint32_t current_image,
+    uint32_t current_light,
     uint32_t layer,
     unsigned int actor
 ) {
-    PointLightShadowMapMatrixUBO modelMatrixUBO {};
+    PointLightShadowMapMatrixUBO model_matrix_ubo {};
 
-    modelMatrixUBO.model = actors[actor].modelMatrix;
+    model_matrix_ubo.model = actors[actor].model_matrix;
 
-    modelMatrixUBO.lightSpaceMatrix =
-        pointLights[currentLight].pointLightSpaceMatrix[layer];
-    modelMatrixUBO.farPlane = 100.0f;
-    modelMatrixUBO.lightPosition = pointLights[currentLight].position;
+    model_matrix_ubo.light_space_matrix =
+        point_lights[current_light].point_light_space_matrix[layer];
+    model_matrix_ubo.far_plane = 100.0f;
+    model_matrix_ubo.light_position = point_lights[current_light].position;
 
     for (unsigned int j = 0; j < MAX_JOINTS_NUMBER; ++j) {
-        modelMatrixUBO.jointMatrices[j] = actors[actor].jointMatrices[j];
+        model_matrix_ubo.joint_matrices[j] = actors[actor].joint_matrices[j];
     }
 
-    void* modelMatrixData;
-    unsigned int shadowMapPointLightDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::SHADOW_MAP_POINT_LIGHT]
-            .descriptorsBindingsIDs[0];
+    void* model_matrix_data;
+    unsigned int shadow_map_point_light_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ShadowMapPointLight]
+            .descriptors_bindings_i_ds[0];
     vkMapMemory(
         device,
-        GPUDescriptors
-            [descriptorBindingsConfig[shadowMapPointLightDescriptorBindingIndex]
-                 .globalDescriptorOffset]
-                .GPUBuffer->deviceMemory,
-        currentImage * sizeof(modelMatrixUBO),
-        sizeof(modelMatrixUBO),
+        GPU_DESCRIPTORS[DESCRIPTOR_BINDINGS_CONFIG
+                            [shadow_map_point_light_descriptor_binding_index]
+                                .global_descriptor_offset]
+            .gpu_buffer->device_memory,
+        current_image * sizeof(model_matrix_ubo),
+        sizeof(model_matrix_ubo),
         0,
-        &modelMatrixData
+        &model_matrix_data
     );
-    memcpy(modelMatrixData, &modelMatrixUBO, sizeof(modelMatrixUBO));
+    memcpy(model_matrix_data, &model_matrix_ubo, sizeof(model_matrix_ubo));
     vkUnmapMemory(
         device,
-        GPUDescriptors
-            [descriptorBindingsConfig[shadowMapPointLightDescriptorBindingIndex]
-                 .globalDescriptorOffset]
-                .GPUBuffer->deviceMemory
+        GPU_DESCRIPTORS[DESCRIPTOR_BINDINGS_CONFIG
+                            [shadow_map_point_light_descriptor_binding_index]
+                                .global_descriptor_offset]
+            .gpu_buffer->device_memory
     );
 }
 
-void CVulkanRenderer::updateMatrixUniformBuffer(
+void CVulkanRenderer::update_matrix_uniform_buffer(
     uint32_t offset,
     unsigned int actor
 ) {
-    ModelMatrixUBO modelMatrixUBO {};
+    ModelMatrixUBO model_matrix_ubo {};
 
-    modelMatrixUBO.model = actors[actor].modelMatrix;
+    model_matrix_ubo.model = actors[actor].model_matrix;
 
-    modelMatrixUBO.view = viewMatrix;
-    modelMatrixUBO.proj = projectionMatrix;
+    model_matrix_ubo.view = view_matrix;
+    model_matrix_ubo.proj = projection_matrix;
 
     for (unsigned int j = 0; j < MAX_JOINTS_NUMBER; ++j) {
-        modelMatrixUBO.jointMatrices[j] = actors[actor].jointMatrices[j];
+        model_matrix_ubo.joint_matrices[j] = actors[actor].joint_matrices[j];
     }
 
-    modelMatrixUBO.ambient = actors[actor].ambient;
-    modelMatrixUBO.shininess = actors[actor].shininess;
+    model_matrix_ubo.ambient = actors[actor].ambient;
+    model_matrix_ubo.shininess = actors[actor].shininess;
 
-    for (uint32_t i = 0; i < directionalLightNumber; ++i) {
-        modelMatrixUBO.dirSpaceMatrix[i] = dirLightSpaceMatrix[i];
+    for (uint32_t i = 0; i < directional_light_number; ++i) {
+        model_matrix_ubo.dir_space_matrix[i] = dir_light_space_matrix[i];
     }
 
-    for (uint32_t i = 0; i < spotLightNumber; ++i) {
-        modelMatrixUBO.spotSpaceMatrix[i] = spotLightSpaceMatrix[i];
+    for (uint32_t i = 0; i < spot_light_number; ++i) {
+        model_matrix_ubo.spot_space_matrix[i] = spot_light_space_matrix[i];
     }
 
-    modelMatrixUBO.directionalLightsNumber = directionalLightNumber;
-    modelMatrixUBO.spotLightsNumber = spotLightNumber;
+    model_matrix_ubo.directional_lights_number = directional_light_number;
+    model_matrix_ubo.spot_lights_number = spot_light_number;
 
-    void* modelMatrixData;
+    void* model_matrix_data;
     vkMapMemory(
         device,
-        GPUDescriptors[DescriptorSetDataLink::MAIN_RENDER_MATRIX_UBO]
-            .GPUBuffer->deviceMemory,
-        sizeof(modelMatrixUBO) * offset,
-        sizeof(modelMatrixUBO),
+        GPU_DESCRIPTORS[DescriptorSetDataLink::MainRenderMatrixUbo]
+            .gpu_buffer->device_memory,
+        sizeof(model_matrix_ubo) * offset,
+        sizeof(model_matrix_ubo),
         0,
-        &modelMatrixData
+        &model_matrix_data
     );
-    memcpy(modelMatrixData, &modelMatrixUBO, sizeof(modelMatrixUBO));
+    memcpy(model_matrix_data, &model_matrix_ubo, sizeof(model_matrix_ubo));
     vkUnmapMemory(
         device,
-        GPUDescriptors[DescriptorSetDataLink::MAIN_RENDER_MATRIX_UBO]
-            .GPUBuffer->deviceMemory
+        GPU_DESCRIPTORS[DescriptorSetDataLink::MainRenderMatrixUbo]
+            .gpu_buffer->device_memory
     );
 }
 
-void CVulkanRenderer::updateViewPositionUniformBuffer(
-    uint32_t currentImage,
+void CVulkanRenderer::update_view_position_uniform_buffer(
+    uint32_t current_image,
     uint32_t player
 ) {
-    LightData lightDataUBO {};
-    lightDataUBO.viewPosition = players[player].position;
+    LightData light_data_ubo {};
+    light_data_ubo.view_position = players[player].position;
 
-    DirectionalLight directionalLight {};
-    directionalLightNumber = directionalLights.size();
+    DirectionalLight directional_light {};
+    directional_light_number = directional_lights.size();
     assert(
-        directionalLightNumber <= 4
+        directional_light_number <= 4
         && "Directional lights number greater then 4"
     );
-    for (unsigned int i = 0; i < directionalLightNumber; ++i) {
-        RenderDirectionalLight dirLight = directionalLights[i];
+    for (unsigned int i = 0; i < directional_light_number; ++i) {
+        RenderDirectionalLight dir_light = directional_lights[i];
 
-        directionalLight.position = dirLight.position;
-        directionalLight.direction = dirLight.direction;
-        directionalLight.ambient = dirLight.ambient;
-        directionalLight.diffuse = dirLight.diffuse;
-        directionalLight.specular = dirLight.specular;
+        directional_light.position = dir_light.position;
+        directional_light.direction = dir_light.direction;
+        directional_light.ambient = dir_light.ambient;
+        directional_light.diffuse = dir_light.diffuse;
+        directional_light.specular = dir_light.specular;
 
-        lightDataUBO.directionalLights[i] = directionalLight;
+        light_data_ubo.directional_lights[i] = directional_light;
     }
-    lightDataUBO.directionalLightsArraySize = directionalLightNumber;
+    light_data_ubo.directional_lights_array_size = directional_light_number;
 
-    pointLightNumber = pointLights.size();
+    point_light_number = point_lights.size();
     assert(
-        pointLightNumber <= POINT_LIGHTS_NUMBER
+        point_light_number <= POINT_LIGHTS_NUMBER
         && "Point lights number greater than 32"
     );
-    for (unsigned int i = 0; i < pointLightNumber; ++i) {
-        RenderPointLight pointLight = pointLights[i];
-        PointLight pointLightUBO {};
+    for (unsigned int i = 0; i < point_light_number; ++i) {
+        RenderPointLight point_light = point_lights[i];
+        PointLight point_light_ubo {};
 
-        pointLightUBO.position = pointLight.position;
-        pointLightUBO.ambient = pointLight.ambient;
-        pointLightUBO.diffuse = pointLight.diffuse;
-        pointLightUBO.specular = pointLight.specular;
-        pointLightUBO.constant = pointLight.constant;
-        pointLightUBO.linear = pointLight.linear;
-        pointLightUBO.quadratic = pointLight.quadratic;
+        point_light_ubo.position = point_light.position;
+        point_light_ubo.ambient = point_light.ambient;
+        point_light_ubo.diffuse = point_light.diffuse;
+        point_light_ubo.specular = point_light.specular;
+        point_light_ubo.constant = point_light.constant;
+        point_light_ubo.linear = point_light.linear;
+        point_light_ubo.quadratic = point_light.quadratic;
 
-        lightDataUBO.pointLights[i] = pointLightUBO;
+        light_data_ubo.point_lights[i] = point_light_ubo;
     }
-    lightDataUBO.pointLightsArraySize = pointLightNumber;
-    lightDataUBO.farPlane = 100.0f;
+    light_data_ubo.point_lights_array_size = point_light_number;
+    light_data_ubo.far_plane = 100.0f;
 
-    SpotLight spotLightUBO {};
-    spotLightNumber = spotLights.size();
-    assert(spotLightNumber <= 8 && "Spot light number greater then 8");
-    for (unsigned int i = 0; i < spotLightNumber; ++i) {
-        RenderSpotLight spotLight = spotLights[i];
+    SpotLight spot_light_ubo {};
+    spot_light_number = spot_lights.size();
+    assert(spot_light_number <= 8 && "Spot light number greater then 8");
+    for (unsigned int i = 0; i < spot_light_number; ++i) {
+        RenderSpotLight spot_light = spot_lights[i];
 
-        spotLightUBO.position = spotLight.position;
-        spotLightUBO.direction = spotLight.direction;
-        spotLightUBO.cutOff = std::cos(Radians(spotLight.cutOff));
-        spotLightUBO.outerCutOff = std::cos(Radians(spotLight.outerCutOff));
-        spotLightUBO.ambient = spotLight.ambient;
-        spotLightUBO.diffuse = spotLight.diffuse;
-        spotLightUBO.specular = spotLight.specular;
-        spotLightUBO.constant = spotLight.constant;
-        spotLightUBO.linear = spotLight.linear;
-        spotLightUBO.quadratic = spotLight.quadratic;
+        spot_light_ubo.position = spot_light.position;
+        spot_light_ubo.direction = spot_light.direction;
+        spot_light_ubo.cut_off = std::cos(radians(spot_light.cut_off));
+        spot_light_ubo.outer_cut_off =
+            std::cos(radians(spot_light.outer_cut_off));
+        spot_light_ubo.ambient = spot_light.ambient;
+        spot_light_ubo.diffuse = spot_light.diffuse;
+        spot_light_ubo.specular = spot_light.specular;
+        spot_light_ubo.constant = spot_light.constant;
+        spot_light_ubo.linear = spot_light.linear;
+        spot_light_ubo.quadratic = spot_light.quadratic;
 
-        lightDataUBO.spotLights[i] = spotLightUBO;
+        light_data_ubo.spot_lights[i] = spot_light_ubo;
     }
-    lightDataUBO.spotLightArraySize = spotLightNumber;
+    light_data_ubo.spot_light_array_size = spot_light_number;
 
     std::random_device rd;
     std::mt19937 mersenne(rd());
-    std::uniform_int_distribution<int> distributionTileIndex(
+    std::uniform_int_distribution<int> distribution_tile_index(
         0,
         INDIRECT_TEXTURE_HEIGHT * INDIRECT_TEXTURE_WIDTH
     );
@@ -7877,102 +8138,105 @@ void CVulkanRenderer::updateViewPositionUniformBuffer(
              i < INDIRECT_TEXTURE_HEIGHT * INDIRECT_TEXTURE_WIDTH / 4 + 1;
              ++i) {
             for (int j = 0; j < 4; ++j) {
-                int randomTileIndex = distributionTileIndex(mersenne);
-                indirectTexture[i][j] = randomTileIndex;
+                int random_tile_index = distribution_tile_index(mersenne);
+                indirect_texture[i][j] = random_tile_index;
             }
         }
     }
     print = false;
-    lightDataUBO.tilesetTilesCount =
+    light_data_ubo.tileset_tiles_count =
         Vector<float, 2>(TILESET_ROW, TILESET_COLUMN);
-    lightDataUBO.tilesRaw = 8;
-    lightDataUBO.tilesColumn = 8;
-    lightDataUBO.debugShadowMode =
-        imguiOverlay->showShadowMaps ? (imguiOverlay->shadowMapMode + 1) : 0;
-    lightDataUBO.debugShadowLight = imguiOverlay->shadowMapLight;
-    lightDataUBO.shadowsEnabled = imguiOverlay->shadowsEnabled ? 1 : 0;
+    light_data_ubo.tiles_raw = 8;
+    light_data_ubo.tiles_column = 8;
+    light_data_ubo.debug_shadow_mode = imgui_overlay->show_shadow_maps
+        ? (imgui_overlay->shadow_map_mode + 1)
+        : 0;
+    light_data_ubo.debug_shadow_light = imgui_overlay->shadow_map_light;
+    light_data_ubo.shadows_enabled = imgui_overlay->shadows_enabled ? 1 : 0;
     for (int i = 0;
          i < INDIRECT_TEXTURE_HEIGHT * INDIRECT_TEXTURE_WIDTH / 4 + 1;
          ++i) {
-        lightDataUBO.indirectTexture[i] = indirectTexture[i];
+        light_data_ubo.indirect_texture[i] = indirect_texture[i];
     }
 
     void* data;
-    unsigned int lightDataUboDescriptorBindingIndex =
-        descriptorSetsConfig[DescriptorSetDataLink::MAIN_RENDER_LIGHT_DATA_UBO]
-            .descriptorsBindingsIDs[0];
+    unsigned int light_data_ubo_descriptor_binding_index =
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
+            .descriptors_bindings_i_ds[0];
     vkMapMemory(
         device,
-        GPUDescriptors[descriptorBindingsConfig[lightDataUboDescriptorBindingIndex]
-                           .globalDescriptorOffset]
-            .GPUBuffer->deviceMemory,
-        sizeof(lightDataUBO) * currentImage,
-        sizeof(lightDataUBO),
+        GPU_DESCRIPTORS
+            [DESCRIPTOR_BINDINGS_CONFIG[light_data_ubo_descriptor_binding_index]
+                 .global_descriptor_offset]
+                .gpu_buffer->device_memory,
+        sizeof(light_data_ubo) * current_image,
+        sizeof(light_data_ubo),
         0,
         &data
     );
-    memcpy(data, &lightDataUBO, sizeof(lightDataUBO));
+    memcpy(data, &light_data_ubo, sizeof(light_data_ubo));
     vkUnmapMemory(
         device,
-        GPUDescriptors[descriptorBindingsConfig[lightDataUboDescriptorBindingIndex]
-                           .globalDescriptorOffset]
-            .GPUBuffer->deviceMemory
+        GPU_DESCRIPTORS
+            [DESCRIPTOR_BINDINGS_CONFIG[light_data_ubo_descriptor_binding_index]
+                 .global_descriptor_offset]
+                .gpu_buffer->device_memory
     );
 }
 
-void CVulkanRenderer::mainRenderDrawFrame() {
+void CVulkanRenderer::main_render_draw_frame() {
     vkWaitForFences(
         device,
         1,
-        &inFlightFences[currentFrame],
+        &in_flight_fences[current_frame],
         VK_TRUE,
         UINT64_MAX
     );
 
-    uint32_t imageIndex;
+    uint32_t image_index;
     // vkAcquireNextImageKHR give index of image that WILL BE SOON available for
     // rendering and signal imageAvailablesemaphore when its so. GraphicsQueue
     // waint for this semaphore bacause we pass it in submitInfo.
     VkResult result = vkAcquireNextImageKHR(
         device,
-        swapChain,
+        swap_chain,
         UINT64_MAX,
-        imageAvailableSemaphores[currentFrame],
+        image_available_semaphores[current_frame],
         VK_NULL_HANDLE,
-        &imageIndex
+        &image_index
     );
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-        recreateSwapChain();
+        recreate_swap_chain();
         return;
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         throw std::runtime_error("failed to acquire swap chain image!");
     }
 
-    vkResetFences(device, 1, &inFlightFences[currentFrame]);
+    vkResetFences(device, 1, &in_flight_fences[current_frame]);
     vkResetCommandBuffer(
-        mainRenderCommandBuffers[currentFrame],
+        main_render_command_buffers[current_frame],
         0 // VkCommandBufferResetFlagBits.
     );
 
-    auto future1 = renderThreadPool->enqueue([this]() {
-        directionalLightRecordCoomandBuffer(
-            directionalLightSecondaryCommandBuffers,
-            this->currentFrame
+    auto future1 = render_thread_pool->enqueue([this]() {
+        directional_light_record_coomand_buffer(
+            directional_light_secondary_command_buffers,
+            this->current_frame
         );
     });
 
-    auto future2 = renderThreadPool->enqueue([this]() {
-        spotLightRecordCommandBuffer(
-            spotLightSecondaryCommandBuffers,
-            this->currentFrame
+    auto future2 = render_thread_pool->enqueue([this]() {
+        spot_light_record_command_buffer(
+            spot_light_secondary_command_buffers,
+            this->current_frame
         );
     });
 
-    auto future3 = renderThreadPool->enqueue([this]() {
-        pointLightRecordCommandBuffer(
-            pointLightSecondaryCommandBuffers,
-            this->currentFrame
+    auto future3 = render_thread_pool->enqueue([this]() {
+        point_light_record_command_buffer(
+            point_light_secondary_command_buffers,
+            this->current_frame
         );
     });
 
@@ -7980,366 +8244,397 @@ void CVulkanRenderer::mainRenderDrawFrame() {
     future2.wait();
     future3.wait();
 
-    VkCommandBufferBeginInfo beginInfo {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    VkCommandBufferBeginInfo begin_info {};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-    if (vkBeginCommandBuffer(mainRenderCommandBuffers[currentFrame], &beginInfo)
+    if (vkBeginCommandBuffer(
+            main_render_command_buffers[current_frame],
+            &begin_info
+        )
         != VK_SUCCESS) {
         throw std::runtime_error("failed to begin recording command buffer!");
     }
-    for (uint32_t directionalLightCounter = 0;
-         directionalLightCounter < directionalLights.size();
-         ++directionalLightCounter) {
-        VkExtent2D flatShadowMapExtent;
-        flatShadowMapExtent.width = FLAT_SHADOW_MAP_SIZE;
-        flatShadowMapExtent.height = FLAT_SHADOW_MAP_SIZE;
-        executeSecondaryCommandBuffer(
-            renderPasses[SpecificPipeline::DIRECTIONAL_LIGHT_PIPELINE],
-            directionalLightShadowMapFrameBuffers[directionalLightCounter],
-            flatShadowMapExtent,
-            mainRenderCommandBuffers[currentFrame],
-            directionalLightSecondaryCommandBuffers
-                [currentFrame * directionalLightNumber + directionalLightCounter]
+    for (uint32_t directional_light_counter = 0;
+         directional_light_counter < directional_lights.size();
+         ++directional_light_counter) {
+        VkExtent2D flat_shadow_map_extent;
+        flat_shadow_map_extent.width = FLAT_SHADOW_MAP_SIZE;
+        flat_shadow_map_extent.height = FLAT_SHADOW_MAP_SIZE;
+        execute_secondary_command_buffer(
+            RENDER_PASSES[SpecificPipeline::DirectionalLightPipeline],
+            directional_light_shadow_map_frame_buffers[directional_light_counter],
+            flat_shadow_map_extent,
+            main_render_command_buffers[current_frame],
+            directional_light_secondary_command_buffers
+                [current_frame * directional_light_number
+                 + directional_light_counter]
         );
     }
-    for (uint32_t spotLightCounter = 0; spotLightCounter < spotLights.size();
-         ++spotLightCounter) {
-        VkExtent2D flatShadowMapExtent;
-        flatShadowMapExtent.width = FLAT_SHADOW_MAP_SIZE;
-        flatShadowMapExtent.height = FLAT_SHADOW_MAP_SIZE;
-        executeSecondaryCommandBuffer(
-            renderPasses[SpecificPipeline::SPOT_LIGHT_PIPELINE],
-            spotLightShadowMapFrameBuffers[spotLightCounter],
-            flatShadowMapExtent,
-            mainRenderCommandBuffers[currentFrame],
-            spotLightSecondaryCommandBuffers
-                [currentFrame * spotLightNumber + spotLightCounter]
+    for (uint32_t spot_light_counter = 0;
+         spot_light_counter < spot_lights.size();
+         ++spot_light_counter) {
+        VkExtent2D flat_shadow_map_extent;
+        flat_shadow_map_extent.width = FLAT_SHADOW_MAP_SIZE;
+        flat_shadow_map_extent.height = FLAT_SHADOW_MAP_SIZE;
+        execute_secondary_command_buffer(
+            RENDER_PASSES[SpecificPipeline::SpotLightPipeline],
+            spot_light_shadow_map_frame_buffers[spot_light_counter],
+            flat_shadow_map_extent,
+            main_render_command_buffers[current_frame],
+            spot_light_secondary_command_buffers
+                [current_frame * spot_light_number + spot_light_counter]
         );
     }
-    for (uint32_t pointLightCounter = 0; pointLightCounter < pointLights.size();
-         ++pointLightCounter) {
-        uint32_t maxCubeMapLayers = 6;
-        for (uint32_t cubeMapLayerCounter = 0;
-             cubeMapLayerCounter < maxCubeMapLayers;
-             ++cubeMapLayerCounter) {
+    for (uint32_t point_light_counter = 0;
+         point_light_counter < point_lights.size();
+         ++point_light_counter) {
+        uint32_t max_cube_map_layers = 6;
+        for (uint32_t cube_map_layer_counter = 0;
+             cube_map_layer_counter < max_cube_map_layers;
+             ++cube_map_layer_counter) {
             VkExtent2D extent;
             extent.width = SHADOW_MAP_SIZE;
             extent.height = SHADOW_MAP_SIZE;
-            executeSecondaryCommandBuffer(
-                renderPasses[SpecificPipeline::POINT_LIGHT_PIPELINE],
-                pointLightShadowMapFrameBuffers[pointLightCounter]
-                                               [cubeMapLayerCounter],
+            execute_secondary_command_buffer(
+                RENDER_PASSES[SpecificPipeline::PointLightPipeline],
+                point_light_shadow_map_frame_buffers[point_light_counter]
+                                                    [cube_map_layer_counter],
                 extent,
-                mainRenderCommandBuffers[currentFrame],
-                pointLightSecondaryCommandBuffers
-                    [currentFrame * pointLightNumber * maxCubeMapLayers
-                     + pointLightCounter * maxCubeMapLayers
-                     + cubeMapLayerCounter]
+                main_render_command_buffers[current_frame],
+                point_light_secondary_command_buffers
+                    [current_frame * point_light_number * max_cube_map_layers
+                     + point_light_counter * max_cube_map_layers
+                     + cube_map_layer_counter]
             );
         }
     }
 
-    recordCommandBuffer(mainRenderCommandBuffers[currentFrame], imageIndex);
-    hudRecordCommandBuffer(mainRenderCommandBuffers[currentFrame], imageIndex);
-    fontRecordCommandBuffer(mainRenderCommandBuffers[currentFrame], imageIndex);
-    if (isInventoryOpened) {
-        uiRecordCommandBuffer(
-            mainRenderCommandBuffers[currentFrame],
-            imageIndex
+    record_command_buffer(
+        main_render_command_buffers[current_frame],
+        image_index
+    );
+    hud_record_command_buffer(
+        main_render_command_buffers[current_frame],
+        image_index
+    );
+    font_record_command_buffer(
+        main_render_command_buffers[current_frame],
+        image_index
+    );
+    if (is_inventory_opened) {
+        ui_record_command_buffer(
+            main_render_command_buffers[current_frame],
+            image_index
         );
-        uiIconsRecordCommandBuffer(
-            mainRenderCommandBuffers[currentFrame],
-            imageIndex
+        ui_icons_record_command_buffer(
+            main_render_command_buffers[current_frame],
+            image_index
         );
     }
 
-    imguiOverlay->recordCommandBuffer(
-        mainRenderCommandBuffers[currentFrame],
-        imageIndex
+    imgui_overlay->record_command_buffer(
+        main_render_command_buffers[current_frame],
+        image_index
     );
-    hudScreenRecordCommandBuffer(
-        mainRenderCommandBuffers[currentFrame],
-        imageIndex
+    hud_screen_record_command_buffer(
+        main_render_command_buffers[current_frame],
+        image_index
     );
 
-    VkSubmitInfo submitInfo {};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     // GraphicsQueue wait for swapchain image when its become available.
-    VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
-    VkPipelineStageFlags waitStages[] = {
+    VkSemaphore wait_semaphores[] = {image_available_semaphores[current_frame]};
+    VkPipelineStageFlags wait_stages[] = {
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
     };
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = waitSemaphores;
-    submitInfo.pWaitDstStageMask = waitStages;
+    submit_info.waitSemaphoreCount = 1;
+    submit_info.pWaitSemaphores = wait_semaphores;
+    submit_info.pWaitDstStageMask = wait_stages;
 
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &mainRenderCommandBuffers[currentFrame];
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &main_render_command_buffers[current_frame];
 
-    VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[imageIndex]};
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = signalSemaphores;
+    VkSemaphore signal_semaphores[] = {render_finished_semaphores[image_index]};
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = signal_semaphores;
 
-    if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame])
+    if (vkQueueSubmit(
+            graphics_queue,
+            1,
+            &submit_info,
+            in_flight_fences[current_frame]
+        )
         != VK_SUCCESS) {
         throw std::runtime_error("failed to submit draw command buffer!");
     }
 
-    VkPresentInfoKHR presentInfo {};
-    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    VkPresentInfoKHR present_info {};
+    present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
-    presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = signalSemaphores;
+    present_info.waitSemaphoreCount = 1;
+    present_info.pWaitSemaphores = signal_semaphores;
 
-    VkSwapchainKHR swapChains[] = {swapChain};
-    presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = swapChains;
+    VkSwapchainKHR swap_chains[] = {swap_chain};
+    present_info.swapchainCount = 1;
+    present_info.pSwapchains = swap_chains;
 
-    presentInfo.pImageIndices = &imageIndex;
+    present_info.pImageIndices = &image_index;
 
-    result = vkQueuePresentKHR(presentQueue, &presentInfo);
+    result = vkQueuePresentKHR(present_queue, &present_info);
 
-    if (frameCounter == 10) {
+    if (frame_counter == 10) {
         vkDeviceWaitIdle(device);
     }
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR
-        || framebufferResized) {
-        framebufferResized = false;
-        recreateSwapChain();
+        || framebuffer_resized) {
+        framebuffer_resized = false;
+        recreate_swap_chain();
     } else if (result != VK_SUCCESS) {
         throw std::runtime_error("failed to present swap chain image!");
     }
 
-    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void CVulkanRenderer::directionalLightShadowMapDrawFrame() {
+void CVulkanRenderer::directional_light_shadow_map_draw_frame() {
     vkWaitForFences(
         device,
         1,
-        &directionalLightShadowMapInFlightFences[directionalLightCurrentFrame],
+        &directional_light_shadow_map_in_flight_fences
+            [directional_light_current_frame],
         VK_TRUE,
         UINT64_MAX
     );
 
-    [[maybe_unused]] uint32_t imageIndex = 0;
+    [[maybe_unused]] uint32_t image_index = 0;
 
     vkResetFences(
         device,
         1,
-        &directionalLightShadowMapInFlightFences[directionalLightCurrentFrame]
+        &directional_light_shadow_map_in_flight_fences
+            [directional_light_current_frame]
     );
     vkResetCommandBuffer(
-        directionalLightCommandBuffers[directionalLightCurrentFrame],
+        directional_light_command_buffers[directional_light_current_frame],
         0 // VkCommandBufferResetFlagBits.
     );
-    VkSubmitInfo submitInfo {};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers =
-        &directionalLightCommandBuffers[directionalLightCurrentFrame];
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers =
+        &directional_light_command_buffers[directional_light_current_frame];
 
     if (vkQueueSubmit(
-            graphicsQueue,
+            graphics_queue,
             1,
-            &submitInfo,
-            directionalLightShadowMapInFlightFences[directionalLightCurrentFrame]
+            &submit_info,
+            directional_light_shadow_map_in_flight_fences
+                [directional_light_current_frame]
         )
         != VK_SUCCESS) {
         throw std::runtime_error("failed to submit draw command buffer!");
     }
 
-    directionalLightCurrentFrame =
-        (directionalLightCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    directional_light_current_frame =
+        (directional_light_current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void CVulkanRenderer::spotLightShadowMapDrawFrame() {
+void CVulkanRenderer::spot_light_shadow_map_draw_frame() {
     vkWaitForFences(
         device,
         1,
-        &spotLightShadowMapInFlightFences[spotLightCurrentFrame],
+        &spot_light_shadow_map_in_flight_fences[spot_light_current_frame],
         VK_TRUE,
         UINT64_MAX
     );
 
-    [[maybe_unused]] uint32_t imageIndex = 0;
+    [[maybe_unused]] uint32_t image_index = 0;
 
     vkResetFences(
         device,
         1,
-        &spotLightShadowMapInFlightFences[spotLightCurrentFrame]
+        &spot_light_shadow_map_in_flight_fences[spot_light_current_frame]
     );
     vkResetCommandBuffer(
-        spotLightCommandBuffers[spotLightCurrentFrame],
+        spot_light_command_buffers[spot_light_current_frame],
         0 // VkCommandBufferResetFlagBits.
     );
 
-    VkSubmitInfo submitInfo {};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers =
-        &spotLightCommandBuffers[spotLightCurrentFrame];
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers =
+        &spot_light_command_buffers[spot_light_current_frame];
 
     if (vkQueueSubmit(
-            graphicsQueue,
+            graphics_queue,
             1,
-            &submitInfo,
-            spotLightShadowMapInFlightFences[spotLightCurrentFrame]
+            &submit_info,
+            spot_light_shadow_map_in_flight_fences[spot_light_current_frame]
         )
         != VK_SUCCESS) {
         throw std::runtime_error("failed to submit draw command buffer!");
     }
 
-    spotLightCurrentFrame = (spotLightCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    spot_light_current_frame =
+        (spot_light_current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void CVulkanRenderer::pointLightShadowMapDrawFrame() {
+void CVulkanRenderer::point_light_shadow_map_draw_frame() {
     vkWaitForFences(
         device,
         1,
-        &pointLightShadowMapInFlightFences[pointLightCurrentFrame],
+        &point_light_shadow_map_in_flight_fences[point_light_current_frame],
         VK_TRUE,
         UINT64_MAX
     );
 
-    [[maybe_unused]] uint32_t imageIndex = 0;
+    [[maybe_unused]] uint32_t image_index = 0;
 
     vkResetFences(
         device,
         1,
-        &pointLightShadowMapInFlightFences[pointLightCurrentFrame]
+        &point_light_shadow_map_in_flight_fences[point_light_current_frame]
     );
     vkResetCommandBuffer(
-        pointLightCommandBuffers[pointLightCurrentFrame],
+        point_light_command_buffers[point_light_current_frame],
         0 // VkCommandBufferResetFlagBits.
     );
 
-    VkSubmitInfo submitInfo {};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkSubmitInfo submit_info {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers =
-        &pointLightCommandBuffers[pointLightCurrentFrame];
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers =
+        &point_light_command_buffers[point_light_current_frame];
 
     if (vkQueueSubmit(
-            graphicsQueue,
+            graphics_queue,
             1,
-            &submitInfo,
-            pointLightShadowMapInFlightFences[pointLightCurrentFrame]
+            &submit_info,
+            point_light_shadow_map_in_flight_fences[point_light_current_frame]
         )
         != VK_SUCCESS) {
         throw std::runtime_error("failed to submit draw command buffer!");
     }
 
-    pointLightCurrentFrame =
-        (pointLightCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    point_light_current_frame =
+        (point_light_current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void CVulkanRenderer::directionalLightRecordCoomandBuffer(
-    std::vector<VkCommandBuffer>& commandBuffers,
-    [[maybe_unused]] uint32_t currentFrame
+void CVulkanRenderer::directional_light_record_coomand_buffer(
+    std::vector<VkCommandBuffer>& command_buffers,
+    [[maybe_unused]] uint32_t current_frame
 ) {
-    for (uint32_t directionalLightCounter = 0;
-         directionalLightCounter < directionalLights.size();
-         ++directionalLightCounter) {
-        VkCommandBufferInheritanceInfo inheritanceInfo {};
-        inheritanceInfo.sType =
+    for (uint32_t directional_light_counter = 0;
+         directional_light_counter < directional_lights.size();
+         ++directional_light_counter) {
+        VkCommandBufferInheritanceInfo inheritance_info {};
+        inheritance_info.sType =
             VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-        inheritanceInfo.renderPass =
-            renderPasses[SpecificPipeline::DIRECTIONAL_LIGHT_PIPELINE];
-        inheritanceInfo.framebuffer =
-            directionalLightShadowMapFrameBuffers[directionalLightCounter];
-        inheritanceInfo.subpass = 0;
+        inheritance_info.renderPass =
+            RENDER_PASSES[SpecificPipeline::DirectionalLightPipeline];
+        inheritance_info.framebuffer =
+            directional_light_shadow_map_frame_buffers[directional_light_counter];
+        inheritance_info.subpass = 0;
 
-        VkCommandBufferBeginInfo beginInfo {};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
-        beginInfo.pInheritanceInfo = &inheritanceInfo;
+        VkCommandBufferBeginInfo begin_info {};
+        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+        begin_info.pInheritanceInfo = &inheritance_info;
 
-        VkCommandBuffer commandBuffer = commandBuffers
-            [currentFrame * directionalLightNumber + directionalLightCounter];
-        if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+        VkCommandBuffer command_buffer = command_buffers
+            [current_frame * directional_light_number
+             + directional_light_counter];
+        if (vkBeginCommandBuffer(command_buffer, &begin_info) != VK_SUCCESS) {
             throw std::runtime_error(
                 "failed to begin recording command buffer!"
             );
         }
 
-        VkViewport shadowMapViewPort;
-        shadowMapViewPort.height = FLAT_SHADOW_MAP_SIZE;
-        shadowMapViewPort.width = FLAT_SHADOW_MAP_SIZE;
-        shadowMapViewPort.minDepth = 0.0f;
-        shadowMapViewPort.maxDepth = 1.0f;
-        shadowMapViewPort.x = 0;
-        shadowMapViewPort.y = 0;
-        vkCmdSetViewport(commandBuffer, 0, 1, &shadowMapViewPort);
+        VkViewport shadow_map_view_port;
+        shadow_map_view_port.height = FLAT_SHADOW_MAP_SIZE;
+        shadow_map_view_port.width = FLAT_SHADOW_MAP_SIZE;
+        shadow_map_view_port.minDepth = 0.0f;
+        shadow_map_view_port.maxDepth = 1.0f;
+        shadow_map_view_port.x = 0;
+        shadow_map_view_port.y = 0;
+        vkCmdSetViewport(command_buffer, 0, 1, &shadow_map_view_port);
 
-        VkRect2D shadowMapScissor;
-        shadowMapScissor.extent.width = FLAT_SHADOW_MAP_SIZE;
-        shadowMapScissor.extent.height = FLAT_SHADOW_MAP_SIZE;
-        shadowMapScissor.offset.x = 0;
-        shadowMapScissor.offset.y = 0;
-        vkCmdSetScissor(commandBuffer, 0, 1, &shadowMapScissor);
+        VkRect2D shadow_map_scissor;
+        shadow_map_scissor.extent.width = FLAT_SHADOW_MAP_SIZE;
+        shadow_map_scissor.extent.height = FLAT_SHADOW_MAP_SIZE;
+        shadow_map_scissor.offset.x = 0;
+        shadow_map_scissor.offset.y = 0;
+        vkCmdSetScissor(command_buffer, 0, 1, &shadow_map_scissor);
 
         vkCmdBindPipeline(
-            commandBuffer,
+            command_buffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
-            pipelineConfigs[SpecificPipeline::DIRECTIONAL_LIGHT_PIPELINE].pipeline
+            PIPELINE_CONFIGS[SpecificPipeline::DirectionalLightPipeline].pipeline
         );
-        dirLightSpaceMatrix[directionalLightCounter] =
-            directionalLights[directionalLightCounter]
-                .DirectionalLightSpaceMatrix;
+        dir_light_space_matrix[directional_light_counter] =
+            directional_lights[directional_light_counter]
+                .directional_light_space_matrix;
 
-        uint32_t actorsNumber = actors.size();
-        for (unsigned int actorCounter = 0; actorCounter < actorsNumber;
-             ++actorCounter) {
-            RenderActor actor = actors[actorCounter];
-            unsigned int meshId = actor.meshID;
-            unsigned int uboDirectionalLightIndex = directionalLightNumber
-                    * actorsNumber * directionalLightCurrentFrame
-                + actorsNumber * directionalLightCounter + actorCounter;
+        uint32_t actors_number = actors.size();
+        for (unsigned int actor_counter = 0; actor_counter < actors_number;
+             ++actor_counter) {
+            RenderActor actor = actors[actor_counter];
+            unsigned int mesh_id = actor.mesh_id;
+            unsigned int ubo_directional_light_index = directional_light_number
+                    * actors_number * directional_light_current_frame
+                + actors_number * directional_light_counter + actor_counter;
 
-            updateDirectionalLightShadowMapMatrixUBO(
-                uboDirectionalLightIndex,
-                directionalLightCounter,
-                actorCounter
+            update_directional_light_shadow_map_matrix_ubo(
+                ubo_directional_light_index,
+                directional_light_counter,
+                actor_counter
             );
-            const unsigned int linkedDescriptorSetID =
-                pipelineConfigs[SpecificPipeline::DIRECTIONAL_LIGHT_PIPELINE]
-                    .linkedDescriptorSetIDs[0];
-            const DescriptorSet& currentDescriptorSet =
-                descriptorSetsConfig[linkedDescriptorSetID];
+            const unsigned int linked_descriptor_set_id =
+                PIPELINE_CONFIGS[SpecificPipeline::DirectionalLightPipeline]
+                    .linked_descriptor_set_i_ds[0];
+            const DescriptorSet& current_descriptor_set =
+                DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id];
             vkCmdBindDescriptorSets(
-                commandBuffer,
+                command_buffer,
                 VK_PIPELINE_BIND_POINT_GRAPHICS,
-                pipelineConfigs[SpecificPipeline::DIRECTIONAL_LIGHT_PIPELINE]
-                    .pipelineLayout,
+                PIPELINE_CONFIGS[SpecificPipeline::DirectionalLightPipeline]
+                    .pipeline_layout,
                 0,
                 1,
-                &(*(descriptorSetsChunks.data()
-                    + currentDescriptorSet.descriptorSetOffset
-                    + uboDirectionalLightIndex)),
+                &(*(DESCRIPTOR_SETS_CHUNKS.data()
+                    + current_descriptor_set.descriptor_set_offset
+                    + ubo_directional_light_index)),
                 0,
                 nullptr
             );
 
-            VkBuffer vertexBuffers[] = {vertexBufferContainer[meshId]};
+            VkBuffer vertex_buffers[] = {vertex_buffer_container[mesh_id]};
             VkDeviceSize offsets[] = {0};
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+            vkCmdBindVertexBuffers(
+                command_buffer,
+                0,
+                1,
+                vertex_buffers,
+                offsets
+            );
 
             vkCmdBindIndexBuffer(
-                commandBuffer,
-                indexBufferContainer[meshId],
+                command_buffer,
+                index_buffer_container[mesh_id],
                 0,
                 VK_INDEX_TYPE_UINT32
             );
 
-            unsigned int indicesContainerSize = aIndices_[meshId].size();
+            unsigned int indices_container_size = a_indices[mesh_id].size();
             vkCmdDrawIndexed(
-                commandBuffer,
-                static_cast<uint32_t>(indicesContainerSize),
+                command_buffer,
+                static_cast<uint32_t>(indices_container_size),
                 1,
                 0,
                 0,
@@ -8347,111 +8642,118 @@ void CVulkanRenderer::directionalLightRecordCoomandBuffer(
             );
         }
 
-        if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+        if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS) {
             throw std::runtime_error("failed to record command buffer!");
         }
     }
 }
 
-void CVulkanRenderer::spotLightRecordCommandBuffer(
-    std::vector<VkCommandBuffer>& commandBuffers,
-    [[maybe_unused]] uint32_t currentFrame
+void CVulkanRenderer::spot_light_record_command_buffer(
+    std::vector<VkCommandBuffer>& command_buffers,
+    [[maybe_unused]] uint32_t current_frame
 ) {
-    for (uint32_t spotLightCounter = 0; spotLightCounter < spotLights.size();
-         ++spotLightCounter) {
-        VkCommandBufferInheritanceInfo inheritanceInfo {};
-        inheritanceInfo.sType =
+    for (uint32_t spot_light_counter = 0;
+         spot_light_counter < spot_lights.size();
+         ++spot_light_counter) {
+        VkCommandBufferInheritanceInfo inheritance_info {};
+        inheritance_info.sType =
             VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-        inheritanceInfo.renderPass =
-            renderPasses[SpecificPipeline::SPOT_LIGHT_PIPELINE];
-        inheritanceInfo.framebuffer =
-            spotLightShadowMapFrameBuffers[spotLightCounter];
-        inheritanceInfo.subpass = 0;
+        inheritance_info.renderPass =
+            RENDER_PASSES[SpecificPipeline::SpotLightPipeline];
+        inheritance_info.framebuffer =
+            spot_light_shadow_map_frame_buffers[spot_light_counter];
+        inheritance_info.subpass = 0;
 
-        VkCommandBufferBeginInfo beginInfo {};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
-        beginInfo.pInheritanceInfo = &inheritanceInfo;
+        VkCommandBufferBeginInfo begin_info {};
+        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+        begin_info.pInheritanceInfo = &inheritance_info;
 
-        VkCommandBuffer commandBuffer =
-            commandBuffers[currentFrame * spotLightNumber + spotLightCounter];
-        if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+        VkCommandBuffer command_buffer = command_buffers
+            [current_frame * spot_light_number + spot_light_counter];
+        if (vkBeginCommandBuffer(command_buffer, &begin_info) != VK_SUCCESS) {
             throw std::runtime_error(
                 "failed to begin recording command buffer!"
             );
         }
 
-        VkViewport spotLightShadowMapViewPort;
-        spotLightShadowMapViewPort.height = FLAT_SHADOW_MAP_SIZE;
-        spotLightShadowMapViewPort.width = FLAT_SHADOW_MAP_SIZE;
-        spotLightShadowMapViewPort.minDepth = 0.0f;
-        spotLightShadowMapViewPort.maxDepth = 1.0f;
-        spotLightShadowMapViewPort.x = 0;
-        spotLightShadowMapViewPort.y = 0;
-        vkCmdSetViewport(commandBuffer, 0, 1, &spotLightShadowMapViewPort);
+        VkViewport spot_light_shadow_map_view_port;
+        spot_light_shadow_map_view_port.height = FLAT_SHADOW_MAP_SIZE;
+        spot_light_shadow_map_view_port.width = FLAT_SHADOW_MAP_SIZE;
+        spot_light_shadow_map_view_port.minDepth = 0.0f;
+        spot_light_shadow_map_view_port.maxDepth = 1.0f;
+        spot_light_shadow_map_view_port.x = 0;
+        spot_light_shadow_map_view_port.y = 0;
+        vkCmdSetViewport(command_buffer, 0, 1, &spot_light_shadow_map_view_port);
 
-        VkRect2D spotLightShadowMapScissor;
-        spotLightShadowMapScissor.extent.width = FLAT_SHADOW_MAP_SIZE;
-        spotLightShadowMapScissor.extent.height = FLAT_SHADOW_MAP_SIZE;
-        spotLightShadowMapScissor.offset.x = 0;
-        spotLightShadowMapScissor.offset.y = 0;
-        vkCmdSetScissor(commandBuffer, 0, 1, &spotLightShadowMapScissor);
+        VkRect2D spot_light_shadow_map_scissor;
+        spot_light_shadow_map_scissor.extent.width = FLAT_SHADOW_MAP_SIZE;
+        spot_light_shadow_map_scissor.extent.height = FLAT_SHADOW_MAP_SIZE;
+        spot_light_shadow_map_scissor.offset.x = 0;
+        spot_light_shadow_map_scissor.offset.y = 0;
+        vkCmdSetScissor(command_buffer, 0, 1, &spot_light_shadow_map_scissor);
 
         vkCmdBindPipeline(
-            commandBuffer,
+            command_buffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
-            pipelineConfigs[SpecificPipeline::SPOT_LIGHT_PIPELINE].pipeline
+            PIPELINE_CONFIGS[SpecificPipeline::SpotLightPipeline].pipeline
         );
 
-        spotLightSpaceMatrix[spotLightCounter] =
-            spotLights[spotLightCounter].SpotLigthSpaceMatrix;
-        uint32_t actorsNumber = actors.size();
-        for (unsigned int actorsCounter = 0; actorsCounter < actorsNumber;
-             ++actorsCounter) {
-            RenderActor actor = actors[actorsCounter];
-            unsigned int meshID = actor.meshID;
-            unsigned int uboSpotLightIndex =
-                spotLightNumber * actorsNumber * spotLightCurrentFrame
-                + actorsNumber * spotLightCounter + actorsCounter;
+        spot_light_space_matrix[spot_light_counter] =
+            spot_lights[spot_light_counter].spot_ligth_space_matrix;
+        uint32_t actors_number = actors.size();
+        for (unsigned int actors_counter = 0; actors_counter < actors_number;
+             ++actors_counter) {
+            RenderActor actor = actors[actors_counter];
+            unsigned int mesh_id = actor.mesh_id;
+            unsigned int ubo_spot_light_index =
+                spot_light_number * actors_number * spot_light_current_frame
+                + actors_number * spot_light_counter + actors_counter;
 
-            updateSpotLightShadowMapMatrixUBO(
-                uboSpotLightIndex,
-                spotLightCounter,
-                actorsCounter
+            update_spot_light_shadow_map_matrix_ubo(
+                ubo_spot_light_index,
+                spot_light_counter,
+                actors_counter
             );
-            const unsigned int linkedDescriptorSetID =
-                pipelineConfigs[SpecificPipeline::SPOT_LIGHT_PIPELINE]
-                    .linkedDescriptorSetIDs[0];
-            const DescriptorSet& currentDescriptorSet =
-                descriptorSetsConfig[linkedDescriptorSetID];
+            const unsigned int linked_descriptor_set_id =
+                PIPELINE_CONFIGS[SpecificPipeline::SpotLightPipeline]
+                    .linked_descriptor_set_i_ds[0];
+            const DescriptorSet& current_descriptor_set =
+                DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id];
             vkCmdBindDescriptorSets(
-                commandBuffer,
+                command_buffer,
                 VK_PIPELINE_BIND_POINT_GRAPHICS,
-                pipelineConfigs[SpecificPipeline::SPOT_LIGHT_PIPELINE]
-                    .pipelineLayout,
+                PIPELINE_CONFIGS[SpecificPipeline::SpotLightPipeline]
+                    .pipeline_layout,
                 0,
                 1,
-                &(*(descriptorSetsChunks.data()
-                    + currentDescriptorSet.descriptorSetOffset
-                    + uboSpotLightIndex)),
+                &(*(DESCRIPTOR_SETS_CHUNKS.data()
+                    + current_descriptor_set.descriptor_set_offset
+                    + ubo_spot_light_index)),
                 0,
                 nullptr
             );
-            VkBuffer vertexBuffers[] = {vertexBufferContainer[meshID]};
+            VkBuffer vertex_buffers[] = {vertex_buffer_container[mesh_id]};
             VkDeviceSize offsets[] = {0};
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+            vkCmdBindVertexBuffers(
+                command_buffer,
+                0,
+                1,
+                vertex_buffers,
+                offsets
+            );
 
             vkCmdBindIndexBuffer(
-                commandBuffer,
-                indexBufferContainer[meshID],
+                command_buffer,
+                index_buffer_container[mesh_id],
                 0,
                 VK_INDEX_TYPE_UINT32
             );
 
-            unsigned int indicesContainerSize = aIndices_[meshID].size();
+            unsigned int indices_container_size = a_indices[mesh_id].size();
             vkCmdDrawIndexed(
-                commandBuffer,
-                static_cast<uint32_t>(indicesContainerSize),
+                command_buffer,
+                static_cast<uint32_t>(indices_container_size),
                 1,
                 0,
                 0,
@@ -8459,125 +8761,140 @@ void CVulkanRenderer::spotLightRecordCommandBuffer(
             );
         }
 
-        if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+        if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS) {
             throw std::runtime_error("failed to record command buffer!");
         }
     }
 }
 
-void CVulkanRenderer::pointLightRecordCommandBuffer(
-    std::vector<VkCommandBuffer>& commandBuffers,
-    [[maybe_unused]] uint32_t currentFrame
+void CVulkanRenderer::point_light_record_command_buffer(
+    std::vector<VkCommandBuffer>& command_buffers,
+    [[maybe_unused]] uint32_t current_frame
 ) {
-    for (uint32_t pointLightCounter = 0; pointLightCounter < pointLights.size();
-         ++pointLightCounter) {
-        uint32_t maxCubeMapLayers = 6;
+    for (uint32_t point_light_counter = 0;
+         point_light_counter < point_lights.size();
+         ++point_light_counter) {
+        uint32_t max_cube_map_layers = 6;
         // 6 is a number of cube map layers.
-        for (uint32_t cubeMapLayerCounter = 0;
-             cubeMapLayerCounter < maxCubeMapLayers;
-             ++cubeMapLayerCounter) {
-            VkCommandBufferInheritanceInfo inheritanceInfo {};
-            inheritanceInfo.sType =
+        for (uint32_t cube_map_layer_counter = 0;
+             cube_map_layer_counter < max_cube_map_layers;
+             ++cube_map_layer_counter) {
+            VkCommandBufferInheritanceInfo inheritance_info {};
+            inheritance_info.sType =
                 VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-            inheritanceInfo.renderPass =
-                renderPasses[SpecificPipeline::POINT_LIGHT_PIPELINE];
-            inheritanceInfo.framebuffer =
-                pointLightShadowMapFrameBuffers[pointLightCounter]
-                                               [cubeMapLayerCounter];
-            inheritanceInfo.subpass = 0;
+            inheritance_info.renderPass =
+                RENDER_PASSES[SpecificPipeline::PointLightPipeline];
+            inheritance_info.framebuffer =
+                point_light_shadow_map_frame_buffers[point_light_counter]
+                                                    [cube_map_layer_counter];
+            inheritance_info.subpass = 0;
 
-            VkCommandBufferBeginInfo beginInfo {};
-            beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-            beginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
-            beginInfo.pInheritanceInfo = &inheritanceInfo;
+            VkCommandBufferBeginInfo begin_info {};
+            begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+            begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+            begin_info.pInheritanceInfo = &inheritance_info;
 
-            VkCommandBuffer commandBuffer = commandBuffers
-                [currentFrame * pointLightNumber * maxCubeMapLayers
-                 + pointLightCounter * maxCubeMapLayers + cubeMapLayerCounter];
-            if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+            VkCommandBuffer command_buffer = command_buffers
+                [current_frame * point_light_number * max_cube_map_layers
+                 + point_light_counter * max_cube_map_layers
+                 + cube_map_layer_counter];
+            if (vkBeginCommandBuffer(command_buffer, &begin_info)
+                != VK_SUCCESS) {
                 throw std::runtime_error(
                     "failed to begin recording command buffer!"
                 );
             }
 
-            VkViewport pointLightShadowMapViewPort;
-            pointLightShadowMapViewPort.height = SHADOW_MAP_SIZE;
-            pointLightShadowMapViewPort.width = SHADOW_MAP_SIZE;
-            pointLightShadowMapViewPort.minDepth = 0.0f;
-            pointLightShadowMapViewPort.maxDepth = 1.0f;
-            pointLightShadowMapViewPort.x = 0;
-            pointLightShadowMapViewPort.y = 0;
-            vkCmdSetViewport(commandBuffer, 0, 1, &pointLightShadowMapViewPort);
-
-            VkRect2D pointLightShadowMapScissor;
-            pointLightShadowMapScissor.extent.width = SHADOW_MAP_SIZE;
-            pointLightShadowMapScissor.extent.height = SHADOW_MAP_SIZE;
-            pointLightShadowMapScissor.offset.x = 0;
-            pointLightShadowMapScissor.offset.y = 0;
-            vkCmdSetScissor(commandBuffer, 0, 1, &pointLightShadowMapScissor);
-
-            vkCmdBindPipeline(
-                commandBuffer,
-                VK_PIPELINE_BIND_POINT_GRAPHICS,
-                pipelineConfigs[SpecificPipeline::POINT_LIGHT_PIPELINE].pipeline
+            VkViewport point_light_shadow_map_view_port;
+            point_light_shadow_map_view_port.height = SHADOW_MAP_SIZE;
+            point_light_shadow_map_view_port.width = SHADOW_MAP_SIZE;
+            point_light_shadow_map_view_port.minDepth = 0.0f;
+            point_light_shadow_map_view_port.maxDepth = 1.0f;
+            point_light_shadow_map_view_port.x = 0;
+            point_light_shadow_map_view_port.y = 0;
+            vkCmdSetViewport(
+                command_buffer,
+                0,
+                1,
+                &point_light_shadow_map_view_port
             );
 
-            uint32_t actorsNumber = actors.size();
-            for (unsigned int actorCounter = 0; actorCounter < actorsNumber;
-                 ++actorCounter) {
-                RenderActor actor = actors[actorCounter];
-                unsigned int meshID = actor.meshID;
+            VkRect2D point_light_shadow_map_scissor;
+            point_light_shadow_map_scissor.extent.width = SHADOW_MAP_SIZE;
+            point_light_shadow_map_scissor.extent.height = SHADOW_MAP_SIZE;
+            point_light_shadow_map_scissor.offset.x = 0;
+            point_light_shadow_map_scissor.offset.y = 0;
+            vkCmdSetScissor(
+                command_buffer,
+                0,
+                1,
+                &point_light_shadow_map_scissor
+            );
 
-                unsigned int uboIndex = pointLightNumber * actorsNumber
-                        * maxCubeMapLayers * pointLightCurrentFrame
-                    + actorsNumber * maxCubeMapLayers * pointLightCounter
-                    + maxCubeMapLayers * actorCounter + cubeMapLayerCounter;
+            vkCmdBindPipeline(
+                command_buffer,
+                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                PIPELINE_CONFIGS[SpecificPipeline::PointLightPipeline].pipeline
+            );
 
-                updatePointLightShadowMapMatrixUBO(
-                    uboIndex,
-                    pointLightCounter,
-                    cubeMapLayerCounter,
-                    actorCounter
+            uint32_t actors_number = actors.size();
+            for (unsigned int actor_counter = 0; actor_counter < actors_number;
+                 ++actor_counter) {
+                RenderActor actor = actors[actor_counter];
+                unsigned int mesh_id = actor.mesh_id;
+
+                unsigned int ubo_index = point_light_number * actors_number
+                        * max_cube_map_layers * point_light_current_frame
+                    + actors_number * max_cube_map_layers * point_light_counter
+                    + max_cube_map_layers * actor_counter
+                    + cube_map_layer_counter;
+
+                update_point_light_shadow_map_matrix_ubo(
+                    ubo_index,
+                    point_light_counter,
+                    cube_map_layer_counter,
+                    actor_counter
                 );
-                const unsigned int linkedDescriptorSetID =
-                    pipelineConfigs[SpecificPipeline::POINT_LIGHT_PIPELINE]
-                        .linkedDescriptorSetIDs[0];
-                const DescriptorSet& currentDescriptorSet =
-                    descriptorSetsConfig[linkedDescriptorSetID];
+                const unsigned int linked_descriptor_set_id =
+                    PIPELINE_CONFIGS[SpecificPipeline::PointLightPipeline]
+                        .linked_descriptor_set_i_ds[0];
+                const DescriptorSet& current_descriptor_set =
+                    DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id];
                 vkCmdBindDescriptorSets(
-                    commandBuffer,
+                    command_buffer,
                     VK_PIPELINE_BIND_POINT_GRAPHICS,
-                    pipelineConfigs[SpecificPipeline::POINT_LIGHT_PIPELINE]
-                        .pipelineLayout,
+                    PIPELINE_CONFIGS[SpecificPipeline::PointLightPipeline]
+                        .pipeline_layout,
                     0,
                     1,
-                    &(*(descriptorSetsChunks.data()
-                        + currentDescriptorSet.descriptorSetOffset + uboIndex)),
+                    &(*(DESCRIPTOR_SETS_CHUNKS.data()
+                        + current_descriptor_set.descriptor_set_offset
+                        + ubo_index)),
                     0,
                     nullptr
                 );
 
-                VkBuffer vertexBuffers[] = {vertexBufferContainer[meshID]};
+                VkBuffer vertex_buffers[] = {vertex_buffer_container[mesh_id]};
                 VkDeviceSize offsets[] = {0};
                 vkCmdBindVertexBuffers(
-                    commandBuffer,
+                    command_buffer,
                     0,
                     1,
-                    vertexBuffers,
+                    vertex_buffers,
                     offsets
                 );
 
                 vkCmdBindIndexBuffer(
-                    commandBuffer,
-                    indexBufferContainer[meshID],
+                    command_buffer,
+                    index_buffer_container[mesh_id],
                     0,
                     VK_INDEX_TYPE_UINT32
                 );
 
-                unsigned int indicesContainerSize = aIndices_[meshID].size();
+                unsigned int indices_container_size = a_indices[mesh_id].size();
                 vkCmdDrawIndexed(
-                    commandBuffer,
-                    static_cast<uint32_t>(indicesContainerSize),
+                    command_buffer,
+                    static_cast<uint32_t>(indices_container_size),
                     1,
                     0,
                     0,
@@ -8585,84 +8902,84 @@ void CVulkanRenderer::pointLightRecordCommandBuffer(
                 );
             }
 
-            if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+            if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS) {
                 throw std::runtime_error("failed to record command buffer!");
             }
         }
     }
 }
 
-VkShaderModule CVulkanRenderer::createShaderModule(
+VkShaderModule CVulkanRenderer::create_shader_module(
     const std::vector<char>& code
 ) {
-    VkShaderModuleCreateInfo createInfo {};
-    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.codeSize = code.size();
-    createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+    VkShaderModuleCreateInfo create_info {};
+    create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    create_info.codeSize = code.size();
+    create_info.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
-    VkShaderModule shaderModule;
-    if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule)
+    VkShaderModule shader_module;
+    if (vkCreateShaderModule(device, &create_info, nullptr, &shader_module)
         != VK_SUCCESS) {
         throw std::runtime_error("failed to create shader module!");
     }
 
-    return shaderModule;
+    return shader_module;
 }
 
-VkSurfaceFormatKHR CVulkanRenderer::chooseSwapSurfaceFormat(
-    const std::vector<VkSurfaceFormatKHR>& availableFormats
+VkSurfaceFormatKHR CVulkanRenderer::choose_swap_surface_format(
+    const std::vector<VkSurfaceFormatKHR>& available_formats
 ) {
-    for (const auto& availableFormat : availableFormats) {
-        if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB
-            && availableFormat.colorSpace
+    for (const auto& available_format : available_formats) {
+        if (available_format.format == VK_FORMAT_B8G8R8A8_SRGB
+            && available_format.colorSpace
                 == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-            return availableFormat;
+            return available_format;
         }
     }
 
-    return availableFormats[0];
+    return available_formats[0];
 }
 
-VkPresentModeKHR CVulkanRenderer::chooseSwapPresentMode(
-    const std::vector<VkPresentModeKHR>& availablePresentModes
+VkPresentModeKHR CVulkanRenderer::choose_swap_present_mode(
+    const std::vector<VkPresentModeKHR>& available_present_modes
 ) {
-    for (const auto& availablePresentMode : availablePresentModes) {
-        if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR
-            || availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR) {
-            return availablePresentMode;
+    for (const auto& available_present_mode : available_present_modes) {
+        if (available_present_mode == VK_PRESENT_MODE_MAILBOX_KHR
+            || available_present_mode == VK_PRESENT_MODE_IMMEDIATE_KHR) {
+            return available_present_mode;
         }
     }
 
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D CVulkanRenderer::chooseSwapExtent(
+VkExtent2D CVulkanRenderer::choose_swap_extent(
     const VkSurfaceCapabilitiesKHR& capabilities
 ) {
     if (capabilities.currentExtent.width
         != std::numeric_limits<uint32_t>::max()) {
         return capabilities.currentExtent;
     } else {
-        VkExtent2D actualExtent {
-            .width = Window->width,
-            .height = Window->height
+        VkExtent2D actual_extent {
+            .width = window->width,
+            .height = window->height
         };
-        actualExtent.width = std::clamp(
-            actualExtent.width,
+        actual_extent.width = std::clamp(
+            actual_extent.width,
             capabilities.minImageExtent.width,
             capabilities.maxImageExtent.width
         );
-        actualExtent.height = std::clamp(
-            actualExtent.height,
+        actual_extent.height = std::clamp(
+            actual_extent.height,
             capabilities.minImageExtent.height,
             capabilities.maxImageExtent.height
         );
 
-        return actualExtent;
+        return actual_extent;
     }
 }
 
-SwapChainSupportDetails CVulkanRenderer::querySwapChainSupport(
+SwapChainSupportDetails CVulkanRenderer::query_swap_chain_support(
     VkPhysicalDevice device
 ) {
     SwapChainSupportDetails details;
@@ -8673,121 +8990,138 @@ SwapChainSupportDetails CVulkanRenderer::querySwapChainSupport(
         &details.capabilities
     );
 
-    uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+    uint32_t format_count = 0;
+    if (vkGetPhysicalDeviceSurfaceFormatsKHR(
+            device,
+            surface,
+            &format_count,
+            nullptr
+        )
+        != VK_SUCCESS) {
+        format_count = 0;
+    }
 
-    if (formatCount != 0) {
-        details.formats.resize(formatCount);
+    if (format_count != 0) {
+        details.formats.resize(format_count);
         vkGetPhysicalDeviceSurfaceFormatsKHR(
             device,
             surface,
-            &formatCount,
+            &format_count,
             details.formats.data()
         );
     }
 
-    uint32_t presentModeCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(
-        device,
-        surface,
-        &presentModeCount,
-        nullptr
-    );
+    uint32_t present_mode_count = 0;
+    if (vkGetPhysicalDeviceSurfacePresentModesKHR(
+            device,
+            surface,
+            &present_mode_count,
+            nullptr
+        )
+        != VK_SUCCESS) {
+        present_mode_count = 0;
+    }
 
-    if (presentModeCount != 0) {
-        details.presentModes.resize(presentModeCount);
+    if (present_mode_count != 0) {
+        details.present_modes.resize(present_mode_count);
         vkGetPhysicalDeviceSurfacePresentModesKHR(
             device,
             surface,
-            &presentModeCount,
-            details.presentModes.data()
+            &present_mode_count,
+            details.present_modes.data()
         );
     }
 
     return details;
 }
 
-bool CVulkanRenderer::isDeviceSuitable(VkPhysicalDevice device) {
-    QueueFamilyIndices indices = findQueueFamilies(device);
+bool CVulkanRenderer::is_device_suitable(VkPhysicalDevice device) {
+    QueueFamilyIndices indices = find_queue_families(device);
 
-    bool extensionsSupported = checkDeviceExtensionSupport(device);
+    bool extensions_supported = check_device_extension_support(device);
 
-    bool swapChainAdequate = false;
-    if (extensionsSupported) {
-        SwapChainSupportDetails swapChainSupport =
-            querySwapChainSupport(device);
-        swapChainAdequate = !swapChainSupport.formats.empty()
-            && !swapChainSupport.presentModes.empty();
+    bool swap_chain_adequate = false;
+    if (extensions_supported) {
+        SwapChainSupportDetails swap_chain_support =
+            query_swap_chain_support(device);
+        swap_chain_adequate = !swap_chain_support.formats.empty()
+            && !swap_chain_support.present_modes.empty();
     }
 
-    VkPhysicalDeviceFeatures supportedFeatures;
-    vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+    VkPhysicalDeviceFeatures supported_features;
+    vkGetPhysicalDeviceFeatures(device, &supported_features);
 
-    return indices.isComplete() && extensionsSupported && swapChainAdequate
-        && supportedFeatures.samplerAnisotropy;
+    return indices.is_complete() && extensions_supported && swap_chain_adequate
+        && supported_features.samplerAnisotropy;
 }
 
-bool CVulkanRenderer::checkDeviceExtensionSupport(VkPhysicalDevice device) {
-    uint32_t extensionCount;
+bool CVulkanRenderer::check_device_extension_support(VkPhysicalDevice device) {
+    uint32_t extension_count;
     vkEnumerateDeviceExtensionProperties(
         device,
         nullptr,
-        &extensionCount,
+        &extension_count,
         nullptr
     );
 
-    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+    std::vector<VkExtensionProperties> available_extensions(extension_count);
     vkEnumerateDeviceExtensionProperties(
         device,
         nullptr,
-        &extensionCount,
-        availableExtensions.data()
+        &extension_count,
+        available_extensions.data()
     );
 
-    std::set<std::string> requiredExtensions(
-        deviceExtensions.begin(),
-        deviceExtensions.end()
+    std::set<std::string> required_extensions(
+        DEVICE_EXTENSIONS.begin(),
+        DEVICE_EXTENSIONS.end()
     );
 
-    for (const auto& extension : availableExtensions) {
-        requiredExtensions.erase(extension.extensionName);
+    for (const auto& extension : available_extensions) {
+        required_extensions.erase(extension.extensionName);
     }
 
-    return requiredExtensions.empty();
+    return required_extensions.empty();
 }
 
-QueueFamilyIndices CVulkanRenderer::findQueueFamilies(VkPhysicalDevice device) {
+QueueFamilyIndices CVulkanRenderer::find_queue_families(
+    VkPhysicalDevice device
+) {
     QueueFamilyIndices indices;
 
-    uint32_t queueFamilyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
-    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+    uint32_t queue_family_count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(
         device,
-        &queueFamilyCount,
-        queueFamilies.data()
+        &queue_family_count,
+        nullptr
+    );
+
+    std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
+    vkGetPhysicalDeviceQueueFamilyProperties(
+        device,
+        &queue_family_count,
+        queue_families.data()
     );
 
     int i = 0;
-    for (const auto& queueFamily : queueFamilies) {
-        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+    for (const auto& queue_family : queue_families) {
+        if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             indices.graphics_family = i;
         }
 
-        VkBool32 presentSupport = false;
+        VkBool32 present_support = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(
             device,
             i,
             surface,
-            &presentSupport
+            &present_support
         );
 
-        if (presentSupport) {
+        if (present_support) {
             indices.present_family = i;
         }
 
-        if (indices.isComplete()) {
+        if (indices.is_complete()) {
             break;
         }
 
@@ -8797,9 +9131,9 @@ QueueFamilyIndices CVulkanRenderer::findQueueFamilies(VkPhysicalDevice device) {
     return indices;
 }
 
-std::vector<const char*> CVulkanRenderer::getRequiredExtensions() {
+std::vector<const char*> CVulkanRenderer::get_required_extensions() {
 #ifdef VK_USE_PLATFORM_XLIB_KHR
-    std::vector<const char*> pRequiredExtentions = {
+    std::vector<const char*> p_required_extensions = {
         "VK_KHR_xlib_surface",
         "VK_EXT_acquire_xlib_display",
         "VK_KHR_display",
@@ -8809,7 +9143,7 @@ std::vector<const char*> CVulkanRenderer::getRequiredExtensions() {
 #endif
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
-    std::vector<const char*> pRequiredExtentions = {
+    std::vector<const char*> p_required_extensions = {
         "VK_KHR_xcb_surface",
         "VK_KHR_display",
         "VK_KHR_surface",
@@ -8818,14 +9152,14 @@ std::vector<const char*> CVulkanRenderer::getRequiredExtensions() {
 #endif
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    std::vector<const char*> pRequiredExtentions = {
+    std::vector<const char*> p_required_extensions = {
         "VK_KHR_win32_surface",
         "VK_KHR_surface"
     };
 #endif
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-    std::vector<const char*> pRequiredExtentions = {
+    std::vector<const char*> p_required_extensions = {
         "VK_KHR_wayland_surface",
         "VK_KHR_display",
         "VK_EXT_direct_mode_display",
@@ -8833,31 +9167,31 @@ std::vector<const char*> CVulkanRenderer::getRequiredExtensions() {
     };
 #endif
 
-    if (enableValidationLayers) {
-        pRequiredExtentions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    if (ENABLE_VALIDATION_LAYERS) {
+        p_required_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
 
-    return pRequiredExtentions;
+    return p_required_extensions;
 }
 
-bool CVulkanRenderer::checkValidationLayerSupport() {
-    uint32_t layerCount;
-    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+bool CVulkanRenderer::check_validation_layer_support() {
+    uint32_t layer_count;
+    vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
-    std::vector<VkLayerProperties> availableLayers(layerCount);
-    vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+    std::vector<VkLayerProperties> available_layers(layer_count);
+    vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
 
-    for (const char* layerName : validationLayers) {
-        bool layerFound = false;
+    for (const char* layer_name : VALIDATION_LAYERS) {
+        bool layer_found = false;
 
-        for (const auto& layerProperties : availableLayers) {
-            if (strcmp(layerName, layerProperties.layerName) == 0) {
-                layerFound = true;
+        for (const auto& layer_properties : available_layers) {
+            if (strcmp(layer_name, layer_properties.layerName) == 0) {
+                layer_found = true;
                 break;
             }
         }
 
-        if (!layerFound) {
+        if (!layer_found) {
             return false;
         }
     }
@@ -8865,58 +9199,58 @@ bool CVulkanRenderer::checkValidationLayerSupport() {
     return true;
 }
 
-VkDescriptorBufferInfo CVulkanRenderer::createDescriptorBufferInfo(
+VkDescriptorBufferInfo CVulkanRenderer::create_descriptor_buffer_info(
     VkBuffer ubo,
-    const VkDeviceSize& uboStructSize,
-    const VkDeviceSize& offsetStep
+    const VkDeviceSize& ubo_struct_size,
+    const VkDeviceSize& offset_step
 ) {
-    VkDescriptorBufferInfo uboBufferInfo {};
-    uboBufferInfo.buffer = ubo;
-    uboBufferInfo.offset = offsetStep * uboStructSize;
-    uboBufferInfo.range = uboStructSize;
+    VkDescriptorBufferInfo ubo_buffer_info {};
+    ubo_buffer_info.buffer = ubo;
+    ubo_buffer_info.offset = offset_step * ubo_struct_size;
+    ubo_buffer_info.range = ubo_struct_size;
 
-    return uboBufferInfo;
+    return ubo_buffer_info;
 }
 
-VkDescriptorImageInfo CVulkanRenderer::createDescriptorImageInfo(
-    const VK_Image& textureImage,
+VkDescriptorImageInfo CVulkanRenderer::create_descriptor_image_info(
+    const GpuImage& texture_image,
     VkImageLayout layout,
-    unsigned int textureViewIndex,
-    VkSampler textureSampler
+    unsigned int texture_view_index,
+    VkSampler texture_sampler
 ) {
-    VkDescriptorImageInfo imageInfo {};
-    imageInfo.imageLayout = layout;
-    imageInfo.imageView = textureImage.views[textureViewIndex];
-    imageInfo.sampler = textureSampler;
+    VkDescriptorImageInfo image_info {};
+    image_info.imageLayout = layout;
+    image_info.imageView = texture_image.views[texture_view_index];
+    image_info.sampler = texture_sampler;
 
-    return imageInfo;
+    return image_info;
 }
 
-std::vector<char> CVulkanRenderer::readFile(const std::string& filename) {
+std::vector<char> CVulkanRenderer::read_file(const std::string& filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
     if (!file.is_open()) {
         throw std::runtime_error("failed to open file!");
     }
 
-    size_t fileSize = (size_t)file.tellg();
-    std::vector<char> buffer(fileSize);
+    size_t file_size = (size_t)file.tellg();
+    std::vector<char> buffer(file_size);
 
     file.seekg(0);
-    file.read(buffer.data(), fileSize);
+    file.read(buffer.data(), file_size);
 
     file.close();
 
     return buffer;
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL CVulkanRenderer::debugCallback(
-    [[maybe_unused]] VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-    [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT messageType,
-    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-    [[maybe_unused]] void* pUserData
+VKAPI_ATTR VkBool32 VKAPI_CALL CVulkanRenderer::debug_callback(
+    [[maybe_unused]] VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+    [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT message_type,
+    const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data,
+    [[maybe_unused]] void* p_user_data
 ) {
-    std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+    std::cerr << "validation layer: " << p_callback_data->pMessage << std::endl;
 
     return VK_FALSE;
 }
@@ -8924,213 +9258,222 @@ VKAPI_ATTR VkBool32 VKAPI_CALL CVulkanRenderer::debugCallback(
 
 namespace glvm {
 
-void CJsonParser::ReadFile(const char* _filePath) {
-    const char* _pJsonFilePath = _filePath;
-    std::ifstream jsonFileInputStream;
-    std::stringstream jsonFileOutputStream;
+void CJsonParser::read_file(const char* file_path) {
+    std::ifstream json_file_input_stream;
+    std::stringstream json_file_output_stream;
 
-    jsonFileInputStream.open(_pJsonFilePath);
-    if (jsonFileInputStream.good()) {
-        jsonFileOutputStream << jsonFileInputStream.rdbuf();
-        jsonFileInputStream.close();
-        sJsonFileData_ = jsonFileOutputStream.str();
+    json_file_input_stream.open(file_path);
+    if (json_file_input_stream.good()) {
+        json_file_output_stream << json_file_input_stream.rdbuf();
+        json_file_input_stream.close();
+        s_json_file_data = json_file_output_stream.str();
     } else {
         std::cout << "Error of reading json file" << std::endl;
         return;
     }
 
-    pJsonFileData_ = sJsonFileData_.c_str();
+    p_json_file_data = s_json_file_data.c_str();
 }
 
-void CJsonParser::Parse() {
-    currentChar_ = pJsonFileData_[globalFileCounter_];
+void CJsonParser::parse() {
+    current_char = p_json_file_data[global_file_counter];
 
-    while (currentChar_ != '\0') {
-        currentChar_ = pJsonFileData_[globalFileCounter_];
+    while (current_char != '\0') {
+        current_char = p_json_file_data[global_file_counter];
 
-        if (currentChar_ == '"' && keyFlag) {
-            lastKey_ = StringParse();
-            while (currentChar_ == ' ' || currentChar_ == ':') {
-                ++globalFileCounter_;
-                currentChar_ = pJsonFileData_[globalFileCounter_];
+        if (current_char == '"' && key_flag) {
+            last_key = string_parse();
+            while (current_char == ' ' || current_char == ':') {
+                ++global_file_counter;
+                current_char = p_json_file_data[global_file_counter];
             }
         }
 
-        if (currentChar_ == '"') {
-            bufferString_ = StringParse();
+        if (current_char == '"') {
+            buffer_string = string_parse();
 
-            if (keyFlag) {
-                JsonValue jsonString(bufferString_);
-                (*stackOfJsonValues_.back()->value.object)[lastKey_.c_str()] =
-                    jsonString;
+            if (key_flag) {
+                JsonValue json_string(buffer_string);
+                (*stack_of_json_values.back()->value.object)[last_key.c_str()] =
+                    json_string;
             } else {
-                JsonValue jsonString(bufferString_);
-                stackOfJsonValues_.back()->value.array->push_back(jsonString);
+                JsonValue json_string(buffer_string);
+                stack_of_json_values.back()->value.array->push_back(json_string);
             }
         } else if (
-            (currentChar_ >= '0' && currentChar_ <= '9') || currentChar_ == '+'
-            || currentChar_ == '-'
+            (current_char >= '0' && current_char <= '9') || current_char == '+'
+            || current_char == '-'
         ) {
-            bufferString_ = NumberAsStringParse();
-            std::vector<char> vector = StringToVectorOfChars(bufferString_);
-            double fNumber = 0.0f;
-            int iNumber = 0;
-            if (IsContainChar(bufferString_, '.')) {
-                fNumber = ParseFloating(vector);
+            buffer_string = number_as_string_parse();
+            std::vector<char> vector = string_to_vector_of_chars(buffer_string);
+            double f_number = 0.0f;
+            int i_number = 0;
+            if (is_contain_char(buffer_string, '.')) {
+                f_number = parse_floating(vector);
 
-                if (keyFlag) {
-                    JsonValue jsonFloat(fNumber);
-                    (*stackOfJsonValues_.back()
-                          ->value.object)[lastKey_.c_str()] = jsonFloat;
+                if (key_flag) {
+                    JsonValue json_float(f_number);
+                    (*stack_of_json_values.back()
+                          ->value.object)[last_key.c_str()] = json_float;
                 } else {
-                    JsonValue jsonFloat(fNumber);
-                    stackOfJsonValues_.back()->value.array->push_back(jsonFloat);
+                    JsonValue json_float(f_number);
+                    stack_of_json_values.back()->value.array->push_back(
+                        json_float
+                    );
                 }
             } else {
-                iNumber = ParseInteger(vector);
+                i_number = parse_integer(vector);
 
-                if (keyFlag) {
-                    JsonValue jsonInt(iNumber);
-                    (*stackOfJsonValues_.back()
-                          ->value.object)[lastKey_.c_str()] = jsonInt;
+                if (key_flag) {
+                    JsonValue json_int(i_number);
+                    (*stack_of_json_values.back()
+                          ->value.object)[last_key.c_str()] = json_int;
                 } else {
-                    JsonValue jsonInt(iNumber);
-                    stackOfJsonValues_.back()->value.array->push_back(jsonInt);
+                    JsonValue json_int(i_number);
+                    stack_of_json_values.back()->value.array->push_back(
+                        json_int
+                    );
                 }
             }
 
         } else if (
-            currentChar_ == 't' || currentChar_ == 'f' || currentChar_ == 'n'
+            current_char == 't' || current_char == 'f' || current_char == 'n'
         ) {
-            std::string boolOrNullString = BoolOrNullParse();
+            std::string bool_or_null_string = bool_or_null_parse();
 
-            if (boolOrNullString == "true") {
-                if (keyFlag) {
-                    JsonValue jsonTrue(true);
-                    (*stackOfJsonValues_.back()
-                          ->value.object)[lastKey_.c_str()] = jsonTrue;
+            if (bool_or_null_string == "true") {
+                if (key_flag) {
+                    JsonValue json_true(true);
+                    (*stack_of_json_values.back()
+                          ->value.object)[last_key.c_str()] = json_true;
                 } else {
-                    JsonValue jsonTrue(true);
-                    stackOfJsonValues_.back()->value.array->push_back(jsonTrue);
+                    JsonValue json_true(true);
+                    stack_of_json_values.back()->value.array->push_back(
+                        json_true
+                    );
                 }
-            } else if (boolOrNullString == "false") {
-                if (keyFlag) {
-                    JsonValue jsonFalse(false);
-                    (*stackOfJsonValues_.back()
-                          ->value.object)[lastKey_.c_str()] = jsonFalse;
+            } else if (bool_or_null_string == "false") {
+                if (key_flag) {
+                    JsonValue json_false(false);
+                    (*stack_of_json_values.back()
+                          ->value.object)[last_key.c_str()] = json_false;
                 } else {
-                    JsonValue jsonFalse(false);
-                    stackOfJsonValues_.back()->value.array->push_back(jsonFalse);
+                    JsonValue json_false(false);
+                    stack_of_json_values.back()->value.array->push_back(
+                        json_false
+                    );
                 }
-            } else if (boolOrNullString == "null") {
-                if (keyFlag) {
-                    JsonValue jsonNull;
-                    jsonNull.type = JsonNull;
-                    jsonNull.value.null = NULL;
-                    (*stackOfJsonValues_.back()
-                          ->value.object)[lastKey_.c_str()] = jsonNull;
+            } else if (bool_or_null_string == "null") {
+                if (key_flag) {
+                    JsonValue json_null;
+                    json_null.type = JsonNull;
+                    json_null.value.null = NULL;
+                    (*stack_of_json_values.back()
+                          ->value.object)[last_key.c_str()] = json_null;
                 } else {
-                    JsonValue jsonNull;
-                    jsonNull.type = JsonNull;
-                    jsonNull.value.null = NULL;
-                    stackOfJsonValues_.back()->value.array->push_back(jsonNull);
+                    JsonValue json_null;
+                    json_null.type = JsonNull;
+                    json_null.value.null = NULL;
+                    stack_of_json_values.back()->value.array->push_back(
+                        json_null
+                    );
                 }
             }
-        } else if (currentChar_ == '{') {
-            if (stackOfJsonValues_.size() == 0) {
-                root_ = new JsonValue;
-                *root_ = CreateJsonHashMap();
-                stackOfJsonValues_.push_back(root_);
-            } else if (keyFlag) {
-                JsonValue jsonObject = CreateJsonHashMap();
-                (*stackOfJsonValues_.back()->value.object)[lastKey_.c_str()] =
-                    jsonObject;
-                stackOfJsonValues_.push_back(&(
-                    *stackOfJsonValues_.back()->value.object
-                )[lastKey_.c_str()]);
-            } else if (!keyFlag) {
-                JsonValue jsonObject = CreateJsonHashMap();
-                stackOfJsonValues_.back()->value.array->push_back(jsonObject);
-                stackOfJsonValues_.push_back(
-                    &stackOfJsonValues_.back()->value.array->back()
+        } else if (current_char == '{') {
+            if (stack_of_json_values.size() == 0) {
+                root = new JsonValue;
+                *root = create_json_hash_map();
+                stack_of_json_values.push_back(root);
+            } else if (key_flag) {
+                JsonValue json_object = create_json_hash_map();
+                (*stack_of_json_values.back()->value.object)[last_key.c_str()] =
+                    json_object;
+                stack_of_json_values.push_back(&(
+                    *stack_of_json_values.back()->value.object
+                )[last_key.c_str()]);
+            } else if (!key_flag) {
+                JsonValue json_object = create_json_hash_map();
+                stack_of_json_values.back()->value.array->push_back(json_object);
+                stack_of_json_values.push_back(
+                    &stack_of_json_values.back()->value.array->back()
                 );
             }
 
-            keyFlag = true;
-        } else if (currentChar_ == '[') {
-            if (stackOfJsonValues_.size() == 0) {
-                root_ = new JsonValue;
-                *root_ = CreateJsonArray();
-                stackOfJsonValues_.push_back(root_);
-            } else if (keyFlag) {
-                JsonValue jsonArray = CreateJsonArray();
-                (*stackOfJsonValues_.back()->value.object)[lastKey_.c_str()] =
-                    jsonArray;
-                stackOfJsonValues_.push_back(&(
-                    *stackOfJsonValues_.back()->value.object
-                )[lastKey_.c_str()]);
-            } else if (!keyFlag) {
-                JsonValue jsonArray = CreateJsonArray();
-                stackOfJsonValues_.back()->value.array->push_back(jsonArray);
-                stackOfJsonValues_.push_back(
-                    &stackOfJsonValues_.back()->value.array->back()
+            key_flag = true;
+        } else if (current_char == '[') {
+            if (stack_of_json_values.size() == 0) {
+                root = new JsonValue;
+                *root = create_json_array();
+                stack_of_json_values.push_back(root);
+            } else if (key_flag) {
+                JsonValue json_array = create_json_array();
+                (*stack_of_json_values.back()->value.object)[last_key.c_str()] =
+                    json_array;
+                stack_of_json_values.push_back(&(
+                    *stack_of_json_values.back()->value.object
+                )[last_key.c_str()]);
+            } else if (!key_flag) {
+                JsonValue json_array = create_json_array();
+                stack_of_json_values.back()->value.array->push_back(json_array);
+                stack_of_json_values.push_back(
+                    &stack_of_json_values.back()->value.array->back()
                 );
             }
 
-            keyFlag = false;
-        } else if (currentChar_ == '}') {
-            stackOfJsonValues_.pop_back();
-            if (stackOfJsonValues_.size()
-                && stackOfJsonValues_.back()->type == JsonObject) {
-                keyFlag = true;
+            key_flag = false;
+        } else if (current_char == '}') {
+            stack_of_json_values.pop_back();
+            if (stack_of_json_values.size()
+                && stack_of_json_values.back()->type == JsonObject) {
+                key_flag = true;
             } else {
-                keyFlag = false;
+                key_flag = false;
             }
 
-        } else if (currentChar_ == ']') {
-            stackOfJsonValues_.pop_back();
-            if (stackOfJsonValues_.size()
-                && stackOfJsonValues_.back()->type == JsonObject) {
-                keyFlag = true;
+        } else if (current_char == ']') {
+            stack_of_json_values.pop_back();
+            if (stack_of_json_values.size()
+                && stack_of_json_values.back()->type == JsonObject) {
+                key_flag = true;
             } else {
-                keyFlag = false;
+                key_flag = false;
             }
         }
 
-        ++globalFileCounter_;
+        ++global_file_counter;
     }
 }
 
-JsonValue CJsonParser::CreateJsonHashMap() {
-    JsonValue jsonObject;
-    jsonObject.type = JsonObject;
-    jsonObject.value.object = new HashMap<JsonValue>;
-    return jsonObject;
+JsonValue CJsonParser::create_json_hash_map() {
+    JsonValue json_object;
+    json_object.type = JsonObject;
+    json_object.value.object = new HashMap<JsonValue>;
+    return json_object;
 }
 
-JsonValue CJsonParser::CreateJsonArray() {
-    JsonValue jsonArray;
-    jsonArray.type = JsonArray;
-    jsonArray.value.array = new std::vector<JsonValue>;
-    return jsonArray;
+JsonValue CJsonParser::create_json_array() {
+    JsonValue json_array;
+    json_array.type = JsonArray;
+    json_array.value.array = new std::vector<JsonValue>;
+    return json_array;
 }
 
-std::string CJsonParser::BoolOrNullParse() {
-    std::string boolOrNullString = "";
+std::string CJsonParser::bool_or_null_parse() {
+    std::string bool_or_null_string = "";
     while (1) {
-        currentChar_ = pJsonFileData_[globalFileCounter_];
-        if (currentChar_ >= 'a' && currentChar_ <= 'z') {
-            boolOrNullString.push_back(currentChar_);
-            ++globalFileCounter_;
+        current_char = p_json_file_data[global_file_counter];
+        if (current_char >= 'a' && current_char <= 'z') {
+            bool_or_null_string.push_back(current_char);
+            ++global_file_counter;
         } else {
-            return boolOrNullString;
+            return bool_or_null_string;
         }
     }
 }
 
-bool CJsonParser::IsContainChar(std::string _string, char _char) {
-    for (unsigned int i = 0; i < _string.size(); ++i) {
-        if (_string[i] == _char) {
+bool CJsonParser::is_contain_char(std::string text, char character) {
+    for (unsigned int i = 0; i < text.size(); ++i) {
+        if (text[i] == character) {
             return true;
         }
     }
@@ -9138,131 +9481,132 @@ bool CJsonParser::IsContainChar(std::string _string, char _char) {
     return false;
 }
 
-std::string CJsonParser::NumberAsStringParse() {
-    std::string numberAsString = "";
+std::string CJsonParser::number_as_string_parse() {
+    std::string number_as_string = "";
     while (1) {
-        currentChar_ = pJsonFileData_[globalFileCounter_];
-        if ((currentChar_ >= '0' && currentChar_ <= '9') || currentChar_ == '+'
-            || currentChar_ == '-' || currentChar_ == 'e') {
-            numberAsString.push_back(currentChar_);
-            ++globalFileCounter_;
-        } else if (currentChar_ == '.') {
-            numberAsString.push_back(currentChar_);
-            ++globalFileCounter_;
+        current_char = p_json_file_data[global_file_counter];
+        if ((current_char >= '0' && current_char <= '9') || current_char == '+'
+            || current_char == '-' || current_char == 'e') {
+            number_as_string.push_back(current_char);
+            ++global_file_counter;
+        } else if (current_char == '.') {
+            number_as_string.push_back(current_char);
+            ++global_file_counter;
         } else {
-            return numberAsString;
+            return number_as_string;
         }
     }
 }
 
-std::string CJsonParser::StringParse() {
-    ++globalFileCounter_;
-    std::string localBuffer = "";
+std::string CJsonParser::string_parse() {
+    ++global_file_counter;
+    std::string local_buffer = "";
     while (1) {
-        currentChar_ = pJsonFileData_[globalFileCounter_];
-        if (currentChar_ == '"') {
-            ++globalFileCounter_;
-            currentChar_ = pJsonFileData_[globalFileCounter_];
-            return localBuffer;
+        current_char = p_json_file_data[global_file_counter];
+        if (current_char == '"') {
+            ++global_file_counter;
+            current_char = p_json_file_data[global_file_counter];
+            return local_buffer;
         } else {
-            localBuffer.push_back(currentChar_);
-            ++globalFileCounter_;
+            local_buffer.push_back(current_char);
+            ++global_file_counter;
         }
     }
 }
 
-std::vector<char> CJsonParser::StringToVectorOfChars(std::string _string) {
-    std::vector<char> vectorWithChars;
-    for (unsigned int i = 0; i < _string.size(); ++i) {
-        vectorWithChars.push_back(_string[i]);
+std::vector<char> CJsonParser::string_to_vector_of_chars(std::string text) {
+    std::vector<char> vector_with_chars;
+    for (unsigned int i = 0; i < text.size(); ++i) {
+        vector_with_chars.push_back(text[i]);
     }
 
-    return vectorWithChars;
+    return vector_with_chars;
 }
 
-int CJsonParser::ParseInteger(std::vector<char> _word) {
-    std::vector<int> baseContainer;
+int CJsonParser::parse_integer(std::vector<char> digits) {
+    std::vector<int> base_container;
 
-    for (unsigned int i = 0; i < _word.size(); ++i) {
-        baseContainer.push_back(_word[i] - 48);
+    for (unsigned int i = 0; i < digits.size(); ++i) {
+        base_container.push_back(digits[i] - 48);
     }
 
-    int iResult = 0;
-    bool negateFlag = false;
+    int i_result = 0;
+    bool negate_flag = false;
 
-    unsigned int baseContainerSize = baseContainer.size();
-    for (unsigned int i = 0; i < baseContainerSize; ++i) {
-        if (baseContainer[i] == -3 && i == 0) {
-            negateFlag = true;
+    unsigned int base_container_size = base_container.size();
+    for (unsigned int i = 0; i < base_container_size; ++i) {
+        if (base_container[i] == -3 && i == 0) {
+            negate_flag = true;
             continue;
-        } else if (baseContainer[i] == -5 && i == 0) {
+        } else if (base_container[i] == -5 && i == 0) {
             continue;
         }
 
-        iResult += baseContainer[i] * std::pow(10, (baseContainerSize - 1) - i);
+        i_result +=
+            base_container[i] * std::pow(10, (base_container_size - 1) - i);
     }
 
-    if (negateFlag) {
-        iResult *= -1;
+    if (negate_flag) {
+        i_result *= -1;
     }
 
-    return iResult;
+    return i_result;
 }
 
-double CJsonParser::ParseFloating(std::vector<char> _word) {
-    std::vector<int> baseContainer;
+double CJsonParser::parse_floating(std::vector<char> digits) {
+    std::vector<int> base_container;
 
-    for (unsigned int i = 0; i < _word.size(); ++i) {
-        baseContainer.push_back(_word[i] - 48);
+    for (unsigned int i = 0; i < digits.size(); ++i) {
+        base_container.push_back(digits[i] - 48);
     }
 
-    int integerPart = 0;
-    double floatingPart = 0;
-    int eNumber = 0;
-    std::vector<int> integerPartContainer;
-    std::vector<int> floatingPartContainer;
-    std::vector<int> ePartContainer;
-    bool dotFlag = false;
-    bool negateFlag = false;
-    bool eFlag = false;
+    int integer_part = 0;
+    double floating_part = 0;
+    int e_number = 0;
+    std::vector<int> integer_part_container;
+    std::vector<int> floating_part_container;
+    std::vector<int> e_part_container;
+    bool dot_flag = false;
+    bool negate_flag = false;
+    bool e_flag = false;
     // False value equal "+" sign.
-    bool eSign = false;
-    unsigned int baseContainerSize = baseContainer.size();
+    bool e_sign = false;
+    unsigned int base_container_size = base_container.size();
 
-    if (baseContainer[0] == -3) {
-        negateFlag = true;
+    if (base_container[0] == -3) {
+        negate_flag = true;
     }
 
-    for (unsigned int i = 0; i < baseContainerSize; ++i) {
-        if (negateFlag && i == 0) {
+    for (unsigned int i = 0; i < base_container_size; ++i) {
+        if (negate_flag && i == 0) {
             continue;
-        } else if (baseContainer[i] == -5 && i == 0) {
+        } else if (base_container[i] == -5 && i == 0) {
             continue;
-        } else if (baseContainer[i] == -2) {
-            dotFlag = true;
+        } else if (base_container[i] == -2) {
+            dot_flag = true;
             continue;
-        } else if (baseContainer[i] == 53) {
-            eFlag = true;
+        } else if (base_container[i] == 53) {
+            e_flag = true;
             continue;
         }
 
-        if (eFlag) {
-            if (baseContainer[i] == -5) {
+        if (e_flag) {
+            if (base_container[i] == -5) {
                 continue;
-            } else if (baseContainer[i] == -3) {
-                eSign = true;
+            } else if (base_container[i] == -3) {
+                e_sign = true;
                 continue;
             }
 
-            ePartContainer.push_back(baseContainer[i]);
+            e_part_container.push_back(base_container[i]);
             continue;
         }
 
-        if (baseContainer[i] >= 0 && baseContainer[i] <= 9) {
-            if (dotFlag) {
-                floatingPartContainer.push_back(baseContainer[i]);
+        if (base_container[i] >= 0 && base_container[i] <= 9) {
+            if (dot_flag) {
+                floating_part_container.push_back(base_container[i]);
             } else {
-                integerPartContainer.push_back(baseContainer[i]);
+                integer_part_container.push_back(base_container[i]);
             }
         } else {
             std::cout << "Element is not a number" << std::endl;
@@ -9270,106 +9614,110 @@ double CJsonParser::ParseFloating(std::vector<char> _word) {
         }
     }
 
-    unsigned int ePartContainerSize = ePartContainer.size();
-    for (unsigned int i = 0; i < ePartContainerSize; ++i) {
-        eNumber +=
-            ePartContainer[i] * std::pow(10, (ePartContainerSize - 1) - i);
+    unsigned int e_part_container_size = e_part_container.size();
+    for (unsigned int i = 0; i < e_part_container_size; ++i) {
+        e_number +=
+            e_part_container[i] * std::pow(10, (e_part_container_size - 1) - i);
     }
 
-    unsigned int integerPartContainerSize = integerPartContainer.size();
-    for (unsigned int i = 0; i < integerPartContainerSize; ++i) {
-        integerPart += integerPartContainer[i]
-            * std::pow(10, (integerPartContainerSize - 1) - i);
+    unsigned int integer_part_container_size = integer_part_container.size();
+    for (unsigned int i = 0; i < integer_part_container_size; ++i) {
+        integer_part += integer_part_container[i]
+            * std::pow(10, (integer_part_container_size - 1) - i);
     }
 
-    unsigned int floatingPartContainerSize = floatingPartContainer.size();
-    for (unsigned int i = 0; i < floatingPartContainerSize; ++i) {
-        floatingPart += floatingPartContainer[i] / std::pow(10, i + 1);
+    unsigned int floating_part_container_size = floating_part_container.size();
+    for (unsigned int i = 0; i < floating_part_container_size; ++i) {
+        floating_part += floating_part_container[i] / std::pow(10, i + 1);
     }
 
     double result = 0;
-    result = (double)(integerPart + floatingPart);
+    result = (double)(integer_part + floating_part);
 
-    if (eFlag) {
-        if (eSign) {
-            result /= std::pow(10, eNumber);
+    if (e_flag) {
+        if (e_sign) {
+            result /= std::pow(10, e_number);
         } else {
-            result *= std::pow(10, eNumber);
+            result *= std::pow(10, e_number);
         }
     }
 
-    if (negateFlag) {
+    if (negate_flag) {
         result *= -1.0f;
     }
 
     return result;
 }
 
-void CJsonParser::SearchInJsonArray(
-    std::vector<JsonValue>* arrayValue,
-    const char* key_,
-    std::vector<JsonValue>& resultVector
+void CJsonParser::search_in_json_array(
+    std::vector<JsonValue>* array_value,
+    const char* key,
+    std::vector<JsonValue>& result_vector
 ) const {
-    for (unsigned int i = 0; i < arrayValue->size(); ++i) {
-        if ((*arrayValue)[i].type == JsonObject) {
-            SearchInJsonObject(
-                (*arrayValue)[i].value.object,
-                key_,
-                resultVector
+    for (unsigned int i = 0; i < array_value->size(); ++i) {
+        if ((*array_value)[i].type == JsonObject) {
+            search_in_json_object(
+                (*array_value)[i].value.object,
+                key,
+                result_vector
             );
         }
 
-        if ((*arrayValue)[i].type == JsonArray) {
-            SearchInJsonArray((*arrayValue)[i].value.array, key_, resultVector);
+        if ((*array_value)[i].type == JsonArray) {
+            search_in_json_array(
+                (*array_value)[i].value.array,
+                key,
+                result_vector
+            );
         }
     }
 }
 
-void CJsonParser::SearchInJsonObject(
-    HashMap<JsonValue>* mapValue,
-    const char* key_,
-    std::vector<JsonValue>& resultVector
+void CJsonParser::search_in_json_object(
+    HashMap<JsonValue>* map_value,
+    const char* key,
+    std::vector<JsonValue>& result_vector
 ) const {
-    for (unsigned int i = 0; i < mapValue->GetCapacity(); ++i) {
-        if (mapValue->hashMap_[i] != nullptr) {
-            Node<JsonValue>* current = mapValue->hashMap_[i];
+    for (unsigned int i = 0; i < map_value->get_capacity(); ++i) {
+        if (map_value->hash_map[i] != nullptr) {
+            Node<JsonValue>* current = map_value->hash_map[i];
             while (current != nullptr) {
-                std::string searchKey = key_;
-                std::string currentKey = current->key_;
-                if (currentKey == searchKey) {
-                    resultVector.push_back(current->value_);
+                std::string search_key = key;
+                std::string current_key = current->key;
+                if (current_key == search_key) {
+                    result_vector.push_back(current->value);
                 }
 
-                if (current->value_.type == JsonObject) {
-                    SearchInJsonObject(
-                        current->value_.value.object,
-                        key_,
-                        resultVector
+                if (current->value.type == JsonObject) {
+                    search_in_json_object(
+                        current->value.value.object,
+                        key,
+                        result_vector
                     );
                 }
 
-                if (current->value_.type == JsonArray) {
-                    SearchInJsonArray(
-                        current->value_.value.array,
-                        key_,
-                        resultVector
+                if (current->value.type == JsonArray) {
+                    search_in_json_array(
+                        current->value.value.array,
+                        key,
+                        result_vector
                     );
                 }
 
-                current = current->next_;
+                current = current->next;
             }
         }
     }
 }
 
-std::vector<JsonValue> CJsonParser::Search(const char* key_) const {
-    std::vector<JsonValue> resultVector;
-    SearchInJsonObject(root_->value.object, key_, resultVector);
-    return resultVector;
+std::vector<JsonValue> CJsonParser::search(const char* key) const {
+    std::vector<JsonValue> result_vector;
+    search_in_json_object(root->value.object, key, result_vector);
+    return result_vector;
 }
 
 template<typename T>
-bool isElementExist(const T element, const std::vector<T>& array) {
+bool is_element_exist(const T element, const std::vector<T>& array) {
     for (uint32_t n = 0; n < array.size(); ++n) {
         if (element == array[n]) {
             return true;
@@ -9380,7 +9728,7 @@ bool isElementExist(const T element, const std::vector<T>& array) {
 }
 
 template<typename T>
-T getElementIndex(const T element, const std::vector<T>& array) {
+T get_element_index(const T element, const std::vector<T>& array) {
     for (uint32_t n = 0; n < array.size(); ++n) {
         if (element == array[n]) {
             return n;
@@ -9390,7 +9738,7 @@ T getElementIndex(const T element, const std::vector<T>& array) {
     return std::numeric_limits<T>::max();
 }
 
-void calculateElementsMemorySize(
+void calculate_elements_memory_size(
     const uint32_t indices_elements_count,
     std::string* indices_element_type,
     const uint32_t indices_componet_type,
@@ -9444,145 +9792,150 @@ struct ComponentType {
     };
 };
 
-void calculateByteStep(uint32_t componetType, unsigned int* byteStep) {
-    if (componetType == ComponentType::I8
-        || componetType == ComponentType::U8) {
-        *byteStep = 1;
+void calculate_byte_step(uint32_t componet_type, unsigned int* byte_step) {
+    if (componet_type == ComponentType::I8
+        || componet_type == ComponentType::U8) {
+        *byte_step = 1;
     } else if (
-        componetType == ComponentType::I16 || componetType == ComponentType::U16
+        componet_type == ComponentType::I16
+        || componet_type == ComponentType::U16
     ) {
-        *byteStep = 2;
+        *byte_step = 2;
     } else if (
-        componetType == ComponentType::U32 || componetType == ComponentType::F32
+        componet_type == ComponentType::U32
+        || componet_type == ComponentType::F32
     ) {
-        *byteStep = 4;
+        *byte_step = 4;
     }
 }
 
 // Metadata structs to binary buffer with actual data.
 struct AccessorMetaData {
-    uint32_t bufferView;
-    uint32_t byteOffset;
-    uint32_t componentType;
+    uint32_t buffer_view;
+    uint32_t byte_offset;
+    uint32_t component_type;
     uint32_t count;
     std::string type;
 };
 
 struct BufferViewMetaData {
-    uint32_t byteLength;
-    uint32_t byteOffset;
+    uint32_t byte_length;
+    uint32_t byte_offset;
 };
 
-[[nodiscard]] AccessorMetaData readAccessorMetaData(
+[[nodiscard]] AccessorMetaData read_accessor_meta_data(
     JsonValue* gltf,
-    const uint32_t accessorIndex
+    const uint32_t accessor_index
 ) {
-    AccessorMetaData bufferMetaData;
-    bufferMetaData.bufferView =
-        (*gltf)["accessors"][accessorIndex]["bufferView"].value.iNumber;
-    bufferMetaData.count =
-        (*gltf)["accessors"][accessorIndex]["count"].value.iNumber;
-    bufferMetaData.type =
-        *(*gltf)["accessors"][accessorIndex]["type"].value.string;
-    bufferMetaData.componentType =
-        (*gltf)["accessors"][accessorIndex]["componentType"].value.iNumber;
+    AccessorMetaData buffer_meta_data;
+    buffer_meta_data.buffer_view =
+        (*gltf)["accessors"][accessor_index]["bufferView"].value.i_number;
+    buffer_meta_data.count =
+        (*gltf)["accessors"][accessor_index]["count"].value.i_number;
+    buffer_meta_data.type =
+        *(*gltf)["accessors"][accessor_index]["type"].value.string;
+    buffer_meta_data.component_type =
+        (*gltf)["accessors"][accessor_index]["componentType"].value.i_number;
 
-    bufferMetaData.byteOffset = 0;
-    if ((*gltf)["accessors"][accessorIndex].isObject() == JsonObject) {
+    buffer_meta_data.byte_offset = 0;
+    if ((*gltf)["accessors"][accessor_index].is_object() == JsonObject) {
         HashMap<JsonValue>* ptr =
-            (*gltf)["accessors"][accessorIndex].value.object;
-        if (ptr->Contain("byteOffset")) {
-            bufferMetaData.byteOffset =
-                (*gltf)["accessors"][accessorIndex]["byteOffset"].value.iNumber;
+            (*gltf)["accessors"][accessor_index].value.object;
+        if (ptr->contain("byteOffset")) {
+            buffer_meta_data.byte_offset =
+                (*gltf)["accessors"][accessor_index]["byteOffset"]
+                    .value.i_number;
         }
     }
 
-    return bufferMetaData;
+    return buffer_meta_data;
 }
 
-[[nodiscard]] BufferViewMetaData readBufferViewMetaData(
+[[nodiscard]] BufferViewMetaData read_buffer_view_meta_data(
     JsonValue* gltf,
-    const uint32_t bufferViewIndex
+    const uint32_t buffer_view_index
 ) {
-    BufferViewMetaData bufferViewMetaData;
-    bufferViewMetaData.byteLength =
-        (*gltf)["bufferViews"][bufferViewIndex]["byteLength"].value.iNumber;
-    bufferViewMetaData.byteOffset = 0;
-    if ((*gltf)["bufferViews"][bufferViewIndex].isObject() == JsonObject) {
+    BufferViewMetaData buffer_view_meta_data;
+    buffer_view_meta_data.byte_length =
+        (*gltf)["bufferViews"][buffer_view_index]["byteLength"].value.i_number;
+    buffer_view_meta_data.byte_offset = 0;
+    if ((*gltf)["bufferViews"][buffer_view_index].is_object() == JsonObject) {
         HashMap<JsonValue>* ptr =
-            (*gltf)["bufferViews"][bufferViewIndex].value.object;
-        if (ptr->Contain("byteOffset")) {
-            bufferViewMetaData.byteOffset =
-                (*gltf)["bufferViews"][bufferViewIndex]["byteOffset"]
-                    .value.iNumber;
+            (*gltf)["bufferViews"][buffer_view_index].value.object;
+        if (ptr->contain("byteOffset")) {
+            buffer_view_meta_data.byte_offset =
+                (*gltf)["bufferViews"][buffer_view_index]["byteOffset"]
+                    .value.i_number;
         }
     }
 
-    return bufferViewMetaData;
+    return buffer_view_meta_data;
 }
 
 template<typename T>
-void readBinaryBufferData(
+void read_binary_buffer_data(
     char* buffer,
-    AccessorMetaData accessorMetaData,
-    BufferViewMetaData bufferViewMetaData,
-    std::vector<T>& outputData
+    AccessorMetaData accessor_meta_data,
+    BufferViewMetaData buffer_view_meta_data,
+    std::vector<T>& output_data
 ) {
-    uint32_t indicesByteStep = 0;
-    calculateByteStep(accessorMetaData.componentType, &indicesByteStep);
+    uint32_t indices_byte_step = 0;
+    calculate_byte_step(accessor_meta_data.component_type, &indices_byte_step);
 
-    unsigned int byteLength = 0;
-    calculateElementsMemorySize(
-        accessorMetaData.count,
-        &accessorMetaData.type,
-        accessorMetaData.componentType,
-        &byteLength
+    unsigned int byte_length = 0;
+    calculate_elements_memory_size(
+        accessor_meta_data.count,
+        &accessor_meta_data.type,
+        accessor_meta_data.component_type,
+        &byte_length
     );
     for (unsigned int i =
-             bufferViewMetaData.byteOffset + accessorMetaData.byteOffset;
-         i < bufferViewMetaData.byteOffset + accessorMetaData.byteOffset
-             + byteLength;
-         i += indicesByteStep) {
-        switch (accessorMetaData.componentType) {
+             buffer_view_meta_data.byte_offset + accessor_meta_data.byte_offset;
+         i < buffer_view_meta_data.byte_offset + accessor_meta_data.byte_offset
+             + byte_length;
+         i += indices_byte_step) {
+        switch (accessor_meta_data.component_type) {
             case ComponentType::U8:
-                outputData.push_back(
+                output_data.push_back(
                     reinterpret_cast<unsigned char&>(buffer[i])
                 );
                 break;
             case ComponentType::U16:
-                outputData.push_back(
+                output_data.push_back(
                     reinterpret_cast<unsigned short&>(buffer[i])
                 );
                 break;
             case ComponentType::U32:
-                outputData.push_back(reinterpret_cast<unsigned int&>(buffer[i]));
+                output_data.push_back(
+                    reinterpret_cast<unsigned int&>(buffer[i])
+                );
                 break;
             case ComponentType::F32:
-                outputData.push_back(reinterpret_cast<float&>(buffer[i]));
+                output_data.push_back(reinterpret_cast<float&>(buffer[i]));
                 break;
         }
     }
 }
 
-void CJsonParser::LoadGLTF(
-    const char* pathsGLTF_,
-    std::vector<float>& aVertexes_,
-    std::vector<uint32_t>& aIndices_,
-    std::vector<std::vector<Matrix<float, 4>>>& jointMatricesPerMesh,
+void CJsonParser::load_gltf(
+    const char* paths_gltf,
+    std::vector<float>& a_vertexes,
+    std::vector<uint32_t>& a_indices,
+    std::vector<std::vector<Matrix<float, 4>>>& joint_matrices_per_mesh,
     std::vector<float>& frames,
-    bool& noAnimations,
-    float& topY
+    bool& no_animations,
+    float& top_y
 ) {
-    std::cout << "path: " << pathsGLTF_ << std::endl;
-    ReadFile(pathsGLTF_);
-    Parse();
-    JsonValue* gltf = GetRoot();
+    std::cout << "path: " << paths_gltf << std::endl;
+    read_file(paths_gltf);
+    parse();
+    JsonValue* gltf = get_root();
     std::string binary_path = *(*gltf)["buffers"][0]["uri"].value.string;
-    int full_byte_size = (*gltf)["buffers"][0]["byteLength"].value.iNumber;
-    size_t lastSeparator = std::string(pathsGLTF_).find_last_of("/\\");
-    std::string binary_full_path = lastSeparator == std::string::npos
+    int full_byte_size = (*gltf)["buffers"][0]["byteLength"].value.i_number;
+    size_t last_separator = std::string(paths_gltf).find_last_of("/\\");
+    std::string binary_full_path = last_separator == std::string::npos
         ? binary_path
-        : std::string(pathsGLTF_).substr(0, lastSeparator + 1) + binary_path;
+        : std::string(paths_gltf).substr(0, last_separator + 1) + binary_path;
     std::ifstream in_stream;
     in_stream.open(binary_full_path, std::ios::binary);
     if (!in_stream.is_open()) {
@@ -9593,406 +9946,414 @@ void CJsonParser::LoadGLTF(
     char* buffer = new char[full_byte_size];
     in_stream.read(buffer, full_byte_size);
     in_stream.close();
-    const uint32_t indicesAccessorIndex =
-        (*gltf)["meshes"][0]["primitives"][0]["indices"].value.iNumber;
-    AccessorMetaData indicesAccessorMetaData =
-        readAccessorMetaData(gltf, indicesAccessorIndex);
-    BufferViewMetaData indicesBufferViewMetaData =
-        readBufferViewMetaData(gltf, indicesAccessorMetaData.bufferView);
+    const uint32_t indices_accessor_index =
+        (*gltf)["meshes"][0]["primitives"][0]["indices"].value.i_number;
+    AccessorMetaData indices_accessor_meta_data =
+        read_accessor_meta_data(gltf, indices_accessor_index);
+    BufferViewMetaData indices_buffer_view_meta_data =
+        read_buffer_view_meta_data(gltf, indices_accessor_meta_data.buffer_view);
     std::vector<uint32_t> indices;
-    readBinaryBufferData(
+    read_binary_buffer_data(
         buffer,
-        indicesAccessorMetaData,
-        indicesBufferViewMetaData,
+        indices_accessor_meta_data,
+        indices_buffer_view_meta_data,
         indices
     );
-    const uint32_t verticesPositionAccessorIndex =
+    const uint32_t vertices_position_accessor_index =
         (*gltf)["meshes"][0]["primitives"][0]["attributes"]["POSITION"]
-            .value.iNumber;
-    AccessorMetaData verticesPositionAccessorMetaData =
-        readAccessorMetaData(gltf, verticesPositionAccessorIndex);
-    BufferViewMetaData verticesPositionBufferViewMetaData =
-        readBufferViewMetaData(
+            .value.i_number;
+    AccessorMetaData vertices_position_accessor_meta_data =
+        read_accessor_meta_data(gltf, vertices_position_accessor_index);
+    BufferViewMetaData vertices_position_buffer_view_meta_data =
+        read_buffer_view_meta_data(
             gltf,
-            verticesPositionAccessorMetaData.bufferView
+            vertices_position_accessor_meta_data.buffer_view
         );
-    std::vector<float> verticesPosition;
-    readBinaryBufferData(
+    std::vector<float> vertices_position;
+    read_binary_buffer_data(
         buffer,
-        verticesPositionAccessorMetaData,
-        verticesPositionBufferViewMetaData,
-        verticesPosition
+        vertices_position_accessor_meta_data,
+        vertices_position_buffer_view_meta_data,
+        vertices_position
     );
-    const uint32_t textureCoordinatesAccessorIndex =
+    const uint32_t texture_coordinates_accessor_index =
         (*gltf)["meshes"][0]["primitives"][0]["attributes"]["TEXCOORD_0"]
-            .value.iNumber;
-    AccessorMetaData textureCoordinatesAccessorMetaData =
-        readAccessorMetaData(gltf, textureCoordinatesAccessorIndex);
-    BufferViewMetaData textureCoordinatesBufferViewMetaData =
-        readBufferViewMetaData(
+            .value.i_number;
+    AccessorMetaData texture_coordinates_accessor_meta_data =
+        read_accessor_meta_data(gltf, texture_coordinates_accessor_index);
+    BufferViewMetaData texture_coordinates_buffer_view_meta_data =
+        read_buffer_view_meta_data(
             gltf,
-            textureCoordinatesAccessorMetaData.bufferView
+            texture_coordinates_accessor_meta_data.buffer_view
         );
-    std::vector<float> textureCoordinates;
-    readBinaryBufferData(
+    std::vector<float> texture_coordinates;
+    read_binary_buffer_data(
         buffer,
-        textureCoordinatesAccessorMetaData,
-        textureCoordinatesBufferViewMetaData,
-        textureCoordinates
+        texture_coordinates_accessor_meta_data,
+        texture_coordinates_buffer_view_meta_data,
+        texture_coordinates
     );
-    const uint32_t normalsAccessorIndex =
+    const uint32_t normals_accessor_index =
         (*gltf)["meshes"][0]["primitives"][0]["attributes"]["NORMAL"]
-            .value.iNumber;
-    AccessorMetaData normalsAccessorMetaData =
-        readAccessorMetaData(gltf, normalsAccessorIndex);
-    BufferViewMetaData normalsBufferViewMetaData =
-        readBufferViewMetaData(gltf, normalsAccessorMetaData.bufferView);
+            .value.i_number;
+    AccessorMetaData normals_accessor_meta_data =
+        read_accessor_meta_data(gltf, normals_accessor_index);
+    BufferViewMetaData normals_buffer_view_meta_data =
+        read_buffer_view_meta_data(gltf, normals_accessor_meta_data.buffer_view);
     std::vector<float> normals;
-    readBinaryBufferData(
+    read_binary_buffer_data(
         buffer,
-        normalsAccessorMetaData,
-        normalsBufferViewMetaData,
+        normals_accessor_meta_data,
+        normals_buffer_view_meta_data,
         normals
     );
-    std::vector<JsonValue> skins = Search("skins");
+    std::vector<JsonValue> skins = search("skins");
     JsonValue joints;
-    std::vector<Matrix<float, 4>> globalTransformJointNode;
-    std::vector<Matrix<float, 4>> inverseBindMatrixSet;
-    std::vector<std::vector<Matrix<float, 4>>> jointMatrices;
-    std::vector<float> weightsContainer;
-    std::vector<int> jointsIndices;
+    std::vector<Matrix<float, 4>> global_transform_joint_node;
+    std::vector<Matrix<float, 4>> inverse_bind_matrix_set;
+    std::vector<std::vector<Matrix<float, 4>>> joint_matrices;
+    std::vector<float> weights_container;
+    std::vector<int> joints_indices;
     std::vector<std::vector<int>> children;
     if (skins.size() > 0) {
-        noAnimations = false;
+        no_animations = false;
         joints = (*gltf)["skins"][0]["joints"];
         JsonValue nodes = (*gltf)["nodes"];
         // Loop on joints.
         for (unsigned int i = 0; i < joints.value.array->size(); ++i) {
-            unsigned int jointIndexMapToNode =
-                (*joints.value.array)[i].value.iNumber;
-            JsonValue node = nodes[jointIndexMapToNode];
-            Quaternion rotationQuaternion;
+            unsigned int joint_index_map_to_node =
+                (*joints.value.array)[i].value.i_number;
+            JsonValue node = nodes[joint_index_map_to_node];
+            Quaternion rotation_quaternion;
             Matrix<float, 4> rotation(1.0f);
             Matrix<float, 4> scale(1.0f);
             Matrix<float, 4> translation(1.0f);
-            if (node.value.object->Contain("rotation")) {
+            if (node.value.object->contain("rotation")) {
                 JsonValue array = (*node.value.object)["rotation"];
                 for (unsigned int i = 0; i < array.value.array->size(); ++i) {
                     switch (i) {
                         case 0:
-                            if (array[i].isInterger()) {
-                                rotationQuaternion.x = array[i].value.iNumber;
-                            } else if (array[i].isFloat()) {
-                                rotationQuaternion.x = array[i].value.fNumber;
+                            if (array[i].is_interger()) {
+                                rotation_quaternion.x = array[i].value.i_number;
+                            } else if (array[i].is_float()) {
+                                rotation_quaternion.x = array[i].value.f_number;
                             }
                             break;
                         case 1:
-                            if (array[i].isInterger()) {
-                                rotationQuaternion.y = array[i].value.iNumber;
-                            } else if (array[i].isFloat()) {
-                                rotationQuaternion.y = array[i].value.fNumber;
+                            if (array[i].is_interger()) {
+                                rotation_quaternion.y = array[i].value.i_number;
+                            } else if (array[i].is_float()) {
+                                rotation_quaternion.y = array[i].value.f_number;
                             }
                             break;
                         case 2:
-                            if (array[i].isInterger()) {
-                                rotationQuaternion.z = array[i].value.iNumber;
-                            } else if (array[i].isFloat()) {
-                                rotationQuaternion.z = array[i].value.fNumber;
+                            if (array[i].is_interger()) {
+                                rotation_quaternion.z = array[i].value.i_number;
+                            } else if (array[i].is_float()) {
+                                rotation_quaternion.z = array[i].value.f_number;
                             }
                             break;
                         case 3:
-                            if (array[i].isInterger()) {
-                                rotationQuaternion.w = array[i].value.iNumber;
-                            } else if (array[i].isFloat()) {
-                                rotationQuaternion.w = array[i].value.fNumber;
+                            if (array[i].is_interger()) {
+                                rotation_quaternion.w = array[i].value.i_number;
+                            } else if (array[i].is_float()) {
+                                rotation_quaternion.w = array[i].value.f_number;
                             }
                             break;
                     }
                 }
-                rotation = rotateQuaternion<float, 4>(rotationQuaternion);
-                rotation.SelfTensorTranspose();
+                rotation = rotate_quaternion<float, 4>(rotation_quaternion);
+                rotation.self_tensor_transpose();
             }
             std::vector<int> local_children;
             // Collect children indices.
-            if (node.value.object->Contain("children")) {
+            if (node.value.object->contain("children")) {
                 JsonValue array = (*node.value.object)["children"];
                 for (unsigned int i = 0; i < array.value.array->size(); ++i) {
-                    local_children.push_back(array[i].value.iNumber);
+                    local_children.push_back(array[i].value.i_number);
                 }
                 // Linearly put all children to every root joint.
                 children.push_back(local_children);
             } else {
-                std::vector<int> emptyChildren;
+                std::vector<int> empty_children;
                 // Put empty pack of children if can find a one.
-                children.push_back(emptyChildren);
+                children.push_back(empty_children);
             }
-            if (node.value.object->Contain("scale")) {
+            if (node.value.object->contain("scale")) {
                 JsonValue array = (*node.value.object)["scale"];
                 for (unsigned int i = 0; i < array.value.array->size(); ++i) {
-                    if (array[i].isInterger()) {
-                        scale[i][i] = array[i].value.iNumber;
-                    } else if (array[i].isFloat()) {
-                        scale[i][i] = array[i].value.fNumber;
+                    if (array[i].is_interger()) {
+                        scale[i][i] = array[i].value.i_number;
+                    } else if (array[i].is_float()) {
+                        scale[i][i] = array[i].value.f_number;
                     }
                 }
             }
-            if (node.value.object->Contain("translation")) {
+            if (node.value.object->contain("translation")) {
                 JsonValue array = (*node.value.object)["translation"];
                 for (unsigned int i = 0; i < array.value.array->size(); ++i) {
-                    if (array[i].isInterger()) {
-                        translation[3][i] = array[i].value.iNumber;
-                    } else if (array[i].isFloat()) {
-                        translation[3][i] = array[i].value.fNumber;
+                    if (array[i].is_interger()) {
+                        translation[3][i] = array[i].value.i_number;
+                    } else if (array[i].is_float()) {
+                        translation[3][i] = array[i].value.f_number;
                     }
                 }
             }
             // Compute model matrix.
             Matrix<float, 4> model = scale * rotation * translation;
-            globalTransformJointNode.push_back(model);
+            global_transform_joint_node.push_back(model);
         }
         // Get the inverse bind matrices accessor index.
-        const uint32_t inverseBindMatricesAccessorIndex =
-            (*gltf)["skins"][0]["inverseBindMatrices"].value.iNumber;
-        AccessorMetaData inverseBindMatricesAccessorMetaData =
-            readAccessorMetaData(gltf, inverseBindMatricesAccessorIndex);
-        BufferViewMetaData inveresBindMatricesBufferViewMetaData =
-            readBufferViewMetaData(
+        const uint32_t inverse_bind_matrices_accessor_index =
+            (*gltf)["skins"][0]["inverseBindMatrices"].value.i_number;
+        AccessorMetaData inverse_bind_matrices_accessor_meta_data =
+            read_accessor_meta_data(gltf, inverse_bind_matrices_accessor_index);
+        BufferViewMetaData inveres_bind_matrices_buffer_view_meta_data =
+            read_buffer_view_meta_data(
                 gltf,
-                inverseBindMatricesAccessorMetaData.bufferView
+                inverse_bind_matrices_accessor_meta_data.buffer_view
             );
-        std::vector<float> inverseBindMatricesData;
-        readBinaryBufferData(
+        std::vector<float> inverse_bind_matrices_data;
+        read_binary_buffer_data(
             buffer,
-            inverseBindMatricesAccessorMetaData,
-            inveresBindMatricesBufferViewMetaData,
-            inverseBindMatricesData
+            inverse_bind_matrices_accessor_meta_data,
+            inveres_bind_matrices_buffer_view_meta_data,
+            inverse_bind_matrices_data
         );
-        Matrix<float, 4> inverseBindMatrix(0.0f);
+        Matrix<float, 4> inverse_bind_matrix(0.0f);
         for (unsigned int n = 0; n < joints.value.array->size(); ++n) {
             for (unsigned int g = 0; g < 4; ++g) {
                 for (unsigned int j = 0; j < 4; ++j) {
                     // Put row float data into mat4.
-                    inverseBindMatrix[g][j] =
-                        inverseBindMatricesData[n * 16 + g * 4 + j];
+                    inverse_bind_matrix[g][j] =
+                        inverse_bind_matrices_data[n * 16 + g * 4 + j];
                 }
             }
-            inverseBindMatrixSet.push_back(inverseBindMatrix);
+            inverse_bind_matrix_set.push_back(inverse_bind_matrix);
         }
-        const uint32_t jointsAccessorIndex =
+        const uint32_t joints_accessor_index =
             (*gltf)["meshes"][0]["primitives"][0]["attributes"]["JOINTS_0"]
-                .value.iNumber;
-        AccessorMetaData jointsAccessorMetaData =
-            readAccessorMetaData(gltf, jointsAccessorIndex);
-        BufferViewMetaData jointsBufferViewMetaData =
-            readBufferViewMetaData(gltf, jointsAccessorMetaData.bufferView);
-        readBinaryBufferData(
+                .value.i_number;
+        AccessorMetaData joints_accessor_meta_data =
+            read_accessor_meta_data(gltf, joints_accessor_index);
+        BufferViewMetaData joints_buffer_view_meta_data =
+            read_buffer_view_meta_data(
+                gltf,
+                joints_accessor_meta_data.buffer_view
+            );
+        read_binary_buffer_data(
             buffer,
-            jointsAccessorMetaData,
-            jointsBufferViewMetaData,
-            jointsIndices
+            joints_accessor_meta_data,
+            joints_buffer_view_meta_data,
+            joints_indices
         );
-        unsigned int weightsAccessorIndex =
+        unsigned int weights_accessor_index =
             (*gltf)["meshes"][0]["primitives"][0]["attributes"]["WEIGHTS_0"]
-                .value.iNumber;
-        AccessorMetaData weightsAccessorMetaData =
-            readAccessorMetaData(gltf, weightsAccessorIndex);
-        BufferViewMetaData weightsBufferViewMetaData =
-            readBufferViewMetaData(gltf, weightsAccessorMetaData.bufferView);
-        readBinaryBufferData(
+                .value.i_number;
+        AccessorMetaData weights_accessor_meta_data =
+            read_accessor_meta_data(gltf, weights_accessor_index);
+        BufferViewMetaData weights_buffer_view_meta_data =
+            read_buffer_view_meta_data(
+                gltf,
+                weights_accessor_meta_data.buffer_view
+            );
+        read_binary_buffer_data(
             buffer,
-            weightsAccessorMetaData,
-            weightsBufferViewMetaData,
-            weightsContainer
+            weights_accessor_meta_data,
+            weights_buffer_view_meta_data,
+            weights_container
         );
     } else {
-        noAnimations = true;
+        no_animations = true;
     }
-    std::vector<JsonValue> animations = Search("animations");
+    std::vector<JsonValue> animations = search("animations");
     if (animations.size() > 0) {
-        std::vector<JsonValue> samplerIndices;
-        std::vector<JsonValue> targetNodes;
-        std::vector<JsonValue> targetPaths;
+        std::vector<JsonValue> sampler_indices;
+        std::vector<JsonValue> target_nodes;
+        std::vector<JsonValue> target_paths;
         JsonValue channels = (*gltf)["animations"][0]["channels"];
         for (unsigned int i = 0; i < channels.value.array->size(); ++i) {
-            samplerIndices.push_back(channels[i]["sampler"]);
+            sampler_indices.push_back(channels[i]["sampler"]);
         }
         for (unsigned int i = 0; i < channels.value.array->size(); ++i) {
-            targetNodes.push_back(channels[i]["target"]["node"]);
+            target_nodes.push_back(channels[i]["target"]["node"]);
         }
         for (unsigned int i = 0; i < channels.value.array->size(); ++i) {
-            targetPaths.push_back(channels[i]["target"]["path"]);
+            target_paths.push_back(channels[i]["target"]["path"]);
         }
-        std::vector<unsigned int> translationSamplerIndices;
-        std::vector<unsigned int> rotationSamplerIndices;
-        std::vector<unsigned int> scaleSamplerIndices;
-        std::vector<uint32_t> nodesMapTranslations;
-        std::vector<uint32_t> nodesMapRotations;
-        std::vector<uint32_t> nodesMapScales;
-        for (unsigned int i = 0; i < samplerIndices.size(); ++i) {
-            if (*targetPaths[i].value.string == "translation") {
-                translationSamplerIndices.push_back(
-                    samplerIndices[i].value.iNumber
+        std::vector<unsigned int> translation_sampler_indices;
+        std::vector<unsigned int> rotation_sampler_indices;
+        std::vector<unsigned int> scale_sampler_indices;
+        std::vector<uint32_t> nodes_map_translations;
+        std::vector<uint32_t> nodes_map_rotations;
+        std::vector<uint32_t> nodes_map_scales;
+        for (unsigned int i = 0; i < sampler_indices.size(); ++i) {
+            if (*target_paths[i].value.string == "translation") {
+                translation_sampler_indices.push_back(
+                    sampler_indices[i].value.i_number
                 );
-                nodesMapTranslations.push_back(targetNodes[i].value.iNumber);
-            } else if (*targetPaths[i].value.string == "rotation") {
-                rotationSamplerIndices.push_back(
-                    samplerIndices[i].value.iNumber
+                nodes_map_translations.push_back(target_nodes[i].value.i_number);
+            } else if (*target_paths[i].value.string == "rotation") {
+                rotation_sampler_indices.push_back(
+                    sampler_indices[i].value.i_number
                 );
-                nodesMapRotations.push_back(targetNodes[i].value.iNumber);
-            } else if (*targetPaths[i].value.string == "scale") {
-                scaleSamplerIndices.push_back(samplerIndices[i].value.iNumber);
-                nodesMapScales.push_back(targetNodes[i].value.iNumber);
+                nodes_map_rotations.push_back(target_nodes[i].value.i_number);
+            } else if (*target_paths[i].value.string == "scale") {
+                scale_sampler_indices.push_back(
+                    sampler_indices[i].value.i_number
+                );
+                nodes_map_scales.push_back(target_nodes[i].value.i_number);
             }
         }
         JsonValue samplers = (*gltf)["animations"][0]["samplers"];
-        std::vector<unsigned int> translationInputs;
-        std::vector<unsigned int> translationOutputs;
-        for (unsigned int i = 0; i < translationSamplerIndices.size(); ++i) {
-            translationInputs.push_back(
-                samplers[translationSamplerIndices[i]]["input"].value.iNumber
+        std::vector<unsigned int> translation_inputs;
+        std::vector<unsigned int> translation_outputs;
+        for (unsigned int i = 0; i < translation_sampler_indices.size(); ++i) {
+            translation_inputs.push_back(
+                samplers[translation_sampler_indices[i]]["input"].value.i_number
             );
         }
-        for (unsigned int i = 0; i < translationSamplerIndices.size(); ++i) {
-            translationOutputs.push_back(
-                samplers[translationSamplerIndices[i]]["output"].value.iNumber
+        for (unsigned int i = 0; i < translation_sampler_indices.size(); ++i) {
+            translation_outputs.push_back(
+                samplers[translation_sampler_indices[i]]["output"].value.i_number
             );
         }
-        std::vector<std::vector<float>> frameInputsTranslation;
-        for (unsigned int i = 0; i < translationInputs.size(); ++i) {
-            AccessorMetaData frameInputsTranslationAccessorMetaData =
-                readAccessorMetaData(gltf, translationInputs[i]);
-            BufferViewMetaData frameInputsTranslationBufferViewMetaData =
-                readBufferViewMetaData(
+        std::vector<std::vector<float>> frame_inputs_translation;
+        for (unsigned int i = 0; i < translation_inputs.size(); ++i) {
+            AccessorMetaData frame_inputs_translation_accessor_meta_data =
+                read_accessor_meta_data(gltf, translation_inputs[i]);
+            BufferViewMetaData frame_inputs_translation_buffer_view_meta_data =
+                read_buffer_view_meta_data(
                     gltf,
-                    frameInputsTranslationAccessorMetaData.bufferView
+                    frame_inputs_translation_accessor_meta_data.buffer_view
                 );
             std::vector<float> temp;
-            readBinaryBufferData(
+            read_binary_buffer_data(
                 buffer,
-                frameInputsTranslationAccessorMetaData,
-                frameInputsTranslationBufferViewMetaData,
+                frame_inputs_translation_accessor_meta_data,
+                frame_inputs_translation_buffer_view_meta_data,
                 temp
             );
-            frameInputsTranslation.push_back(temp);
+            frame_inputs_translation.push_back(temp);
         }
         std::vector<std::vector<float>> translations;
-        for (unsigned int i = 0; i < translationOutputs.size(); ++i) {
-            AccessorMetaData frameOutputsTranslationAccessorMetaData =
-                readAccessorMetaData(gltf, translationOutputs[i]);
-            BufferViewMetaData frameOutputsTranslationBufferViewMetaData =
-                readBufferViewMetaData(
+        for (unsigned int i = 0; i < translation_outputs.size(); ++i) {
+            AccessorMetaData frame_outputs_translation_accessor_meta_data =
+                read_accessor_meta_data(gltf, translation_outputs[i]);
+            BufferViewMetaData frame_outputs_translation_buffer_view_meta_data =
+                read_buffer_view_meta_data(
                     gltf,
-                    frameOutputsTranslationAccessorMetaData.bufferView
+                    frame_outputs_translation_accessor_meta_data.buffer_view
                 );
             std::vector<float> temp;
-            readBinaryBufferData(
+            read_binary_buffer_data(
                 buffer,
-                frameOutputsTranslationAccessorMetaData,
-                frameOutputsTranslationBufferViewMetaData,
+                frame_outputs_translation_accessor_meta_data,
+                frame_outputs_translation_buffer_view_meta_data,
                 temp
             );
             translations.push_back(temp);
         }
-        std::vector<unsigned int> rotationInputs;
-        std::vector<unsigned int> rotationOutputs;
-        for (unsigned int i = 0; i < rotationSamplerIndices.size(); ++i) {
-            rotationInputs.push_back(
-                samplers[rotationSamplerIndices[i]]["input"].value.iNumber
+        std::vector<unsigned int> rotation_inputs;
+        std::vector<unsigned int> rotation_outputs;
+        for (unsigned int i = 0; i < rotation_sampler_indices.size(); ++i) {
+            rotation_inputs.push_back(
+                samplers[rotation_sampler_indices[i]]["input"].value.i_number
             );
         }
-        for (unsigned int i = 0; i < rotationSamplerIndices.size(); ++i) {
-            rotationOutputs.push_back(
-                samplers[rotationSamplerIndices[i]]["output"].value.iNumber
+        for (unsigned int i = 0; i < rotation_sampler_indices.size(); ++i) {
+            rotation_outputs.push_back(
+                samplers[rotation_sampler_indices[i]]["output"].value.i_number
             );
         }
-        std::vector<std::vector<float>> frameInputsRotation;
-        for (unsigned int i = 0; i < rotationInputs.size(); ++i) {
-            AccessorMetaData frameInputsRotationAccessorMetaData =
-                readAccessorMetaData(gltf, rotationInputs[i]);
-            BufferViewMetaData frameInputsRotationBufferViewMetaData =
-                readBufferViewMetaData(
+        std::vector<std::vector<float>> frame_inputs_rotation;
+        for (unsigned int i = 0; i < rotation_inputs.size(); ++i) {
+            AccessorMetaData frame_inputs_rotation_accessor_meta_data =
+                read_accessor_meta_data(gltf, rotation_inputs[i]);
+            BufferViewMetaData frame_inputs_rotation_buffer_view_meta_data =
+                read_buffer_view_meta_data(
                     gltf,
-                    frameInputsRotationAccessorMetaData.bufferView
+                    frame_inputs_rotation_accessor_meta_data.buffer_view
                 );
             std::vector<float> temp;
-            readBinaryBufferData(
+            read_binary_buffer_data(
                 buffer,
-                frameInputsRotationAccessorMetaData,
-                frameInputsRotationBufferViewMetaData,
+                frame_inputs_rotation_accessor_meta_data,
+                frame_inputs_rotation_buffer_view_meta_data,
                 temp
             );
-            frameInputsRotation.push_back(temp);
+            frame_inputs_rotation.push_back(temp);
         }
         std::vector<std::vector<float>> rotations;
-        for (unsigned int i = 0; i < rotationOutputs.size(); ++i) {
-            AccessorMetaData frameOutputsRotationAccessorMetaData =
-                readAccessorMetaData(gltf, rotationOutputs[i]);
-            BufferViewMetaData frameOutputsRotationBufferViewMetaData =
-                readBufferViewMetaData(
+        for (unsigned int i = 0; i < rotation_outputs.size(); ++i) {
+            AccessorMetaData frame_outputs_rotation_accessor_meta_data =
+                read_accessor_meta_data(gltf, rotation_outputs[i]);
+            BufferViewMetaData frame_outputs_rotation_buffer_view_meta_data =
+                read_buffer_view_meta_data(
                     gltf,
-                    frameOutputsRotationAccessorMetaData.bufferView
+                    frame_outputs_rotation_accessor_meta_data.buffer_view
                 );
             std::vector<float> temp;
-            readBinaryBufferData(
+            read_binary_buffer_data(
                 buffer,
-                frameOutputsRotationAccessorMetaData,
-                frameOutputsRotationBufferViewMetaData,
+                frame_outputs_rotation_accessor_meta_data,
+                frame_outputs_rotation_buffer_view_meta_data,
                 temp
             );
             rotations.push_back(temp);
         }
-        std::vector<unsigned int> scaleInputs;
-        std::vector<unsigned int> scaleOutputs;
-        for (unsigned int i = 0; i < scaleSamplerIndices.size(); ++i) {
-            scaleInputs.push_back(
-                samplers[scaleSamplerIndices[i]]["input"].value.iNumber
+        std::vector<unsigned int> scale_inputs;
+        std::vector<unsigned int> scale_outputs;
+        for (unsigned int i = 0; i < scale_sampler_indices.size(); ++i) {
+            scale_inputs.push_back(
+                samplers[scale_sampler_indices[i]]["input"].value.i_number
             );
         }
-        for (unsigned int i = 0; i < scaleSamplerIndices.size(); ++i) {
-            scaleOutputs.push_back(
-                samplers[scaleSamplerIndices[i]]["output"].value.iNumber
+        for (unsigned int i = 0; i < scale_sampler_indices.size(); ++i) {
+            scale_outputs.push_back(
+                samplers[scale_sampler_indices[i]]["output"].value.i_number
             );
         }
-        std::vector<std::vector<float>> frameInputsScale;
-        for (unsigned int i = 0; i < scaleInputs.size(); ++i) {
-            AccessorMetaData frameInputsScaleAccessorMetaData =
-                readAccessorMetaData(gltf, scaleInputs[i]);
-            BufferViewMetaData frameInputsScaleBufferViewMetaData =
-                readBufferViewMetaData(
+        std::vector<std::vector<float>> frame_inputs_scale;
+        for (unsigned int i = 0; i < scale_inputs.size(); ++i) {
+            AccessorMetaData frame_inputs_scale_accessor_meta_data =
+                read_accessor_meta_data(gltf, scale_inputs[i]);
+            BufferViewMetaData frame_inputs_scale_buffer_view_meta_data =
+                read_buffer_view_meta_data(
                     gltf,
-                    frameInputsScaleAccessorMetaData.bufferView
+                    frame_inputs_scale_accessor_meta_data.buffer_view
                 );
             std::vector<float> temp;
-            readBinaryBufferData(
+            read_binary_buffer_data(
                 buffer,
-                frameInputsScaleAccessorMetaData,
-                frameInputsScaleBufferViewMetaData,
+                frame_inputs_scale_accessor_meta_data,
+                frame_inputs_scale_buffer_view_meta_data,
                 temp
             );
-            frameInputsScale.push_back(temp);
+            frame_inputs_scale.push_back(temp);
         }
         std::vector<std::vector<float>> scales;
-        for (unsigned int i = 0; i < scaleOutputs.size(); ++i) {
-            AccessorMetaData frameOutputsScaleAccessorMetaData =
-                readAccessorMetaData(gltf, scaleOutputs[i]);
-            BufferViewMetaData frameOutputsScaleBufferViewMetaData =
-                readBufferViewMetaData(
+        for (unsigned int i = 0; i < scale_outputs.size(); ++i) {
+            AccessorMetaData frame_outputs_scale_accessor_meta_data =
+                read_accessor_meta_data(gltf, scale_outputs[i]);
+            BufferViewMetaData frame_outputs_scale_buffer_view_meta_data =
+                read_buffer_view_meta_data(
                     gltf,
-                    frameOutputsScaleAccessorMetaData.bufferView
+                    frame_outputs_scale_accessor_meta_data.buffer_view
                 );
             std::vector<float> temp;
-            readBinaryBufferData(
+            read_binary_buffer_data(
                 buffer,
-                frameOutputsScaleAccessorMetaData,
-                frameOutputsScaleBufferViewMetaData,
+                frame_outputs_scale_accessor_meta_data,
+                frame_outputs_scale_buffer_view_meta_data,
                 temp
             );
             scales.push_back(temp);
         }
         // Searching for root joins.
-        std::vector<int> rootNodes;
+        std::vector<int> root_nodes;
         for (unsigned int s = 0; s < joints.value.array->size(); ++s) {
-            int current_joint = (*joints.value.array)[s].value.iNumber;
+            int current_joint = (*joints.value.array)[s].value.i_number;
             for (unsigned w = 0; w < children.size(); ++w) {
                 for (unsigned q = 0; q < children[w].size(); ++q) {
                     if (children[w][q] == current_joint) {
@@ -10001,20 +10362,20 @@ void CJsonParser::LoadGLTF(
                 }
             }
             // If we execute this line then this joint index ectualy the root.
-            rootNodes.push_back(current_joint);
+            root_nodes.push_back(current_joint);
         most_scary_operator_of_all_time: // Not so scary at all. Am i right?
             continue;
         }
-        std::vector<std::vector<unsigned int>> nodesHierarchy;
+        std::vector<std::vector<unsigned int>> nodes_hierarchy;
         // Loop on parent joints.
-        for (unsigned int w = 0; w < rootNodes.size(); ++w) {
+        for (unsigned int w = 0; w < root_nodes.size(); ++w) {
             std::vector<std::vector<unsigned int>> nodes_bones;
-            unsigned int currentRoot = rootNodes[w];
+            unsigned int current_root = root_nodes[w];
             std::vector<uint32_t> node_stack;
             // Start from root joint.
-            node_stack.push_back(currentRoot);
+            node_stack.push_back(current_root);
             std::vector<uint32_t> deepness_stack;
-            traversalBones(
+            traversal_bones(
                 children,
                 joints,
                 node_stack,
@@ -10022,368 +10383,394 @@ void CJsonParser::LoadGLTF(
                 nodes_bones
             );
             for (unsigned int e = 0; e < nodes_bones.size(); ++e) {
-                nodesHierarchy.push_back(nodes_bones[e]);
+                nodes_hierarchy.push_back(nodes_bones[e]);
             }
         }
         // This logic related to joints that has inverseBindMatrices.
-        [[maybe_unused]] uint32_t transformationsMax =
+        [[maybe_unused]] uint32_t transformations_max =
             translations.size() > scales.size()
             ? (translations.size() > rotations.size() ? translations.size()
                                                       : rotations.size())
             : (scales.size() > rotations.size() ? scales.size()
                                                 : rotations.size());
-        const uint32_t numJoints = joints.value.array->size();
-        uint32_t translationFramesNumber = 0;
-        for (uint32_t k = 0; k < frameInputsTranslation.size(); ++k) {
-            if (frameInputsTranslation[k].size() > translationFramesNumber) {
-                translationFramesNumber = frameInputsTranslation[k].size();
+        const uint32_t num_joints = joints.value.array->size();
+        uint32_t translation_frames_number = 0;
+        for (uint32_t k = 0; k < frame_inputs_translation.size(); ++k) {
+            if (frame_inputs_translation[k].size()
+                > translation_frames_number) {
+                translation_frames_number = frame_inputs_translation[k].size();
             }
         }
-        uint32_t rotationFramesNumber = 0;
-        for (uint32_t k = 0; k < frameInputsRotation.size(); ++k) {
-            if (frameInputsRotation[k].size() > rotationFramesNumber) {
-                rotationFramesNumber = frameInputsRotation[k].size();
+        uint32_t rotation_frames_number = 0;
+        for (uint32_t k = 0; k < frame_inputs_rotation.size(); ++k) {
+            if (frame_inputs_rotation[k].size() > rotation_frames_number) {
+                rotation_frames_number = frame_inputs_rotation[k].size();
             }
         }
-        uint32_t scaleFramesNumber = 0;
-        for (uint32_t k = 0; k < frameInputsScale.size(); ++k) {
-            if (frameInputsScale[k].size() > scaleFramesNumber) {
-                scaleFramesNumber = frameInputsScale[k].size();
+        uint32_t scale_frames_number = 0;
+        for (uint32_t k = 0; k < frame_inputs_scale.size(); ++k) {
+            if (frame_inputs_scale[k].size() > scale_frames_number) {
+                scale_frames_number = frame_inputs_scale[k].size();
             }
         }
-        const uint32_t framesMax = translationFramesNumber > scaleFramesNumber
-            ? (translationFramesNumber > rotationFramesNumber
-                   ? translationFramesNumber
-                   : rotationFramesNumber)
-            : (scaleFramesNumber > rotationFramesNumber ? scaleFramesNumber
-                                                        : rotationFramesNumber);
-        for (uint32_t k = 0; k < frameInputsTranslation.size(); ++k) {
-            if (frameInputsTranslation[k].size() > frames.size()) {
-                frames = frameInputsTranslation[k];
+        const uint32_t frames_max =
+            translation_frames_number > scale_frames_number
+            ? (translation_frames_number > rotation_frames_number
+                   ? translation_frames_number
+                   : rotation_frames_number)
+            : (scale_frames_number > rotation_frames_number
+                   ? scale_frames_number
+                   : rotation_frames_number);
+        for (uint32_t k = 0; k < frame_inputs_translation.size(); ++k) {
+            if (frame_inputs_translation[k].size() > frames.size()) {
+                frames = frame_inputs_translation[k];
             }
         }
-        for (uint32_t k = 0; k < frameInputsRotation.size(); ++k) {
-            if (frameInputsRotation[k].size() > frames.size()) {
-                frames = frameInputsRotation[k];
+        for (uint32_t k = 0; k < frame_inputs_rotation.size(); ++k) {
+            if (frame_inputs_rotation[k].size() > frames.size()) {
+                frames = frame_inputs_rotation[k];
             }
         }
-        for (uint32_t k = 0; k < frameInputsScale.size(); ++k) {
-            if (frameInputsScale[k].size() > frames.size()) {
-                frames = frameInputsScale[k];
+        for (uint32_t k = 0; k < frame_inputs_scale.size(); ++k) {
+            if (frame_inputs_scale[k].size() > frames.size()) {
+                frames = frame_inputs_scale[k];
             }
         }
-        std::vector<int> jointToTranslationCh;
-        std::vector<int> jointToRotationCh;
-        std::vector<int> jointToScaleCh;
-        for (uint32_t k = 0; k < numJoints; ++k) {
-            jointToTranslationCh.push_back(-1);
-            jointToRotationCh.push_back(-1);
-            jointToScaleCh.push_back(-1);
+        std::vector<int> joint_to_translation_ch;
+        std::vector<int> joint_to_rotation_ch;
+        std::vector<int> joint_to_scale_ch;
+        for (uint32_t k = 0; k < num_joints; ++k) {
+            joint_to_translation_ch.push_back(-1);
+            joint_to_rotation_ch.push_back(-1);
+            joint_to_scale_ch.push_back(-1);
         }
-        for (uint32_t k = 0; k < nodesMapTranslations.size(); ++k) {
-            uint32_t jIdx =
-                getJointIndex(joints, (int32_t)nodesMapTranslations[k]);
-            if (jIdx != UINT32_MAX) {
-                jointToTranslationCh[jIdx] = (int)k;
+        for (uint32_t k = 0; k < nodes_map_translations.size(); ++k) {
+            uint32_t j_idx =
+                get_joint_index(joints, (int32_t)nodes_map_translations[k]);
+            if (j_idx != UINT32_MAX) {
+                joint_to_translation_ch[j_idx] = (int)k;
             }
         }
-        for (uint32_t k = 0; k < nodesMapRotations.size(); ++k) {
-            uint32_t jIdx =
-                getJointIndex(joints, (int32_t)nodesMapRotations[k]);
-            if (jIdx != UINT32_MAX) {
-                jointToRotationCh[jIdx] = (int)k;
+        for (uint32_t k = 0; k < nodes_map_rotations.size(); ++k) {
+            uint32_t j_idx =
+                get_joint_index(joints, (int32_t)nodes_map_rotations[k]);
+            if (j_idx != UINT32_MAX) {
+                joint_to_rotation_ch[j_idx] = (int)k;
             }
         }
-        for (uint32_t k = 0; k < nodesMapScales.size(); ++k) {
-            uint32_t jIdx = getJointIndex(joints, (int32_t)nodesMapScales[k]);
-            if (jIdx != UINT32_MAX) {
-                jointToScaleCh[jIdx] = (int)k;
+        for (uint32_t k = 0; k < nodes_map_scales.size(); ++k) {
+            uint32_t j_idx =
+                get_joint_index(joints, (int32_t)nodes_map_scales[k]);
+            if (j_idx != UINT32_MAX) {
+                joint_to_scale_ch[j_idx] = (int)k;
             }
         }
         // Build animatedNodesMatricesAccumulator indexed by joint-index
         // (0..numJoints - 1).
         std::vector<std::vector<Matrix<float, 4>>>
-            animatedNodesMatricesAccumulator;
-        for (unsigned int j = 0; j < numJoints; ++j) {
-            int tIdx = jointToTranslationCh[j];
-            int rIdx = jointToRotationCh[j];
-            int sIdx = jointToScaleCh[j];
+            animated_nodes_matrices_accumulator;
+        for (unsigned int j = 0; j < num_joints; ++j) {
+            int t_idx = joint_to_translation_ch[j];
+            int r_idx = joint_to_rotation_ch[j];
+            int s_idx = joint_to_scale_ch[j];
             // Local defaults fresh on every joint, for not make possible to
             // collect data from previous iterations.
-            std::vector<float> defaultTranslations;
-            std::vector<float> defaultRotations;
-            std::vector<float> defaultScales;
+            std::vector<float> default_translations;
+            std::vector<float> default_rotations;
+            std::vector<float> default_scales;
             // Static TRS from node. Using if channel not exists.
-            int32_t nodeIdx = (int32_t)(*joints.value.array)[j].value.iNumber;
-            float sTx = 0.f, sTy = 0.f, sTz = 0.f;
-            float sRx = 0.f, sRy = 0.f, sRz = 0.f, sRw = 1.f;
-            float sSx = 1.f, sSy = 1.f, sSz = 1.f;
-            if ((*gltf)["nodes"][nodeIdx].isObject() == JsonObject) {
-                auto* nd = (*gltf)["nodes"][nodeIdx].value.object;
-                if (nd->Contain("translation")) {
-                    sTx = (*gltf)["nodes"][nodeIdx]["translation"][0]
-                              .value.fNumber;
-                    sTy = (*gltf)["nodes"][nodeIdx]["translation"][1]
-                              .value.fNumber;
-                    sTz = (*gltf)["nodes"][nodeIdx]["translation"][2]
-                              .value.fNumber;
+            int32_t node_idx = (int32_t)(*joints.value.array)[j].value.i_number;
+            float s_tx = 0.f, s_ty = 0.f, s_tz = 0.f;
+            float s_rx = 0.f, s_ry = 0.f, s_rz = 0.f, s_rw = 1.f;
+            float s_sx = 1.f, s_sy = 1.f, s_sz = 1.f;
+            if ((*gltf)["nodes"][node_idx].is_object() == JsonObject) {
+                auto* nd = (*gltf)["nodes"][node_idx].value.object;
+                if (nd->contain("translation")) {
+                    s_tx = (*gltf)["nodes"][node_idx]["translation"][0]
+                               .value.f_number;
+                    s_ty = (*gltf)["nodes"][node_idx]["translation"][1]
+                               .value.f_number;
+                    s_tz = (*gltf)["nodes"][node_idx]["translation"][2]
+                               .value.f_number;
                 }
-                if (nd->Contain("rotation")) {
-                    sRx =
-                        (*gltf)["nodes"][nodeIdx]["rotation"][0].value.fNumber;
-                    sRy =
-                        (*gltf)["nodes"][nodeIdx]["rotation"][1].value.fNumber;
-                    sRz =
-                        (*gltf)["nodes"][nodeIdx]["rotation"][2].value.fNumber;
-                    sRw =
-                        (*gltf)["nodes"][nodeIdx]["rotation"][3].value.fNumber;
+                if (nd->contain("rotation")) {
+                    s_rx =
+                        (*gltf)["nodes"][node_idx]["rotation"][0].value.f_number;
+                    s_ry =
+                        (*gltf)["nodes"][node_idx]["rotation"][1].value.f_number;
+                    s_rz =
+                        (*gltf)["nodes"][node_idx]["rotation"][2].value.f_number;
+                    s_rw =
+                        (*gltf)["nodes"][node_idx]["rotation"][3].value.f_number;
                 }
-                if (nd->Contain("scale")) {
-                    sSx = (*gltf)["nodes"][nodeIdx]["scale"][0].value.fNumber;
-                    sSy = (*gltf)["nodes"][nodeIdx]["scale"][1].value.fNumber;
-                    sSz = (*gltf)["nodes"][nodeIdx]["scale"][2].value.fNumber;
-                }
-            }
-            if (tIdx < 0) {
-                for (uint32_t f = 0; f < framesMax; ++f) {
-                    defaultTranslations.push_back(sTx);
-                    defaultTranslations.push_back(sTy);
-                    defaultTranslations.push_back(sTz);
+                if (nd->contain("scale")) {
+                    s_sx =
+                        (*gltf)["nodes"][node_idx]["scale"][0].value.f_number;
+                    s_sy =
+                        (*gltf)["nodes"][node_idx]["scale"][1].value.f_number;
+                    s_sz =
+                        (*gltf)["nodes"][node_idx]["scale"][2].value.f_number;
                 }
             }
-            if (rIdx < 0) {
-                for (uint32_t f = 0; f < framesMax; ++f) {
-                    defaultRotations.push_back(sRx);
-                    defaultRotations.push_back(sRy);
-                    defaultRotations.push_back(sRz);
-                    defaultRotations.push_back(sRw);
+            if (t_idx < 0) {
+                for (uint32_t f = 0; f < frames_max; ++f) {
+                    default_translations.push_back(s_tx);
+                    default_translations.push_back(s_ty);
+                    default_translations.push_back(s_tz);
                 }
             }
-            if (sIdx < 0) {
-                for (uint32_t f = 0; f < framesMax; ++f) {
-                    defaultScales.push_back(sSx);
-                    defaultScales.push_back(sSy);
-                    defaultScales.push_back(sSz);
+            if (r_idx < 0) {
+                for (uint32_t f = 0; f < frames_max; ++f) {
+                    default_rotations.push_back(s_rx);
+                    default_rotations.push_back(s_ry);
+                    default_rotations.push_back(s_rz);
+                    default_rotations.push_back(s_rw);
                 }
             }
-            std::vector<float>& boneT =
-                (tIdx >= 0) ? translations[tIdx] : defaultTranslations;
-            std::vector<float>& boneR =
-                (rIdx >= 0) ? rotations[rIdx] : defaultRotations;
-            std::vector<float>& boneS =
-                (sIdx >= 0) ? scales[sIdx] : defaultScales;
+            if (s_idx < 0) {
+                for (uint32_t f = 0; f < frames_max; ++f) {
+                    default_scales.push_back(s_sx);
+                    default_scales.push_back(s_sy);
+                    default_scales.push_back(s_sz);
+                }
+            }
+            std::vector<float>& bone_t =
+                (t_idx >= 0) ? translations[t_idx] : default_translations;
+            std::vector<float>& bone_r =
+                (r_idx >= 0) ? rotations[r_idx] : default_rotations;
+            std::vector<float>& bone_s =
+                (s_idx >= 0) ? scales[s_idx] : default_scales;
             // Chennels can has verious number of frames; framesMax - gloabal
             // maximum. Clamp index to last valid chennel frame, for not run out
             // after vectors bounds.
-            const uint32_t tFrames = boneT.size() / 3;
-            const uint32_t rFrames = boneR.size() / 4;
-            const uint32_t sFrames = boneS.size() / 3;
-            std::vector<Matrix<float, 4>> perFrameMatrices;
-            for (unsigned int i = 0; i < framesMax; ++i) {
-                if (tFrames == 0 || rFrames == 0 || sFrames == 0) {
+            const uint32_t t_frames = bone_t.size() / 3;
+            const uint32_t r_frames = bone_r.size() / 4;
+            const uint32_t s_frames = bone_s.size() / 3;
+            std::vector<Matrix<float, 4>> per_frame_matrices;
+            for (unsigned int i = 0; i < frames_max; ++i) {
+                if (t_frames == 0 || r_frames == 0 || s_frames == 0) {
                     // Malformed data; skip joint.
                     std::vector<Matrix<float, 4>> empty;
-                    animatedNodesMatricesAccumulator.push_back(empty);
+                    animated_nodes_matrices_accumulator.push_back(empty);
                     continue;
                 }
-                const uint32_t ti = (i < tFrames) ? i : tFrames - 1;
-                const uint32_t ri = (i < rFrames) ? i : rFrames - 1;
-                const uint32_t si = (i < sFrames) ? i : sFrames - 1;
-                Matrix<float, 4> frameTranslation(1.0f);
-                Matrix<float, 4> frameScale(1.0f);
+                const uint32_t ti = (i < t_frames) ? i : t_frames - 1;
+                const uint32_t ri = (i < r_frames) ? i : r_frames - 1;
+                const uint32_t si = (i < s_frames) ? i : s_frames - 1;
+                Matrix<float, 4> frame_translation(1.0f);
+                Matrix<float, 4> frame_scale(1.0f);
                 for (unsigned int q = 0; q < 3; ++q) {
-                    frameTranslation[3][q] = boneT[ti * 3 + q];
-                    frameScale[q][q] = boneS[si * 3 + q];
+                    frame_translation[3][q] = bone_t[ti * 3 + q];
+                    frame_scale[q][q] = bone_s[si * 3 + q];
                 }
-                Quaternion frameRotationQuaternion;
-                Matrix<float, 4> frameRotation(1.0f);
-                frameRotationQuaternion.x = boneR[ri * 4];
-                frameRotationQuaternion.y = boneR[ri * 4 + 1];
-                frameRotationQuaternion.z = boneR[ri * 4 + 2];
-                frameRotationQuaternion.w = boneR[ri * 4 + 3];
-                frameRotation =
-                    rotateQuaternion<float, 4>(frameRotationQuaternion);
-                frameRotation.SelfTensorTranspose();
-                Matrix<float, 4> localTransform =
-                    frameScale * frameRotation * frameTranslation;
-                perFrameMatrices.push_back(localTransform);
+                Quaternion frame_rotation_quaternion;
+                Matrix<float, 4> frame_rotation(1.0f);
+                frame_rotation_quaternion.x = bone_r[ri * 4];
+                frame_rotation_quaternion.y = bone_r[ri * 4 + 1];
+                frame_rotation_quaternion.z = bone_r[ri * 4 + 2];
+                frame_rotation_quaternion.w = bone_r[ri * 4 + 3];
+                frame_rotation =
+                    rotate_quaternion<float, 4>(frame_rotation_quaternion);
+                frame_rotation.self_tensor_transpose();
+                Matrix<float, 4> local_transform =
+                    frame_scale * frame_rotation * frame_translation;
+                per_frame_matrices.push_back(local_transform);
             }
-            animatedNodesMatricesAccumulator.push_back(perFrameMatrices);
+            animated_nodes_matrices_accumulator.push_back(per_frame_matrices);
         }
         // Final comstruction of joint-matrices. Both arrays indexed by
         // joint-index now, that's why nodesHierarchy[j][b] address accumulator
         // correctly.
-        for (unsigned int j = 0; j < numJoints; ++j) {
-            std::vector<Matrix<float, 4>> globalAllFrameNodeMatrix;
-            for (unsigned int i = 0; i < framesMax; ++i) {
-                Matrix<float, 4> rootTransform(1.0f);
-                for (unsigned int b = 0; b < nodesHierarchy[j].size() - 1;
+        for (unsigned int j = 0; j < num_joints; ++j) {
+            std::vector<Matrix<float, 4>> global_all_frame_node_matrix;
+            for (unsigned int i = 0; i < frames_max; ++i) {
+                Matrix<float, 4> root_transform(1.0f);
+                for (unsigned int b = 0; b < nodes_hierarchy[j].size() - 1;
                      ++b) {
-                    rootTransform =
-                        animatedNodesMatricesAccumulator[nodesHierarchy[j][b]][i]
-                        * rootTransform;
+                    root_transform = animated_nodes_matrices_accumulator
+                                         [nodes_hierarchy[j][b]][i]
+                        * root_transform;
                 }
-                globalAllFrameNodeMatrix.push_back(
-                    inverseBindMatrixSet[j]
-                    * animatedNodesMatricesAccumulator[j][i] * rootTransform
+                global_all_frame_node_matrix.push_back(
+                    inverse_bind_matrix_set[j]
+                    * animated_nodes_matrices_accumulator[j][i] * root_transform
                 );
             }
-            jointMatrices.push_back(globalAllFrameNodeMatrix);
+            joint_matrices.push_back(global_all_frame_node_matrix);
         }
     }
-    jointMatricesPerMesh = jointMatrices;
-    topY = -999.999f;
+    joint_matrices_per_mesh = joint_matrices;
+    top_y = -999.999f;
     for (uint32_t i = 0; i < indices.size(); ++i) {
-        aIndices_.push_back(i);
+        a_indices.push_back(i);
         unsigned int index = indices[i] * 3;
-        if (index + 2 < verticesPosition.size()) {
+        if (index + 2 < vertices_position.size()) {
             Vector<float, 3> position = {
-                verticesPosition[index],
-                verticesPosition[index + 1],
-                verticesPosition[index + 2]
+                vertices_position[index],
+                vertices_position[index + 1],
+                vertices_position[index + 2]
             };
-            if (position[1] > topY) {
-                topY = position[1];
+            if (position[1] > top_y) {
+                top_y = position[1];
             }
-            aVertexes_.push_back(position[0]);
-            aVertexes_.push_back(position[1]);
-            aVertexes_.push_back(position[2]);
+            a_vertexes.push_back(position[0]);
+            a_vertexes.push_back(position[1]);
+            a_vertexes.push_back(position[2]);
         }
         if (index + 2 < normals.size()) {
             Vector<float, 3> normal =
                 {normals[index], normals[index + 1], normals[index + 2]};
-            aVertexes_.push_back(normal[0]);
-            aVertexes_.push_back(normal[1]);
-            aVertexes_.push_back(normal[2]);
+            a_vertexes.push_back(normal[0]);
+            a_vertexes.push_back(normal[1]);
+            a_vertexes.push_back(normal[2]);
         }
         index = indices[i] * 2;
-        if (index + 1 < textureCoordinates.size()) {
-            aVertexes_.push_back(textureCoordinates[index]);
-            aVertexes_.push_back(textureCoordinates[index + 1]);
+        if (index + 1 < texture_coordinates.size()) {
+            a_vertexes.push_back(texture_coordinates[index]);
+            a_vertexes.push_back(texture_coordinates[index + 1]);
         }
         index = indices[i] * 4;
-        if (index + 3 < jointsIndices.size()) {
-            aVertexes_.push_back(jointsIndices[index]);
-            aVertexes_.push_back(jointsIndices[index + 1]);
-            aVertexes_.push_back(jointsIndices[index + 2]);
-            aVertexes_.push_back(jointsIndices[index + 3]);
+        if (index + 3 < joints_indices.size()) {
+            a_vertexes.push_back(joints_indices[index]);
+            a_vertexes.push_back(joints_indices[index + 1]);
+            a_vertexes.push_back(joints_indices[index + 2]);
+            a_vertexes.push_back(joints_indices[index + 3]);
         }
-        if (index + 3 < weightsContainer.size()) {
-            aVertexes_.push_back(weightsContainer[index]);
-            aVertexes_.push_back(weightsContainer[index + 1]);
-            aVertexes_.push_back(weightsContainer[index + 2]);
-            aVertexes_.push_back(weightsContainer[index + 3]);
+        if (index + 3 < weights_container.size()) {
+            a_vertexes.push_back(weights_container[index]);
+            a_vertexes.push_back(weights_container[index + 1]);
+            a_vertexes.push_back(weights_container[index + 2]);
+            a_vertexes.push_back(weights_container[index + 3]);
         }
     }
     delete[] buffer;
     buffer = nullptr;
 }
 
-void CJsonParser::traversalBones(
+void CJsonParser::traversal_bones(
     std::vector<std::vector<int>> children,
     JsonValue joints,
     std::vector<uint32_t> node_stack,
     std::vector<uint32_t> deepness_stack,
     std::vector<std::vector<uint32_t>>& result
 ) {
-    uint32_t topJointIndex = 0;
+    uint32_t top_joint_index = 0;
     if (!node_stack.empty()) {
         // Pass array of all joints and root joint and return index of root
         // joint in array.
-        topJointIndex = getJointIndex(joints, node_stack.back());
+        top_joint_index = get_joint_index(joints, node_stack.back());
     }
     if (node_stack.size() > deepness_stack.size()) {
         // First 0 level start from.
-        uint32_t firstChild = 0;
-        deepness_stack.push_back(firstChild);
+        uint32_t first_child = 0;
+        deepness_stack.push_back(first_child);
     }
     // Main exit check.
     if (deepness_stack.empty()) {
         return;
     }
-    uint32_t nextNodeIndex = 0;
+    uint32_t next_node_index = 0;
     // Check current root joint has any children. Children maps linearly with
     // root joint array index.
-    if (topJointIndex != UINT32_MAX && !children[topJointIndex].empty()) {
+    if (top_joint_index != UINT32_MAX && !children[top_joint_index].empty()) {
         // Check if on last child level.
         if (deepness_stack.back() > 0
-            && deepness_stack.back() == children[topJointIndex].size()) {
+            && deepness_stack.back() == children[top_joint_index].size()) {
             deepness_stack.pop_back();
             node_stack.pop_back();
-            traversalBones(children, joints, node_stack, deepness_stack, result);
+            traversal_bones(
+                children,
+                joints,
+                node_stack,
+                deepness_stack,
+                result
+            );
             return;
         }
         // Check if not on last child level.
         if (deepness_stack.back() > 0
-            && deepness_stack.back() < children[topJointIndex].size()) {
-            nextNodeIndex = children[topJointIndex][deepness_stack.back()];
-            node_stack.push_back(nextNodeIndex);
+            && deepness_stack.back() < children[top_joint_index].size()) {
+            next_node_index = children[top_joint_index][deepness_stack.back()];
+            node_stack.push_back(next_node_index);
             std::vector<uint32_t> current_node_indices;
             for (uint32_t i = 0; i < node_stack.size(); ++i) {
-                uint32_t currentJoinIndex =
-                    getJointIndex(joints, node_stack[i]);
-                current_node_indices.push_back(currentJoinIndex);
+                uint32_t current_join_index =
+                    get_joint_index(joints, node_stack[i]);
+                current_node_indices.push_back(current_join_index);
             }
             ++deepness_stack.back();
-            traversalBones(children, joints, node_stack, deepness_stack, result);
+            traversal_bones(
+                children,
+                joints,
+                node_stack,
+                deepness_stack,
+                result
+            );
             return;
         } else {
             std::vector<uint32_t> current_node_indices;
             for (uint32_t i = 0; i < node_stack.size(); ++i) {
-                uint32_t currentJoinIndex =
-                    getJointIndex(joints, node_stack[i]);
-                current_node_indices.push_back(currentJoinIndex);
+                uint32_t current_join_index =
+                    get_joint_index(joints, node_stack[i]);
+                current_node_indices.push_back(current_join_index);
             }
             result.push_back(current_node_indices);
-            nextNodeIndex = children[topJointIndex][deepness_stack.back()];
-            node_stack.push_back(nextNodeIndex);
+            next_node_index = children[top_joint_index][deepness_stack.back()];
+            node_stack.push_back(next_node_index);
             ++deepness_stack.back();
-            traversalBones(children, joints, node_stack, deepness_stack, result);
+            traversal_bones(
+                children,
+                joints,
+                node_stack,
+                deepness_stack,
+                result
+            );
             return;
         }
     } else {
         std::vector<uint32_t> current_node_indices;
-        if (topJointIndex == UINT32_MAX) {
+        if (top_joint_index == UINT32_MAX) {
             current_node_indices.push_back(node_stack.back());
             result.push_back(current_node_indices);
             return;
         }
         for (uint32_t i = 0; i < node_stack.size(); ++i) {
-            uint32_t currentJoinIndex = getJointIndex(joints, node_stack[i]);
-            current_node_indices.push_back(currentJoinIndex);
+            uint32_t current_join_index =
+                get_joint_index(joints, node_stack[i]);
+            current_node_indices.push_back(current_join_index);
         }
         result.push_back(current_node_indices);
         deepness_stack.pop_back();
         node_stack.pop_back();
-        traversalBones(children, joints, node_stack, deepness_stack, result);
+        traversal_bones(children, joints, node_stack, deepness_stack, result);
         return;
     }
 }
 
-std::vector<std::vector<unsigned int>> CJsonParser::makeRenderJointsIndices(
+std::vector<std::vector<unsigned int>> CJsonParser::make_render_joints_indices(
     std::vector<std::vector<unsigned int>>& input
 ) {
     std::vector<std::vector<unsigned int>> result;
-    bool accumulatorFlag = false;
-    bool innerFlag = false;
+    bool accumulator_flag = false;
+    bool inner_flag = false;
     unsigned int accumulator = input[0][0];
     for (unsigned int i = 0; i < input.size(); ++i) {
         for (unsigned int j = 0; j < input[i].size(); ++j) {
             std::vector<unsigned int> inner;
             for (unsigned int v = 0; v < j + 1; ++v) {
-                if (input[i][j] == accumulator && accumulatorFlag) {
-                    innerFlag = false;
+                if (input[i][j] == accumulator && accumulator_flag) {
+                    inner_flag = false;
                     continue;
                 } else {
-                    innerFlag = true;
+                    inner_flag = true;
                     inner.push_back(input[i][v]);
 
-                    if (accumulatorFlag == false) {
-                        accumulatorFlag = true;
+                    if (accumulator_flag == false) {
+                        accumulator_flag = true;
                     }
                 }
             }
-            if (innerFlag) {
+            if (inner_flag) {
                 result.push_back(inner);
             }
         }
@@ -10391,7 +10778,7 @@ std::vector<std::vector<unsigned int>> CJsonParser::makeRenderJointsIndices(
     return result;
 }
 
-bool CJsonParser::containsElement(
+bool CJsonParser::contains_element(
     std::vector<std::vector<unsigned int>> container,
     unsigned int element
 ) {
@@ -10406,10 +10793,10 @@ bool CJsonParser::containsElement(
     return flag;
 }
 
-uint32_t CJsonParser::getJointIndex(JsonValue joints, int32_t searchingIndex) {
+uint32_t CJsonParser::get_joint_index(JsonValue joints, int32_t searching_index) {
     for (unsigned int i = 0; i < joints.value.array->size(); ++i) {
-        int currentJointIndex = (*joints.value.array)[i].value.iNumber;
-        if (currentJointIndex == searchingIndex) {
+        int current_joint_index = (*joints.value.array)[i].value.i_number;
+        if (current_joint_index == searching_index) {
             return i;
         }
     }
@@ -10417,432 +10804,443 @@ uint32_t CJsonParser::getJointIndex(JsonValue joints, int32_t searchingIndex) {
 }
 
 CJsonParser::~CJsonParser() {
-    delete root_;
+    delete root;
 }
 } // namespace glvm
 
 namespace glvm {
-MeshManager* MeshManager::pInstance_ = nullptr;
-std::mutex MeshManager::Mutex_;
+MeshManager* MeshManager::p_instance = nullptr;
+std::mutex MeshManager::mutex;
 
 MeshManager::MeshManager() {}
 
 MeshManager::~MeshManager() {}
 
-void MeshManager::SetMesh(const char* _pathToMesh) {
-    pathsArray_.push_back(_pathToMesh);
+void MeshManager::set_mesh(const char* mesh_path) {
+    paths_array.push_back(mesh_path);
 }
 
-void MeshManager::SetMeshGLTF(const char* pathToMesh) {
-    pathsGLTF_.push_back(pathToMesh);
+void MeshManager::set_mesh_gltf(const char* path_to_mesh) {
+    paths_gltf.push_back(path_to_mesh);
 }
 
 MeshManager* MeshManager::get_instance() {
-    std::lock_guard<std::mutex> lock(Mutex_);
-    if (pInstance_ == nullptr) {
-        pInstance_ = new MeshManager();
+    std::lock_guard<std::mutex> lock(mutex);
+    if (p_instance == nullptr) {
+        p_instance = new MeshManager();
     }
-    return pInstance_;
+    return p_instance;
 }
 } // namespace glvm
 
 namespace glvm {
-void ProceduralLevelGeneratingSystem::Update() {
+void ProceduralLevelGeneratingSystem::update() {
     using namespace glvm;
-    Engine* GLVM = Engine::get_instance();
+    Engine* glvm = Engine::get_instance();
 
     // New arch ECS.
-    ArchetypeEntityManager* archEntityManager =
+    ArchetypeEntityManager* arch_entity_manager =
         ArchetypeEntityManager::get_instance();
 
-    world.searchCacheArchetypes(
-        playerRequiredMask,
-        &archView.cachedPlayerArch,
-        cachedPlayerArchNumber
+    WORLD.search_cache_archetypes(
+        player_required_mask,
+        &arch_view.cached_player_arch,
+        cached_player_arch_number
     );
-    componentsView.playerTransforms =
-        (transform*)archView.cachedPlayerArch
+    components_view.player_transforms =
+        (Transform*)arch_view.cached_player_arch
             ->components[ComponentsIndices::TransformComponent];
 
-    while (levelNubmer < 5) {
-        std::vector<Vertex> nextLevel;
+    while (level_nubmer < 5) {
+        std::vector<Vertex> next_level;
         std::vector<uint32_t> indices;
-        std::vector<Vertex> transitionBridgeVertices;
-        std::vector<uint32_t> transitionBridgeIndices;
+        std::vector<Vertex> transition_bridge_vertices;
+        std::vector<uint32_t> transition_bridge_indices;
 
-        if (levelNubmer < 5) {
+        if (level_nubmer < 5) {
             std::random_device rd;
             std::mt19937 mersenne(rd());
-            std::uniform_int_distribution<int> distCurrentLevel_y(1, 1);
-            unsigned int levelHalfY = distCurrentLevel_y(mersenne);
-            std::uniform_int_distribution<int> distCurrentLevel_x_z(8, 16);
-            unsigned int levelHalfX = distCurrentLevel_x_z(mersenne);
-            unsigned int levelHalfZ = distCurrentLevel_x_z(mersenne);
+            std::uniform_int_distribution<int> dist_current_level_y(1, 1);
+            unsigned int level_half_y = dist_current_level_y(mersenne);
+            std::uniform_int_distribution<int> dist_current_level_x_z(8, 16);
+            unsigned int level_half_x = dist_current_level_x_z(mersenne);
+            unsigned int level_half_z = dist_current_level_x_z(mersenne);
 
             // Need to move on half.
-            constexpr float transitionBridgeHalfWidth = 0.5f;
-            constexpr float transitionBridgeHalfHeight = 1.0f;
+            constexpr float TRANSITION_BRIDGE_HALF_WIDTH = 0.5f;
+            constexpr float TRANSITION_BRIDGE_HALF_HEIGHT = 1.0f;
             // On first iteration we dont need to define where locate current
             // level depends on previousTransitionBridge.
-            if (levelNubmer != 0) {
-                generateLevel(
-                    levelHalfX,
-                    levelHalfY,
-                    levelHalfZ,
-                    transitionBridgeHalfWidth,
-                    transitionBridgeHalfHeight
+            if (level_nubmer != 0) {
+                generate_level(
+                    level_half_x,
+                    level_half_y,
+                    level_half_z,
+                    TRANSITION_BRIDGE_HALF_WIDTH,
+                    TRANSITION_BRIDGE_HALF_HEIGHT
                 );
             } else {
                 // Set to first level maximum values.
-                coordinateMaximumValuePerDirection.lowest_x =
-                    currentLevelPosition[0] - levelHalfX;
-                coordinateMaximumValuePerDirection.highest_x =
-                    currentLevelPosition[0] + levelHalfX;
-                coordinateMaximumValuePerDirection.lowest_y =
-                    currentLevelPosition[1] - levelHalfY;
-                coordinateMaximumValuePerDirection.highest_y =
-                    currentLevelPosition[1] + levelHalfY;
-                coordinateMaximumValuePerDirection.lowest_z =
-                    currentLevelPosition[2] - levelHalfZ;
-                coordinateMaximumValuePerDirection.highest_z =
-                    currentLevelPosition[2] + levelHalfZ;
+                coordinate_maximum_value_per_direction.lowest_x =
+                    current_level_position[0] - level_half_x;
+                coordinate_maximum_value_per_direction.highest_x =
+                    current_level_position[0] + level_half_x;
+                coordinate_maximum_value_per_direction.lowest_y =
+                    current_level_position[1] - level_half_y;
+                coordinate_maximum_value_per_direction.highest_y =
+                    current_level_position[1] + level_half_y;
+                coordinate_maximum_value_per_direction.lowest_z =
+                    current_level_position[2] - level_half_z;
+                coordinate_maximum_value_per_direction.highest_z =
+                    current_level_position[2] + level_half_z;
             }
 
-            generateTransitionBridge(
-                levelHalfX,
-                levelHalfY,
-                levelHalfZ,
-                transitionBridgeHalfWidth,
-                transitionBridgeHalfHeight
+            generate_transition_bridge(
+                level_half_x,
+                level_half_y,
+                level_half_z,
+                TRANSITION_BRIDGE_HALF_WIDTH,
+                TRANSITION_BRIDGE_HALF_HEIGHT
             );
 
             for (unsigned int i = 0; i < 36; ++i) {
-                indices.push_back(boxIndicesForIndexBuffer[i]);
+                indices.push_back(BOX_INDICES_FOR_INDEX_BUFFER[i]);
             }
 
-            meshAxisLimitingValues.setToDefaultValues();
+            mesh_axis_limiting_values.set_to_default_values();
 
-            makeCubeObjectVertices(
+            make_cube_object_vertices(
                 {-1, -1, -1, -1},
                 {1, 1, 1, 1},
-                levelHalfX,
-                levelHalfY,
-                levelHalfZ,
-                nextLevel
+                level_half_x,
+                level_half_y,
+                level_half_z,
+                next_level
             );
-            setMeshBounds(meshAxisLimitingValues);
+            set_mesh_bounds(mesh_axis_limiting_values);
 
-            [[maybe_unused]] MeshHandle gameLevelMeshHandle = GLVM->LoadMesh();
-            uint64_t gameLevelChunkEntity = archEntityManager->createEntity();
+            [[maybe_unused]] MeshHandle game_level_mesh_handle =
+                glvm->load_mesh();
+            uint64_t game_level_chunk_entity =
+                arch_entity_manager->create_entity();
 
-            cachedLevelChunkArchNumber = 0;
+            cached_level_chunk_arch_number = 0;
             // Search and cache one time for LevelChunkArch.
-            world.searchCacheArchetypes(
-                requiredMask,
-                &archView.cachedLevelChunkArch,
-                cachedLevelChunkArchNumber
+            WORLD.search_cache_archetypes(
+                required_mask,
+                &arch_view.cached_level_chunk_arch,
+                cached_level_chunk_arch_number
             );
 
-            world.addEntityToArchetype(
-                gameLevelChunkEntity,
-                archView.cachedLevelChunkArch
+            WORLD.add_entity_to_archetype(
+                game_level_chunk_entity,
+                arch_view.cached_level_chunk_arch
             );
-            EntityLocation gameLevelChunkLocation =
-                world.entityLocations[getId(gameLevelChunkEntity)];
+            EntityLocation game_level_chunk_location =
+                WORLD.entity_locations[get_id(game_level_chunk_entity)];
 
-            LevelChunkArchetype* levelChunkArch =
-                static_cast<LevelChunkArchetype*>(gameLevelChunkLocation.arch);
-            const uint32_t gameLevelChunkIndex = gameLevelChunkLocation.index;
-            TextureHandle gameLevelTexture = textureHandlers[2];
-            if (levelNubmer == 0) {
+            LevelChunkArchetype* level_chunk_arch =
+                static_cast<LevelChunkArchetype*>(
+                    game_level_chunk_location.arch
+                );
+            const uint32_t game_level_chunk_index =
+                game_level_chunk_location.index;
+            TextureHandle game_level_texture = texture_handlers[2];
+            if (level_nubmer == 0) {
                 // Set up current level position to player position.
-                componentsView.playerTransforms->position = Vector<float, 3>(
-                    currentLevelPosition[0],
-                    componentsView.playerTransforms->position[1],
-                    currentLevelPosition[2]
+                components_view.player_transforms->position = Vector<float, 3>(
+                    current_level_position[0],
+                    components_view.player_transforms->position[1],
+                    current_level_position[2]
                 );
             }
-            levelChunkArch->transforms[gameLevelChunkIndex] = {
-                .position = currentLevelPosition,
+            level_chunk_arch->transforms[game_level_chunk_index] = {
+                .position = current_level_position,
                 .scale = 1.0f
             };
-            levelChunkArch->materials[gameLevelChunkIndex] = {
-                .diffuseTextureID_ = gameLevelTexture,
-                .specularTextureID_ = gameLevelTexture,
+            level_chunk_arch->materials[game_level_chunk_index] = {
+                .diffuse_texture_id = game_level_texture,
+                .specular_texture_id = game_level_texture,
                 .ambient = {0.05f, 0.05f, 0.0f},
                 .shininess = 128.0f * 0.078125f
             };
-            levelChunkArch->meshes[gameLevelChunkIndex].handle =
-                gameLevelMeshHandle;
+            level_chunk_arch->meshes[game_level_chunk_index].handle =
+                game_level_mesh_handle;
 
             for (unsigned int i = 0; i < 36; ++i) {
-                transitionBridgeIndices.push_back(boxIndicesForIndexBuffer[i]);
+                transition_bridge_indices.push_back(
+                    BOX_INDICES_FOR_INDEX_BUFFER[i]
+                );
             }
 
-            meshAxisLimitingValues.setToDefaultValues();
+            mesh_axis_limiting_values.set_to_default_values();
 
             float half_x = 0.0f;
-            float half_y = levelHalfY;
+            float half_y = level_half_y;
             float half_z = 0.0f;
-            setHalfExtentsFromDirection(
+            set_half_extents_from_direction(
                 half_x,
                 half_z,
-                transitionBridgeHalfWidth,
-                transitionBridgeHalfHeight,
-                nextLevelTransitionDirection
+                TRANSITION_BRIDGE_HALF_WIDTH,
+                TRANSITION_BRIDGE_HALF_HEIGHT,
+                next_level_transition_direction
             );
-            makeCubeObjectVertices(
+            make_cube_object_vertices(
                 {-1, -1, -1, -1},
                 {1, 1, 1, 1},
                 half_x,
                 half_y,
                 half_z,
-                transitionBridgeVertices
+                transition_bridge_vertices
             );
-            setMeshBounds(meshAxisLimitingValues);
+            set_mesh_bounds(mesh_axis_limiting_values);
 
-            [[maybe_unused]] MeshHandle transitionBridgeMeshHandle =
-                GLVM->LoadMesh();
-            uint64_t transitionBridgeEntity = archEntityManager->createEntity();
-            world.addEntityToArchetype(
-                transitionBridgeEntity,
-                archView.cachedLevelChunkArch
+            [[maybe_unused]] MeshHandle transition_bridge_mesh_handle =
+                glvm->load_mesh();
+            uint64_t transition_bridge_entity =
+                arch_entity_manager->create_entity();
+            WORLD.add_entity_to_archetype(
+                transition_bridge_entity,
+                arch_view.cached_level_chunk_arch
             );
 
-            EntityLocation transitionBridgeLocation =
-                world.entityLocations[getId(transitionBridgeEntity)];
+            EntityLocation transition_bridge_location =
+                WORLD.entity_locations[get_id(transition_bridge_entity)];
 
-            LevelChunkArchetype* transitionBridgeArch =
-                static_cast<LevelChunkArchetype*>(transitionBridgeLocation.arch);
-            const uint32_t transitionBridgeIndex =
-                transitionBridgeLocation.index;
-            TextureHandle transitionBridgeTexture = textureHandlers[3];
-            transitionBridgeArch->transforms[transitionBridgeIndex] = {
-                .position = transitionBridgePosition,
+            LevelChunkArchetype* transition_bridge_arch =
+                static_cast<LevelChunkArchetype*>(
+                    transition_bridge_location.arch
+                );
+            const uint32_t transition_bridge_index =
+                transition_bridge_location.index;
+            TextureHandle transition_bridge_texture = texture_handlers[3];
+            transition_bridge_arch->transforms[transition_bridge_index] = {
+                .position = transition_bridge_position,
                 .scale = 1.0f
             };
-            transitionBridgeArch->materials[transitionBridgeIndex] = {
-                .diffuseTextureID_ = transitionBridgeTexture,
-                .specularTextureID_ = transitionBridgeTexture,
+            transition_bridge_arch->materials[transition_bridge_index] = {
+                .diffuse_texture_id = transition_bridge_texture,
+                .specular_texture_id = transition_bridge_texture,
                 .ambient = {0.05f, 0.05f, 0.0f},
                 .shininess = 128.0f * 0.078125f
             };
-            transitionBridgeArch->meshes[transitionBridgeIndex].handle =
-                transitionBridgeMeshHandle;
+            transition_bridge_arch->meshes[transition_bridge_index].handle =
+                transition_bridge_mesh_handle;
 
-            ++levelNubmer;
+            ++level_nubmer;
         }
-        levelGeneratedVertices.push_back(nextLevel);
-        levelGeneratedIndices.push_back(indices);
+        level_generated_vertices.push_back(next_level);
+        level_generated_indices.push_back(indices);
 
-        levelGeneratedVertices.push_back(transitionBridgeVertices);
-        levelGeneratedIndices.push_back(transitionBridgeIndices);
+        level_generated_vertices.push_back(transition_bridge_vertices);
+        level_generated_indices.push_back(transition_bridge_indices);
 
-        bredoFlag = true;
+        bredo_flag = true;
     }
 }
 
-void ProceduralLevelGeneratingSystem::setHalfExtentsFromDirection(
-    float& halfX,
-    float& halfZ,
-    const float& transitionBridgeHalfWidth,
-    const float& transitionBridgeHalfHeight,
-    const float& nextLevelTransitionDirection
+void ProceduralLevelGeneratingSystem::set_half_extents_from_direction(
+    float& half_x,
+    float& half_z,
+    const float& transition_bridge_half_width,
+    const float& transition_bridge_half_height,
+    const float& next_level_transition_direction
 ) {
-    if (nextLevelTransitionDirection == 1
-        || nextLevelTransitionDirection == 3) {
-        halfX = transitionBridgeHalfWidth;
-        halfZ = transitionBridgeHalfHeight;
+    if (next_level_transition_direction == 1
+        || next_level_transition_direction == 3) {
+        half_x = transition_bridge_half_width;
+        half_z = transition_bridge_half_height;
     } else if (
-        nextLevelTransitionDirection == 2 || nextLevelTransitionDirection == 4
+        next_level_transition_direction == 2
+        || next_level_transition_direction == 4
     ) {
-        halfX = transitionBridgeHalfHeight;
-        halfZ = transitionBridgeHalfWidth;
+        half_x = transition_bridge_half_height;
+        half_z = transition_bridge_half_width;
     }
 }
 
-void ProceduralLevelGeneratingSystem::generateLevel(
-    const unsigned int levelHalfX,
-    const unsigned int levelHalfY,
-    const unsigned int levelHalfZ,
-    const float transitionBridgeHalfWidth,
-    const float transitionBridgeHalfHeight
+void ProceduralLevelGeneratingSystem::generate_level(
+    const unsigned int level_half_x,
+    const unsigned int level_half_y,
+    const unsigned int level_half_z,
+    const float transition_bridge_half_width,
+    const float transition_bridge_half_height
 ) {
     std::random_device rd;
     std::mt19937 mersenne(rd());
-    unsigned int previousTransitionBridgeAnchorPoint = 0;
-    bool validLevel = false;
-    while (!validLevel) {
-        switch (previousIterationTransitionBridgeDirection) {
+    unsigned int previous_transition_bridge_anchor_point = 0;
+    bool valid_level = false;
+    while (!valid_level) {
+        switch (previous_iteration_transition_bridge_direction) {
             case 1: {
                 std::uniform_int_distribution<int>
-                    distPreviousTransitionBridgeAnchorPoint(
+                    dist_previous_transition_bridge_anchor_point(
                         0,
-                        levelHalfX * 2 - 1
+                        level_half_x * 2 - 1
                     );
-                previousTransitionBridgeAnchorPoint =
-                    distPreviousTransitionBridgeAnchorPoint(mersenne);
-                currentLevelPosition[0] = transitionBridgePosition[0]
-                    - levelHalfX + transitionBridgeHalfWidth
-                    + previousTransitionBridgeAnchorPoint;
-                currentLevelPosition[2] = transitionBridgePosition[2]
-                    + levelHalfZ + transitionBridgeHalfHeight;
+                previous_transition_bridge_anchor_point =
+                    dist_previous_transition_bridge_anchor_point(mersenne);
+                current_level_position[0] = transition_bridge_position[0]
+                    - level_half_x + transition_bridge_half_width
+                    + previous_transition_bridge_anchor_point;
+                current_level_position[2] = transition_bridge_position[2]
+                    + level_half_z + transition_bridge_half_height;
             } break;
             case 2: {
                 std::uniform_int_distribution<int>
-                    distPreviousTransitionBridgeAnchorPoint(
+                    dist_previous_transition_bridge_anchor_point(
                         0,
-                        levelHalfZ * 2 - 1
+                        level_half_z * 2 - 1
                     );
-                previousTransitionBridgeAnchorPoint =
-                    distPreviousTransitionBridgeAnchorPoint(mersenne);
-                currentLevelPosition[2] = transitionBridgePosition[2]
-                    - levelHalfZ + transitionBridgeHalfWidth
-                    + previousTransitionBridgeAnchorPoint;
-                currentLevelPosition[0] = transitionBridgePosition[0]
-                    + levelHalfX + transitionBridgeHalfHeight;
+                previous_transition_bridge_anchor_point =
+                    dist_previous_transition_bridge_anchor_point(mersenne);
+                current_level_position[2] = transition_bridge_position[2]
+                    - level_half_z + transition_bridge_half_width
+                    + previous_transition_bridge_anchor_point;
+                current_level_position[0] = transition_bridge_position[0]
+                    + level_half_x + transition_bridge_half_height;
             } break;
             case 3: {
                 std::uniform_int_distribution<int>
-                    distPreviousTransitionBridgeAnchorPoint(
+                    dist_previous_transition_bridge_anchor_point(
                         0,
-                        levelHalfX * 2 - 1
+                        level_half_x * 2 - 1
                     );
-                previousTransitionBridgeAnchorPoint =
-                    distPreviousTransitionBridgeAnchorPoint(mersenne);
-                currentLevelPosition[0] = transitionBridgePosition[0]
-                    - levelHalfX + transitionBridgeHalfWidth
-                    + previousTransitionBridgeAnchorPoint;
-                currentLevelPosition[2] = transitionBridgePosition[2]
-                    - levelHalfZ - transitionBridgeHalfHeight;
+                previous_transition_bridge_anchor_point =
+                    dist_previous_transition_bridge_anchor_point(mersenne);
+                current_level_position[0] = transition_bridge_position[0]
+                    - level_half_x + transition_bridge_half_width
+                    + previous_transition_bridge_anchor_point;
+                current_level_position[2] = transition_bridge_position[2]
+                    - level_half_z - transition_bridge_half_height;
             } break;
             case 4: {
                 std::uniform_int_distribution<int>
-                    distPreviousTransitionBridgeAnchorPoint(
+                    dist_previous_transition_bridge_anchor_point(
                         0,
-                        levelHalfZ * 2 - 1
+                        level_half_z * 2 - 1
                     );
-                previousTransitionBridgeAnchorPoint =
-                    distPreviousTransitionBridgeAnchorPoint(mersenne);
-                currentLevelPosition[2] = transitionBridgePosition[2]
-                    - levelHalfZ + transitionBridgeHalfWidth
-                    + previousTransitionBridgeAnchorPoint;
-                currentLevelPosition[0] = transitionBridgePosition[0]
-                    - levelHalfX - transitionBridgeHalfHeight;
+                previous_transition_bridge_anchor_point =
+                    dist_previous_transition_bridge_anchor_point(mersenne);
+                current_level_position[2] = transition_bridge_position[2]
+                    - level_half_z + transition_bridge_half_width
+                    + previous_transition_bridge_anchor_point;
+                current_level_position[0] = transition_bridge_position[0]
+                    - level_half_x - transition_bridge_half_height;
             } break;
         }
 
-        if (checkCollisionIntersectionWithMaximumCoordinates(
-                currentLevelPosition,
-                levelHalfX,
-                levelHalfY,
-                levelHalfZ
+        if (check_collision_intersection_with_maximum_coordinates(
+                current_level_position,
+                level_half_x,
+                level_half_y,
+                level_half_z
             )) {
             std::cout << "LEVEL COLLITION DETECTED" << std::endl;
-            previousIterationTransitionBridgeDirection =
-                (4 + previousIterationTransitionBridgeDirection) % 4 + 1;
+            previous_iteration_transition_bridge_direction =
+                (4 + previous_iteration_transition_bridge_direction) % 4 + 1;
         } else {
-            coordinateMaximumValuePerDirection
-                .comparePerDirectionAndSetToMaximumValueByModule(
-                    currentLevelPosition,
-                    (float)levelHalfX,
-                    (float)levelHalfY,
-                    (float)levelHalfZ
+            coordinate_maximum_value_per_direction
+                .compare_per_direction_and_set_to_maximum_value_by_module(
+                    current_level_position,
+                    (float)level_half_x,
+                    (float)level_half_y,
+                    (float)level_half_z
                 );
-            validLevel = true;
+            valid_level = true;
         }
     }
-    currentLevelPosition[1] = 0.0f;
+    current_level_position[1] = 0.0f;
 }
 
-void ProceduralLevelGeneratingSystem::generateTransitionBridge(
-    const unsigned int levelHalfX,
-    const unsigned int levelHalfY,
-    const unsigned int levelHalfZ,
-    const float transitionBridgeHalfWidth,
-    const float transitionBridgeHalfHeight
+void ProceduralLevelGeneratingSystem::generate_transition_bridge(
+    const unsigned int level_half_x,
+    const unsigned int level_half_y,
+    const unsigned int level_half_z,
+    const float transition_bridge_half_width,
+    const float transition_bridge_half_height
 ) {
     std::random_device rd;
     std::mt19937 mersenne(rd());
     // 1 - north, 2 - east, 3 - south, 4 - west.
-    std::uniform_int_distribution<int> distNextLevelTransitionDirection(1, 4);
+    std::uniform_int_distribution<int> dist_next_level_transition_direction(
+        1,
+        4
+    );
     // Randomly chose direction in where next level will appeared.
-    nextLevelTransitionDirection = distNextLevelTransitionDirection(mersenne);
-    unsigned int transitionBridgeAnchorPoint = 0;
-    float transitionBridgeOffset_x = 0.0f;
-    float transitionBridgeOffset_z = 0.0f;
-    bool validTransitionBridge = false;
-    while (!validTransitionBridge) {
+    next_level_transition_direction =
+        dist_next_level_transition_direction(mersenne);
+    unsigned int transition_bridge_anchor_point = 0;
+    float transition_bridge_offset_x = 0.0f;
+    float transition_bridge_offset_z = 0.0f;
+    bool valid_transition_bridge = false;
+    while (!valid_transition_bridge) {
         // Choose up (1) or down (3) insert point direction.
-        if (nextLevelTransitionDirection == 1
-            || nextLevelTransitionDirection == 3) {
+        if (next_level_transition_direction == 1
+            || next_level_transition_direction == 3) {
             // In what point we connect next transition bridge to current level.
-            std::uniform_int_distribution<int> distTransitionBridgeAnchorPoint(
-                0,
-                levelHalfX * 2 - 1
-            );
-            transitionBridgeAnchorPoint =
-                distTransitionBridgeAnchorPoint(mersenne);
+            std::uniform_int_distribution<int>
+                dist_transition_bridge_anchor_point(0, level_half_x * 2 - 1);
+            transition_bridge_anchor_point =
+                dist_transition_bridge_anchor_point(mersenne);
             // Summarize most left position with random value of point where
             // transition bridge will be insert.
-            transitionBridgeOffset_x =
-                -(float)levelHalfX + (float)transitionBridgeAnchorPoint;
-            if (nextLevelTransitionDirection == 1) {
+            transition_bridge_offset_x =
+                -(float)level_half_x + (float)transition_bridge_anchor_point;
+            if (next_level_transition_direction == 1) {
                 // Move to the bottom level edge.
-                transitionBridgeOffset_z = levelHalfZ;
-                transitionBridgePosition = {
-                    currentLevelPosition[0] + transitionBridgeOffset_x
-                        + transitionBridgeHalfWidth,
-                    (float)levelHalfY,
-                    currentLevelPosition[2] + transitionBridgeOffset_z
-                        + transitionBridgeHalfHeight
+                transition_bridge_offset_z = level_half_z;
+                transition_bridge_position = {
+                    current_level_position[0] + transition_bridge_offset_x
+                        + transition_bridge_half_width,
+                    (float)level_half_y,
+                    current_level_position[2] + transition_bridge_offset_z
+                        + transition_bridge_half_height
                 };
             } else {
                 // Move to the upper level edge.
-                transitionBridgeOffset_z = -(float)levelHalfZ;
-                transitionBridgePosition = {
-                    currentLevelPosition[0] + transitionBridgeOffset_x
-                        + transitionBridgeHalfWidth,
-                    (float)levelHalfY,
-                    currentLevelPosition[2] + transitionBridgeOffset_z
-                        - transitionBridgeHalfHeight
+                transition_bridge_offset_z = -(float)level_half_z;
+                transition_bridge_position = {
+                    current_level_position[0] + transition_bridge_offset_x
+                        + transition_bridge_half_width,
+                    (float)level_half_y,
+                    current_level_position[2] + transition_bridge_offset_z
+                        - transition_bridge_half_height
                 };
             }
             // Choose left (2) or right (4) insert point direction.
         } else if (
-            nextLevelTransitionDirection == 2
-            || nextLevelTransitionDirection == 4
+            next_level_transition_direction == 2
+            || next_level_transition_direction == 4
         ) {
             // In what point we connect next transition bridge to current level.
-            std::uniform_int_distribution<int> distTransitionBridgeAnchorPoint(
-                0,
-                levelHalfZ * 2 - 1
-            );
-            transitionBridgeAnchorPoint =
-                distTransitionBridgeAnchorPoint(mersenne);
+            std::uniform_int_distribution<int>
+                dist_transition_bridge_anchor_point(0, level_half_z * 2 - 1);
+            transition_bridge_anchor_point =
+                dist_transition_bridge_anchor_point(mersenne);
             // Summarize forward most position with random value of point where
             // transition bridge will be insert.
-            transitionBridgeOffset_z =
-                -(float)levelHalfZ + (float)transitionBridgeAnchorPoint;
-            if (nextLevelTransitionDirection == 2) {
+            transition_bridge_offset_z =
+                -(float)level_half_z + (float)transition_bridge_anchor_point;
+            if (next_level_transition_direction == 2) {
                 // Move to the right level edge.
-                transitionBridgeOffset_x = levelHalfX;
-                transitionBridgePosition = {
-                    currentLevelPosition[0] + transitionBridgeOffset_x
-                        + transitionBridgeHalfHeight,
-                    (float)levelHalfY,
-                    currentLevelPosition[2] + transitionBridgeOffset_z
-                        + transitionBridgeHalfWidth
+                transition_bridge_offset_x = level_half_x;
+                transition_bridge_position = {
+                    current_level_position[0] + transition_bridge_offset_x
+                        + transition_bridge_half_height,
+                    (float)level_half_y,
+                    current_level_position[2] + transition_bridge_offset_z
+                        + transition_bridge_half_width
                 };
             } else {
                 // Move to the left level edge.
-                transitionBridgeOffset_x = -(float)levelHalfX;
-                transitionBridgePosition = {
-                    currentLevelPosition[0] + transitionBridgeOffset_x
-                        - transitionBridgeHalfHeight,
-                    (float)levelHalfY,
-                    currentLevelPosition[2] + transitionBridgeOffset_z
-                        + transitionBridgeHalfWidth
+                transition_bridge_offset_x = -(float)level_half_x;
+                transition_bridge_position = {
+                    current_level_position[0] + transition_bridge_offset_x
+                        - transition_bridge_half_height,
+                    (float)level_half_y,
+                    current_level_position[2] + transition_bridge_offset_z
+                        + transition_bridge_half_width
                 };
             }
         }
@@ -10851,46 +11249,47 @@ void ProceduralLevelGeneratingSystem::generateTransitionBridge(
         float height = 0;
         // Chose transitionBridgeHalfWidth as X and transitionBridgeHalfHeight
         // as Z.
-        setHalfExtentsFromDirection(
+        set_half_extents_from_direction(
             width,
             height,
-            transitionBridgeHalfWidth,
-            transitionBridgeHalfHeight,
-            nextLevelTransitionDirection
+            transition_bridge_half_width,
+            transition_bridge_half_height,
+            next_level_transition_direction
         );
 
-        if (checkCollisionIntersectionWithMaximumCoordinates(
-                transitionBridgePosition,
+        if (check_collision_intersection_with_maximum_coordinates(
+                transition_bridge_position,
                 width,
-                levelHalfY,
+                level_half_y,
                 height
             )) {
             // Need to choose another direction if we got collided with level.
-            nextLevelTransitionDirection =
-                (4 + nextLevelTransitionDirection) % 4 + 1;
+            next_level_transition_direction =
+                (4 + next_level_transition_direction) % 4 + 1;
         } else {
             // Setting up bounds for all levels.
-            coordinateMaximumValuePerDirection
-                .comparePerDirectionAndSetToMaximumValueByModule(
-                    transitionBridgePosition,
+            coordinate_maximum_value_per_direction
+                .compare_per_direction_and_set_to_maximum_value_by_module(
+                    transition_bridge_position,
                     (float)width,
-                    (float)levelHalfY,
+                    (float)level_half_y,
                     (float)height
                 );
-            validTransitionBridge = true;
+            valid_transition_bridge = true;
         }
     }
-    transitionBridgePosition[1] = currentLevelPosition[1];
-    previousIterationTransitionBridgeDirection = nextLevelTransitionDirection;
+    transition_bridge_position[1] = current_level_position[1];
+    previous_iteration_transition_bridge_direction =
+        next_level_transition_direction;
 }
 
-void ProceduralLevelGeneratingSystem::makeCubeObjectVertices(
-    Vector<float, 4> joinIndices,
+void ProceduralLevelGeneratingSystem::make_cube_object_vertices(
+    Vector<float, 4> join_indices,
     Vector<float, 4> weights,
     float half_x,
     float half_y,
     float half_z,
-    std::vector<Vertex>& destinationVerticesContainer
+    std::vector<Vertex>& destination_vertices_container
 ) {
     unsigned int cube_vertices = 8;
     for (unsigned int i = 0; i < cube_vertices; ++i) {
@@ -10939,9 +11338,8 @@ void ProceduralLevelGeneratingSystem::makeCubeObjectVertices(
                 break;
         }
 
-        meshAxisLimitingValues.comparePerDirectionAndSetToMaximumValueByModule(
-            vertex
-        );
+        mesh_axis_limiting_values
+            .compare_per_direction_and_set_to_maximum_value_by_module(vertex);
 
         SVertex normal;
         normal[0] = 0;
@@ -10951,29 +11349,38 @@ void ProceduralLevelGeneratingSystem::makeCubeObjectVertices(
         texture[0] = 0;
         texture[1] = 1;
 
-        destinationVerticesContainer.push_back(
+        destination_vertices_container.push_back(
             {{vertex[0], vertex[1], vertex[2]},
              {normal[0], normal[1], normal[2]},
              {texture[0], texture[1]},
-             {joinIndices[0], joinIndices[1], joinIndices[2], joinIndices[3]},
+             {join_indices[0],
+              join_indices[1],
+              join_indices[2],
+              join_indices[3]},
              {weights[0], weights[1], weights[2], weights[3]}}
         );
     }
 }
 
 bool ProceduralLevelGeneratingSystem::
-    checkCollisionIntersectionWithMaximumCoordinates(
+    check_collision_intersection_with_maximum_coordinates(
         Vector<float, 3> position,
         float half_x,
         float half_y,
         float half_z
     ) {
-    return position[0] + half_x > coordinateMaximumValuePerDirection.lowest_x
-        && position[0] - half_x < coordinateMaximumValuePerDirection.highest_x
-        && position[1] + half_y > coordinateMaximumValuePerDirection.lowest_y
-        && position[1] - half_y < coordinateMaximumValuePerDirection.highest_y
-        && position[2] + half_z > coordinateMaximumValuePerDirection.lowest_z
-        && position[2] - half_z < coordinateMaximumValuePerDirection.highest_z;
+    return position[0] + half_x
+        > coordinate_maximum_value_per_direction.lowest_x
+        && position[0] - half_x
+        < coordinate_maximum_value_per_direction.highest_x
+        && position[1] + half_y
+        > coordinate_maximum_value_per_direction.lowest_y
+        && position[1] - half_y
+        < coordinate_maximum_value_per_direction.highest_y
+        && position[2] + half_z
+        > coordinate_maximum_value_per_direction.lowest_z
+        && position[2] - half_z
+        < coordinate_maximum_value_per_direction.highest_z;
 }
 } // namespace glvm
 
@@ -10984,7 +11391,7 @@ bool ProceduralLevelGeneratingSystem::
 #endif
 
 namespace glvm {
-ISoundEngine* CSoundEngineFactory::CreateSoundEngine() {
+ISoundEngine* CSoundEngineFactory::create_sound_engine() {
 #ifdef __linux__
     return new CSoundEngineAlsa;
 #endif
@@ -10993,212 +11400,337 @@ ISoundEngine* CSoundEngineFactory::CreateSoundEngine() {
     return new CSoundEngineWaveform;
 #endif
 }
+#ifdef __linux__
+CSoundEngineAlsa::~CSoundEngineAlsa() {
+    for (uint32_t i = 0; i < sound_container.size(); ++i) {
+        delete sound_container[i];
+        sound_container[i] = nullptr;
+    }
+}
 
-void CSoundEngineWaveform::OpenDevice(const char* /* device */) {}
+void CSoundEngineAlsa::open_device(const char* device) {
+    snd_pcm_open(&pcm_, device, SND_PCM_STREAM_PLAYBACK, 0);
+}
 
-void CSoundEngineWaveform::CloseDevice() {}
+void CSoundEngineAlsa::close_device() {
+    snd_pcm_drain(pcm_);
+    snd_pcm_close(pcm_);
+}
 
-void CSoundEngineWaveform::CreateSoundSample(
-    const char* filePath,
+void CSoundEngineAlsa::sound_stream() {
+    for (unsigned int i = 0; i < sound_container.size(); ++i) {
+        playback_sound_sample(*sound_container[i]);
+        sound_container.erase(sound_container.begin() + i);
+    }
+}
+
+void CSoundEngineAlsa::playback_sound_sample(CSoundSample& sample) {
+    const snd_pcm_format_t format = SND_PCM_FORMAT_S16_LE;
+    const snd_pcm_access_t access = SND_PCM_ACCESS_RW_INTERLEAVED;
+    constexpr unsigned int channels = 2;
+    // 0.5 s.
+    constexpr unsigned int latency = 500000;
+    constexpr unsigned int frame_size = channels * 2;
+    constexpr int alsa_frames = 32;
+
+    snd_pcm_set_params(
+        pcm_,
+        format,
+        access,
+        channels,
+        sample.ui_rate,
+        1,
+        latency
+    );
+
+    FILE* file_descriptor = fopen(sample.k_path_to_file, "r");
+    if (file_descriptor == nullptr) {
+        return;
+    }
+    char* buffer = (char*)malloc(alsa_frames * frame_size);
+    for (int i = 0; i < 300; ++i) {
+        int frames = fread(buffer, frame_size, alsa_frames, file_descriptor);
+        if (frames <= 0) {
+            break;
+        }
+        int rest = frames;
+
+        int16_t* samples = reinterpret_cast<int16_t*>(buffer);
+        int sample_count = frames * channels;
+        for (int j = 0; j < sample_count; ++j) {
+            int32_t scaled = static_cast<int32_t>(samples[j] * sample.volume);
+            samples[j] =
+                static_cast<int16_t>(std::clamp(scaled, -32768, 32767));
+        }
+
+        char* data = buffer;
+        while (rest > 0) {
+            frames = snd_pcm_writei(pcm_, data, rest);
+            if (frames <= 0) {
+                break;
+            }
+            rest -= frames;
+            data += frames * frame_size;
+        }
+    }
+    free(buffer);
+    fclose(file_descriptor);
+}
+
+void CSoundEngineAlsa::set_master_volume(long volume_percent) {
+    long min_volume = 0;
+    long max_volume = 0;
+    snd_mixer_t* mixer = nullptr;
+    snd_mixer_selem_id_t* sid = nullptr;
+    const char* card = "default";
+    const char* selem_name = "Master";
+
+    snd_mixer_open(&mixer, 0);
+    snd_mixer_attach(mixer, card);
+    snd_mixer_selem_register(mixer, NULL, NULL);
+    snd_mixer_load(mixer);
+
+    snd_mixer_selem_id_alloca(&sid);
+    snd_mixer_selem_id_set_index(sid, 0);
+    snd_mixer_selem_id_set_name(sid, selem_name);
+    snd_mixer_elem_t* element = snd_mixer_find_selem(mixer, sid);
+
+    snd_mixer_selem_get_playback_volume_range(element, &min_volume, &max_volume);
+    snd_mixer_selem_set_playback_volume_all(
+        element,
+        min_volume + (volume_percent * (max_volume - min_volume)) / 100
+    );
+
+    snd_mixer_close(mixer);
+}
+
+std::vector<CSoundSample*>& CSoundEngineAlsa::get_sound_container() {
+    return sound_container;
+}
+
+void CSoundEngineAlsa::create_sound_sample(
+    const char* file_path,
     uint32_t duration,
     uint32_t rate,
     float volume
 ) {
-    CSoundSample* sample = new CSoundSample {filePath, duration, rate, volume};
-    tSound_Container.push_back(sample);
+    sound_container.push_back(
+        new CSoundSample {file_path, duration, rate, volume}
+    );
 }
+#endif // __linux__
+
+#ifdef _WIN32
+void CSoundEngineWaveform::open_device(const char* /* device */) {}
+
+void CSoundEngineWaveform::close_device() {}
+
+void CSoundEngineWaveform::create_sound_sample(
+    const char* file_path,
+    uint32_t duration,
+    uint32_t rate,
+    float volume
+) {
+    CSoundSample* sample = new CSoundSample {file_path, duration, rate, volume};
+    t_sound_container.push_back(sample);
+}
+#endif // _WIN32
 } // namespace glvm
 
 namespace glvm {
-CSystemManager* CSystemManager::pInstance_ = nullptr;
-std::mutex CSystemManager::Mutex_;
+CSystemManager* CSystemManager::p_instance = nullptr;
+std::mutex CSystemManager::mutex;
 
 CSystemManager::CSystemManager() {}
 
 CSystemManager::~CSystemManager() {
-    delete pInstance_;
-    pInstance_ = nullptr;
+    delete p_instance;
+    p_instance = nullptr;
 }
 
 CSystemManager* CSystemManager::get_instance() {
-    std::lock_guard<std::mutex> lock(Mutex_);
-    if (pInstance_ == nullptr) {
-        pInstance_ = new CSystemManager();
+    std::lock_guard<std::mutex> lock(mutex);
+    if (p_instance == nullptr) {
+        p_instance = new CSystemManager();
     }
-    return pInstance_;
+    return p_instance;
 }
 
-void CSystemManager::ActivateSystem(ISystem* _System) {
-    tSystemContainer.push_back(_System);
-    ++s_iSystem_ID;
+void CSystemManager::activate_system(ISystem* system) {
+    t_system_container.push_back(system);
+    ++s_i_system_id;
 }
 
-void CSystemManager::DeactivateSystem(DeactivatedSystems system) {
-    deactivatedSystems.push_back(system);
+void CSystemManager::deactivate_system(DeactivatedSystems system) {
+    deactivated_systems.push_back(system);
 }
 
-void CSystemManager::ReturnSystemToActivatedState(DeactivatedSystems system) {
-    for (unsigned int i = 0; i < deactivatedSystems.size(); ++i) {
-        if (system == deactivatedSystems[i]) {
-            deactivatedSystems.erase(deactivatedSystems.begin() + i);
+void CSystemManager::return_system_to_activated_state(
+    DeactivatedSystems system
+) {
+    for (unsigned int i = 0; i < deactivated_systems.size(); ++i) {
+        if (system == deactivated_systems[i]) {
+            deactivated_systems.erase(deactivated_systems.begin() + i);
             return;
         }
     }
 }
 
-void CSystemManager::Update() {
-    bool removedSystemFlag = false;
-    for (unsigned int i = 0; i < s_iSystem_ID; ++i) {
-        for (unsigned int j = 0; j < deactivatedSystems.size(); ++j) {
-            if ((unsigned int)deactivatedSystems[j] == i) {
-                removedSystemFlag = true;
+void CSystemManager::update() {
+    bool removed_system_flag = false;
+    for (unsigned int i = 0; i < s_i_system_id; ++i) {
+        for (unsigned int j = 0; j < deactivated_systems.size(); ++j) {
+            if ((unsigned int)deactivated_systems[j] == i) {
+                removed_system_flag = true;
                 continue;
             }
         }
 
-        if (removedSystemFlag) {
-            removedSystemFlag = false;
+        if (removed_system_flag) {
+            removed_system_flag = false;
             continue;
         } else {
-            tSystemContainer[i]->Update();
+            t_system_container[i]->update();
         }
     }
 }
 } // namespace glvm
 
 namespace glvm {
-void CCollisionSystem::Update() {
+void CCollisionSystem::update() {
     // Spatial grid common data.
-    const SpatialGrid& spatialGrid = world.spatialGrid;
+    const SpatialGrid& spatial_grid = WORLD.spatial_grid;
     assert(
-        spatialGrid.width > 0 && spatialGrid.height > 0 && spatialGrid.depth > 0
+        spatial_grid.width > 0 && spatial_grid.height > 0
+        && spatial_grid.depth > 0
     );
-    const float chunkSize = spatialGrid.grid[0][0][0].size;
+    const float chunk_size = spatial_grid.grid[0][0][0].SIZE;
 
-    const float chunkHalfWidth = spatialGrid.width * chunkSize * 0.5f;
-    const float chunkHalfHeight = spatialGrid.height * chunkSize * 0.5f;
-    const float chunkHalfDepth = spatialGrid.depth * chunkSize * 0.5f;
+    const float chunk_half_width = spatial_grid.width * chunk_size * 0.5f;
+    const float chunk_half_height = spatial_grid.height * chunk_size * 0.5f;
+    const float chunk_half_depth = spatial_grid.depth * chunk_size * 0.5f;
 
-    cachedArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        requiredMask,
-        cachedArchetypes,
-        cachedArchetypesNumber
+    cached_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        required_mask,
+        cached_archetypes,
+        cached_archetypes_number
     );
 
-    const float cameraSpeed = 5.5f * fDelta_Time_;
+    const float camera_speed = 5.5f * f_delta_time;
     // Outer cycle on every archetype.
-    for (uint32_t x = 0; x < cachedArchetypesNumber; ++x) {
-        Archetype* arch = cachedArchetypes[x];
-        view.backtrackingTransforms =
-            (transform*)arch->components[ComponentsIndices::TransformComponent];
-        view.backtrackingColliders =
-            (collider*)arch->components[ComponentsIndices::ColliderComponent];
-        view.backtrackingColliderFlags =
-            (colliderFlags*)
+    for (uint32_t x = 0; x < cached_archetypes_number; ++x) {
+        Archetype* arch = cached_archetypes[x];
+        view.backtracking_transforms =
+            (Transform*)arch->components[ComponentsIndices::TransformComponent];
+        view.backtracking_colliders =
+            (Collider*)arch->components[ComponentsIndices::ColliderComponent];
+        view.backtracking_collider_flags =
+            (ColliderFlags*)
                 arch->components[ComponentsIndices::ColliderFlagsComponent];
-        view.backtrackingMeshes =
-            (mesh*)arch->components[ComponentsIndices::MeshComponent];
+        view.backtracking_meshes =
+            (Mesh*)arch->components[ComponentsIndices::MeshComponent];
 
-        for (unsigned int i = 0; i < arch->entityCount; ++i) {
+        for (unsigned int i = 0; i < arch->entity_count; ++i) {
             // Count on every entity in current outer archetype.
-            uint32_t backtrackingEntityID = arch->entities[i];
+            uint32_t backtracking_entity_id = arch->entities[i];
 
-            uint8_t groudCollisionTurnOffMask =
+            uint8_t groud_collision_turn_off_mask =
                 (1u << 0) | (0u << 1) | (1u << 2) | (1u << 3);
-            if (view.backtrackingColliderFlags && view.backtrackingColliders
-                && view.backtrackingMeshes && view.backtrackingTransforms) {
-                view.backtrackingColliderFlags[i].flags =
-                    view.backtrackingColliderFlags[i].flags
-                    & groudCollisionTurnOffMask;
-                view.backtrackingColliders[i].colliders.clear();
-                mesh backtrackinEntityMesh = view.backtrackingMeshes[i];
-                MeshHandle backtrackingEntityMeshHandle =
-                    backtrackinEntityMesh.handle;
-                transform* backtrackingTransformComponent =
-                    &view.backtrackingTransforms[i];
-                Vector<float, 3> backtrackingTransform =
-                    backtrackingTransformComponent->position;
-                [[maybe_unused]] float backtrackingScale =
-                    backtrackingTransformComponent->scale;
+            if (view.backtracking_collider_flags && view.backtracking_colliders
+                && view.backtracking_meshes && view.backtracking_transforms) {
+                view.backtracking_collider_flags[i].flags =
+                    view.backtracking_collider_flags[i].flags
+                    & groud_collision_turn_off_mask;
+                view.backtracking_colliders[i].colliders.clear();
+                Mesh backtrackin_entity_mesh = view.backtracking_meshes[i];
+                MeshHandle backtracking_entity_mesh_handle =
+                    backtrackin_entity_mesh.handle;
+                Transform* backtracking_transform_component =
+                    &view.backtracking_transforms[i];
+                Vector<float, 3> backtracking_transform =
+                    backtracking_transform_component->position;
+                [[maybe_unused]] float backtracking_scale =
+                    backtracking_transform_component->scale;
 
-                uint64_t moveRequiredMask =
+                uint64_t move_required_mask =
                     (1ul << ComponentsIndices::MoveComponent);
                 // Check if outer current archetype has move component.
-                if (matches_required_mask(arch->mask, moveRequiredMask)) {
-                    view.backtrackingMove =
-                        (move*)
+                if (matches_required_mask(arch->mask, move_required_mask)) {
+                    view.backtracking_move =
+                        (Move*)
                             arch->components[ComponentsIndices::MoveComponent];
-                    backtrackingTransform +=
-                        Normalize(view.backtrackingMove[i].frameMovement)
-                        * cameraSpeed;
-                    backtrackingTransform += view.backtrackingMove[i].gravity;
+                    backtracking_transform +=
+                        normalize(view.backtracking_move[i].frame_movement)
+                        * camera_speed;
+                    backtracking_transform += view.backtracking_move[i].gravity;
                 }
 
                 // Collect entities from grid chunks.
-                MeshAxisMaxAbsoluteValues entityChunkBounds =
-                    allMeshMaxAbsoluteValues[backtrackingEntityMeshHandle.id];
-                std::vector<Vector<float, 3>> entityBoxCornerBoundPoints =
-                    computeBoxCornerBoundPoints(
-                        entityChunkBounds,
-                        backtrackingTransformComponent->position,
-                        backtrackingTransformComponent->scale
+                MeshAxisMaxAbsoluteValues entity_chunk_bounds =
+                    ALL_MESH_MAX_ABSOLUTE_VALUES[backtracking_entity_mesh_handle
+                                                     .id];
+                std::vector<Vector<float, 3>> entity_box_corner_bound_points =
+                    compute_box_corner_bound_points(
+                        entity_chunk_bounds,
+                        backtracking_transform_component->position,
+                        backtracking_transform_component->scale
                     );
 
                 // Result array with collected entities.
-                std::vector<uint32_t> collectedEntities;
+                std::vector<uint32_t> collected_entities;
                 // Need only left bottom back corner point and right upper front
                 // corner point to obtain all box bounds
-                const Vector<float, 3> minEntityPosition =
-                    entityBoxCornerBoundPoints[0];
-                const Vector<float, 3> maxEntityPosition =
-                    entityBoxCornerBoundPoints[1];
+                const Vector<float, 3> min_entity_position =
+                    entity_box_corner_bound_points[0];
+                const Vector<float, 3> max_entity_position =
+                    entity_box_corner_bound_points[1];
 
-                int indexMinX = static_cast<int>(
-                    (minEntityPosition[0] + chunkHalfWidth) / chunkSize
+                int index_min_x = static_cast<int>(
+                    (min_entity_position[0] + chunk_half_width) / chunk_size
                 );
-                int indexMinY = static_cast<int>(
-                    (minEntityPosition[1] + chunkHalfHeight) / chunkSize
+                int index_min_y = static_cast<int>(
+                    (min_entity_position[1] + chunk_half_height) / chunk_size
                 );
-                int indexMinZ = static_cast<int>(
-                    (minEntityPosition[2] + chunkHalfDepth) / chunkSize
+                int index_min_z = static_cast<int>(
+                    (min_entity_position[2] + chunk_half_depth) / chunk_size
                 );
 
-                int indexMaxX = static_cast<int>(
-                    (maxEntityPosition[0] + chunkHalfWidth) / chunkSize
+                int index_max_x = static_cast<int>(
+                    (max_entity_position[0] + chunk_half_width) / chunk_size
                 );
-                int indexMaxY = static_cast<int>(
-                    (maxEntityPosition[1] + chunkHalfHeight) / chunkSize
+                int index_max_y = static_cast<int>(
+                    (max_entity_position[1] + chunk_half_height) / chunk_size
                 );
-                int indexMaxZ = static_cast<int>(
-                    (maxEntityPosition[2] + chunkHalfDepth) / chunkSize
+                int index_max_z = static_cast<int>(
+                    (max_entity_position[2] + chunk_half_depth) / chunk_size
                 );
 
                 // Entity can legitimately leave the fixed-size world grid -
                 // clamp to nearest edge cell instead of crashing.
-                indexMinX =
-                    std::clamp(indexMinX, 0, (int)spatialGrid.width - 1);
-                indexMinY =
-                    std::clamp(indexMinY, 0, (int)spatialGrid.height - 1);
-                indexMinZ =
-                    std::clamp(indexMinZ, 0, (int)spatialGrid.depth - 1);
-                indexMaxX =
-                    std::clamp(indexMaxX, 0, (int)spatialGrid.width - 1);
-                indexMaxY =
-                    std::clamp(indexMaxY, 0, (int)spatialGrid.height - 1);
-                indexMaxZ =
-                    std::clamp(indexMaxZ, 0, (int)spatialGrid.depth - 1);
+                index_min_x =
+                    std::clamp(index_min_x, 0, (int)spatial_grid.width - 1);
+                index_min_y =
+                    std::clamp(index_min_y, 0, (int)spatial_grid.height - 1);
+                index_min_z =
+                    std::clamp(index_min_z, 0, (int)spatial_grid.depth - 1);
+                index_max_x =
+                    std::clamp(index_max_x, 0, (int)spatial_grid.width - 1);
+                index_max_y =
+                    std::clamp(index_max_y, 0, (int)spatial_grid.height - 1);
+                index_max_z =
+                    std::clamp(index_max_z, 0, (int)spatial_grid.depth - 1);
 
-                for (auto i2 = indexMinZ; i2 <= indexMaxZ; ++i2) {
-                    for (auto i3 = indexMinY; i3 <= indexMaxY; ++i3) {
-                        for (auto i4 = indexMinX; i4 <= indexMaxX; ++i4) {
-                            const std::vector<uint32_t>& chunkEntities =
-                                spatialGrid.grid[i2][i3][i4].entities;
-                            for (uint32_t i5 = 0; i5 < chunkEntities.size();
+                for (auto i2 = index_min_z; i2 <= index_max_z; ++i2) {
+                    for (auto i3 = index_min_y; i3 <= index_max_y; ++i3) {
+                        for (auto i4 = index_min_x; i4 <= index_max_x; ++i4) {
+                            const std::vector<uint32_t>& chunk_entities =
+                                spatial_grid.grid[i2][i3][i4].entities;
+                            for (uint32_t i5 = 0; i5 < chunk_entities.size();
                                  ++i5) {
-                                const uint32_t entity = chunkEntities[i5];
-                                if (!isExist(collectedEntities, entity)) {
-                                    collectedEntities.push_back(entity);
+                                const uint32_t entity = chunk_entities[i5];
+                                if (!is_exist(collected_entities, entity)) {
+                                    collected_entities.push_back(entity);
                                 }
                             }
                         }
@@ -11207,128 +11739,130 @@ void CCollisionSystem::Update() {
 
                 // Inner cycle on every archetype.
                 // Count on every entity in current inner archetype.
-                for (unsigned int j = 0; j < collectedEntities.size(); ++j) {
+                for (unsigned int j = 0; j < collected_entities.size(); ++j) {
                     // Check for same entityID and iteration.
-                    uint32_t comparedEntityID = collectedEntities[j];
-                    if (backtrackingEntityID == comparedEntityID) {
+                    uint32_t compared_entity_id = collected_entities[j];
+                    if (backtracking_entity_id == compared_entity_id) {
                         continue;
                     }
 
-                    EntityLocation comparedEntityLocation =
-                        world.entityLocations[getId(comparedEntityID)];
-                    const uint32_t comparedEntityIndex =
-                        comparedEntityLocation.index;
+                    EntityLocation compared_entity_location =
+                        WORLD.entity_locations[get_id(compared_entity_id)];
+                    const uint32_t compared_entity_index =
+                        compared_entity_location.index;
 
-                    MeshHandle comparedEntityMeshHandle;
-                    if (comparedEntityLocation.arch == nullptr) {
+                    MeshHandle compared_entity_mesh_handle;
+                    if (compared_entity_location.arch == nullptr) {
                         // Entity was removed from the world but a stale
                         // reference survived in the grid, skip it.
                         continue;
                     }
                     if (matches_required_mask(
-                            comparedEntityLocation.arch->mask,
-                            requiredMask
+                            compared_entity_location.arch->mask,
+                            required_mask
                         )) {
-                        Archetype* arch = comparedEntityLocation.arch;
-                        view.comparedTransforms = &(
-                            (transform*)arch->components
+                        Archetype* arch = compared_entity_location.arch;
+                        view.compared_transforms = &(
+                            (Transform*)arch->components
                                 [ComponentsIndices::TransformComponent]
-                        )[comparedEntityIndex];
-                        view.comparedMeshes = &(
+                        )[compared_entity_index];
+                        view.compared_meshes = &(
                             (
-                                mesh*
+                                Mesh*
                             )arch->components[ComponentsIndices::MeshComponent]
-                        )[comparedEntityIndex];
-                        comparedEntityMeshHandle = view.comparedMeshes->handle;
+                        )[compared_entity_index];
+                        compared_entity_mesh_handle =
+                            view.compared_meshes->handle;
 
-                        uint64_t moveRequiredMask =
+                        uint64_t move_required_mask =
                             (1ul << ComponentsIndices::MoveComponent);
                         if (matches_required_mask(
-                                comparedEntityLocation.arch->mask,
-                                moveRequiredMask
+                                compared_entity_location.arch->mask,
+                                move_required_mask
                             )) {
-                            view.comparedMove = &(
-                                (move*)arch
+                            view.compared_move = &(
+                                (Move*)arch
                                     ->components[ComponentsIndices::MoveComponent]
-                            )[comparedEntityIndex];
+                            )[compared_entity_index];
                         }
                     }
 
-                    transform* comparedTransformComponent =
-                        view.comparedTransforms;
-                    move* comparedMoveComponent = view.comparedMove;
+                    Transform* compared_transform_component =
+                        view.compared_transforms;
+                    Move* compared_move_component = view.compared_move;
 
-                    Vector<float, 3> comparedTransform =
+                    Vector<float, 3> compared_transform =
                         Vector<float, 3>(0.0f, 0.0f, 0.0f);
-                    float comparedScale = 0.0f;
-                    comparedTransform = comparedTransformComponent->position;
-                    comparedScale = comparedTransformComponent->scale;
+                    float compared_scale = 0.0f;
+                    compared_transform = compared_transform_component->position;
+                    compared_scale = compared_transform_component->scale;
 
-                    Vector<float, 3> gravityTest {};
-                    if (comparedMoveComponent != nullptr) {
-                        comparedTransform +=
-                            Normalize(comparedMoveComponent->frameMovement)
-                            * cameraSpeed;
-                        comparedTransform += comparedMoveComponent->gravity;
-                        gravityTest = comparedMoveComponent->gravity;
+                    Vector<float, 3> gravity_test {};
+                    if (compared_move_component != nullptr) {
+                        compared_transform +=
+                            normalize(compared_move_component->frame_movement)
+                            * camera_speed;
+                        compared_transform += compared_move_component->gravity;
+                        gravity_test = compared_move_component->gravity;
                     }
 
-                    bool boxColliderFlag = false;
-                    bool upperActorCheckFlag = false;
+                    bool box_collider_flag = false;
+                    bool upper_actor_check_flag = false;
 
                     MeshAxisMaxAbsoluteValues
-                        backtrackingMeshAxisMaxAbsoluteValues =
-                            allMeshMaxAbsoluteValues[backtrackingEntityMeshHandle
-                                                         .id];
+                        backtracking_mesh_axis_max_absolute_values =
+                            ALL_MESH_MAX_ABSOLUTE_VALUES
+                                [backtracking_entity_mesh_handle.id];
                     MeshAxisMaxAbsoluteValues
-                        comparedMeshAxisMaxAbsoluteValues = {};
-                    if (comparedEntityMeshHandle.id
-                        < allMeshMaxAbsoluteValues.size()) {
-                        comparedMeshAxisMaxAbsoluteValues =
-                            allMeshMaxAbsoluteValues[comparedEntityMeshHandle.id];
+                        compared_mesh_axis_max_absolute_values = {};
+                    if (compared_entity_mesh_handle.id
+                        < ALL_MESH_MAX_ABSOLUTE_VALUES.size()) {
+                        compared_mesh_axis_max_absolute_values =
+                            ALL_MESH_MAX_ABSOLUTE_VALUES
+                                [compared_entity_mesh_handle.id];
                     }
 
-                    boxColliderFlag = BoxCollider(
-                        backtrackingTransform,
-                        comparedTransform,
-                        backtrackingScale,
-                        comparedScale,
-                        backtrackingMeshAxisMaxAbsoluteValues,
-                        comparedMeshAxisMaxAbsoluteValues
+                    box_collider_flag = box_collider(
+                        backtracking_transform,
+                        compared_transform,
+                        backtracking_scale,
+                        compared_scale,
+                        backtracking_mesh_axis_max_absolute_values,
+                        compared_mesh_axis_max_absolute_values
                     );
 
-                    if (boxColliderFlag) {
-                        upperActorCheckFlag = UpperActorCheck(
-                            backtrackingTransform,
-                            comparedTransform,
-                            backtrackingScale,
-                            comparedScale,
-                            backtrackingEntityMeshHandle,
-                            comparedEntityMeshHandle
+                    if (box_collider_flag) {
+                        upper_actor_check_flag = upper_actor_check(
+                            backtracking_transform,
+                            compared_transform,
+                            backtracking_scale,
+                            compared_scale,
+                            backtracking_entity_mesh_handle,
+                            compared_entity_mesh_handle
                         );
                     }
 
-                    if (upperActorCheckFlag && boxColliderFlag) {
-                        uint8_t groudCollisionTurnOnMask =
+                    if (upper_actor_check_flag && box_collider_flag) {
+                        uint8_t groud_collision_turn_on_mask =
                             (0u << 0) | (1u << 1) | (0u << 2) | (0u << 3);
-                        view.backtrackingColliderFlags[i].flags =
-                            view.backtrackingColliderFlags[i].flags
-                            | groudCollisionTurnOnMask;
-                        view.backtrackingColliders[i].colliders.push_back(
-                            comparedEntityID
+                        view.backtracking_collider_flags[i].flags =
+                            view.backtracking_collider_flags[i].flags
+                            | groud_collision_turn_on_mask;
+                        view.backtracking_colliders[i].colliders.push_back(
+                            compared_entity_id
                         );
 
                         continue;
                     }
 
-                    if (boxColliderFlag) {
-                        uint8_t wallCollisionTurnOnMask =
+                    if (box_collider_flag) {
+                        uint8_t wall_collision_turn_on_mask =
                             (1u << 0) | (0u << 1) | (0u << 2) | (0u << 3);
-                        view.backtrackingColliderFlags[i].flags =
-                            view.backtrackingColliderFlags[i].flags
-                            | wallCollisionTurnOnMask;
-                        view.backtrackingColliders[i].colliders.push_back(
-                            comparedEntityID
+                        view.backtracking_collider_flags[i].flags =
+                            view.backtracking_collider_flags[i].flags
+                            | wall_collision_turn_on_mask;
+                        view.backtracking_colliders[i].colliders.push_back(
+                            compared_entity_id
                         );
 
                         continue;
@@ -11337,98 +11871,101 @@ void CCollisionSystem::Update() {
             }
         }
     }
-    cachedArchetypesNumber = 0;
+    cached_archetypes_number = 0;
 }
 
-bool CCollisionSystem::UpperActorCheck(
-    Vector<float, 3> backtrackingPosition,
-    Vector<float, 3> comparedPosition,
-    float backtrackingScale,
-    float comparedScale,
-    MeshHandle backtrackingMeshHandle,
-    MeshHandle comparedMeshHandle
+bool CCollisionSystem::upper_actor_check(
+    Vector<float, 3> backtracking_position,
+    Vector<float, 3> compared_position,
+    float backtracking_scale,
+    float compared_scale,
+    MeshHandle backtracking_mesh_handle,
+    MeshHandle compared_mesh_handle
 ) {
-    MeshAxisMaxAbsoluteValues backtrackingMeshAxisMaxAbsoluteValues =
-        allMeshMaxAbsoluteValues[backtrackingMeshHandle.id];
+    MeshAxisMaxAbsoluteValues backtracking_mesh_axis_max_absolute_values =
+        ALL_MESH_MAX_ABSOLUTE_VALUES[backtracking_mesh_handle.id];
 
-    MeshAxisMaxAbsoluteValues comparedMeshAxisMaxAbsoluteValues =
-        allMeshMaxAbsoluteValues[comparedMeshHandle.id];
+    MeshAxisMaxAbsoluteValues compared_mesh_axis_max_absolute_values =
+        ALL_MESH_MAX_ABSOLUTE_VALUES[compared_mesh_handle.id];
 
-    constexpr float epsilon = 0.15f;
-    return backtrackingPosition[1]
-        + backtrackingMeshAxisMaxAbsoluteValues.origin_offset_y
-            * backtrackingScale
-        - backtrackingMeshAxisMaxAbsoluteValues.absolute_y * backtrackingScale
-        + epsilon
-        > comparedPosition[1]
-        + comparedMeshAxisMaxAbsoluteValues.origin_offset_y * comparedScale
-        + comparedMeshAxisMaxAbsoluteValues.absolute_y * comparedScale;
+    constexpr float EPSILON = 0.15f;
+    return backtracking_position[1]
+        + backtracking_mesh_axis_max_absolute_values.origin_offset_y
+            * backtracking_scale
+        - backtracking_mesh_axis_max_absolute_values.absolute_y
+            * backtracking_scale
+        + EPSILON
+        > compared_position[1]
+        + compared_mesh_axis_max_absolute_values.origin_offset_y
+            * compared_scale
+        + compared_mesh_axis_max_absolute_values.absolute_y * compared_scale;
 }
 } // namespace glvm
 
 namespace glvm {
-void DamageSystem::Update() {
-    cachedAttackableArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        attackableRequiredMask,
-        archView.cachedAttackableArchetypes,
-        cachedAttackableArchetypesNumber
+void DamageSystem::update() {
+    cached_attackable_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        attackable_required_mask,
+        arch_view.cached_attackable_archetypes,
+        cached_attackable_archetypes_number
     );
 
-    for (uint32_t x = 0; x < cachedAttackableArchetypesNumber; ++x) {
-        Archetype* arch = archView.cachedAttackableArchetypes[x];
-        componentsView.attackableAttacks =
-            (attack*)arch->components[ComponentsIndices::AttackComponent];
-        componentsView.attackableHealth =
-            (health*)arch->components[ComponentsIndices::HealthComponent];
-        componentsView.attackableFonts =
-            (font*)arch->components[ComponentsIndices::FontComponent];
+    for (uint32_t x = 0; x < cached_attackable_archetypes_number; ++x) {
+        Archetype* arch = arch_view.cached_attackable_archetypes[x];
+        components_view.attackable_attacks =
+            (Attack*)arch->components[ComponentsIndices::AttackComponent];
+        components_view.attackable_health =
+            (Health*)arch->components[ComponentsIndices::HealthComponent];
+        components_view.attackable_fonts =
+            (Font*)arch->components[ComponentsIndices::FontComponent];
 
-        for (unsigned int i = 0; i < arch->entityCount; ++i) {
+        for (unsigned int i = 0; i < arch->entity_count; ++i) {
             uint64_t entity = arch->entities[i];
-            if (&componentsView.attackableHealth[i] != nullptr
-                && &componentsView.attackableAttacks[i] != nullptr) {
-                health& healthComponent = componentsView.attackableHealth[i];
-                attack& attackComponent = componentsView.attackableAttacks[i];
+            if (&components_view.attackable_health[i] != nullptr
+                && &components_view.attackable_attacks[i] != nullptr) {
+                Health& health_component = components_view.attackable_health[i];
+                Attack& attack_component =
+                    components_view.attackable_attacks[i];
 
-                healthComponent.currentHealth -= attackComponent.damage;
-                attackComponent.damage = 0;
-                if (healthComponent.currentHealth <= 0) {
-                    ArchetypeEntityManager* archEntityManager =
+                health_component.current_health -= attack_component.damage;
+                attack_component.damage = 0;
+                if (health_component.current_health <= 0) {
+                    ArchetypeEntityManager* arch_entity_manager =
                         ArchetypeEntityManager::get_instance();
-                    archEntityManager->removeEntity(entity);
-                    world.removeEntity(entity);
+                    arch_entity_manager->remove_entity(entity);
+                    WORLD.remove_entity(entity);
                 }
 
-                font& fontComponent = componentsView.attackableFonts[i];
-                fontComponent.font_string.clear();
-                fontComponent.font_string.push_back('4');
-                fontComponent.font_string.push_back('0');
-                fontComponent.lifeTime = 0;
-                fontComponent.removeble = true;
+                Font& font_component = components_view.attackable_fonts[i];
+                font_component.font_string.clear();
+                font_component.font_string.push_back('4');
+                font_component.font_string.push_back('0');
+                font_component.life_time = 0;
+                font_component.removeble = true;
             }
         }
     }
 
-    cachedFontArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        fontRequiredMask,
-        archView.cachedFontArchetypes,
-        cachedFontArchetypesNumber
+    cached_font_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        font_required_mask,
+        arch_view.cached_font_archetypes,
+        cached_font_archetypes_number
     );
 
-    for (uint32_t x = 0; x < cachedFontArchetypesNumber; ++x) {
-        Archetype* arch = archView.cachedFontArchetypes[x];
-        componentsView.fonts =
-            (font*)arch->components[ComponentsIndices::FontComponent];
+    for (uint32_t x = 0; x < cached_font_archetypes_number; ++x) {
+        Archetype* arch = arch_view.cached_font_archetypes[x];
+        components_view.fonts =
+            (Font*)arch->components[ComponentsIndices::FontComponent];
 
-        for (unsigned int i = 0; i < arch->entityCount; ++i) {
-            if (componentsView.fonts) {
-                font& fontComponent = componentsView.fonts[i];
-                if (fontComponent.removeble) {
-                    fontComponent.lifeTime += deltaTime;
+        for (unsigned int i = 0; i < arch->entity_count; ++i) {
+            if (components_view.fonts) {
+                Font& font_component = components_view.fonts[i];
+                if (font_component.removeble) {
+                    font_component.life_time += delta_time;
                 }
-                if (fontComponent.lifeTime >= 1.5) {}
+                if (font_component.life_time >= 1.5) {}
             }
         }
     }
@@ -11436,126 +11973,128 @@ void DamageSystem::Update() {
 } // namespace glvm
 
 namespace glvm {
-void EnemySystem::Update() {
-    playerArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        playerRequiredMask,
-        &archView.playerCachedArchetype,
-        playerArchetypesNumber
+void EnemySystem::update() {
+    player_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        player_required_mask,
+        &arch_view.player_cached_archetype,
+        player_archetypes_number
     );
-    componentsView.playerTransforms =
-        (transform*)archView.playerCachedArchetype
+    components_view.player_transforms =
+        (Transform*)arch_view.player_cached_archetype
             ->components[ComponentsIndices::TransformComponent];
 
-    enemyArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        enemyRequiredMask,
-        &archView.enemyCachedArchetype,
-        enemyArchetypesNumber
+    enemy_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        enemy_required_mask,
+        &arch_view.enemy_cached_archetype,
+        enemy_archetypes_number
     );
-    componentsView.enemyTransforms =
-        (transform*)archView.enemyCachedArchetype
+    components_view.enemy_transforms =
+        (Transform*)arch_view.enemy_cached_archetype
             ->components[ComponentsIndices::TransformComponent];
-    componentsView.enemyStates =
-        (state*)archView.enemyCachedArchetype
+    components_view.enemy_states =
+        (State*)arch_view.enemy_cached_archetype
             ->components[ComponentsIndices::StateComponent];
-    componentsView.enemies =
-        (enemy*)archView.enemyCachedArchetype
+    components_view.enemies =
+        (Enemy*)arch_view.enemy_cached_archetype
             ->components[ComponentsIndices::EnemyComponent];
 
-    projectileArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        projectileRequiredMask,
-        &archView.projectileArchetype,
-        projectileArchetypesNumber
+    projectile_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        projectile_required_mask,
+        &arch_view.projectile_archetype,
+        projectile_archetypes_number
     );
 
-    for (uint32_t j = 0; j < archView.playerCachedArchetype->entityCount; ++j) {
-        transform* playerTransformComponent =
-            &componentsView.playerTransforms[j];
-        for (unsigned int i = 0; i < archView.enemyCachedArchetype->entityCount;
+    for (uint32_t j = 0; j < arch_view.player_cached_archetype->entity_count;
+         ++j) {
+        Transform* player_transform_component =
+            &components_view.player_transforms[j];
+        for (unsigned int i = 0;
+             i < arch_view.enemy_cached_archetype->entity_count;
              ++i) {
-            transform* enemyTransformComponent =
-                &componentsView.enemyTransforms[i];
-            state* stateEnemyComponent = &componentsView.enemyStates[i];
-            enemy* enemyComponent = &componentsView.enemies[i];
+            Transform* enemy_transform_component =
+                &components_view.enemy_transforms[i];
+            State* state_enemy_component = &components_view.enemy_states[i];
+            Enemy* enemy_component = &components_view.enemies[i];
 
-            Vector<float, 3> distance = playerTransformComponent->position
-                - enemyTransformComponent->position;
-            float cameraSpeed = 5.5f * deltaFrameTime;
+            Vector<float, 3> distance = player_transform_component->position
+                - enemy_transform_component->position;
+            float camera_speed = 5.5f * delta_frame_time;
 
-            if (projectileCooldown > 0) {
-                projectileCooldown -= cameraSpeed;
+            if (projectile_cooldown > 0) {
+                projectile_cooldown -= camera_speed;
             }
-            if (distance.Length() > enemyComponent->detectRadius
-                && stateEnemyComponent->state == States::ATTACK) {
-                float deltaLength =
-                    distance.Length() - enemyComponent->detectRadius;
-                Vector<float, 3> enemyMove =
-                    distance * (deltaLength / distance.Length());
+            if (distance.length() > enemy_component->detect_radius
+                && state_enemy_component->state == States::ATTACK) {
+                float delta_length =
+                    distance.length() - enemy_component->detect_radius;
+                Vector<float, 3> enemy_move =
+                    distance * (delta_length / distance.length());
 
-                enemyTransformComponent->position += enemyMove;
+                enemy_transform_component->position += enemy_move;
             }
 
-            if (distance.Length() <= enemyComponent->detectRadius) {
-                if (projectileCooldown <= 0) {
-                    MeshHandle meshHandle {};
-                    const uint32_t sphereMeshHandleIndex = 2;
-                    if (meshHandlers.size() > 2) {
-                        meshHandle = meshHandlers[sphereMeshHandleIndex];
+            if (distance.length() <= enemy_component->detect_radius) {
+                if (projectile_cooldown <= 0) {
+                    MeshHandle mesh_handle {};
+                    const uint32_t sphere_mesh_handle_index = 2;
+                    if (mesh_handlers.size() > 2) {
+                        mesh_handle = mesh_handlers[sphere_mesh_handle_index];
                     }
 
-                    TextureHandle textureHandle {};
-                    const uint32_t grayTextureHandle = 2;
-                    if (textureHandlers.size() > 2) {
-                        textureHandle = textureHandlers[grayTextureHandle];
+                    TextureHandle texture_handle {};
+                    const uint32_t gray_texture_handle = 2;
+                    if (texture_handlers.size() > 2) {
+                        texture_handle = texture_handlers[gray_texture_handle];
                     }
 
-                    const material material = {
-                        .diffuseTextureID_ = textureHandle,
-                        .specularTextureID_ = textureHandle,
+                    const Material material = {
+                        .diffuse_texture_id = texture_handle,
+                        .specular_texture_id = texture_handle,
                         .ambient = {0.05f, 0.05f, 0.05f},
                         .shininess = 128.0f * 0.078125f
                     };
 
-                    const damage damage = {
-                        .maximumDamage = 40,
-                        .minimumDamage = 20,
-                        .criticalHitRate = 0,
-                        .criticalModifier = 0
+                    const Damage damage = {
+                        .maximum_damage = 40,
+                        .minimum_damage = 20,
+                        .critical_hit_rate = 0,
+                        .critical_modifier = 0
                     };
 
-                    ArchetypeEntityManager* archEntityManager =
+                    ArchetypeEntityManager* arch_entity_manager =
                         ArchetypeEntityManager::get_instance();
-                    uint64_t projectileEntity =
-                        archEntityManager->createEntity();
-                    world.addEntityToArchetype(
-                        projectileEntity,
-                        archView.projectileArchetype
+                    uint64_t projectile_entity =
+                        arch_entity_manager->create_entity();
+                    WORLD.add_entity_to_archetype(
+                        projectile_entity,
+                        arch_view.projectile_archetype
                     );
-                    EntityLocation projectileLocation =
-                        world.entityLocations[getId(projectileEntity)];
+                    EntityLocation projectile_location =
+                        WORLD.entity_locations[get_id(projectile_entity)];
 
-                    CreateProjectile(
-                        enemyTransformComponent->position,
-                        playerTransformComponent->position
-                            - enemyTransformComponent->position,
-                        meshHandle,
+                    create_projectile(
+                        enemy_transform_component->position,
+                        player_transform_component->position
+                            - enemy_transform_component->position,
+                        mesh_handle,
                         material,
                         damage,
-                        projectileLocation
+                        projectile_location
                     );
 
-                    soundEngine->CreateSoundSample(
+                    sound_engine->create_sound_sample(
                         "../../../examples/assets/sounds/pistol.wav",
                         5,
                         22050,
                         0.05
                     );
-                    projectileCooldown = 5.0;
+                    projectile_cooldown = 5.0;
                 }
 
-                stateEnemyComponent->state = States::ATTACK;
+                state_enemy_component->state = States::ATTACK;
             }
         }
     }
@@ -11563,339 +12102,345 @@ void EnemySystem::Update() {
 } // namespace glvm
 
 namespace glvm {
-void InventorySystem::Update() {
-    if (isInventoryOpened) {
-        crosshairArchetypesNumber = 0;
-        world.searchCacheArchetypes(
-            crosshairRequiredMask,
-            &archView.crosshairCachedArchetype,
-            crosshairArchetypesNumber
+void InventorySystem::update() {
+    if (is_inventory_opened) {
+        crosshair_archetypes_number = 0;
+        WORLD.search_cache_archetypes(
+            crosshair_required_mask,
+            &arch_view.crosshair_cached_archetype,
+            crosshair_archetypes_number
         );
-        componentsView.crosshairTransformsView =
-            (transform*)archView.crosshairCachedArchetype
+        components_view.crosshair_transforms_view =
+            (Transform*)arch_view.crosshair_cached_archetype
                 ->components[ComponentsIndices::TransformComponent];
 
-        inventoryArchetypesNumber = 0;
-        world.searchCacheArchetypes(
-            inventoryRequiredMask,
-            &archView.inventoryCachedArchetype,
-            inventoryArchetypesNumber
+        inventory_archetypes_number = 0;
+        WORLD.search_cache_archetypes(
+            inventory_required_mask,
+            &arch_view.inventory_cached_archetype,
+            inventory_archetypes_number
         );
 
-        componentsView.inventoryTransformsView =
-            (transform*)archView.inventoryCachedArchetype
+        components_view.inventory_transforms_view =
+            (Transform*)arch_view.inventory_cached_archetype
                 ->components[ComponentsIndices::TransformComponent];
-        componentsView.inventoryView =
-            (inventory*)archView.inventoryCachedArchetype
+        components_view.inventory_view =
+            (Inventory*)arch_view.inventory_cached_archetype
                 ->components[ComponentsIndices::InventoryComponent];
-        componentsView.inventoryMeshesView =
-            (mesh*)archView.inventoryCachedArchetype
+        components_view.inventory_meshes_view =
+            (Mesh*)arch_view.inventory_cached_archetype
                 ->components[ComponentsIndices::MeshComponent];
 
-        if (componentsView.crosshairTransformsView
-            && componentsView.inventoryTransformsView
-            && componentsView.inventoryView
-            && componentsView.inventoryMeshesView) {
-            transform* crosshairTransformComponent =
-                &componentsView.crosshairTransformsView[0];
+        if (components_view.crosshair_transforms_view
+            && components_view.inventory_transforms_view
+            && components_view.inventory_view
+            && components_view.inventory_meshes_view) {
+            Transform* crosshair_transform_component =
+                &components_view.crosshair_transforms_view[0];
 
-            transform* inventoryTransformComponent =
-                &componentsView.inventoryTransformsView[0];
-            inventory* inventoryComponent = &componentsView.inventoryView[0];
-            mesh* inventoryMeshComponent =
-                &componentsView.inventoryMeshesView[0];
+            Transform* inventory_transform_component =
+                &components_view.inventory_transforms_view[0];
+            Inventory* inventory_component = &components_view.inventory_view[0];
+            Mesh* inventory_mesh_component =
+                &components_view.inventory_meshes_view[0];
 
-            const float inventorySlotScale = inventoryMeshComponent->gltf
-                ? inventoryComponent->slotScale * 2.0f
-                : inventoryComponent->slotScale;
-            const float inventorySlotHalfScale = inventoryMeshComponent->gltf
-                ? inventoryComponent->slotScale
-                : inventoryComponent->slotScale * 0.5f;
+            const float inventory_slot_scale = inventory_mesh_component->gltf
+                ? inventory_component->slot_scale * 2.0f
+                : inventory_component->slot_scale;
+            const float inventory_slot_half_scale =
+                inventory_mesh_component->gltf
+                ? inventory_component->slot_scale
+                : inventory_component->slot_scale * 0.5f;
 
             // Take an item from inventory.
-            if (*isItemDraged < 0 && isLeftMouseButtonPressed
-                && *isLeftMouseButtonReleased) {
-                if (checkCrosshairInventoryIntersection(
-                        crosshairTransformComponent,
-                        inventoryTransformComponent,
-                        inventoryComponent,
-                        inventorySlotScale,
-                        inventorySlotHalfScale
+            if (*is_item_draged < 0 && is_left_mouse_button_pressed
+                && *is_left_mouse_button_released) {
+                if (check_crosshair_inventory_intersection(
+                        crosshair_transform_component,
+                        inventory_transform_component,
+                        inventory_component,
+                        inventory_slot_scale,
+                        inventory_slot_half_scale
                     )) {
-                    point2D<int> intersectionSlot =
-                        determineActualIntersectionSlot(
-                            crosshairTransformComponent,
-                            inventoryTransformComponent,
-                            inventorySlotScale,
-                            inventorySlotHalfScale
+                    Point2D<int> intersection_slot =
+                        determine_actual_intersection_slot(
+                            crosshair_transform_component,
+                            inventory_transform_component,
+                            inventory_slot_scale,
+                            inventory_slot_half_scale
                         );
-                    const unsigned int row = intersectionSlot.y;
-                    const unsigned int column = intersectionSlot.x;
+                    const unsigned int row = intersection_slot.y;
+                    const unsigned int column = intersection_slot.x;
                     const unsigned int entity =
-                        inventoryComponent->slots[row][column];
+                        inventory_component->slots[row][column];
                     // Check slot is not empty and hold an item.
                     if (entity != UINT_MAX && entity >= 0) {
-                        EntityLocation itemLocation =
-                            world.entityLocations[getId(entity)];
-                        ItemArchetype* itemArch =
-                            static_cast<ItemArchetype*>(itemLocation.arch);
-                        const uint32_t itemIndex = itemLocation.index;
-                        item* itemComponent = &itemArch->items[itemIndex];
+                        EntityLocation item_location =
+                            WORLD.entity_locations[get_id(entity)];
+                        ItemArchetype* item_arch =
+                            static_cast<ItemArchetype*>(item_location.arch);
+                        const uint32_t item_index = item_location.index;
+                        Item* item_component = &item_arch->items[item_index];
 
-                        if (itemComponent != nullptr) {
+                        if (item_component != nullptr) {
                             for (unsigned int i = 0;
-                                 i < itemComponent->occupiedSlots.size();
+                                 i < item_component->occupied_slots.size();
                                  ++i) {
                                 unsigned int row_index =
-                                    itemComponent->occupiedSlots[i]
-                                    / inventoryComponent->row;
+                                    item_component->occupied_slots[i]
+                                    / inventory_component->row;
                                 unsigned int col_index =
-                                    itemComponent->occupiedSlots[i]
-                                    % inventoryComponent->col;
+                                    item_component->occupied_slots[i]
+                                    % inventory_component->col;
                                 // Need to free all slots that hold an item.
-                                inventoryComponent->slots[row_index][col_index] =
-                                    UINT_MAX;
+                                inventory_component
+                                    ->slots[row_index][col_index] = UINT_MAX;
                             }
                         }
                         // Set currently dragged item entity.
-                        *isItemDraged = entity;
+                        *is_item_draged = entity;
                     }
                 }
-                *isLeftMouseButtonReleased = false;
+                *is_left_mouse_button_released = false;
             }
 
-            if (*isItemDraged >= 0) {
-                if (checkCrosshairInventoryIntersection(
-                        crosshairTransformComponent,
-                        inventoryTransformComponent,
-                        inventoryComponent,
-                        inventorySlotScale,
-                        inventorySlotHalfScale
+            if (*is_item_draged >= 0) {
+                if (check_crosshair_inventory_intersection(
+                        crosshair_transform_component,
+                        inventory_transform_component,
+                        inventory_component,
+                        inventory_slot_scale,
+                        inventory_slot_half_scale
                     )) {
-                    [[maybe_unused]] point2D<int> intersectionSlot =
-                        determineActualIntersectionSlot(
-                            crosshairTransformComponent,
-                            inventoryTransformComponent,
-                            inventorySlotScale,
-                            inventorySlotHalfScale
+                    [[maybe_unused]] Point2D<int> intersection_slot =
+                        determine_actual_intersection_slot(
+                            crosshair_transform_component,
+                            inventory_transform_component,
+                            inventory_slot_scale,
+                            inventory_slot_half_scale
                         );
 
-                    EntityLocation itemLocation =
-                        world.entityLocations[getId(*isItemDraged)];
-                    ItemArchetype* itemArch =
-                        static_cast<ItemArchetype*>(itemLocation.arch);
-                    const uint32_t itemIndex = itemLocation.index;
-                    item* itemComponent = &itemArch->items[itemIndex];
+                    EntityLocation item_location =
+                        WORLD.entity_locations[get_id(*is_item_draged)];
+                    ItemArchetype* item_arch =
+                        static_cast<ItemArchetype*>(item_location.arch);
+                    const uint32_t item_index = item_location.index;
+                    Item* item_component = &item_arch->items[item_index];
 
-                    std::vector<unsigned int> potentialOccupiedSlots;
-                    int isSwapable = 0;
-                    isSwapable = determineSwappableStatusAndSlots(
-                        itemComponent,
-                        inventoryTransformComponent,
-                        potentialOccupiedSlots,
-                        crosshairTransformComponent,
-                        intersectionSlot,
-                        inventoryComponent,
-                        inventorySlotScale
+                    std::vector<unsigned int> potential_occupied_slots;
+                    int is_swapable = 0;
+                    is_swapable = determine_swappable_status_and_slots(
+                        item_component,
+                        inventory_transform_component,
+                        potential_occupied_slots,
+                        crosshair_transform_component,
+                        intersection_slot,
+                        inventory_component,
+                        inventory_slot_scale
                     );
 
-                    inventoryComponent->highlightedSlots =
-                        potentialOccupiedSlots;
-                    inventoryComponent->isAvailableHighlightedSlots =
-                        isSwapable == -1 || isSwapable >= 0;
+                    inventory_component->highlighted_slots =
+                        potential_occupied_slots;
+                    inventory_component->is_available_highlighted_slots =
+                        is_swapable == -1 || is_swapable >= 0;
                 } else {
-                    inventoryComponent->highlightedSlots.clear();
+                    inventory_component->highlighted_slots.clear();
                 }
             }
 
             // Item drop to inventory, swapped or we just can't place.
-            if (*isItemDraged >= 0 && isLeftMouseButtonPressed
-                && *isLeftMouseButtonReleased) {
-                int isSwapable = 0;
-                if (checkCrosshairInventoryIntersection(
-                        crosshairTransformComponent,
-                        inventoryTransformComponent,
-                        inventoryComponent,
-                        inventorySlotScale,
-                        inventorySlotHalfScale
+            if (*is_item_draged >= 0 && is_left_mouse_button_pressed
+                && *is_left_mouse_button_released) {
+                int is_swapable = 0;
+                if (check_crosshair_inventory_intersection(
+                        crosshair_transform_component,
+                        inventory_transform_component,
+                        inventory_component,
+                        inventory_slot_scale,
+                        inventory_slot_half_scale
                     )) {
-                    [[maybe_unused]] point2D<int> intersectionSlot =
-                        determineActualIntersectionSlot(
-                            crosshairTransformComponent,
-                            inventoryTransformComponent,
-                            inventorySlotScale,
-                            inventorySlotHalfScale
+                    [[maybe_unused]] Point2D<int> intersection_slot =
+                        determine_actual_intersection_slot(
+                            crosshair_transform_component,
+                            inventory_transform_component,
+                            inventory_slot_scale,
+                            inventory_slot_half_scale
                         );
 
-                    EntityLocation itemLocation =
-                        world.entityLocations[getId(*isItemDraged)];
-                    ItemArchetype* itemArch =
-                        static_cast<ItemArchetype*>(itemLocation.arch);
-                    const uint32_t itemIndex = itemLocation.index;
-                    item* itemComponent = &itemArch->items[itemIndex];
+                    EntityLocation item_location =
+                        WORLD.entity_locations[get_id(*is_item_draged)];
+                    ItemArchetype* item_arch =
+                        static_cast<ItemArchetype*>(item_location.arch);
+                    const uint32_t item_index = item_location.index;
+                    Item* item_component = &item_arch->items[item_index];
 
-                    std::vector<unsigned int> potentialOccupiedSlots;
-                    isSwapable = determineSwappableStatusAndSlots(
-                        itemComponent,
-                        inventoryTransformComponent,
-                        potentialOccupiedSlots,
-                        crosshairTransformComponent,
-                        intersectionSlot,
-                        inventoryComponent,
-                        inventorySlotScale
+                    std::vector<unsigned int> potential_occupied_slots;
+                    is_swapable = determine_swappable_status_and_slots(
+                        item_component,
+                        inventory_transform_component,
+                        potential_occupied_slots,
+                        crosshair_transform_component,
+                        intersection_slot,
+                        inventory_component,
+                        inventory_slot_scale
                     );
 
-                    const int itemWidth = itemComponent->itemSlotType.width;
-                    const int itemHeight = itemComponent->itemSlotType.height;
+                    const int item_width = item_component->item_slot_type.width;
+                    const int item_height =
+                        item_component->item_slot_type.height;
 
                     // Default value. Just drop item to all empty slots.
-                    if (isSwapable == -1) {
-                        itemComponent->occupiedSlots = potentialOccupiedSlots;
-                        fillInventorySlots(
-                            itemComponent,
-                            itemWidth,
-                            itemHeight,
-                            inventoryComponent,
-                            *isItemDraged
+                    if (is_swapable == -1) {
+                        item_component->occupied_slots =
+                            potential_occupied_slots;
+                        fill_inventory_slots(
+                            item_component,
+                            item_width,
+                            item_height,
+                            inventory_component,
+                            *is_item_draged
                         );
                         // Swap one item that we dragging to another one in
                         // inventory.
-                    } else if (isSwapable > 0) {
-                        EntityLocation itemLocation =
-                            world.entityLocations[getId(isSwapable)];
-                        ItemArchetype* itemArch =
-                            static_cast<ItemArchetype*>(itemLocation.arch);
-                        const uint32_t itemIndex = itemLocation.index;
-                        item* swapedItemComponent = &itemArch->items[itemIndex];
+                    } else if (is_swapable > 0) {
+                        EntityLocation item_location =
+                            WORLD.entity_locations[get_id(is_swapable)];
+                        ItemArchetype* item_arch =
+                            static_cast<ItemArchetype*>(item_location.arch);
+                        const uint32_t item_index = item_location.index;
+                        Item* swaped_item_component =
+                            &item_arch->items[item_index];
 
-                        itemComponent->occupiedSlots = potentialOccupiedSlots;
-                        fillInventorySlots(
-                            swapedItemComponent,
-                            swapedItemComponent->itemSlotType.width,
-                            swapedItemComponent->itemSlotType.height,
-                            inventoryComponent,
+                        item_component->occupied_slots =
+                            potential_occupied_slots;
+                        fill_inventory_slots(
+                            swaped_item_component,
+                            swaped_item_component->item_slot_type.width,
+                            swaped_item_component->item_slot_type.height,
+                            inventory_component,
                             UINT_MAX
                         );
 
-                        swapedItemComponent->occupiedSlots.clear();
-                        fillInventorySlots(
-                            itemComponent,
-                            itemWidth,
-                            itemHeight,
-                            inventoryComponent,
-                            *isItemDraged
+                        swaped_item_component->occupied_slots.clear();
+                        fill_inventory_slots(
+                            item_component,
+                            item_width,
+                            item_height,
+                            inventory_component,
+                            *is_item_draged
                         );
                     }
 
-                    if (isSwapable == -1) {
-                        *isLeftMouseButtonReleased = false;
-                        *isItemDraged = -1;
+                    if (is_swapable == -1) {
+                        *is_left_mouse_button_released = false;
+                        *is_item_draged = -1;
                         // Already have 2 or more items in potential inventory
                         // slots.
-                    } else if (isSwapable == -2) {
-                        *isLeftMouseButtonReleased = false;
+                    } else if (is_swapable == -2) {
+                        *is_left_mouse_button_released = false;
                     } else {
-                        *isLeftMouseButtonReleased = false;
-                        *isItemDraged = isSwapable;
+                        *is_left_mouse_button_released = false;
+                        *is_item_draged = is_swapable;
                     }
                     // Item drop to the ground.
                 } else {
-                    EntityLocation itemLocation =
-                        world.entityLocations[getId(*isItemDraged)];
-                    ItemArchetype* itemArch =
-                        static_cast<ItemArchetype*>(itemLocation.arch);
-                    const uint32_t itemIndex = itemLocation.index;
-                    itemArch->rigidBodies[itemIndex] = {.fMass_ = 2.0f};
-                    transform* itemTransform = &itemArch->transforms[itemIndex];
-                    item* item = &itemArch->items[itemIndex];
-                    item->isActor = true;
+                    EntityLocation item_location =
+                        WORLD.entity_locations[get_id(*is_item_draged)];
+                    ItemArchetype* item_arch =
+                        static_cast<ItemArchetype*>(item_location.arch);
+                    const uint32_t item_index = item_location.index;
+                    item_arch->rigid_bodies[item_index] = {.f_mass = 2.0f};
+                    Transform* item_transform =
+                        &item_arch->transforms[item_index];
+                    Item* item = &item_arch->items[item_index];
+                    item->is_actor = true;
                     // Remove this cringe.
                     const uint32_t player = 0;
-                    EntityLocation playerLocation =
-                        world.entityLocations[getId(player)];
-                    PlayerArchetype* playerArch =
-                        static_cast<PlayerArchetype*>(playerLocation.arch);
-                    const uint32_t playerIndex = playerLocation.index;
-                    transform* playerTransform =
-                        &playerArch->transforms[playerIndex];
-                    itemTransform->position = playerTransform->position;
-                    Vector<float, 3> normalizedForward =
-                        Normalize(playerTransform->forward);
-                    itemTransform->position[0] += normalizedForward[0] * 2.5f;
-                    itemTransform->position[1] += normalizedForward[1] * 2.5f;
-                    itemTransform->position[2] += normalizedForward[2] * 2.5f;
-                    itemTransform->scale = 0.05f;
+                    EntityLocation player_location =
+                        WORLD.entity_locations[get_id(player)];
+                    PlayerArchetype* player_arch =
+                        static_cast<PlayerArchetype*>(player_location.arch);
+                    const uint32_t player_index = player_location.index;
+                    Transform* player_transform =
+                        &player_arch->transforms[player_index];
+                    item_transform->position = player_transform->position;
+                    Vector<float, 3> normalized_forward =
+                        normalize(player_transform->forward);
+                    item_transform->position[0] += normalized_forward[0] * 2.5f;
+                    item_transform->position[1] += normalized_forward[1] * 2.5f;
+                    item_transform->position[2] += normalized_forward[2] * 2.5f;
+                    item_transform->scale = 0.05f;
 
-                    *isItemDraged = -1;
-                    *isLeftMouseButtonReleased = false;
+                    *is_item_draged = -1;
+                    *is_left_mouse_button_released = false;
                 }
             }
         }
     }
 }
 
-int InventorySystem::determineSwappableStatusAndSlots(
-    item* itemComponent,
-    transform* inventoryTransformComponent,
-    std::vector<unsigned int>& potentialOccupiedSlots,
-    transform* crosshairTransformComponent,
-    point2D<int> intersectionSlot,
-    inventory* inventoryComponent,
-    const float inventorySlotScale
+int InventorySystem::determine_swappable_status_and_slots(
+    Item* item_component,
+    Transform* inventory_transform_component,
+    std::vector<unsigned int>& potential_occupied_slots,
+    Transform* crosshair_transform_component,
+    Point2D<int> intersection_slot,
+    Inventory* inventory_component,
+    const float inventory_slot_scale
 ) {
-    if (itemComponent != nullptr) {
-        const int itemWidth = itemComponent->itemSlotType.width;
-        const int itemHeight = itemComponent->itemSlotType.height;
+    if (item_component != nullptr) {
+        const int item_width = item_component->item_slot_type.width;
+        const int item_height = item_component->item_slot_type.height;
 
-        const int row = intersectionSlot.y;
-        const int column = intersectionSlot.x;
+        const int row = intersection_slot.y;
+        const int column = intersection_slot.x;
 
         // Find left-upper pivot slot inventory.
-        int rowBasicOffset = 0;
-        int columnBasicOffset = 0;
+        int row_basic_offset = 0;
+        int column_basic_offset = 0;
 
         // Set as pivot point slot in left upper corner.
         // Need to calculate offset for row and column
         // to change it from center. And need to It is
         // necessary to take into account the offset
         // relative to the center for additional correction.
-        columnBasicOffset = calculateBasicOffset(
-            itemWidth,
-            inventoryTransformComponent->position[0],
-            crosshairTransformComponent->position[0],
+        column_basic_offset = calculate_basic_offset(
+            item_width,
+            inventory_transform_component->position[0],
+            crosshair_transform_component->position[0],
             column,
-            inventorySlotScale
+            inventory_slot_scale
         );
-        rowBasicOffset = calculateBasicOffset(
-            itemHeight,
-            inventoryTransformComponent->position[1],
-            crosshairTransformComponent->position[1],
+        row_basic_offset = calculate_basic_offset(
+            item_height,
+            inventory_transform_component->position[1],
+            crosshair_transform_component->position[1],
             row,
-            inventorySlotScale * aspectRate
+            inventory_slot_scale * aspect_rate
         );
 
-        int pivotRow = row - rowBasicOffset;
-        int pivotColumn = column - columnBasicOffset;
+        int pivot_row = row - row_basic_offset;
+        int pivot_column = column - column_basic_offset;
 
         clamp<int>(
             0,
-            pivotRow,
-            static_cast<int>(inventoryComponent->row) - itemHeight
+            pivot_row,
+            static_cast<int>(inventory_component->row) - item_height
         );
         clamp<int>(
             0,
-            pivotColumn,
-            static_cast<int>(inventoryComponent->col) - itemWidth
+            pivot_column,
+            static_cast<int>(inventory_component->col) - item_width
         );
 
-        return determineSwappableField(
-            itemComponent,
-            itemWidth,
-            itemHeight,
-            pivotRow,
-            pivotColumn,
-            inventoryComponent,
-            potentialOccupiedSlots
+        return determine_swappable_field(
+            item_component,
+            item_width,
+            item_height,
+            pivot_row,
+            pivot_column,
+            inventory_component,
+            potential_occupied_slots
         );
     } else {
         // Return -3 as error code means itemComponent is nullptr.
@@ -11903,120 +12448,123 @@ int InventorySystem::determineSwappableStatusAndSlots(
     }
 }
 
-void InventorySystem::fillInventorySlots(
-    item* itemComponent,
-    const int itemWidth,
-    const int itemHeight,
-    inventory* inventoryComponent,
-    const int fillValue
+void InventorySystem::fill_inventory_slots(
+    Item* item_component,
+    const int item_width,
+    const int item_height,
+    Inventory* inventory_component,
+    const int fill_value
 ) {
-    for (int i = 0; i < itemHeight; ++i) {
-        for (int j = 0; j < itemWidth; ++j) {
-            const unsigned int slotsRow =
-                itemComponent->occupiedSlots[i * itemWidth + j]
-                / inventoryComponent->col;
-            const unsigned int slotsColumn =
-                itemComponent->occupiedSlots[i * itemWidth + j]
-                % inventoryComponent->col;
+    for (int i = 0; i < item_height; ++i) {
+        for (int j = 0; j < item_width; ++j) {
+            const unsigned int slots_row =
+                item_component->occupied_slots[i * item_width + j]
+                / inventory_component->col;
+            const unsigned int slots_column =
+                item_component->occupied_slots[i * item_width + j]
+                % inventory_component->col;
 
-            inventoryComponent->slots[slotsRow][slotsColumn] = fillValue;
+            inventory_component->slots[slots_row][slots_column] = fill_value;
         }
     }
 }
 
-int InventorySystem::determineSwappableField(
-    item* itemComponent,
-    const int itemWidth,
-    const int itemHeight,
-    int pivotRow,
-    int pivotColumn,
-    inventory* inventoryComponent,
-    std::vector<unsigned int>& potentialOccupiedSlots
+int InventorySystem::determine_swappable_field(
+    Item* item_component,
+    const int item_width,
+    const int item_height,
+    int pivot_row,
+    int pivot_column,
+    Inventory* inventory_component,
+    std::vector<unsigned int>& potential_occupied_slots
 ) {
-    itemComponent->occupiedSlots.clear();
+    item_component->occupied_slots.clear();
     // -1: default value. -2: found two entities in potential slots. Any other
     // value: swappable.
-    int isSwapable = -1;
-    for (int i = 0; i < itemHeight; ++i) {
-        for (int j = 0; j < itemWidth; ++j) {
-            const unsigned int finalRow = pivotRow + i;
-            const unsigned int finalColumn = pivotColumn + j;
-            if (isSwapable == -1
-                && inventoryComponent->slots[finalRow][finalColumn]
+    int is_swapable = -1;
+    for (int i = 0; i < item_height; ++i) {
+        for (int j = 0; j < item_width; ++j) {
+            const unsigned int final_row = pivot_row + i;
+            const unsigned int final_column = pivot_column + j;
+            if (is_swapable == -1
+                && inventory_component->slots[final_row][final_column]
                     != UINT_MAX) {
-                isSwapable = inventoryComponent->slots[finalRow][finalColumn];
+                is_swapable =
+                    inventory_component->slots[final_row][final_column];
             } else if (
-                isSwapable > 0
-                && inventoryComponent->slots[finalRow][finalColumn] != UINT_MAX
-                && (int)inventoryComponent->slots[finalRow][finalColumn]
-                    != isSwapable
+                is_swapable > 0
+                && inventory_component->slots[final_row][final_column]
+                    != UINT_MAX
+                && (int)inventory_component->slots[final_row][final_column]
+                    != is_swapable
             ) {
-                isSwapable = -2;
+                is_swapable = -2;
             }
 
-            potentialOccupiedSlots.push_back(
-                finalRow * inventoryComponent->col + finalColumn
+            potential_occupied_slots.push_back(
+                final_row * inventory_component->col + final_column
             );
         }
     }
 
-    return isSwapable;
+    return is_swapable;
 }
 
-int InventorySystem::calculateBasicOffset(
-    const int itemAxisSize,
-    const float axisValue,
-    const float crosshairAxisPosition,
-    const int axisSlotIndex,
-    const float inventorySlotScale
+int InventorySystem::calculate_basic_offset(
+    const int item_axis_size,
+    const float axis_value,
+    const float crosshair_axis_position,
+    const int axis_slot_index,
+    const float inventory_slot_scale
 ) {
-    if (itemAxisSize % 2 == 0) {
-        const float slotCenterX =
-            axisValue + static_cast<float>(axisSlotIndex) * inventorySlotScale;
-        if (slotCenterX > crosshairAxisPosition) {
-            return itemAxisSize / 2;
+    if (item_axis_size % 2 == 0) {
+        const float slot_center_x = axis_value
+            + static_cast<float>(axis_slot_index) * inventory_slot_scale;
+        if (slot_center_x > crosshair_axis_position) {
+            return item_axis_size / 2;
         }
-        return itemAxisSize / 2 - 1;
+        return item_axis_size / 2 - 1;
     }
-    return itemAxisSize / 2;
+    return item_axis_size / 2;
 }
 
-bool InventorySystem::checkCrosshairInventoryIntersection(
-    transform* crosshairTransformComponent,
-    transform* inventoryTransformComponent,
-    inventory* inventoryComponent,
-    const float inventorySlotScale,
-    const float inventorySlotHalfScale
+bool InventorySystem::check_crosshair_inventory_intersection(
+    Transform* crosshair_transform_component,
+    Transform* inventory_transform_component,
+    Inventory* inventory_component,
+    const float inventory_slot_scale,
+    const float inventory_slot_half_scale
 ) {
-    return crosshairTransformComponent->position[0]
-        > inventoryTransformComponent->position[0] - inventorySlotHalfScale
-        && crosshairTransformComponent->position[0]
-        < inventoryTransformComponent->position[0] - inventorySlotHalfScale
-            + inventorySlotScale * inventoryComponent->col
-        && crosshairTransformComponent->position[1]
-        > inventoryTransformComponent->position[1]
-            - inventorySlotHalfScale * aspectRate
-        && crosshairTransformComponent->position[1]
-        < inventoryTransformComponent->position[1]
-            - inventorySlotHalfScale * aspectRate
-            + inventorySlotScale * inventoryComponent->row * aspectRate;
+    return crosshair_transform_component->position[0]
+        > inventory_transform_component->position[0] - inventory_slot_half_scale
+        && crosshair_transform_component->position[0]
+        < inventory_transform_component->position[0] - inventory_slot_half_scale
+            + inventory_slot_scale * inventory_component->col
+        && crosshair_transform_component->position[1]
+        > inventory_transform_component->position[1]
+            - inventory_slot_half_scale * aspect_rate
+        && crosshair_transform_component->position[1]
+        < inventory_transform_component->position[1]
+            - inventory_slot_half_scale * aspect_rate
+            + inventory_slot_scale * inventory_component->row * aspect_rate;
 }
 
-point2D<int> InventorySystem::determineActualIntersectionSlot(
-    transform* crosshairTransformComponent,
-    transform* inventoryTransformComponent,
-    const float inventorySlotScale,
-    const float inventorySlotHalfScale
+Point2D<int> InventorySystem::determine_actual_intersection_slot(
+    Transform* crosshair_transform_component,
+    Transform* inventory_transform_component,
+    const float inventory_slot_scale,
+    const float inventory_slot_half_scale
 ) {
-    float x_delta = crosshairTransformComponent->position[0]
-        - inventoryTransformComponent->position[0] + inventorySlotHalfScale;
-    float y_delta = crosshairTransformComponent->position[1]
-        - inventoryTransformComponent->position[1]
-        + inventorySlotHalfScale * aspectRate;
+    float x_delta = crosshair_transform_component->position[0]
+        - inventory_transform_component->position[0]
+        + inventory_slot_half_scale;
+    float y_delta = crosshair_transform_component->position[1]
+        - inventory_transform_component->position[1]
+        + inventory_slot_half_scale * aspect_rate;
 
-    return point2D<int> {
-        (int)(x_delta / inventorySlotScale),
-        (int)(y_delta / (inventorySlotScale * aspectRate))
+    return Point2D<int> {
+        (int)(x_delta / inventory_slot_scale),
+        (int)(y_delta / (inventory_slot_scale * aspect_rate))
     };
 }
 } // namespace glvm
@@ -12024,111 +12572,113 @@ point2D<int> InventorySystem::determineActualIntersectionSlot(
 namespace glvm {
 // This method is trying to search for suitable slots for the given specific
 // type item. It returns true if it finds them and false otherwise.
-bool ItemSystem::putItem2x2(
-    inventory* inventoryComponent,
-    unsigned int itemEntity
+bool ItemSystem::put_item2x2(
+    Inventory* inventory_component,
+    unsigned int item_entity
 ) {
-    bool isSlotFound = false;
-    unsigned int row = inventoryComponent->row;
-    unsigned int col = inventoryComponent->col;
+    bool is_slot_found = false;
+    unsigned int row = inventory_component->row;
+    unsigned int col = inventory_component->col;
 
-    EntityLocation itemLocation = world.entityLocations[getId(itemEntity)];
-    ItemArchetype* itemArch = static_cast<ItemArchetype*>(itemLocation.arch);
-    const uint32_t itemIndex = itemLocation.index;
-    item* itemComponent = &itemArch->items[itemIndex];
+    EntityLocation item_location = WORLD.entity_locations[get_id(item_entity)];
+    ItemArchetype* item_arch = static_cast<ItemArchetype*>(item_location.arch);
+    const uint32_t item_index = item_location.index;
+    Item* item_component = &item_arch->items[item_index];
 
-    unsigned int item_width = itemComponent->itemSlotType.width;
-    unsigned int item_height = itemComponent->itemSlotType.height;
+    unsigned int item_width = item_component->item_slot_type.width;
+    unsigned int item_height = item_component->item_slot_type.height;
 
     std::cout << "item width: " << item_width << std::endl;
     std::cout << "item height: " << item_height << std::endl;
     for (unsigned int i = 0; i < row - item_height + 1; ++i) {
         for (unsigned int j = 0; j < col - item_width + 1; ++j) {
-            std::vector<unsigned int> maybeAvailabeSlots;
-            std::vector<unsigned int> indicesOfMaybeAvailableSlots;
+            std::vector<unsigned int> maybe_availabe_slots;
+            std::vector<unsigned int> indices_of_maybe_available_slots;
             for (unsigned int m = i; m < i + item_height; ++m) {
                 for (unsigned int n = j; n < j + item_width; ++n) {
-                    maybeAvailabeSlots.push_back(
-                        inventoryComponent->slots[m][n]
+                    maybe_availabe_slots.push_back(
+                        inventory_component->slots[m][n]
                     );
-                    indicesOfMaybeAvailableSlots.push_back(m * col + n);
+                    indices_of_maybe_available_slots.push_back(m * col + n);
                 }
             }
 
-            unsigned int isAllSlotsAvailable = 0;
-            for (unsigned int v = 0; v < maybeAvailabeSlots.size(); ++v) {
-                if (maybeAvailabeSlots[v] == UINT_MAX) {
-                    ++isAllSlotsAvailable;
+            unsigned int is_all_slots_available = 0;
+            for (unsigned int v = 0; v < maybe_availabe_slots.size(); ++v) {
+                if (maybe_availabe_slots[v] == UINT_MAX) {
+                    ++is_all_slots_available;
                 } else {
-                    --isAllSlotsAvailable;
+                    --is_all_slots_available;
                 }
             }
-            if (maybeAvailabeSlots.size() == isAllSlotsAvailable) {
-                for (unsigned int w = 0; w < maybeAvailabeSlots.size(); ++w) {
+            if (maybe_availabe_slots.size() == is_all_slots_available) {
+                for (unsigned int w = 0; w < maybe_availabe_slots.size(); ++w) {
                     unsigned int row_index =
-                        indicesOfMaybeAvailableSlots[w] / row;
+                        indices_of_maybe_available_slots[w] / row;
                     unsigned int col_index =
-                        indicesOfMaybeAvailableSlots[w] % col;
-                    inventoryComponent->slots[row_index][col_index] =
-                        itemEntity;
-                    itemComponent->occupiedSlots.push_back(
-                        indicesOfMaybeAvailableSlots[w]
+                        indices_of_maybe_available_slots[w] % col;
+                    inventory_component->slots[row_index][col_index] =
+                        item_entity;
+                    item_component->occupied_slots.push_back(
+                        indices_of_maybe_available_slots[w]
                     );
                 }
 
-                isSlotFound = true;
-                return isSlotFound;
+                is_slot_found = true;
+                return is_slot_found;
             }
         }
     }
 
-    return isSlotFound;
+    return is_slot_found;
 }
 
-void ItemSystem::Update() {
-    if (!isInventoryOpened) {
-        inventoryArchetypesNumber = 0;
-        world.searchCacheArchetypes(
-            inventoryRequiredMask,
-            &archView.inventoryCachedArchetype,
-            inventoryArchetypesNumber
+void ItemSystem::update() {
+    if (!is_inventory_opened) {
+        inventory_archetypes_number = 0;
+        WORLD.search_cache_archetypes(
+            inventory_required_mask,
+            &arch_view.inventory_cached_archetype,
+            inventory_archetypes_number
         );
-        componentsView.inventoriesView =
-            (inventory*)archView.inventoryCachedArchetype
+        components_view.inventories_view =
+            (Inventory*)arch_view.inventory_cached_archetype
                 ->components[ComponentsIndices::InventoryComponent];
 
-        itemArchetypesNumber = 0;
-        world.searchCacheArchetypes(
-            itemRequiredMask,
-            &archView.itemArchetype,
-            itemArchetypesNumber
+        item_archetypes_number = 0;
+        WORLD.search_cache_archetypes(
+            item_required_mask,
+            &arch_view.item_archetype,
+            item_archetypes_number
         );
-        componentsView.itemsView =
-            (item*)archView.itemArchetype
+        components_view.items_view =
+            (Item*)arch_view.item_archetype
                 ->components[ComponentsIndices::ItemComponent];
-        componentsView.itemCollidersView =
-            (collider*)archView.itemArchetype
+        components_view.item_colliders_view =
+            (Collider*)arch_view.item_archetype
                 ->components[ComponentsIndices::ColliderComponent];
 
         for (unsigned int m = 0;
-             m < archView.inventoryCachedArchetype->entityCount;
+             m < arch_view.inventory_cached_archetype->entity_count;
              ++m) {
-            inventory* inventoryComponent = &componentsView.inventoriesView[m];
+            Inventory* inventory_component =
+                &components_view.inventories_view[m];
 
-            for (unsigned int i = 0; i < archView.itemArchetype->entityCount;
+            for (unsigned int i = 0; i < arch_view.item_archetype->entity_count;
                  ++i) {
-                unsigned int itemEntity = archView.itemArchetype->entities[i];
-                collider* itemColliderComponent =
-                    &componentsView.itemCollidersView[i];
+                unsigned int item_entity =
+                    arch_view.item_archetype->entities[i];
+                Collider* item_collider_component =
+                    &components_view.item_colliders_view[i];
 
                 for (unsigned int j = 0;
-                     j < itemColliderComponent->colliders.size();
+                     j < item_collider_component->colliders.size();
                      ++j) {
-                    if (itemColliderComponent->colliders[j]
-                            == inventoryComponent->entityOwner
-                        && componentsView.itemsView[i].isActor) {
-                        if (putItem2x2(inventoryComponent, itemEntity)) {
-                            componentsView.itemsView[i].isActor = false;
+                    if (item_collider_component->colliders[j]
+                            == inventory_component->entity_owner
+                        && components_view.items_view[i].is_actor) {
+                        if (put_item2x2(inventory_component, item_entity)) {
+                            components_view.items_view[i].is_actor = false;
                         } else {
                             std::cout
                                 << "No suitable slots for that item in inventory"
@@ -12140,38 +12690,40 @@ void ItemSystem::Update() {
         }
     }
 
-    if (isInventoryOpened) {
-        crosshairArchetypesNumber = 0;
-        world.searchCacheArchetypes(
-            crosshairRequiredMask,
-            &archView.crosshairArchetype,
-            crosshairArchetypesNumber
+    if (is_inventory_opened) {
+        crosshair_archetypes_number = 0;
+        WORLD.search_cache_archetypes(
+            crosshair_required_mask,
+            &arch_view.crosshair_archetype,
+            crosshair_archetypes_number
         );
-        componentsView.crosshairTransforms =
-            (transform*)archView.crosshairArchetype
+        components_view.crosshair_transforms =
+            (Transform*)arch_view.crosshair_archetype
                 ->components[ComponentsIndices::TransformComponent];
 
-        itemArchetypesNumber = 0;
-        world.searchCacheArchetypes(
-            itemRequiredMask,
-            &archView.itemArchetype,
-            itemArchetypesNumber
+        item_archetypes_number = 0;
+        WORLD.search_cache_archetypes(
+            item_required_mask,
+            &arch_view.item_archetype,
+            item_archetypes_number
         );
-        componentsView.itemTransformsView =
-            (transform*)archView.itemArchetype
+        components_view.item_transforms_view =
+            (Transform*)arch_view.item_archetype
                 ->components[ComponentsIndices::TransformComponent];
 
-        transform* crosshairTransformComponent =
-            &componentsView.crosshairTransforms[0];
-        for (unsigned int i = 0; i < archView.itemArchetype->entityCount; ++i) {
-            uint32_t entityItemContaining = archView.itemArchetype->entities[i];
-            transform* itemTransformComponent =
-                &componentsView.itemTransformsView[i];
-            if (*draggedItemEntity >= 0
-                && *draggedItemEntity == (int)entityItemContaining) {
+        Transform* crosshair_transform_component =
+            &components_view.crosshair_transforms[0];
+        for (unsigned int i = 0; i < arch_view.item_archetype->entity_count;
+             ++i) {
+            uint32_t entity_item_containing =
+                arch_view.item_archetype->entities[i];
+            Transform* item_transform_component =
+                &components_view.item_transforms_view[i];
+            if (*dragged_item_entity >= 0
+                && *dragged_item_entity == (int)entity_item_containing) {
                 // Set crosshair position to dragged items.
-                itemTransformComponent->position =
-                    crosshairTransformComponent->position;
+                item_transform_component->position =
+                    crosshair_transform_component->position;
             }
         }
     }
@@ -12179,67 +12731,71 @@ void ItemSystem::Update() {
 } // namespace glvm
 
 namespace glvm {
-CMovementSystem::CMovementSystem(CStack& inputStack) : inputStack(inputStack) {}
+CMovementSystem::CMovementSystem(CStack& input_stack) :
+    input_stack(input_stack) {}
 
-void CMovementSystem::Update() {
-    world.searchCacheArchetypes(
-        playerRequiredMask,
-        &archView.playerCachedArchetype,
-        playerArchetypesNumber
+void CMovementSystem::update() {
+    WORLD.search_cache_archetypes(
+        player_required_mask,
+        &arch_view.player_cached_archetype,
+        player_archetypes_number
     );
-    componentsView.playerMoves =
-        (move*)archView.playerCachedArchetype
+    components_view.player_moves =
+        (Move*)arch_view.player_cached_archetype
             ->components[ComponentsIndices::MoveComponent];
-    componentsView.playerViews =
-        (beholder*)archView.playerCachedArchetype
+    components_view.player_views =
+        (Beholder*)arch_view.player_cached_archetype
             ->components[ComponentsIndices::ViewComponent];
-    componentsView.playerColliderFlags =
-        (colliderFlags*)archView.playerCachedArchetype
+    components_view.player_collider_flags =
+        (ColliderFlags*)arch_view.player_cached_archetype
             ->components[ComponentsIndices::ColliderFlagsComponent];
-    componentsView.playerRigidBody =
-        (RigidBody*)archView.playerCachedArchetype
+    components_view.player_rigid_body =
+        (RigidBody*)arch_view.player_cached_archetype
             ->components[ComponentsIndices::RigidBodyComponent];
 
-    const float cameraSpeed = 3.0f * deltaFrameTime;
-    for (unsigned int i = 0; i < archView.playerCachedArchetype->entityCount;
+    const float camera_speed = 3.0f * delta_frame_time;
+    for (unsigned int i = 0;
+         i < arch_view.player_cached_archetype->entity_count;
          ++i) {
-        const uint64_t entity = archView.playerCachedArchetype->entities[i];
-        EntityLocation& entityLocation = world.entityLocations[getId(entity)];
-        beholder* playerView = &componentsView.playerViews[i];
-        move* playerMove = &componentsView.playerMoves[i];
-        colliderFlags* playerColliderFlags =
-            &componentsView.playerColliderFlags[i];
-        RigidBody* playerRigidBody = &componentsView.playerRigidBody[i];
+        const uint64_t entity = arch_view.player_cached_archetype->entities[i];
+        EntityLocation& entity_location =
+            WORLD.entity_locations[get_id(entity)];
+        Beholder* player_view = &components_view.player_views[i];
+        Move* player_move = &components_view.player_moves[i];
+        ColliderFlags* player_collider_flags =
+            &components_view.player_collider_flags[i];
+        RigidBody* player_rigid_body = &components_view.player_rigid_body[i];
         for (int n = 0; n < 6; ++n) {
             Vector<float, 3> right;
             Vector<float, 3> forward;
-            switch (inputStack[n]) {
-                case EEvents::eMOVE_LEFT:
-                    right = CalculateVectorRL(*playerView);
-                    playerMove->frameMovement -= right * cameraSpeed;
-                    entityLocation.isDirty = true;
+            switch (input_stack[n]) {
+                case EEvents::EMoveLeft:
+                    right = calculate_vector_rl(*player_view);
+                    player_move->frame_movement -= right * camera_speed;
+                    entity_location.is_dirty = true;
                     break;
-                case EEvents::eMOVE_RIGHT:
-                    right = CalculateVectorRL(*playerView);
-                    playerMove->frameMovement += right * cameraSpeed;
-                    entityLocation.isDirty = true;
+                case EEvents::EMoveRight:
+                    right = calculate_vector_rl(*player_view);
+                    player_move->frame_movement += right * camera_speed;
+                    entity_location.is_dirty = true;
                     break;
-                case EEvents::eMOVE_BACKWARD:
-                    forward = CalculateVectorFB(*playerView, g_eEvent);
-                    playerMove->frameMovement -= forward * cameraSpeed;
-                    entityLocation.isDirty = true;
+                case EEvents::EMoveBackward:
+                    forward = calculate_vector_fb(*player_view, G_E_EVENT);
+                    player_move->frame_movement -= forward * camera_speed;
+                    entity_location.is_dirty = true;
                     break;
-                case EEvents::eMOVE_FORWARD:
-                    forward = CalculateVectorFB(*playerView, g_eEvent);
-                    playerMove->frameMovement += forward * cameraSpeed;
-                    entityLocation.isDirty = true;
+                case EEvents::EMoveForward:
+                    forward = calculate_vector_fb(*player_view, G_E_EVENT);
+                    player_move->frame_movement += forward * camera_speed;
+                    entity_location.is_dirty = true;
                     break;
-                case EEvents::eJUMP: {
-                    entityLocation.isDirty = true;
-                    uint8_t isGroudCollisionMask =
+                case EEvents::EJump: {
+                    entity_location.is_dirty = true;
+                    uint8_t is_groud_collision_mask =
                         (0u << 0) | (1u << 1) | (0u << 2) | (0u << 3);
-                    if (playerColliderFlags->flags & isGroudCollisionMask) {
-                        playerRigidBody->jumpAccumulator = 1.5f;
+                    if (player_collider_flags->flags
+                        & is_groud_collision_mask) {
+                        player_rigid_body->jump_accumulator = 1.5f;
                     }
                 } break;
                 default:
@@ -12248,284 +12804,289 @@ void CMovementSystem::Update() {
         }
     }
 
-    rigidBodyContainedArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        rigidBodyRequiredMask,
-        archView.rigidBodyContainedArchetypesCache,
-        rigidBodyContainedArchetypesNumber
+    rigid_body_contained_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        rigid_body_required_mask,
+        arch_view.rigid_body_contained_archetypes_cache,
+        rigid_body_contained_archetypes_number
     );
 
-    for (uint32_t i0 = 0; i0 < rigidBodyContainedArchetypesNumber; ++i0) {
-        Archetype* currentArch = archView.rigidBodyContainedArchetypesCache[i0];
-        componentsView.transforms =
-            (transform*)
-                currentArch->components[ComponentsIndices::TransformComponent];
-        componentsView.rigidBodies =
+    for (uint32_t i0 = 0; i0 < rigid_body_contained_archetypes_number; ++i0) {
+        Archetype* current_arch =
+            arch_view.rigid_body_contained_archetypes_cache[i0];
+        components_view.transforms =
+            (Transform*)
+                current_arch->components[ComponentsIndices::TransformComponent];
+        components_view.rigid_bodies =
             (RigidBody*)
-                currentArch->components[ComponentsIndices::RigidBodyComponent];
-        componentsView.moves =
-            (move*)currentArch->components[ComponentsIndices::MoveComponent];
-        componentsView.items =
-            (item*)currentArch->components[ComponentsIndices::ItemComponent];
+                current_arch->components[ComponentsIndices::RigidBodyComponent];
+        components_view.moves =
+            (Move*)current_arch->components[ComponentsIndices::MoveComponent];
+        components_view.items =
+            (Item*)current_arch->components[ComponentsIndices::ItemComponent];
 
-        for (uint32_t i1 = 0; i1 < currentArch->entityCount; ++i1) {
-            const uint64_t entity = currentArch->entities[i1];
-            EntityLocation& entityLocation =
-                world.entityLocations[getId(entity)];
-            entityLocation.isDirty = true;
+        for (uint32_t i1 = 0; i1 < current_arch->entity_count; ++i1) {
+            const uint64_t entity = current_arch->entities[i1];
+            EntityLocation& entity_location =
+                WORLD.entity_locations[get_id(entity)];
+            entity_location.is_dirty = true;
 
-            if (componentsView.items && !componentsView.items[i1].isActor) {
+            if (components_view.items && !components_view.items[i1].is_actor) {
                 continue;
             }
 
-            transform* rTransform_Component = &componentsView.transforms[i1];
-            RigidBody* rigidBodyComponennt = &componentsView.rigidBodies[i1];
-            move* moveComponent = &componentsView.moves[i1];
-            rTransform_Component->gravityAccumulator += deltaFrameTime;
-            float gravity = 9.8f * rTransform_Component->gravityAccumulator
-                * rigidBodyComponennt->fMass_ * 0.0005;
+            Transform* r_transform_component = &components_view.transforms[i1];
+            RigidBody* rigid_body_componennt =
+                &components_view.rigid_bodies[i1];
+            Move* move_component = &components_view.moves[i1];
+            r_transform_component->gravity_accumulator += delta_frame_time;
+            float gravity = 9.8f * r_transform_component->gravity_accumulator
+                * rigid_body_componennt->f_mass * 0.0005;
             if (gravity > 0.2f) {
                 gravity = 0.2;
             }
 
-            moveComponent->gravity[1] -= gravity;
+            move_component->gravity[1] -= gravity;
         }
     }
 }
 
-Vector<float, 3> CMovementSystem::CalculateVectorRL(beholder& beholder) {
-    Vector<float, 3> normalizedVector =
-        Normalize(Cross(beholder.forward, Vector<float, 3> {0.0f, -1.0f, 0.0}));
-    return normalizedVector;
+Vector<float, 3> CMovementSystem::calculate_vector_rl(Beholder& beholder) {
+    Vector<float, 3> normalized_vector =
+        normalize(cross(beholder.forward, Vector<float, 3> {0.0f, -1.0f, 0.0}));
+    return normalized_vector;
 }
 
-Vector<float, 3> CMovementSystem::CalculateVectorFB(
-    beholder& beholder,
+Vector<float, 3> CMovementSystem::calculate_vector_fb(
+    Beholder& beholder,
     [[maybe_unused]] CEvent& event
 ) {
     Vector<float, 3> forward(0.0f);
-    current_X = (float)g_eEvent.mousePointerPosition.offset_X;
-    float delta_x = current_X - prev_X;
-    const Vector<float, 3> rotateAxis = {0.0, -1.0, 0.0};
-    float rotationAngle = delta_x;
-    constexpr float angleScale = 0.1f;
-    rotationAngle = Radians(rotationAngle * angleScale);
+    current_x = (float)G_E_EVENT.mouse_pointer_position.offset_x;
+    float delta_x = current_x - prev_x;
+    const Vector<float, 3> rotate_axis = {0.0, -1.0, 0.0};
+    float rotation_angle = delta_x;
+    constexpr float ANGLE_SCALE = 0.1f;
+    rotation_angle = radians(rotation_angle * ANGLE_SCALE);
     // Quaternions need division by 2.
-    constexpr float quatAngleCorrection = 0.5f;
-    const float sinRotationAngle = sinf(rotationAngle * quatAngleCorrection);
-    Quaternion rotationQuat = Quaternion(
-        cosf(rotationAngle * quatAngleCorrection),
-        sinRotationAngle * rotateAxis[0],
-        sinRotationAngle * rotateAxis[1],
-        sinRotationAngle * rotateAxis[2]
+    constexpr float QUAT_ANGLE_CORRECTION = 0.5f;
+    const float sin_rotation_angle =
+        sinf(rotation_angle * QUAT_ANGLE_CORRECTION);
+    Quaternion rotation_quat = Quaternion(
+        cosf(rotation_angle * QUAT_ANGLE_CORRECTION),
+        sin_rotation_angle * rotate_axis[0],
+        sin_rotation_angle * rotate_axis[1],
+        sin_rotation_angle * rotate_axis[2]
     );
-    const Quaternion appliedRotationQuat = (rotationQuat
-                                            * Quaternion(
-                                                0.0f,
-                                                beholder.forward[0],
-                                                beholder.forward[1],
-                                                beholder.forward[2]
-                                            ))
-        * conjugate(rotationQuat);
+    const Quaternion applied_rotation_quat = (rotation_quat
+                                              * Quaternion(
+                                                  0.0f,
+                                                  beholder.forward[0],
+                                                  beholder.forward[1],
+                                                  beholder.forward[2]
+                                              ))
+        * conjugate(rotation_quat);
 
-    forward[0] = appliedRotationQuat.x;
+    forward[0] = applied_rotation_quat.x;
     forward[1] = 0.0f;
-    forward[2] = appliedRotationQuat.z;
-    prev_X = (float)g_eEvent.mousePointerPosition.offset_X;
-    forward = Normalize(forward);
+    forward[2] = applied_rotation_quat.z;
+    prev_x = (float)G_E_EVENT.mouse_pointer_position.offset_x;
+    forward = normalize(forward);
     return forward;
 }
 } // namespace glvm
 
 namespace glvm {
 namespace {
-bool aabbOverlap(
-    const Vector<float, 3>& aPosition,
-    const MeshAxisMaxAbsoluteValues& aBounds,
-    float aScale,
-    const Vector<float, 3>& bPosition,
-    const MeshAxisMaxAbsoluteValues& bBounds,
-    float bScale
+bool aabb_overlap(
+    const Vector<float, 3>& a_position,
+    const MeshAxisMaxAbsoluteValues& a_bounds,
+    float a_scale,
+    const Vector<float, 3>& b_position,
+    const MeshAxisMaxAbsoluteValues& b_bounds,
+    float b_scale
 ) {
-    return aPosition[0] + aBounds.origin_offset_x * aScale
-            + aBounds.absolute_x * aScale
-        > bPosition[0] + bBounds.origin_offset_x * bScale
-            - bBounds.absolute_x * bScale
-        && aPosition[0] + aBounds.origin_offset_x * aScale
-            - aBounds.absolute_x * aScale
-        < bPosition[0] + bBounds.origin_offset_x * bScale
-            + bBounds.absolute_x * bScale
-        && aPosition[1] + aBounds.origin_offset_y * aScale
-            + aBounds.absolute_y * aScale
-        > bPosition[1] + bBounds.origin_offset_y * bScale
-            - bBounds.absolute_y * bScale
-        && aPosition[1] + aBounds.origin_offset_y * aScale
-            - aBounds.absolute_y * aScale
-        < bPosition[1] + bBounds.origin_offset_y * bScale
-            + bBounds.absolute_y * bScale
-        && aPosition[2] + aBounds.origin_offset_z * aScale
-            + aBounds.absolute_z * aScale
-        > bPosition[2] + bBounds.origin_offset_z * bScale
-            - bBounds.absolute_z * bScale
-        && aPosition[2] + aBounds.origin_offset_z * aScale
-            - aBounds.absolute_z * aScale
-        < bPosition[2] + bBounds.origin_offset_z * bScale
-            + bBounds.absolute_z * bScale;
+    return a_position[0] + a_bounds.origin_offset_x * a_scale
+            + a_bounds.absolute_x * a_scale
+        > b_position[0] + b_bounds.origin_offset_x * b_scale
+            - b_bounds.absolute_x * b_scale
+        && a_position[0] + a_bounds.origin_offset_x * a_scale
+            - a_bounds.absolute_x * a_scale
+        < b_position[0] + b_bounds.origin_offset_x * b_scale
+            + b_bounds.absolute_x * b_scale
+        && a_position[1] + a_bounds.origin_offset_y * a_scale
+            + a_bounds.absolute_y * a_scale
+        > b_position[1] + b_bounds.origin_offset_y * b_scale
+            - b_bounds.absolute_y * b_scale
+        && a_position[1] + a_bounds.origin_offset_y * a_scale
+            - a_bounds.absolute_y * a_scale
+        < b_position[1] + b_bounds.origin_offset_y * b_scale
+            + b_bounds.absolute_y * b_scale
+        && a_position[2] + a_bounds.origin_offset_z * a_scale
+            + a_bounds.absolute_z * a_scale
+        > b_position[2] + b_bounds.origin_offset_z * b_scale
+            - b_bounds.absolute_z * b_scale
+        && a_position[2] + a_bounds.origin_offset_z * a_scale
+            - a_bounds.absolute_z * a_scale
+        < b_position[2] + b_bounds.origin_offset_z * b_scale
+            + b_bounds.absolute_z * b_scale;
 }
 
-bool isAbove(
-    const Vector<float, 3>& aPosition,
-    const MeshAxisMaxAbsoluteValues& aBounds,
-    float aScale,
-    const Vector<float, 3>& bPosition,
-    const MeshAxisMaxAbsoluteValues& bBounds,
-    float bScale
+bool is_above(
+    const Vector<float, 3>& a_position,
+    const MeshAxisMaxAbsoluteValues& a_bounds,
+    float a_scale,
+    const Vector<float, 3>& b_position,
+    const MeshAxisMaxAbsoluteValues& b_bounds,
+    float b_scale
 ) {
-    constexpr float epsilon = 0.15f;
-    return aPosition[1] + aBounds.origin_offset_y * aScale
-        - aBounds.absolute_y * aScale + epsilon
-        > bPosition[1] + bBounds.origin_offset_y * bScale
-        + bBounds.absolute_y * bScale;
+    constexpr float EPSILON = 0.15f;
+    return a_position[1] + a_bounds.origin_offset_y * a_scale
+        - a_bounds.absolute_y * a_scale + EPSILON
+        > b_position[1] + b_bounds.origin_offset_y * b_scale
+        + b_bounds.absolute_y * b_scale;
 }
 } // namespace
 
 // This update searching for referring to colliders entities and check their
 // transform components for collision, and if collision detected check if
 // backtracking entity had gravity component for call Gravity function.
-void CPhysicsSystem::Update() {
-    cachedArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        requiredMask,
-        archView.cachedArchetypes,
-        cachedArchetypesNumber
+void CPhysicsSystem::update() {
+    cached_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        required_mask,
+        arch_view.cached_archetypes,
+        cached_archetypes_number
     );
 
-    for (uint32_t x = 0; x < cachedArchetypesNumber; ++x) {
-        Archetype* arch = archView.cachedArchetypes[x];
+    for (uint32_t x = 0; x < cached_archetypes_number; ++x) {
+        Archetype* arch = arch_view.cached_archetypes[x];
 
-        componentsView.transformsView =
-            (transform*)archView.cachedArchetypes[x]
+        components_view.transforms_view =
+            (Transform*)arch_view.cached_archetypes[x]
                 ->components[ComponentsIndices::TransformComponent];
-        componentsView.movesView =
-            (move*)archView.cachedArchetypes[x]
+        components_view.moves_view =
+            (Move*)arch_view.cached_archetypes[x]
                 ->components[ComponentsIndices::MoveComponent];
-        componentsView.rigidBodiesView =
-            (RigidBody*)archView.cachedArchetypes[x]
+        components_view.rigid_bodies_view =
+            (RigidBody*)arch_view.cached_archetypes[x]
                 ->components[ComponentsIndices::RigidBodyComponent];
-        componentsView.colliderFlagsView =
-            (colliderFlags*)archView.cachedArchetypes[x]
+        components_view.collider_flags_view =
+            (ColliderFlags*)arch_view.cached_archetypes[x]
                 ->components[ComponentsIndices::ColliderFlagsComponent];
-        componentsView.collidersView =
-            (collider*)archView.cachedArchetypes[x]
+        components_view.colliders_view =
+            (Collider*)arch_view.cached_archetypes[x]
                 ->components[ComponentsIndices::ColliderComponent];
-        componentsView.meshesView =
-            (mesh*)archView.cachedArchetypes[x]
+        components_view.meshes_view =
+            (Mesh*)arch_view.cached_archetypes[x]
                 ->components[ComponentsIndices::MeshComponent];
 
-        float deltaTime = 5.5f * fDelta_Time_;
-        for (unsigned int i = 0; i < arch->entityCount; ++i) {
-            if (componentsView.transformsView
-                && componentsView.colliderFlagsView && componentsView.movesView
-                && componentsView.rigidBodiesView) {
-                transform& transformComponent =
-                    componentsView.transformsView[i];
-                move& move = componentsView.movesView[i];
-                colliderFlags& colliderFlags =
-                    componentsView.colliderFlagsView[i];
-                uint8_t isGroudCollisionMask =
+        float delta_time = 5.5f * f_delta_time;
+        for (unsigned int i = 0; i < arch->entity_count; ++i) {
+            if (components_view.transforms_view
+                && components_view.collider_flags_view
+                && components_view.moves_view
+                && components_view.rigid_bodies_view) {
+                Transform& transform_component =
+                    components_view.transforms_view[i];
+                Move& move = components_view.moves_view[i];
+                ColliderFlags& collider_flags =
+                    components_view.collider_flags_view[i];
+                uint8_t is_groud_collision_mask =
                     (0u << 0) | (1u << 1) | (0u << 2) | (0u << 3);
-                if (colliderFlags.flags & isGroudCollisionMask) {
+                if (collider_flags.flags & is_groud_collision_mask) {
                     move.gravity = 0;
-                    transformComponent.gravityAccumulator = 0.0f;
+                    transform_component.gravity_accumulator = 0.0f;
                 }
-                uint8_t isWallCollisionMask =
+                uint8_t is_wall_collision_mask =
                     (1u << 0) | (0u << 1) | (0u << 2) | (0u << 3);
-                if (colliderFlags.flags & isWallCollisionMask) {
+                if (collider_flags.flags & is_wall_collision_mask) {
                     // Wall-slide: zero only the frameMovement axis blocked by
                     // a collider, keep the tangential component so the player
                     // slides along the wall instead of sticking to it.
-                    collider* colliders = componentsView.collidersView;
-                    mesh* meshes = componentsView.meshesView;
+                    Collider* colliders = components_view.colliders_view;
+                    Mesh* meshes = components_view.meshes_view;
                     if (colliders && meshes
                         && colliders[i].colliders.size() > 0) {
-                        const MeshAxisMaxAbsoluteValues playerBounds =
-                            allMeshMaxAbsoluteValues[meshes[i].handle.id];
-                        const Vector<float, 3> playerPosition =
-                            transformComponent.position;
+                        const MeshAxisMaxAbsoluteValues player_bounds =
+                            ALL_MESH_MAX_ABSOLUTE_VALUES[meshes[i].handle.id];
+                        const Vector<float, 3> player_position =
+                            transform_component.position;
                         for (uint32_t c = 0; c < colliders[i].colliders.size();
                              ++c) {
-                            const uint32_t collidedEntity =
+                            const uint32_t collided_entity =
                                 colliders[i].colliders[c];
-                            EntityLocation& collidedLocation =
-                                world.entityLocations[getId(collidedEntity)];
-                            Archetype* collidedArch = collidedLocation.arch;
-                            if (collidedArch == nullptr) {
+                            EntityLocation& collided_location =
+                                WORLD.entity_locations[get_id(collided_entity)];
+                            Archetype* collided_arch = collided_location.arch;
+                            if (collided_arch == nullptr) {
                                 // Entity was removed this frame (e.g. by
                                 // DamageSystem) after collision detection.
                                 continue;
                             }
-                            const uint32_t collidedIndex =
-                                collidedLocation.index;
-                            transform* collidedTransform =
-                                (transform*)collidedArch->components
+                            const uint32_t collided_index =
+                                collided_location.index;
+                            Transform* collided_transform =
+                                (Transform*)collided_arch->components
                                     [ComponentsIndices::TransformComponent];
-                            mesh* collidedMesh =
-                                (mesh*)collidedArch->components
+                            Mesh* collided_mesh =
+                                (Mesh*)collided_arch->components
                                     [ComponentsIndices::MeshComponent];
-                            if (!collidedTransform || !collidedMesh) {
+                            if (!collided_transform || !collided_mesh) {
                                 continue;
                             }
-                            collidedTransform += collidedIndex;
-                            collidedMesh += collidedIndex;
-                            const MeshAxisMaxAbsoluteValues collidedBounds =
-                                allMeshMaxAbsoluteValues[collidedMesh->handle.id];
-                            const Vector<float, 3> collidedPosition =
-                                collidedTransform->position;
+                            collided_transform += collided_index;
+                            collided_mesh += collided_index;
+                            const MeshAxisMaxAbsoluteValues collided_bounds =
+                                ALL_MESH_MAX_ABSOLUTE_VALUES[collided_mesh
+                                                                 ->handle.id];
+                            const Vector<float, 3> collided_position =
+                                collided_transform->position;
                             // Ground (player standing above) is handled by
                             // gravity, only resolve wall-like colliders.
-                            if (isAbove(
-                                    playerPosition,
-                                    playerBounds,
-                                    transformComponent.scale,
-                                    collidedPosition,
-                                    collidedBounds,
-                                    collidedTransform->scale
+                            if (is_above(
+                                    player_position,
+                                    player_bounds,
+                                    transform_component.scale,
+                                    collided_position,
+                                    collided_bounds,
+                                    collided_transform->scale
                                 )) {
                                 continue;
                             }
                             for (int axis = 0; axis < 3; ++axis) {
-                                Vector<float, 3> candidate = playerPosition;
-                                candidate[axis] += move.frameMovement[axis];
-                                bool hit = aabbOverlap(
+                                Vector<float, 3> candidate = player_position;
+                                candidate[axis] += move.frame_movement[axis];
+                                bool hit = aabb_overlap(
                                     candidate,
-                                    playerBounds,
-                                    transformComponent.scale,
-                                    collidedPosition,
-                                    collidedBounds,
-                                    collidedTransform->scale
+                                    player_bounds,
+                                    transform_component.scale,
+                                    collided_position,
+                                    collided_bounds,
+                                    collided_transform->scale
                                 );
                                 if (hit) {
-                                    move.frameMovement[axis] = 0.0f;
+                                    move.frame_movement[axis] = 0.0f;
                                 }
                             }
                         }
                     } else {
-                        move.frameMovement = 0;
+                        move.frame_movement = 0;
                     }
-                    uint8_t wallCollisionTurnOffMask =
+                    uint8_t wall_collision_turn_off_mask =
                         (0u << 0) | (1u << 1) | (1u << 2) | (1u << 3);
-                    colliderFlags.flags &= wallCollisionTurnOffMask;
+                    collider_flags.flags &= wall_collision_turn_off_mask;
                 }
-                transformComponent.position += move.frameMovement;
-                transformComponent.position += move.gravity;
+                transform_component.position += move.frame_movement;
+                transform_component.position += move.gravity;
                 move.gravity = 0.0f;
-                move.frameMovement = 0.0f;
-                RigidBody& rigidBody = componentsView.rigidBodiesView[i];
-                if (rigidBody.jumpAccumulator > 0.0f) {
-                    rigidBody.jumpAccumulator -= deltaTime;
+                move.frame_movement = 0.0f;
+                RigidBody& rigid_body = components_view.rigid_bodies_view[i];
+                if (rigid_body.jump_accumulator > 0.0f) {
+                    rigid_body.jump_accumulator -= delta_time;
                     Vector<float, 3> jump =
-                        Vector<float, 3> {0.0f, 5.0f, 0.0f} * deltaTime;
-                    transformComponent.position += jump;
+                        Vector<float, 3> {0.0f, 5.0f, 0.0f} * delta_time;
+                    transform_component.position += jump;
                 }
             }
         }
@@ -12534,176 +13095,178 @@ void CPhysicsSystem::Update() {
 } // namespace glvm
 
 namespace glvm {
-CProjectileSystem::CProjectileSystem(CStack& inputStack) :
-    inputStack(inputStack) {}
+CProjectileSystem::CProjectileSystem(CStack& input_stack) :
+    input_stack(input_stack) {}
 
-void CProjectileSystem::Update() {
-    float cameraSpeed = 5.5f * deltaFrameTime;
+void CProjectileSystem::update() {
+    float camera_speed = 5.5f * delta_frame_time;
 
-    playerArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        playerRequiredMask,
-        &archView.playerCachedArchetype,
-        playerArchetypesNumber
+    player_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        player_required_mask,
+        &arch_view.player_cached_archetype,
+        player_archetypes_number
     );
-    componentsView.playerTransforms =
-        (transform*)archView.playerCachedArchetype
+    components_view.player_transforms =
+        (Transform*)arch_view.player_cached_archetype
             ->components[ComponentsIndices::TransformComponent];
-    componentsView.playerViews =
-        (beholder*)archView.playerCachedArchetype
+    components_view.player_views =
+        (Beholder*)arch_view.player_cached_archetype
             ->components[ComponentsIndices::ViewComponent];
 
-    projectileArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        projectileRequiredMask,
-        &archView.projectileArchetype,
-        projectileArchetypesNumber
+    projectile_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        projectile_required_mask,
+        &arch_view.projectile_archetype,
+        projectile_archetypes_number
     );
 
-    if (projectileCooldown > 0) {
-        projectileCooldown -= cameraSpeed;
+    if (projectile_cooldown > 0) {
+        projectile_cooldown -= camera_speed;
     }
 
     // Iterate on every player and create projectile if "LMB pressed" event
     // found.
-    for (unsigned int i = 0; i < archView.playerCachedArchetype->entityCount;
+    for (unsigned int i = 0;
+         i < arch_view.player_cached_archetype->entity_count;
          ++i) {
-        beholder* playerView = &componentsView.playerViews[i];
-        transform* playerTransform = &componentsView.playerTransforms[i];
-        const uint32_t maxEventNumber = 6;
-        for (uint32_t n = 0; n < maxEventNumber; ++n) {
-            if (!isInventoryOpened
-                && inputStack.SearchElement(EEvents::eMOUSE_LEFT_BUTTON)
-                    == EEvents::eMOUSE_LEFT_BUTTON) {
-                if (projectileCooldown <= 0) {
-                    MeshHandle meshHandle {};
-                    const uint32_t sphereMeshHandleIndex = 2;
-                    if (meshHandlers.size() > 2) {
-                        meshHandle = meshHandlers[sphereMeshHandleIndex];
+        Beholder* player_view = &components_view.player_views[i];
+        Transform* player_transform = &components_view.player_transforms[i];
+        const uint32_t max_event_number = 6;
+        for (uint32_t n = 0; n < max_event_number; ++n) {
+            if (!is_inventory_opened
+                && input_stack.search_element(EEvents::EMouseLeftButton)
+                    == EEvents::EMouseLeftButton) {
+                if (projectile_cooldown <= 0) {
+                    MeshHandle mesh_handle {};
+                    const uint32_t sphere_mesh_handle_index = 2;
+                    if (mesh_handlers.size() > 2) {
+                        mesh_handle = mesh_handlers[sphere_mesh_handle_index];
                     }
 
-                    TextureHandle textureHandle {};
-                    const uint32_t grayTextureHandle = 2;
-                    if (textureHandlers.size() > 2) {
-                        textureHandle = textureHandlers[grayTextureHandle];
+                    TextureHandle texture_handle {};
+                    const uint32_t gray_texture_handle = 2;
+                    if (texture_handlers.size() > 2) {
+                        texture_handle = texture_handlers[gray_texture_handle];
                     }
 
-                    const material material = {
-                        .diffuseTextureID_ = textureHandle,
-                        .specularTextureID_ = textureHandle,
+                    const Material material = {
+                        .diffuse_texture_id = texture_handle,
+                        .specular_texture_id = texture_handle,
                         .ambient = {0.05f, 0.05f, 0.05f},
                         .shininess = 128.0f * 0.078125f
                     };
 
-                    const damage damage = {
-                        .maximumDamage = 40,
-                        .minimumDamage = 20,
-                        .criticalHitRate = 0,
-                        .criticalModifier = 0
+                    const Damage damage = {
+                        .maximum_damage = 40,
+                        .minimum_damage = 20,
+                        .critical_hit_rate = 0,
+                        .critical_modifier = 0
                     };
 
-                    ArchetypeEntityManager* archEntityManager =
+                    ArchetypeEntityManager* arch_entity_manager =
                         ArchetypeEntityManager::get_instance();
-                    uint64_t projectileEntity =
-                        archEntityManager->createEntity();
-                    world.addEntityToArchetype(
-                        projectileEntity,
-                        archView.projectileArchetype
+                    uint64_t projectile_entity =
+                        arch_entity_manager->create_entity();
+                    WORLD.add_entity_to_archetype(
+                        projectile_entity,
+                        arch_view.projectile_archetype
                     );
-                    EntityLocation projectileLocation =
-                        world.entityLocations[getId(projectileEntity)];
+                    EntityLocation projectile_location =
+                        WORLD.entity_locations[get_id(projectile_entity)];
 
-                    CreateProjectile(
-                        playerTransform->position,
-                        playerView->forward,
-                        meshHandle,
+                    create_projectile(
+                        player_transform->position,
+                        player_view->forward,
+                        mesh_handle,
                         material,
                         damage,
-                        projectileLocation
+                        projectile_location
                     );
 
-                    soundEngine->CreateSoundSample(
+                    sound_engine->create_sound_sample(
                         "../../../examples/assets/sounds/pistol.wav",
                         5,
                         22050,
                         0.05
                     );
-                    projectileCooldown = 2.0;
+                    projectile_cooldown = 2.0;
                 }
             }
         }
     }
 
-    projectileArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        projectileRequiredMask,
-        &archView.projectileArchetype,
-        projectileArchetypesNumber
+    projectile_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        projectile_required_mask,
+        &arch_view.projectile_archetype,
+        projectile_archetypes_number
     );
 
-    componentsView.projectileTransforms =
-        (transform*)archView.projectileArchetype
+    components_view.projectile_transforms =
+        (Transform*)arch_view.projectile_archetype
             ->components[ComponentsIndices::TransformComponent];
-    componentsView.projectileColliderFlags =
-        (colliderFlags*)archView.projectileArchetype
+    components_view.projectile_collider_flags =
+        (ColliderFlags*)arch_view.projectile_archetype
             ->components[ComponentsIndices::ColliderFlagsComponent];
-    componentsView.projectileColliders =
-        (collider*)archView.projectileArchetype
+    components_view.projectile_colliders =
+        (Collider*)arch_view.projectile_archetype
             ->components[ComponentsIndices::ColliderComponent];
-    componentsView.projectileBundles =
-        (ProjectileBundle*)archView.projectileArchetype
+    components_view.projectile_bundles =
+        (ProjectileBundle*)arch_view.projectile_archetype
             ->components[ComponentsIndices::ProjectileBundleComponent];
-    componentsView.projectileHealth =
-        (health*)archView.projectileArchetype
+    components_view.projectile_health =
+        (Health*)arch_view.projectile_archetype
             ->components[ComponentsIndices::HealthComponent];
-    componentsView.projectileAttacks =
-        (attack*)archView.projectileArchetype
+    components_view.projectile_attacks =
+        (Attack*)arch_view.projectile_archetype
             ->components[ComponentsIndices::AttackComponent];
 
     // Update position of every projectile.
-    for (unsigned int x = 0; x < archView.projectileArchetype->entityCount;
+    for (unsigned int x = 0; x < arch_view.projectile_archetype->entity_count;
          ++x) {
-        transform* projectileTransform =
-            &componentsView.projectileTransforms[x];
-        projectileTransform->position +=
-            Normalize(projectileTransform->forward) * cameraSpeed * 2.5;
+        Transform* projectile_transform =
+            &components_view.projectile_transforms[x];
+        projectile_transform->position +=
+            normalize(projectile_transform->forward) * camera_speed * 2.5;
     }
     // Iterate every projectile, check for collisions with another entities and
     // update damage info if collided entity has attack component.
-    for (unsigned int i = 0; i < archView.projectileArchetype->entityCount;
+    for (unsigned int i = 0; i < arch_view.projectile_archetype->entity_count;
          ++i) {
-        colliderFlags* projectileColliderFlags =
-            &componentsView.projectileColliderFlags[i];
-        health* projectileHealth = &componentsView.projectileHealth[i];
-        [[maybe_unused]] attack* projectileAttack =
-            &componentsView.projectileAttacks[i];
-        const uint8_t wallCollisionBit = 1;
-        const uint8_t groundCollistionBit = (1 << 1);
-        if ((projectileColliderFlags->flags & wallCollisionBit)
-            || (projectileColliderFlags->flags & groundCollistionBit)) {
-            damage* projectileDamage =
-                &componentsView.projectileBundles[i].damage;
-            collider* projectileCollider =
-                &componentsView.projectileColliders[i];
-            for (unsigned int j = 0; j < projectileCollider->colliders.size();
+        ColliderFlags* projectile_collider_flags =
+            &components_view.projectile_collider_flags[i];
+        Health* projectile_health = &components_view.projectile_health[i];
+        [[maybe_unused]] Attack* projectile_attack =
+            &components_view.projectile_attacks[i];
+        const uint8_t wall_collision_bit = 1;
+        const uint8_t ground_collistion_bit = (1 << 1);
+        if ((projectile_collider_flags->flags & wall_collision_bit)
+            || (projectile_collider_flags->flags & ground_collistion_bit)) {
+            Damage* projectile_damage =
+                &components_view.projectile_bundles[i].damage;
+            Collider* projectile_collider =
+                &components_view.projectile_colliders[i];
+            for (unsigned int j = 0; j < projectile_collider->colliders.size();
                  ++j) {
-                unsigned int collidedEntity = projectileCollider->colliders[j];
+                unsigned int collided_entity =
+                    projectile_collider->colliders[j];
 
-                EntityLocation collidedEntityLocation =
-                    world.entityLocations[getId(collidedEntity)];
-                uint64_t requiredMask =
+                EntityLocation collided_entity_location =
+                    WORLD.entity_locations[get_id(collided_entity)];
+                uint64_t required_mask =
                     (1ul << ComponentsIndices::HealthComponent)
                     | (1ul << ComponentsIndices::AttackComponent);
 
-                if ((collidedEntityLocation.arch != nullptr)
-                    && (collidedEntityLocation.arch->mask & requiredMask)
-                        == requiredMask) {
-                    attack* attacks =
-                        (attack*)collidedEntityLocation.arch
+                if ((collided_entity_location.arch != nullptr)
+                    && (collided_entity_location.arch->mask & required_mask)
+                        == required_mask) {
+                    Attack* attacks =
+                        (Attack*)collided_entity_location.arch
                             ->components[ComponentsIndices::AttackComponent];
-                    attacks[collidedEntityLocation.index].damage =
-                        projectileDamage->maximumDamage;
-                    projectileHealth->currentHealth = 0;
+                    attacks[collided_entity_location.index].damage =
+                        projectile_damage->maximum_damage;
+                    projectile_health->current_health = 0;
                 }
             }
         }
@@ -12712,179 +13275,188 @@ void CProjectileSystem::Update() {
 } // namespace glvm
 
 namespace glvm {
-void SpatialGridSystem::Update() {
-    SpatialGrid& spatialGrid = world.spatialGrid;
+void SpatialGridSystem::update() {
+    SpatialGrid& spatial_grid = WORLD.spatial_grid;
     assert(
-        spatialGrid.width > 0 && spatialGrid.height > 0 && spatialGrid.depth > 0
+        spatial_grid.width > 0 && spatial_grid.height > 0
+        && spatial_grid.depth > 0
     );
-    const float chunkSize = spatialGrid.grid[0][0][0].size;
+    const float chunk_size = spatial_grid.grid[0][0][0].SIZE;
 
-    const float halfWidth = spatialGrid.width * chunkSize * 0.5f;
-    const float halfHeight = spatialGrid.height * chunkSize * 0.5f;
-    const float halfDepth = spatialGrid.depth * chunkSize * 0.5f;
+    const float half_width = spatial_grid.width * chunk_size * 0.5f;
+    const float half_height = spatial_grid.height * chunk_size * 0.5f;
+    const float half_depth = spatial_grid.depth * chunk_size * 0.5f;
 
-    cachedArchetypesNumber = 0;
-    world.searchCacheArchetypes(
-        requiredMask,
-        cachedArchetypes,
-        cachedArchetypesNumber
+    cached_archetypes_number = 0;
+    WORLD.search_cache_archetypes(
+        required_mask,
+        cached_archetypes,
+        cached_archetypes_number
     );
 
-    for (uint32_t i0 = 0; i0 < cachedArchetypesNumber; ++i0) {
-        Archetype* arch = cachedArchetypes[i0];
+    for (uint32_t i0 = 0; i0 < cached_archetypes_number; ++i0) {
+        Archetype* arch = cached_archetypes[i0];
         view.transforms =
-            (transform*)arch->components[ComponentsIndices::TransformComponent];
-        view.meshes = (mesh*)arch->components[ComponentsIndices::MeshComponent];
+            (Transform*)arch->components[ComponentsIndices::TransformComponent];
+        view.meshes = (Mesh*)arch->components[ComponentsIndices::MeshComponent];
 
-        for (uint32_t i1 = 0; i1 < arch->entityCount; ++i1) {
+        for (uint32_t i1 = 0; i1 < arch->entity_count; ++i1) {
             const uint64_t entity = arch->entities[i1];
-            EntityLocation& entityLocation =
-                world.entityLocations[getId(entity)];
-            if (!entityLocation.isDirty && isInitialized) {
+            EntityLocation& entity_location =
+                WORLD.entity_locations[get_id(entity)];
+            if (!entity_location.is_dirty && is_initialized) {
                 continue;
             }
 
-            if (entityLocation.gridCellCounter > 0) {
-                for (uint32_t i2 = 0; i2 < entityLocation.gridCellCounter;
+            if (entity_location.grid_cell_counter > 0) {
+                for (uint32_t i2 = 0; i2 < entity_location.grid_cell_counter;
                      ++i2) {
-                    uint32_t z = entityLocation.gridCellIndicies[i2][0];
-                    uint32_t y = entityLocation.gridCellIndicies[i2][1];
-                    uint32_t x = entityLocation.gridCellIndicies[i2][2];
-                    std::vector<uint32_t>& chunkEntities =
-                        spatialGrid.grid[z][y][x].entities;
+                    uint32_t z = entity_location.grid_cell_indicies[i2][0];
+                    uint32_t y = entity_location.grid_cell_indicies[i2][1];
+                    uint32_t x = entity_location.grid_cell_indicies[i2][2];
+                    std::vector<uint32_t>& chunk_entities =
+                        spatial_grid.grid[z][y][x].entities;
                     // Remove by value: the recorded index can be stale after
                     // other removals shifted the cell's vector.
-                    for (uint32_t i3 = 0; i3 < chunkEntities.size(); ++i3) {
-                        if (chunkEntities[i3] == entity) {
-                            chunkEntities.erase(chunkEntities.begin() + i3);
+                    for (uint32_t i3 = 0; i3 < chunk_entities.size(); ++i3) {
+                        if (chunk_entities[i3] == entity) {
+                            chunk_entities.erase(chunk_entities.begin() + i3);
                             break;
                         }
                     }
                 }
-                entityLocation.gridCellCounter = 0;
+                entity_location.grid_cell_counter = 0;
             }
 
-            const transform& transform = view.transforms[i1];
-            const mesh& mesh = view.meshes[i1];
+            const Transform& transform = view.transforms[i1];
+            const Mesh& mesh = view.meshes[i1];
 
-            MeshHandle entityMeshHandle = mesh.handle;
-            MeshAxisMaxAbsoluteValues entityChunkBounds =
-                allMeshMaxAbsoluteValues[entityMeshHandle.id];
-            std::vector<Vector<float, 3>> entityBoxCornerBoundPoints =
-                computeBoxCornerBoundPoints(
-                    entityChunkBounds,
+            MeshHandle entity_mesh_handle = mesh.handle;
+            MeshAxisMaxAbsoluteValues entity_chunk_bounds =
+                ALL_MESH_MAX_ABSOLUTE_VALUES[entity_mesh_handle.id];
+            std::vector<Vector<float, 3>> entity_box_corner_bound_points =
+                compute_box_corner_bound_points(
+                    entity_chunk_bounds,
                     transform.position,
                     transform.scale
                 );
 
             // Need only left bottom back corner point and right upper front
             // corner point to obtain all box bounds.
-            const Vector<float, 3> minEntityPosition =
-                entityBoxCornerBoundPoints[0];
-            const Vector<float, 3> maxEntityPosition =
-                entityBoxCornerBoundPoints[1];
+            const Vector<float, 3> min_entity_position =
+                entity_box_corner_bound_points[0];
+            const Vector<float, 3> max_entity_position =
+                entity_box_corner_bound_points[1];
 
-            int indexMinX = static_cast<int>(
-                (minEntityPosition[0] + halfWidth) / chunkSize
+            int index_min_x = static_cast<int>(
+                (min_entity_position[0] + half_width) / chunk_size
             );
-            int indexMinY = static_cast<int>(
-                (minEntityPosition[1] + halfHeight) / chunkSize
+            int index_min_y = static_cast<int>(
+                (min_entity_position[1] + half_height) / chunk_size
             );
-            int indexMinZ = static_cast<int>(
-                (minEntityPosition[2] + halfDepth) / chunkSize
+            int index_min_z = static_cast<int>(
+                (min_entity_position[2] + half_depth) / chunk_size
             );
 
-            int indexMaxX = static_cast<int>(
-                (maxEntityPosition[0] + halfWidth) / chunkSize
+            int index_max_x = static_cast<int>(
+                (max_entity_position[0] + half_width) / chunk_size
             );
-            int indexMaxY = static_cast<int>(
-                (maxEntityPosition[1] + halfHeight) / chunkSize
+            int index_max_y = static_cast<int>(
+                (max_entity_position[1] + half_height) / chunk_size
             );
-            int indexMaxZ = static_cast<int>(
-                (maxEntityPosition[2] + halfDepth) / chunkSize
+            int index_max_z = static_cast<int>(
+                (max_entity_position[2] + half_depth) / chunk_size
             );
 
             // Entity can legitimately leave the fixed-size world grid (fell off
             // the world edge, projectile flew away) - clamp to nearest edge
             // cell instead of crashing.
-            indexMinX = std::clamp(indexMinX, 0, (int)spatialGrid.width - 1);
-            indexMinY = std::clamp(indexMinY, 0, (int)spatialGrid.height - 1);
-            indexMinZ = std::clamp(indexMinZ, 0, (int)spatialGrid.depth - 1);
-            indexMaxX = std::clamp(indexMaxX, 0, (int)spatialGrid.width - 1);
-            indexMaxY = std::clamp(indexMaxY, 0, (int)spatialGrid.height - 1);
-            indexMaxZ = std::clamp(indexMaxZ, 0, (int)spatialGrid.depth - 1);
+            index_min_x =
+                std::clamp(index_min_x, 0, (int)spatial_grid.width - 1);
+            index_min_y =
+                std::clamp(index_min_y, 0, (int)spatial_grid.height - 1);
+            index_min_z =
+                std::clamp(index_min_z, 0, (int)spatial_grid.depth - 1);
+            index_max_x =
+                std::clamp(index_max_x, 0, (int)spatial_grid.width - 1);
+            index_max_y =
+                std::clamp(index_max_y, 0, (int)spatial_grid.height - 1);
+            index_max_z =
+                std::clamp(index_max_z, 0, (int)spatial_grid.depth - 1);
 
-            for (auto i2 = indexMinZ; i2 <= indexMaxZ; ++i2) {
-                for (auto i3 = indexMinY; i3 <= indexMaxY; ++i3) {
-                    for (auto i4 = indexMinX; i4 <= indexMaxX; ++i4) {
-                        std::vector<uint32_t>& chunkEntities =
-                            spatialGrid.grid[i2][i3][i4].entities;
-                        if (!isExist<uint32_t>(chunkEntities, entity)) {
-                            chunkEntities.push_back(entity);
-                            const uint32_t currentGridCell =
-                                entityLocation.gridCellCounter;
+            for (auto i2 = index_min_z; i2 <= index_max_z; ++i2) {
+                for (auto i3 = index_min_y; i3 <= index_max_y; ++i3) {
+                    for (auto i4 = index_min_x; i4 <= index_max_x; ++i4) {
+                        std::vector<uint32_t>& chunk_entities =
+                            spatial_grid.grid[i2][i3][i4].entities;
+                        if (!is_exist<uint32_t>(chunk_entities, entity)) {
+                            chunk_entities.push_back(entity);
+                            const uint32_t current_grid_cell =
+                                entity_location.grid_cell_counter;
                             assert(
-                                currentGridCell < 8
+                                current_grid_cell < 8
                             ); ///< 8 is a maximum number for 1 entity to exist
                                ///< in grid cell
-                            entityLocation.gridCellIndicies[currentGridCell] =
+                            entity_location
+                                .grid_cell_indicies[current_grid_cell] =
                                 Vector<float, 3>(i2, i3, i4);
-                            entityLocation.cellEntityIndices[currentGridCell] =
-                                chunkEntities.size() - 1;
-                            entityLocation.isDirty = false;
-                            ++entityLocation.gridCellCounter;
+                            entity_location
+                                .cell_entity_indices[current_grid_cell] =
+                                chunk_entities.size() - 1;
+                            entity_location.is_dirty = false;
+                            ++entity_location.grid_cell_counter;
                         }
                     }
                 }
             }
         }
     }
-    if (!isInitialized) {
-        isInitialized = true;
+    if (!is_initialized) {
+        is_initialized = true;
     }
 }
 
 }; // namespace glvm
 
 namespace glvm {
-TextureManager* TextureManager::pInstance_ = nullptr;
-std::mutex TextureManager::Mutex_;
+TextureManager* TextureManager::p_instance = nullptr;
+std::mutex TextureManager::mutex;
 
 TextureManager::TextureManager() = default;
 
-void TextureManager::BindTexture(
-    unsigned int _entityID,
-    unsigned int _textureID
+void TextureManager::bind_texture(
+    unsigned int entity_id,
+    unsigned int texture_id
 ) {
-    textureVector_[_textureID].entitiesOwnsThisTypeOfTexture_.push_back(
-        _entityID
+    texture_vector[texture_id].entities_owns_this_type_of_texture.push_back(
+        entity_id
     );
 }
 
 TextureManager* TextureManager::get_instance() {
-    std::lock_guard<std::mutex> lock(Mutex_);
-    if (pInstance_ == nullptr) {
-        pInstance_ = new TextureManager();
+    std::lock_guard<std::mutex> lock(mutex);
+    if (p_instance == nullptr) {
+        p_instance = new TextureManager();
     }
-    return pInstance_;
+    return p_instance;
 }
 
-void TextureManager::SetTextureVector(std::vector<Texture> _textureVector) {
-    textureVector_ = _textureVector;
+void TextureManager::set_texture_vector(std::vector<Texture> textures) {
+    texture_vector = textures;
 }
 
-std::vector<Texture>& TextureManager::GetTextureVector() {
-    return textureVector_;
+std::vector<Texture>& TextureManager::get_texture_vector() {
+    return texture_vector;
 }
 } // namespace glvm
 
-ThreadPool::ThreadPool(size_t numThreads) : stop(false) {
-    for (size_t i = 0; i < numThreads; ++i) {
+ThreadPool::ThreadPool(size_t num_threads) : stop(false) {
+    for (size_t i = 0; i < num_threads; ++i) {
         workers.emplace_back([this] {
             while (true) {
                 std::function<void()> task;
                 {
-                    std::unique_lock<std::mutex> lock(this->queueMutex);
+                    std::unique_lock<std::mutex> lock(this->queue_mutex);
                     this->condition.wait(lock, [this] {
                         return this->stop || !this->tasks.empty();
                     });
@@ -12904,7 +13476,7 @@ ThreadPool::ThreadPool(size_t numThreads) : stop(false) {
 
 ThreadPool::~ThreadPool() {
     {
-        std::unique_lock<std::mutex> lock(queueMutex);
+        std::unique_lock<std::mutex> lock(queue_mutex);
         stop = true;
     }
     condition.notify_all();
@@ -12914,12 +13486,32 @@ ThreadPool::~ThreadPool() {
 }
 
 #ifdef __linux__
-#endif
-#ifdef _WIN32
-#endif
 
 namespace glvm {
-IChrono* CTimerCreator::Create() {
+CTimerX::CTimerX() {
+    init_frequency();
+    reset();
+}
+
+double CTimerX::init_frequency() {
+    return frequency_ = 1e+9;
+}
+
+double CTimerX::reset() {
+    clock_gettime(CLOCK_MONOTONIC, &start_);
+    return start_.tv_sec + start_.tv_nsec;
+}
+
+double CTimerX::get_elapsed() {
+    clock_gettime(CLOCK_MONOTONIC, &now_);
+    seconds_ = now_.tv_sec - start_.tv_sec;
+    nanoseconds_ = now_.tv_nsec - start_.tv_nsec;
+    return seconds_ + nanoseconds_ / frequency_;
+}
+} // namespace glvm
+#endif
+namespace glvm {
+IChrono* CTimerCreator::create() {
 #ifdef __linux__
     return new CTimerX;
 #endif
@@ -12934,23 +13526,23 @@ IChrono* CTimerCreator::Create() {
 
 namespace glvm {
 CTimerWin::CTimerWin() {
-    InitFrequency();
-    Reset();
+    init_frequency();
+    reset();
 }
 
-double CTimerWin::InitFrequency() {
-    QueryPerformanceFrequency((PLARGE_INTEGER)&i64Freq_);
-    return (double)i64Freq_;
+double CTimerWin::init_frequency() {
+    QueryPerformanceFrequency((PLARGE_INTEGER)&i64_freq);
+    return (double)i64_freq;
 }
 
-double CTimerWin::Reset() {
-    QueryPerformanceCounter((PLARGE_INTEGER)&i64Start_);
-    return (double)i64Start_;
+double CTimerWin::reset() {
+    QueryPerformanceCounter((PLARGE_INTEGER)&i64_start);
+    return (double)i64_start;
 }
 
-double CTimerWin::GetElapsed() {
-    QueryPerformanceCounter((PLARGE_INTEGER)&i64Now_);
-    return (double)(i64Now_ - i64Start_) / i64Freq_;
+double CTimerWin::get_elapsed() {
+    QueryPerformanceCounter((PLARGE_INTEGER)&i64_now);
+    return (double)(i64_now - i64_start) / i64_freq;
 }
 } // namespace glvm
 #endif // _WIN32
@@ -12958,35 +13550,35 @@ double CTimerWin::GetElapsed() {
 #ifdef _WIN32
 
 namespace glvm {
-void CSoundEngineWaveform::SoundStream() {
-    for (unsigned int i = 0; i < tSound_Container.size(); ++i) {
-        PlaybackSoundSample(*tSound_Container[i]);
-        tSound_Container.erase(tSound_Container.begin() + i);
+void CSoundEngineWaveform::sound_stream() {
+    for (unsigned int i = 0; i < t_sound_container.size(); ++i) {
+        playback_sound_sample(*t_sound_container[i]);
+        t_sound_container.erase(t_sound_container.begin() + i);
     }
 }
 
-void CSoundEngineWaveform::PlaybackSoundSample(CSoundSample& _sound_sample) {
-    HWAVEOUT hWaveOut;
-    WAVEHDR lpWaveHdr {};
-    WAVEFORMATEX Format;
-    Format.wFormatTag = WAVE_FORMAT_PCM;
-    Format.nChannels = 2;
-    Format.nSamplesPerSec = _sound_sample.uiRate_;
-    Format.nAvgBytesPerSec = Format.nSamplesPerSec * Format.nChannels * 2;
+void CSoundEngineWaveform::playback_sound_sample(CSoundSample& sample) {
+    HWAVEOUT h_wave_out;
+    WAVEHDR lp_wave_hdr {};
+    WAVEFORMATEX format;
+    format.wFormatTag = WAVE_FORMAT_PCM;
+    format.nChannels = 2;
+    format.nSamplesPerSec = sample.ui_rate;
+    format.nAvgBytesPerSec = format.nSamplesPerSec * format.nChannels * 2;
     // Change this field first if got any problems.
-    Format.nBlockAlign = 4;
-    Format.wBitsPerSample = 16;
-    Format.cbSize = 0;
+    format.nBlockAlign = 4;
+    format.wBitsPerSample = 16;
+    format.cbSize = 0;
     // Open a waveform device for output using window callback.
     unsigned int rc = 0;
-    rc = waveOutOpen(&hWaveOut, WAVE_MAPPER, &Format, 0L, 0L, 0L);
+    rc = waveOutOpen(&h_wave_out, WAVE_MAPPER, &format, 0L, 0L, 0L);
     if (rc != MMSYSERR_NOERROR) {
         std::cerr << "waveOutOpen: " << "error code: " << rc << std::endl;
         std::exit(-1);
     }
 
     std::ifstream file(
-        _sound_sample.kPath_to_File_,
+        sample.k_path_to_file,
         std::ios_base::binary | std::ios_base::in
     );
     if (!file) {
@@ -12994,31 +13586,33 @@ void CSoundEngineWaveform::PlaybackSoundSample(CSoundSample& _sound_sample) {
         std::exit(-1);
     }
 
-    char* buf = (char*)malloc(Format.nAvgBytesPerSec * 2);
+    char* buf = (char*)malloc(format.nAvgBytesPerSec * 2);
     while (true) {
-        file.read(buf, Format.nAvgBytesPerSec * 2);
+        file.read(buf, format.nAvgBytesPerSec * 2);
         if (file.gcount() == 0) {
             break;
         }
 
-        lpWaveHdr.lpData = buf;
-        lpWaveHdr.dwBufferLength = file.gcount();
-        lpWaveHdr.dwFlags = 0L;
-        lpWaveHdr.dwLoops = 0L;
-        waveOutPrepareHeader(hWaveOut, &lpWaveHdr, sizeof(WAVEHDR));
-        waveOutWrite(hWaveOut, &lpWaveHdr, sizeof(WAVEHDR));
-        Sleep((lpWaveHdr.dwBufferLength * 1000) / (Format.nAvgBytesPerSec * 2));
-        waveOutUnprepareHeader(hWaveOut, &lpWaveHdr, sizeof(WAVEHDR));
+        lp_wave_hdr.lpData = buf;
+        lp_wave_hdr.dwBufferLength = file.gcount();
+        lp_wave_hdr.dwFlags = 0L;
+        lp_wave_hdr.dwLoops = 0L;
+        waveOutPrepareHeader(h_wave_out, &lp_wave_hdr, sizeof(WAVEHDR));
+        waveOutWrite(h_wave_out, &lp_wave_hdr, sizeof(WAVEHDR));
+        Sleep(
+            (lp_wave_hdr.dwBufferLength * 1000) / (format.nAvgBytesPerSec * 2)
+        );
+        waveOutUnprepareHeader(h_wave_out, &lp_wave_hdr, sizeof(WAVEHDR));
     }
 
     free(buf);
-    waveOutClose(hWaveOut);
+    waveOutClose(h_wave_out);
 }
 
-void CSoundEngineWaveform::SetMasterVolume(long /* l_volume */) {}
+void CSoundEngineWaveform::set_master_volume(long /* l_volume */) {}
 
-std::vector<CSoundSample*>& CSoundEngineWaveform::GetSoundContainer() {
-    return tSound_Container;
+std::vector<CSoundSample*>& CSoundEngineWaveform::get_sound_container() {
+    return t_sound_container;
 }
 } // namespace glvm
 #endif // _WIN32
@@ -13026,10 +13620,11 @@ std::vector<CSoundSample*>& CSoundEngineWaveform::GetSoundContainer() {
 #ifdef _WIN32
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(
-    HWND hWnd,
+    // NOLINT(readability-identifier-naming)
+    HWND h_wnd,
     UINT msg,
-    WPARAM wParam,
-    LPARAM lParam
+    WPARAM w_param,
+    LPARAM l_param
 );
 
 namespace glvm {
@@ -13037,38 +13632,38 @@ WindowWinVulkan* WindowWinVulkan::instance = nullptr;
 
 WindowWinVulkan::WindowWinVulkan() {
     instance = this;
-    const char* _title = "Game";
-    int _width = width / 2, _height = height / 2;
+    const char* title = "Game";
+    int window_width = width / 2, window_height = height / 2;
     // Register the window class for the main window.
-    window_Class_.style = 0;
-    window_Class_.lpfnWndProc = MainWndProc;
-    window_Class_.cbClsExtra = 0;
-    window_Class_.cbWndExtra = 0;
-    window_Class_.hInstance = NULL;
-    window_Class_.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-    window_Class_.hCursor = LoadCursor(NULL, NULL);
-    window_Class_.hbrBackground = NULL;
-    window_Class_.lpszMenuName = NULL;
-    window_Class_.lpszClassName = "Game";
+    window_class.style = 0;
+    window_class.lpfnWndProc = main_wnd_proc;
+    window_class.cbClsExtra = 0;
+    window_class.cbWndExtra = 0;
+    window_class.hInstance = NULL;
+    window_class.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+    window_class.hCursor = LoadCursor(NULL, NULL);
+    window_class.hbrBackground = NULL;
+    window_class.lpszMenuName = NULL;
+    window_class.lpszClassName = "Game";
 
-    RegisterClassA(&window_Class_);
+    RegisterClassA(&window_class);
 
     DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX
         | WS_MAXIMIZEBOX | WS_THICKFRAME;
 
     RECT rect;
-    SetRect(&rect, 0, 0, _width, _height);
+    SetRect(&rect, 0, 0, window_width, window_height);
     AdjustWindowRect(&rect, style, FALSE);
-    int _x_position = (width - (rect.right - rect.left)) / 2;
-    int _y_position = (height - (rect.bottom - rect.top)) / 2;
+    int window_x = (width - (rect.right - rect.left)) / 2;
+    int window_y = (height - (rect.bottom - rect.top)) / 2;
 
     // Create the main window.
-    pModern_Window_ = CreateWindowA(
+    p_modern_window = CreateWindowA(
         "Game",
-        _title,
+        title,
         style,
-        _x_position,
-        _y_position,
+        window_x,
+        window_y,
         rect.right - rect.left,
         rect.bottom - rect.top,
         (HWND)NULL,
@@ -13078,67 +13673,67 @@ WindowWinVulkan::WindowWinVulkan() {
     );
 
     // Show the window and paint its contents.
-    ShowWindow(pModern_Window_, SW_SHOWDEFAULT);
-    UpdateWindow(pModern_Window_);
+    ShowWindow(p_modern_window, SW_SHOWDEFAULT);
+    UpdateWindow(p_modern_window);
 }
 
-void WindowWinVulkan::SwapBuffers() {}
+void WindowWinVulkan::swap_buffers() {}
 
-void WindowWinVulkan::ClearDisplay() {}
+void WindowWinVulkan::clear_display() {}
 
-bool WindowWinVulkan::HandleEvent(CEvent& _Event) {
+bool WindowWinVulkan::handle_event(CEvent& event) {
     // Create message struct object.
     MSG msg;
 
-    SetWindowLongPtrW(pModern_Window_, GWLP_USERDATA, (LONG_PTR)&_Event);
+    SetWindowLongPtrW(p_modern_window, GWLP_USERDATA, (LONG_PTR)&event);
     while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
-        Input_Stack_->ControlInput(_Event);
+        input_stack->control_input(event);
         // DispatchMessage may not have set the event (e.g. a WM_CHAR left
         // over from TranslateMessage, or WM_KEYUP for an unhandled key). The
         // stale value would otherwise be re-pushed by ControlInput on the next
         // message/frame and toggle the cursor a second time.
-        _Event.SetEvent(EEvents::eDEFAULT);
+        event.set_event(EEvents::EDefault);
     }
     return false;
 }
 
-void WindowWinVulkan::Close() {
-    DestroyWindow(pModern_Window_);
+void WindowWinVulkan::close() {
+    DestroyWindow(p_modern_window);
     PostQuitMessage(0);
 }
 
-HWND WindowWinVulkan::GetClassicWindowHWND() {
-    return pClassic_Window_;
+HWND WindowWinVulkan::get_classic_window_hwnd() {
+    return p_classic_window;
 }
 
-HWND WindowWinVulkan::GetModernWindowHWND() {
-    return pModern_Window_;
+HWND WindowWinVulkan::get_modern_window_hwnd() {
+    return p_modern_window;
 }
 
-void WindowWinVulkan::CursorLock(
-    int _x_position,
-    int _y_position,
-    int* _x_offset,
-    int* _y_offset
+void WindowWinVulkan::cursor_lock(
+    int pointer_x,
+    int pointer_y,
+    int* out_offset_x,
+    int* out_offset_y
 ) {
-    RECT clientRect;
-    GetClientRect(pModern_Window_, &clientRect);
-    const int centerX = clientRect.right / 2;
-    const int centerY = clientRect.bottom / 2;
-    POINT point_position {centerX, centerY};
-    ClientToScreen(pModern_Window_, &point_position);
+    RECT client_rect;
+    GetClientRect(p_modern_window, &client_rect);
+    const int center_x = client_rect.right / 2;
+    const int center_y = client_rect.bottom / 2;
+    POINT point_position {center_x, center_y};
+    ClientToScreen(p_modern_window, &point_position);
     // Solve a problem with endlessly growing numbers in the start game run.
-    if (_x_position > clientRect.right || _x_position < 0
-        || _y_position > clientRect.bottom || _y_position < 0) {
+    if (pointer_x > client_rect.right || pointer_x < 0
+        || pointer_y > client_rect.bottom || pointer_y < 0) {
         return;
     }
-    int iOffset_X = 0, iOffset_Y = 0;
-    iOffset_X = _x_position - previous_X;
-    iOffset_Y = _y_position - previous_Y;
-    previous_X = _x_position;
-    previous_Y = _y_position;
+    int i_offset_x = 0, i_offset_y = 0;
+    i_offset_x = pointer_x - previous_x;
+    i_offset_y = pointer_y - previous_y;
+    previous_x = pointer_x;
+    previous_y = pointer_y;
 
     // The per-frame delta is measured against the cursor's actual position
     // after the previous warp, not against the computed center: the two can
@@ -13149,11 +13744,11 @@ void WindowWinVulkan::CursorLock(
     // refocus, stale sample after the warp, and the first sample after the
     // inventory closes - the cursor was free while the inventory was open).
     // Discard the sample, just re-warp to the center.
-    if (iOffset_X > 250 || iOffset_X < -250 || iOffset_Y > 250
-        || iOffset_Y < -250) {
+    if (i_offset_x > 250 || i_offset_x < -250 || i_offset_y > 250
+        || i_offset_y < -250) {
     } else {
-        *_x_offset += iOffset_X;
-        *_y_offset -= iOffset_Y;
+        *out_offset_x += i_offset_x;
+        *out_offset_y -= i_offset_y;
     }
     // Pitch is limited by angle in Engine::SetViewMatrix(), so this offset may
     // accumulate freely; no pixel clamp here (resolution-independent).
@@ -13163,78 +13758,77 @@ void WindowWinVulkan::CursorLock(
     // warp (matches what the next WM_MOUSEMOVE will report).
     POINT actual_position;
     GetCursorPos(&actual_position);
-    ScreenToClient(pModern_Window_, &actual_position);
-    previous_X = actual_position.x;
-    previous_Y = actual_position.y;
+    ScreenToClient(p_modern_window, &actual_position);
+    previous_x = actual_position.x;
+    previous_y = actual_position.y;
 }
 
 // Callback method for events handling.
-LRESULT CALLBACK WindowWinVulkan::MainWndProc(
-    HWND _pHwnd,
-    UINT _pMsg,
-    WPARAM _pWParam,
-    LPARAM _pLParam
+LRESULT CALLBACK WindowWinVulkan::main_wnd_proc(
+    HWND hwnd,
+    UINT msg,
+    WPARAM w_param,
+    LPARAM l_param
 ) {
-    ImGui_ImplWin32_WndProcHandler(_pHwnd, _pMsg, _pWParam, _pLParam);
-    CEvent* pEvent = (CEvent*)GetWindowLongPtrW(_pHwnd, GWLP_USERDATA);
+    ImGui_ImplWin32_WndProcHandler(hwnd, msg, w_param, l_param);
+    CEvent* p_event = (CEvent*)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
 
-    if (_pMsg == WM_KEYDOWN && _pWParam == VK_ESCAPE && pEvent != nullptr
-        && (_pLParam & (1 << 30)) == 0) {
-        pEvent->SetEvent(EEvents::eCURSOR_RELEASED);
+    if (msg == WM_KEYDOWN && w_param == VK_ESCAPE && p_event != nullptr
+        && (l_param & (1 << 30)) == 0) {
+        p_event->set_event(EEvents::ECursorReleased);
         return 0;
     }
 
     if (ImGui::GetCurrentContext()) {
         ImGuiIO& io = ImGui::GetIO();
-        const bool isMouseMessage =
-            (_pMsg >= WM_MOUSEFIRST && _pMsg <= WM_MOUSELAST)
-            || _pMsg == WM_MOUSEWHEEL || _pMsg == WM_MOUSEHWHEEL;
-        const bool isKeyboardMessage =
-            (_pMsg >= WM_KEYFIRST && _pMsg <= WM_KEYLAST) || _pMsg == WM_CHAR
-            || _pMsg == WM_SYSCHAR || _pMsg == WM_SYSKEYDOWN
-            || _pMsg == WM_SYSKEYUP;
-        if ((isMouseMessage && io.WantCaptureMouse)
-            || (isKeyboardMessage && io.WantCaptureKeyboard)) {
+        const bool is_mouse_message =
+            (msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST)
+            || msg == WM_MOUSEWHEEL || msg == WM_MOUSEHWHEEL;
+        const bool is_keyboard_message =
+            (msg >= WM_KEYFIRST && msg <= WM_KEYLAST) || msg == WM_CHAR
+            || msg == WM_SYSCHAR || msg == WM_SYSKEYDOWN || msg == WM_SYSKEYUP;
+        if ((is_mouse_message && io.WantCaptureMouse)
+            || (is_keyboard_message && io.WantCaptureKeyboard)) {
             return 0;
         }
     }
 
-    if (pEvent == nullptr) {
-        return DefWindowProcA(_pHwnd, _pMsg, _pWParam, _pLParam);
+    if (p_event == nullptr) {
+        return DefWindowProcA(hwnd, msg, w_param, l_param);
     }
-    int iMouse_Position_X, iMouse_Position_Y;
-    switch (_pMsg) {
+    int i_mouse_position_x, i_mouse_position_y;
+    switch (msg) {
         case WM_CREATE:
             return 0;
         case WM_SIZE:
             return 0;
         case WM_LBUTTONDOWN:
-            pEvent->SetEvent(EEvents::eMOUSE_LEFT_BUTTON);
+            p_event->set_event(EEvents::EMouseLeftButton);
             return 0;
 
         case WM_SETFOCUS:
             if (WindowWinVulkan::instance) {
-                WindowWinVulkan::instance->isFocused = true;
+                WindowWinVulkan::instance->is_focused = true;
             }
             return 0;
         case WM_KILLFOCUS:
             if (WindowWinVulkan::instance) {
-                WindowWinVulkan::instance->isFocused = false;
+                WindowWinVulkan::instance->is_focused = false;
             }
             return 0;
         case WM_LBUTTONUP:
-            pEvent->SetEvent(EEvents::eMOUSE_LEFT_BUTTON_RELEASE);
-            pEvent->isLeftMouseButtonReleased = true;
+            p_event->set_event(EEvents::EMouseLeftButtonRelease);
+            p_event->is_left_mouse_button_released = true;
             return 0;
         case WM_MOUSEMOVE:
-            iMouse_Position_X = GET_X_LPARAM(_pLParam);
-            iMouse_Position_Y = GET_Y_LPARAM(_pLParam);
-            pEvent->SetEvent(EEvents::eMOUSE_POINTER_POSITION);
-            pEvent->mousePointerPosition.position_X = iMouse_Position_X;
-            pEvent->mousePointerPosition.position_Y = iMouse_Position_Y;
+            i_mouse_position_x = GET_X_LPARAM(l_param);
+            i_mouse_position_y = GET_Y_LPARAM(l_param);
+            p_event->set_event(EEvents::EMousePointerPosition);
+            p_event->mouse_pointer_position.position_x = i_mouse_position_x;
+            p_event->mouse_pointer_position.position_y = i_mouse_position_y;
             return 0;
         case WM_KEYDOWN:
-            switch (_pWParam) {
+            switch (w_param) {
                 case VK_LEFT:
                     break;
                 case VK_RIGHT:
@@ -13242,22 +13836,22 @@ LRESULT CALLBACK WindowWinVulkan::MainWndProc(
                 case VK_ESCAPE:
                     break;
                 case VK_W:
-                    pEvent->SetEvent(EEvents::eMOVE_FORWARD);
+                    p_event->set_event(EEvents::EMoveForward);
                     break;
                 case VK_S:
-                    pEvent->SetEvent(EEvents::eMOVE_BACKWARD);
+                    p_event->set_event(EEvents::EMoveBackward);
                     break;
                 case VK_A:
-                    pEvent->SetEvent(EEvents::eMOVE_LEFT);
+                    p_event->set_event(EEvents::EMoveLeft);
                     break;
                 case VK_D:
-                    pEvent->SetEvent(EEvents::eMOVE_RIGHT);
+                    p_event->set_event(EEvents::EMoveRight);
                     break;
                 case VK_SPACE:
-                    pEvent->SetEvent(EEvents::eJUMP);
+                    p_event->set_event(EEvents::EJump);
                     break;
                 case VK_I:
-                    pEvent->SetEvent(EEvents::eINVENTORY);
+                    p_event->set_event(EEvents::EInventory);
                     break;
                 case VK_UP:
                     break;
@@ -13278,28 +13872,28 @@ LRESULT CALLBACK WindowWinVulkan::MainWndProc(
             }
             break;
         case WM_KEYUP:
-            switch (_pWParam) {
+            switch (w_param) {
                 case VK_LEFT:
                     break;
                 case VK_RIGHT:
                     break;
                 case VK_W:
-                    pEvent->SetEvent(EEvents::eKEYRELEASE_W);
+                    p_event->set_event(EEvents::EKeyreleaseW);
                     break;
                 case VK_S:
-                    pEvent->SetEvent(EEvents::eKEYRELEASE_S);
+                    p_event->set_event(EEvents::EKeyreleaseS);
                     break;
                 case VK_A:
-                    pEvent->SetEvent(EEvents::eKEYRELEASE_A);
+                    p_event->set_event(EEvents::EKeyreleaseA);
                     break;
                 case VK_D:
-                    pEvent->SetEvent(EEvents::eKEYRELEASE_D);
+                    p_event->set_event(EEvents::EKeyreleaseD);
                     break;
                 case VK_SPACE:
-                    pEvent->SetEvent(EEvents::eKEYRELEASE_JUMP);
+                    p_event->set_event(EEvents::EKeyreleaseJump);
                     break;
                 case VK_I:
-                    pEvent->SetEvent(EEvents::eINVENTORY_RELEASE);
+                    p_event->set_event(EEvents::EInventoryRelease);
                     break;
                 case VK_UP:
                     break;
@@ -13320,24 +13914,24 @@ LRESULT CALLBACK WindowWinVulkan::MainWndProc(
             }
             break;
         case WM_CLOSE:
-            pEvent->SetEvent(EEvents::eGAME_LOOP_KILL);
+            p_event->set_event(EEvents::EGameLoopKill);
             return 0;
         case WM_DESTROY:
             PostQuitMessage(0);
             break;
         // Process other messages.
         default:
-            return DefWindowProc(_pHwnd, _pMsg, _pWParam, _pLParam);
+            return DefWindowProc(hwnd, msg, w_param, l_param);
     }
     return 0;
 }
 } // namespace glvm
 #endif // _WIN32
 
-const int kVertex_Size = 9;
-constexpr float kWidth_Offset = 1.0f / 3;
+const int K_VERTEX_SIZE = 9;
+constexpr float K_WIDTH_OFFSET = 1.0f / 3;
 
-float aVertices[kVertex_Size] = {
+float A_VERTICES[K_VERTEX_SIZE] = {
     -0.5f,
     -0.5f,
     0.5f, // Left vertex.
@@ -13349,7 +13943,7 @@ float aVertices[kVertex_Size] = {
     0.0f // Upper vertex.
 };
 
-float aVertices2[kVertex_Size] = {
+float A_VERTICES2[K_VERTEX_SIZE] = {
     0.5f,
     -0.5f,
     // Left vertex.
@@ -13364,7 +13958,7 @@ float aVertices2[kVertex_Size] = {
     -1.0f
 };
 
-float aVertices_Static_Object[] = {
+float A_VERTICES_STATIC_OBJECT[] = {
     // Coordinates.
     0.5f,  0.5f,  0.0f, 1.0f, 1.0f, // Up right vertex.
     0.5f,  -0.5f, 0.0f, 1.0f, 0.0f, // Bottom right vertex.
@@ -13373,26 +13967,26 @@ float aVertices_Static_Object[] = {
     0.5f,  0.5f,  0.0f, 1.0f, 1.0f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f
 };
 
-float vertices[] = {
+float VERTICES[] = {
     // Coordinates.
-    0.5f,  0.5f,  0.0f, kWidth_Offset, 1.0f, // Up right vertex.
-    0.5f,  -0.5f, 0.0f, kWidth_Offset, 0.75f, // Bottom right vertex.
-    -0.5f, -0.5f, 0.0f, 0.0f,          0.75f, // Bottom left vertex.
-    -0.5f, 0.5f,  0.0f, 0.0f,          1.0f, // Up left vertex.
-    0.5f,  0.5f,  0.0f, kWidth_Offset, 1.0f,  -0.5f, -0.5f, 0.0f, 0.0f, 0.75f
+    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 1.0f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET, 0.75f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, 0.0f,           0.75f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, 0.0f,           1.0f, // Up left vertex.
+    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 1.0f,  -0.5f, -0.5f, 0.0f, 0.0f, 0.75f
 };
 
-float vertices2[] = {
+float VERTICES2[] = {
     // Coordinates.
-    0.5f,  0.5f,  0.0f, kWidth_Offset * 2, 1.0f, // Up right vertex.
-    0.5f,  -0.5f, 0.0f, kWidth_Offset * 2, 0.75f, // Bottom right vertex.
-    -0.5f, -0.5f, 0.0f, kWidth_Offset,     0.75f, // Bottom left vertex.
-    -0.5f, 0.5f,  0.0f, kWidth_Offset,     1.0f, // Up left vertex.
-    0.5f,  0.5f,  0.0f, kWidth_Offset * 2, 1.0f,
-    -0.5f, -0.5f, 0.0f, kWidth_Offset,     0.75f
+    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET * 2, 1.0f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET * 2, 0.75f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, K_WIDTH_OFFSET,     0.75f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, K_WIDTH_OFFSET,     1.0f, // Up left vertex.
+    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET * 2, 1.0f,
+    -0.5f, -0.5f, 0.0f, K_WIDTH_OFFSET,     0.75f
 };
 
-float vertices3[] = {
+float VERTICES3[] = {
     // Coordinates.
     0.5f,
     0.5f,
@@ -13407,12 +14001,12 @@ float vertices3[] = {
     -0.5f,
     -0.5f,
     0.0f,
-    kWidth_Offset * 2,
+    K_WIDTH_OFFSET * 2,
     0.75f, // Bottom left vertex.
     -0.5f,
     0.5f,
     0.0f,
-    kWidth_Offset * 2,
+    K_WIDTH_OFFSET * 2,
     1.0f, // Up left vertex.
     0.5f,
     0.5f,
@@ -13422,30 +14016,30 @@ float vertices3[] = {
     -0.5f,
     -0.5f,
     0.0f,
-    kWidth_Offset * 2,
+    K_WIDTH_OFFSET * 2,
     0.75f
 };
 
-float vertices4[] = {
+float VERTICES4[] = {
     // Coordinates.
-    0.5f,  0.5f,  0.0f, kWidth_Offset, 0.75f, // Up right vertex.
-    0.5f,  -0.5f, 0.0f, kWidth_Offset, 0.5f, // Bottom right vertex.
-    -0.5f, -0.5f, 0.0f, 0.0f,          0.5f, // Bottom left vertex.
-    -0.5f, 0.5f,  0.0f, 0.0f,          0.75f, // Up left vertex.
-    0.5f,  0.5f,  0.0f, kWidth_Offset, 0.75f, -0.5f, -0.5f, 0.0f, 0.0f, 0.5f
+    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 0.75f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET, 0.5f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, 0.0f,           0.5f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, 0.0f,           0.75f, // Up left vertex.
+    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 0.75f, -0.5f, -0.5f, 0.0f, 0.0f, 0.5f
 };
 
-float vertices5[] = {
+float VERTICES5[] = {
     // Coordinates.
-    0.5f,  0.5f,  0.0f, kWidth_Offset * 2, 0.75f, // Up right vertex.
-    0.5f,  -0.5f, 0.0f, kWidth_Offset * 2, 0.5f, // Bottom right vertex.
-    -0.5f, -0.5f, 0.0f, kWidth_Offset,     0.5f, // Bottom left vertex.
-    -0.5f, 0.5f,  0.0f, kWidth_Offset,     0.75f, // Up left vertex.
-    0.5f,  0.5f,  0.0f, kWidth_Offset * 2, 0.75f,
-    -0.5f, -0.5f, 0.0f, kWidth_Offset,     0.5f
+    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET * 2, 0.75f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET * 2, 0.5f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, K_WIDTH_OFFSET,     0.5f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, K_WIDTH_OFFSET,     0.75f, // Up left vertex.
+    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET * 2, 0.75f,
+    -0.5f, -0.5f, 0.0f, K_WIDTH_OFFSET,     0.5f
 };
 
-float vertices6[] = {
+float VERTICES6[] = {
     // Coordinates.
     0.5f,
     0.5f,
@@ -13460,12 +14054,12 @@ float vertices6[] = {
     -0.5f,
     -0.5f,
     0.0f,
-    kWidth_Offset * 2,
+    K_WIDTH_OFFSET * 2,
     0.5f, // Bottom left vertex.
     -0.5f,
     0.5f,
     0.0f,
-    kWidth_Offset * 2,
+    K_WIDTH_OFFSET * 2,
     0.75f, // Up left vertex.
     0.5f,
     0.5f,
@@ -13475,30 +14069,30 @@ float vertices6[] = {
     -0.5f,
     -0.5f,
     0.0f,
-    kWidth_Offset * 2,
+    K_WIDTH_OFFSET * 2,
     0.5f
 };
 
-float vertices7[] = {
+float VERTICES7[] = {
     // Coordinates.
-    0.5f,  0.5f,  0.0f, kWidth_Offset, 0.5f, // Up right vertex.
-    0.5f,  -0.5f, 0.0f, kWidth_Offset, 0.25f, // Bottom right vertex.
-    -0.5f, -0.5f, 0.0f, 0.0f,          0.25f, // Bottom left vertex.
-    -0.5f, 0.5f,  0.0f, 0.0f,          0.5f, // Up left vertex.
-    0.5f,  0.5f,  0.0f, kWidth_Offset, 0.5f,  -0.5f, -0.5f, 0.0f, 0.0f, 0.25f
+    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 0.5f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET, 0.25f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, 0.0f,           0.25f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, 0.0f,           0.5f, // Up left vertex.
+    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 0.5f,  -0.5f, -0.5f, 0.0f, 0.0f, 0.25f
 };
 
-float vertices8[] = {
+float VERTICES8[] = {
     // Coordinates.
-    0.5f,  0.5f,  0.0f, kWidth_Offset * 2, 0.5f, // Up right vertex.
-    0.5f,  -0.5f, 0.0f, kWidth_Offset * 2, 0.25f, // Bottom right vertex.
-    -0.5f, -0.5f, 0.0f, kWidth_Offset,     0.25f, // Bottom left vertex.
-    -0.5f, 0.5f,  0.0f, kWidth_Offset,     0.5f, // Up left vertex.
-    0.5f,  0.5f,  0.0f, kWidth_Offset * 2, 0.5f,
-    -0.5f, -0.5f, 0.0f, kWidth_Offset,     0.25f
+    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET * 2, 0.5f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET * 2, 0.25f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, K_WIDTH_OFFSET,     0.25f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, K_WIDTH_OFFSET,     0.5f, // Up left vertex.
+    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET * 2, 0.5f,
+    -0.5f, -0.5f, 0.0f, K_WIDTH_OFFSET,     0.25f
 };
 
-float vertices9[] = {
+float VERTICES9[] = {
     // Coordinates.
     0.5f,
     0.5f,
@@ -13513,12 +14107,12 @@ float vertices9[] = {
     -0.5f,
     -0.5f,
     0.0f,
-    kWidth_Offset * 2,
+    K_WIDTH_OFFSET * 2,
     0.25f, // Bottom left vertex.
     -0.5f,
     0.5f,
     0.0f,
-    kWidth_Offset * 2,
+    K_WIDTH_OFFSET * 2,
     0.5f, // Up left vertex.
     0.5f,
     0.5f,
@@ -13528,30 +14122,30 @@ float vertices9[] = {
     -0.5f,
     -0.5f,
     0.0f,
-    kWidth_Offset * 2,
+    K_WIDTH_OFFSET * 2,
     0.25f
 };
 
-float vertices10[] = {
+float VERTICES10[] = {
     // Coordinates.
-    0.5f,  0.5f,  0.0f, kWidth_Offset, 0.25f, // Up right vertex.
-    0.5f,  -0.5f, 0.0f, kWidth_Offset, 0.0f, // Bottom right vertex.
-    -0.5f, -0.5f, 0.0f, 0.0f,          0.0f, // Bottom left vertex.
-    -0.5f, 0.5f,  0.0f, 0.0f,          0.25f, // Up left vertex.
-    0.5f,  0.5f,  0.0f, kWidth_Offset, 0.25f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f
+    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 0.25f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET, 0.0f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, 0.0f,           0.0f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, 0.0f,           0.25f, // Up left vertex.
+    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 0.25f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f
 };
 
-float vertices11[] = {
+float VERTICES11[] = {
     // Coordinates.
-    0.5f,  0.5f,  0.0f, kWidth_Offset * 2, 0.25f, // Up right vertex.
-    0.5f,  -0.5f, 0.0f, kWidth_Offset * 2, 0.0f, // Bottom right vertex.
-    -0.5f, -0.5f, 0.0f, kWidth_Offset,     0.0f, // Bottom left vertex.
-    -0.5f, 0.5f,  0.0f, kWidth_Offset,     0.25f, // Up left vertex.
-    0.5f,  0.5f,  0.0f, kWidth_Offset * 2, 0.25f,
-    -0.5f, -0.5f, 0.0f, kWidth_Offset,     0.0f
+    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET * 2, 0.25f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET * 2, 0.0f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, K_WIDTH_OFFSET,     0.0f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, K_WIDTH_OFFSET,     0.25f, // Up left vertex.
+    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET * 2, 0.25f,
+    -0.5f, -0.5f, 0.0f, K_WIDTH_OFFSET,     0.0f
 };
 
-float vertices12[] = {
+float VERTICES12[] = {
     // Coordinates.
     0.5f,
     0.5f,
@@ -13566,12 +14160,12 @@ float vertices12[] = {
     -0.5f,
     -0.5f,
     0.0f,
-    kWidth_Offset * 2,
+    K_WIDTH_OFFSET * 2,
     0.0f, // Bottom left vertex.
     -0.5f,
     0.5f,
     0.0f,
-    kWidth_Offset * 2,
+    K_WIDTH_OFFSET * 2,
     0.25f, // Up left vertex.
     0.5f,
     0.5f,
@@ -13581,205 +14175,203 @@ float vertices12[] = {
     -0.5f,
     -0.5f,
     0.0f,
-    kWidth_Offset * 2,
+    K_WIDTH_OFFSET * 2,
     0.0f
 };
 
-int Vertices_Size = sizeof(vertices);
+int VERTICES_SIZE = sizeof(VERTICES);
 
 namespace glvm {
-static bool equalsCStr(const std::vector<char>& v, const char* s) {
+static bool equals_c_str(const std::vector<char>& v, const char* s) {
     return strcmp(v.data(), s) == 0;
 }
 
 CWaveFrontObjParser::CWaveFrontObjParser() {}
 
-const std::vector<SVertex>& CWaveFrontObjParser::getCoordinateVertices() const {
-    return coordinateVertices_;
+const std::vector<SVertex>& CWaveFrontObjParser::get_coordinate_vertices() const {
+    return coordinate_vertices;
 }
 
-const std::vector<SVertex>& CWaveFrontObjParser::getTextureVertices() const {
-    return textureVertices_;
+const std::vector<SVertex>& CWaveFrontObjParser::get_texture_vertices() const {
+    return texture_vertices;
 }
 
-const std::vector<SVertex>& CWaveFrontObjParser::getNormals() const {
-    return normals_;
+const std::vector<SVertex>& CWaveFrontObjParser::get_normals() const {
+    return normals;
 }
 
-const std::vector<SFace>& CWaveFrontObjParser::getFaces() const {
-    return faces_;
+const std::vector<SFace>& CWaveFrontObjParser::get_faces() const {
+    return faces;
 }
 
-void CWaveFrontObjParser::ReadFile(const char* _filePath) {
-    const char* _pWavefrontObjFile = _filePath;
-    std::ifstream WavefrontObjFileInputStream;
-    std::stringstream WavefrontObjFileOutputStream;
+void CWaveFrontObjParser::read_file(const char* file_path) {
+    std::ifstream wavefront_obj_file_input_stream;
+    std::stringstream wavefront_obj_file_output_stream;
 
-    WavefrontObjFileInputStream.open(_pWavefrontObjFile);
-    if (WavefrontObjFileInputStream.good()) {
-        WavefrontObjFileOutputStream << WavefrontObjFileInputStream.rdbuf();
-        WavefrontObjFileInputStream.close();
-        sWavefrontObjFileData = WavefrontObjFileOutputStream.str();
+    wavefront_obj_file_input_stream.open(file_path);
+    if (wavefront_obj_file_input_stream.good()) {
+        wavefront_obj_file_output_stream
+            << wavefront_obj_file_input_stream.rdbuf();
+        wavefront_obj_file_input_stream.close();
+        s_wavefront_obj_file_data = wavefront_obj_file_output_stream.str();
     } else {
-        std::cout << "Error of reading " << _filePath << " file" << std::endl;
+        std::cout << "Error of reading " << file_path << " file" << std::endl;
         return;
     }
 
-    pWavefrontObjFileData = sWavefrontObjFileData.c_str();
+    p_wavefront_obj_file_data = s_wavefront_obj_file_data.c_str();
 }
 
-void CWaveFrontObjParser::ParseFile() {
-    while (pWavefrontObjFileData[uiCounter] != '\0') {
+void CWaveFrontObjParser::parse_file() {
+    while (p_wavefront_obj_file_data[ui_counter] != '\0') {
         std::vector<std::vector<char>> line =
-            Split(pWavefrontObjFileData, ' ', '\n', uiCounter);
-        if (equalsCStr(line[0], "v")) {
-            SVertex vertex = ParseVertices(line);
-            coordinateVertices_.push_back(vertex);
+            split(p_wavefront_obj_file_data, ' ', '\n', ui_counter);
+        if (equals_c_str(line[0], "v")) {
+            SVertex vertex = parse_vertices(line);
+            coordinate_vertices.push_back(vertex);
         }
-        if (equalsCStr(line[0], "vt")) {
-            SVertex vertex = ParseVertices(line);
-            textureVertices_.push_back(vertex);
+        if (equals_c_str(line[0], "vt")) {
+            SVertex vertex = parse_vertices(line);
+            texture_vertices.push_back(vertex);
         }
-        if (equalsCStr(line[0], "vn")) {
-            SVertex vertex = ParseVertices(line);
-            normals_.push_back(vertex);
+        if (equals_c_str(line[0], "vn")) {
+            SVertex vertex = parse_vertices(line);
+            normals.push_back(vertex);
         }
-        if (equalsCStr(line[0], "f")) {
-            SFace face = ParseFaces(line);
-            faces_.push_back(face);
+        if (equals_c_str(line[0], "f")) {
+            SFace face = parse_faces(line);
+            faces.push_back(face);
         }
     }
 }
 
-std::vector<std::vector<char>> CWaveFrontObjParser::Split(
-    const char* _pWaveFrontObjFileData,
-    const char _separator,
-    const char _exitSymbol,
-    unsigned int& _uiCounter
+std::vector<std::vector<char>> CWaveFrontObjParser::split(
+    const char* data,
+    const char separator,
+    const char exit_symbol,
+    unsigned int& position
 ) {
-    std::vector<std::vector<char>> wordsContainer;
-    unsigned int outerIndex = 0;
-    wordsContainer.push_back({});
+    std::vector<std::vector<char>> words_container;
+    unsigned int outer_index = 0;
+    words_container.push_back({});
 
-    for (;; ++_uiCounter) {
-        if (_pWaveFrontObjFileData[_uiCounter] == '#') {
-            while (_pWaveFrontObjFileData[_uiCounter] != '\n') {
-                ++_uiCounter;
+    for (;; ++position) {
+        if (data[position] == '#') {
+            while (data[position] != '\n') {
+                ++position;
             }
             continue;
         }
-        if (_pWaveFrontObjFileData[_uiCounter] == _separator) {
-            wordsContainer[outerIndex].push_back('\0');
-            wordsContainer.push_back({});
-            ++outerIndex;
+        if (data[position] == separator) {
+            words_container[outer_index].push_back('\0');
+            words_container.push_back({});
+            ++outer_index;
             continue;
         }
-        if (_pWaveFrontObjFileData[_uiCounter] == _exitSymbol) {
-            ++_uiCounter;
-            wordsContainer[outerIndex].push_back('\0');
-            return wordsContainer;
+        if (data[position] == exit_symbol) {
+            ++position;
+            words_container[outer_index].push_back('\0');
+            return words_container;
         }
-        wordsContainer[outerIndex].push_back(_pWaveFrontObjFileData[_uiCounter]);
+        words_container[outer_index].push_back(data[position]);
     }
 }
 
-SVertex CWaveFrontObjParser::ParseVertices(
-    std::vector<std::vector<char>> _wordsContainer
+SVertex CWaveFrontObjParser::parse_vertices(
+    std::vector<std::vector<char>> words
 ) {
     SVertex vertex;
-    unsigned int uiVertexIndex = 0;
+    unsigned int ui_vertex_index = 0;
 
-    unsigned int uiWordsContainerSize = _wordsContainer.size();
-    for (unsigned int i = 1; i < uiWordsContainerSize; ++i) {
-        float floatNumber = ParseFloating(_wordsContainer[i]);
-        vertex[uiVertexIndex++] = floatNumber;
+    unsigned int ui_words_container_size = words.size();
+    for (unsigned int i = 1; i < ui_words_container_size; ++i) {
+        float float_number = parse_floating(words[i]);
+        vertex[ui_vertex_index++] = float_number;
     }
 
     return vertex;
 }
 
-SFace CWaveFrontObjParser::ParseFaces(
-    std::vector<std::vector<char>> _wordsContainer
-) {
+SFace CWaveFrontObjParser::parse_faces(std::vector<std::vector<char>> words) {
     SFace face;
-    std::vector<std::vector<char>> wordsInnerContainer;
+    std::vector<std::vector<char>> words_inner_container;
     std::vector<char> word;
 
-    unsigned int uiWordsContainerSize = _wordsContainer.size();
+    unsigned int ui_words_container_size = words.size();
 
-    for (unsigned int i = 1; i < uiWordsContainerSize; ++i) {
+    for (unsigned int i = 1; i < ui_words_container_size; ++i) {
         unsigned int counter = 0;
-        wordsInnerContainer =
-            Split(_wordsContainer[i].data(), '/', '\0', counter);
+        words_inner_container = split(words[i].data(), '/', '\0', counter);
 
-        for (unsigned int j = 0; j < wordsInnerContainer.size(); ++j) {
-            word = wordsInnerContainer[j];
-            int iValue = ParseInteger(word);
+        for (unsigned int j = 0; j < words_inner_container.size(); ++j) {
+            word = words_inner_container[j];
+            int i_value = parse_integer(word);
 
-            face[j].push_back(iValue);
+            face[j].push_back(i_value);
         }
     }
     return face;
 }
 
-int CWaveFrontObjParser::ParseInteger(std::vector<char> _word) {
-    std::vector<int> baseContainer;
+int CWaveFrontObjParser::parse_integer(std::vector<char> digits) {
+    std::vector<int> base_container;
 
-    for (unsigned int i = 0; i < _word.size() - 1; ++i) {
-        baseContainer.push_back(_word[i] - 48);
+    for (unsigned int i = 0; i < digits.size() - 1; ++i) {
+        base_container.push_back(digits[i] - 48);
     }
 
-    int iResult = 0;
-    bool negateFlag = false;
+    int i_result = 0;
+    bool negate_flag = false;
 
-    unsigned int baseContainerSize = baseContainer.size();
-    for (unsigned int i = 0; i < baseContainerSize; ++i) {
-        if (negateFlag && i == 0) {
+    unsigned int base_container_size = base_container.size();
+    for (unsigned int i = 0; i < base_container_size; ++i) {
+        if (negate_flag && i == 0) {
             continue;
-        } else if (baseContainer[i] == -5 && i == 0) {
+        } else if (base_container[i] == -5 && i == 0) {
             continue;
         }
 
-        iResult += baseContainer[i] * std::pow(10, (baseContainerSize - 1) - i);
+        i_result +=
+            base_container[i] * std::pow(10, (base_container_size - 1) - i);
     }
 
-    return iResult;
+    return i_result;
 }
 
-float CWaveFrontObjParser::ParseFloating(std::vector<char> _word) {
-    std::vector<int> baseContainer;
+float CWaveFrontObjParser::parse_floating(std::vector<char> digits) {
+    std::vector<int> base_container;
 
-    for (unsigned int i = 0; i < _word.size() - 1; ++i) {
-        baseContainer.push_back(_word[i] - 48);
+    for (unsigned int i = 0; i < digits.size() - 1; ++i) {
+        base_container.push_back(digits[i] - 48);
     }
 
-    int integerPart = 0;
-    float floatingPart = 0;
-    std::vector<int> integerPartContainer;
-    std::vector<int> floatingPartContainer;
-    bool dotFlag = false;
-    bool negateFlag = false;
-    unsigned int baseContainerSize = baseContainer.size();
+    int integer_part = 0;
+    float floating_part = 0;
+    std::vector<int> integer_part_container;
+    std::vector<int> floating_part_container;
+    bool dot_flag = false;
+    bool negate_flag = false;
+    unsigned int base_container_size = base_container.size();
 
-    if (baseContainer[0] == -3) {
-        negateFlag = true;
+    if (base_container[0] == -3) {
+        negate_flag = true;
     }
 
-    for (unsigned int i = 0; i < baseContainerSize; ++i) {
-        if (negateFlag && i == 0) {
+    for (unsigned int i = 0; i < base_container_size; ++i) {
+        if (negate_flag && i == 0) {
             continue;
-        } else if (baseContainer[i] == -5 && i == 0) {
+        } else if (base_container[i] == -5 && i == 0) {
             continue;
-        } else if (baseContainer[i] == -2) {
-            dotFlag = true;
+        } else if (base_container[i] == -2) {
+            dot_flag = true;
             continue;
         }
 
-        if (baseContainer[i] >= 0 && baseContainer[i] <= 9) {
-            if (dotFlag) {
-                floatingPartContainer.push_back(baseContainer[i]);
+        if (base_container[i] >= 0 && base_container[i] <= 9) {
+            if (dot_flag) {
+                floating_part_container.push_back(base_container[i]);
             } else {
-                integerPartContainer.push_back(baseContainer[i]);
+                integer_part_container.push_back(base_container[i]);
             }
         } else {
             std::cout << "Element is not a number" << std::endl;
@@ -13787,24 +14379,634 @@ float CWaveFrontObjParser::ParseFloating(std::vector<char> _word) {
         }
     }
 
-    unsigned int integerPartContainerSize = integerPartContainer.size();
-    for (unsigned int i = 0; i < integerPartContainerSize; ++i) {
-        integerPart += integerPartContainer[i]
-            * std::pow(10, (integerPartContainerSize - 1) - i);
+    unsigned int integer_part_container_size = integer_part_container.size();
+    for (unsigned int i = 0; i < integer_part_container_size; ++i) {
+        integer_part += integer_part_container[i]
+            * std::pow(10, (integer_part_container_size - 1) - i);
     }
 
-    unsigned int floatingPartContainerSize = floatingPartContainer.size();
-    for (unsigned int i = 0; i < floatingPartContainerSize; ++i) {
-        floatingPart += floatingPartContainer[i] / std::pow(10, i + 1);
+    unsigned int floating_part_container_size = floating_part_container.size();
+    for (unsigned int i = 0; i < floating_part_container_size; ++i) {
+        floating_part += floating_part_container[i] / std::pow(10, i + 1);
     }
 
     float result = 0;
-    result = (float)(integerPart + floatingPart);
+    result = (float)(integer_part + floating_part);
 
-    if (negateFlag) {
+    if (negate_flag) {
         result *= -1.0f;
     }
 
     return result;
 }
 } // namespace glvm
+
+#ifdef __linux__
+
+namespace glvm {
+
+static WindowWaylandVulkan wayland_window;
+
+void xdg_surface_configure(
+    [[maybe_unused]] void* data,
+    struct xdg_surface* xdg_surface,
+    uint32_t serial
+) {
+    // The compositor sends a configure event before the surface is shown;
+    // it must be acknowledged, otherwise the window never appears.
+    WindowWaylandVulkan* config_data = (WindowWaylandVulkan*)data;
+
+    xdg_surface_ack_configure(xdg_surface, serial);
+    if (!config_data->pixels) {
+        resize(data);
+    }
+}
+
+void new_frame_callback(
+    [[maybe_unused]] void* data,
+    struct wl_callback* frame_call_back,
+    [[maybe_unused]] uint32_t callback_data
+) {
+    wl_callback_destroy(frame_call_back);
+    frame_call_back = wl_surface_frame(wayland_window.wl_surface);
+    wl_callback_add_listener(
+        frame_call_back,
+        &wayland_window.callback_listener,
+        data
+    );
+}
+
+void shell_ping(
+    [[maybe_unused]] void* data,
+    struct xdg_wm_base* shell,
+    uint32_t serial
+) {
+    xdg_wm_base_pong(shell, serial);
+}
+
+void keyboard_keymap(
+    [[maybe_unused]] void* data,
+    [[maybe_unused]] struct wl_keyboard* keyboard,
+    [[maybe_unused]] uint32_t format,
+    [[maybe_unused]] int32_t keymap_file_descriptor,
+    [[maybe_unused]] uint32_t size
+) {}
+
+void keyboard_enter(
+    void* data,
+    [[maybe_unused]] struct wl_keyboard* keyboard,
+    [[maybe_unused]] uint32_t serial,
+    [[maybe_unused]] struct wl_surface* surface,
+    [[maybe_unused]] struct wl_array* keys
+) {
+    WindowWaylandVulkan* wayland_window_data = (WindowWaylandVulkan*)data;
+    wayland_window_data->is_focused = true;
+}
+
+void keyboard_leave(
+    void* data,
+    [[maybe_unused]] struct wl_keyboard* keyboard,
+    [[maybe_unused]] uint32_t serial,
+    [[maybe_unused]] struct wl_surface* surface
+) {
+    WindowWaylandVulkan* wayland_window_data = (WindowWaylandVulkan*)data;
+    wayland_window_data->is_focused = false;
+}
+
+void push_event(EEvents event_type) {
+    G_E_EVENT.set_event(event_type);
+    INPUT_STACK.control_input(G_E_EVENT);
+}
+
+void keyboard_key(
+    [[maybe_unused]] void* data,
+    [[maybe_unused]] struct wl_keyboard* keyboard,
+    [[maybe_unused]] uint32_t serial,
+    [[maybe_unused]] uint32_t time,
+    uint32_t key,
+    uint32_t state
+) {
+    if (state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+        if (key == 1) {
+            push_event(EEvents::EGameLoopKill);
+        }
+        if (key == 17) {
+            push_event(EEvents::EMoveForward);
+        }
+        if (key == 31) {
+            push_event(EEvents::EMoveBackward);
+        }
+        if (key == 30) {
+            push_event(EEvents::EMoveLeft);
+        }
+        if (key == 32) {
+            push_event(EEvents::EMoveRight);
+        }
+        if (key == 57) {
+            push_event(EEvents::EJump);
+        }
+        if (key == 23) {
+            push_event(EEvents::EInventory);
+        }
+    }
+
+    if (state == WL_KEYBOARD_KEY_STATE_RELEASED) {
+        if (key == 17) {
+            push_event(EEvents::EKeyreleaseW);
+        }
+        if (key == 31) {
+            push_event(EEvents::EKeyreleaseS);
+        }
+        if (key == 30) {
+            push_event(EEvents::EKeyreleaseA);
+        }
+        if (key == 32) {
+            push_event(EEvents::EKeyreleaseD);
+        }
+        if (key == 57) {
+            push_event(EEvents::EKeyreleaseJump);
+        }
+        if (key == 23) {
+            push_event(EEvents::EInventoryRelease);
+        }
+    }
+}
+
+void keyboard_modifiers(
+    [[maybe_unused]] void* data,
+    [[maybe_unused]] struct wl_keyboard* keyboard,
+    [[maybe_unused]] uint32_t serial,
+    [[maybe_unused]] uint32_t mods_depressed,
+    [[maybe_unused]] uint32_t mods_latched,
+    [[maybe_unused]] uint32_t mods_locked,
+    [[maybe_unused]] uint32_t group
+) {}
+
+void keyboard_repeat_info(
+    [[maybe_unused]] void* data,
+    [[maybe_unused]] struct wl_keyboard* keyboard,
+    [[maybe_unused]] int32_t rate,
+    [[maybe_unused]] int32_t delay
+) {}
+
+void pointer_enter(
+    [[maybe_unused]] void* data,
+    [[maybe_unused]] struct wl_pointer* pointer,
+    [[maybe_unused]] uint32_t serial,
+    [[maybe_unused]] struct wl_surface* surface,
+    [[maybe_unused]] wl_fixed_t sx,
+    [[maybe_unused]] wl_fixed_t sy
+) {}
+
+void pointer_leave(
+    [[maybe_unused]] void* data,
+    [[maybe_unused]] struct wl_pointer* pointer,
+    [[maybe_unused]] uint32_t serial,
+    [[maybe_unused]] struct wl_surface* surface
+) {}
+
+void pointer_motion(
+    [[maybe_unused]] void* data,
+    [[maybe_unused]] struct wl_pointer* pointer,
+    [[maybe_unused]] uint32_t time,
+    [[maybe_unused]] wl_fixed_t sx,
+    [[maybe_unused]] wl_fixed_t sy
+) {}
+
+void pointer_axis(
+    [[maybe_unused]] void* data,
+    [[maybe_unused]] struct wl_pointer* pointer,
+    [[maybe_unused]] uint32_t time,
+    [[maybe_unused]] uint32_t axis,
+    [[maybe_unused]] wl_fixed_t value
+) {}
+
+void pointer_button(
+    [[maybe_unused]] void* data,
+    [[maybe_unused]] struct wl_pointer* pointer,
+    [[maybe_unused]] uint32_t serial,
+    [[maybe_unused]] uint32_t time,
+    uint32_t button,
+    uint32_t state
+) {
+    if (state == WL_POINTER_BUTTON_STATE_PRESSED && button == 272) {
+        push_event(EEvents::EMouseLeftButton);
+    }
+    if (state == WL_POINTER_BUTTON_STATE_RELEASED && button == 272) {
+        push_event(EEvents::EMouseLeftButtonRelease);
+        G_E_EVENT.is_left_mouse_button_released = true;
+    }
+    // Hide the cursor on first opportunity.
+    if (!wayland_window.hideAndLockPointer) {
+        wayland_window.hideAndLockPointer = true;
+        struct wl_buffer* transparent =
+            wayland_window.create_transparent_cursor(
+                wayland_window.pointer_shared_memory
+            );
+        wl_surface_attach(wayland_window.pointer_surface, transparent, 0, 0);
+        wl_surface_commit(wayland_window.pointer_surface);
+        wl_pointer_set_cursor(
+            pointer,
+            serial,
+            wayland_window.pointer_surface,
+            0,
+            0
+        );
+
+        if (!wayland_window.pointer_constraints) {
+            return;
+        }
+
+        // Lock pointer to the main window surface, not pointer_surface.
+        [[maybe_unused]] zwp_locked_pointer_v1* locked_pointer =
+            zwp_pointer_constraints_v1_lock_pointer(
+                wayland_window.pointer_constraints,
+                wayland_window.wl_surface,
+                pointer,
+                NULL,
+                ZWP_POINTER_CONSTRAINTS_V1_LIFETIME_PERSISTENT
+            );
+
+        // Get relative motion.
+        wayland_window.relative_pointer =
+            zwp_relative_pointer_manager_v1_get_relative_pointer(
+                wayland_window.relative_pointer_manager,
+                pointer
+            );
+        zwp_relative_pointer_v1_add_listener(
+            wayland_window.relative_pointer,
+            &wayland_window.relative_pointer_listener,
+            NULL
+        );
+    }
+}
+
+void handle_relative_motion(
+    [[maybe_unused]] void* data,
+    [[maybe_unused]] struct zwp_relative_pointer_v1* rel_pointer,
+    [[maybe_unused]] uint32_t utime_hi,
+    [[maybe_unused]] uint32_t utime_lo,
+    wl_fixed_t dx,
+    wl_fixed_t dy,
+    [[maybe_unused]] wl_fixed_t dx_unaccel,
+    [[maybe_unused]] wl_fixed_t dy_unaccel
+) {
+    X_POINTER = wl_fixed_to_int(dx);
+    Y_POINTER = wl_fixed_to_int(dy);
+}
+
+void seat_capabilities(
+    [[maybe_unused]] void* data,
+    struct wl_seat* seat,
+    uint32_t capabilities
+) {
+    if ((capabilities & WL_SEAT_CAPABILITY_POINTER)
+        && !wayland_window.pointer) {
+        wayland_window.pointer = wl_seat_get_pointer(seat);
+        wl_pointer_add_listener(
+            wayland_window.pointer,
+            &wayland_window.pointer_listener,
+            data
+        );
+    } else if (
+        !(capabilities & WL_SEAT_CAPABILITY_POINTER) && wayland_window.pointer
+    ) {
+        wl_pointer_destroy(wayland_window.pointer);
+        wayland_window.pointer = NULL;
+    }
+
+    if (capabilities & WL_SEAT_CAPABILITY_KEYBOARD
+        && !wayland_window.keyboard) {
+        wayland_window.keyboard = wl_seat_get_keyboard(seat);
+        wl_keyboard_add_listener(
+            wayland_window.keyboard,
+            &wayland_window.keyboard_listener,
+            data
+        );
+    }
+}
+
+void seat_name(
+    [[maybe_unused]] void* data,
+    [[maybe_unused]] struct wl_seat* seat,
+    [[maybe_unused]] const char* name
+) {}
+
+void output_geometry(
+    [[maybe_unused]] void* data,
+    [[maybe_unused]] struct wl_output* output,
+    [[maybe_unused]] int32_t x,
+    [[maybe_unused]] int32_t y,
+    [[maybe_unused]] int32_t physical_width,
+    [[maybe_unused]] int32_t physical_height,
+    [[maybe_unused]] int32_t subpixel,
+    [[maybe_unused]] const char* make,
+    [[maybe_unused]] const char* model,
+    [[maybe_unused]] int32_t transform
+) {}
+
+void output_mode(
+    void* data,
+    [[maybe_unused]] struct wl_output* output,
+    uint32_t flags,
+    int32_t width,
+    int32_t height,
+    [[maybe_unused]] int32_t refresh
+) {
+    if (flags & WL_OUTPUT_MODE_CURRENT) {
+        WindowWaylandVulkan* wayland_window_data = (WindowWaylandVulkan*)data;
+        wayland_window_data->width = width;
+        wayland_window_data->height = height;
+    }
+}
+
+void output_done(
+    [[maybe_unused]] void* data,
+    [[maybe_unused]] struct wl_output* output
+) {}
+
+void registry_global(
+    [[maybe_unused]] void* data,
+    struct wl_registry* registry,
+    uint32_t name,
+    const char* interface,
+    [[maybe_unused]] uint32_t version
+) {
+    if (!strcmp(interface, wl_compositor_interface.name)) {
+        wayland_window.compositor = (wl_compositor*)
+            wl_registry_bind(registry, name, &wl_compositor_interface, 4);
+    } else if (!strcmp(interface, wl_shm_interface.name)) {
+        wayland_window.shared_memory =
+            (wl_shm*)wl_registry_bind(registry, name, &wl_shm_interface, 1);
+        wayland_window.pointer_shared_memory =
+            (wl_shm*)wl_registry_bind(registry, name, &wl_shm_interface, 1);
+    } else if (!strcmp(interface, zwp_pointer_constraints_v1_interface.name)) {
+        wayland_window.pointer_constraints =
+            (zwp_pointer_constraints_v1*)wl_registry_bind(
+                registry,
+                name,
+                &zwp_pointer_constraints_v1_interface,
+                1
+            );
+    } else if (!strcmp(
+                   interface,
+                   zwp_relative_pointer_manager_v1_interface.name
+               )) {
+        wayland_window.relative_pointer_manager =
+            (zwp_relative_pointer_manager_v1*)wl_registry_bind(
+                registry,
+                name,
+                &zwp_relative_pointer_manager_v1_interface,
+                1
+            );
+    } else if (!strcmp(interface, xdg_wm_base_interface.name)) {
+        wayland_window.xdg_shell = (xdg_wm_base*)
+            wl_registry_bind(registry, name, &xdg_wm_base_interface, 1);
+        xdg_wm_base_add_listener(
+            wayland_window.xdg_shell,
+            &wayland_window.shell_listener,
+            0
+        );
+    } else if (!strcmp(interface, wl_seat_interface.name)) {
+        wayland_window.seat =
+            (wl_seat*)wl_registry_bind(registry, name, &wl_seat_interface, 1);
+        wl_seat_add_listener(
+            wayland_window.seat,
+            &wayland_window.seat_lintener,
+            data
+        );
+    } else if (!strcmp(interface, wl_output_interface.name)) {
+        struct wl_output* output = (wl_output*)
+            wl_registry_bind(registry, name, &wl_output_interface, 1);
+        wl_output_add_listener(output, &wayland_window.output_listener, data);
+    }
+}
+
+void registry_global_remove(
+    [[maybe_unused]] void* data,
+    [[maybe_unused]] struct wl_registry* registry,
+    [[maybe_unused]] uint32_t name
+) {}
+
+int32_t alocate_shared_memory(uint64_t size) {
+    char name[8];
+    name[0] = '/';
+    name[7] = 0;
+    for (int8_t i = 1; i < 6; ++i) {
+        name[i] = (rand() & 23) + 97;
+    }
+    int32_t file_descriptor = shm_open(
+        name,
+        O_RDWR | O_CREAT | O_EXCL,
+        S_IWUSR | S_IRUSR | S_IWOTH | S_IROTH
+    );
+    shm_unlink(name);
+    [[maybe_unused]] int result = ftruncate(file_descriptor, size);
+
+    return file_descriptor;
+}
+
+void resize(void* data) {
+    // Rendering goes through the Vulkan swapchain; the CPU shm buffer path is
+    // not used. ponytail: drop pixels/buffer members if nothing revives it.
+}
+
+void xdg_toplevel_configure(
+    [[maybe_unused]] void* data,
+    [[maybe_unused]] struct xdg_toplevel* xdg_toplevel,
+    int32_t new_width,
+    int32_t new_height,
+    [[maybe_unused]] struct wl_array* atate
+) {
+    if (!new_width && !new_height) {
+        return;
+    }
+
+    WindowWaylandVulkan* toplevel_data = (WindowWaylandVulkan*)data;
+
+    if (toplevel_data->width != new_width
+        || toplevel_data->height != new_height) {
+        toplevel_data->width = new_width;
+        toplevel_data->height = new_height;
+        resize(data);
+    }
+}
+
+void xdg_toplevel_close(
+    [[maybe_unused]] void* data,
+    [[maybe_unused]] struct xdg_toplevel* xdg_toplevel
+) {
+    WindowWaylandVulkan* toplevel_data = (WindowWaylandVulkan*)data;
+
+    toplevel_data->close_xdg_toplevel = 1;
+}
+
+WindowWaylandVulkan::WindowWaylandVulkan() {}
+
+void WindowWaylandVulkan::init() {
+    display = wl_display_connect(0);
+    registry = wl_display_get_registry(display);
+    wl_registry_add_listener(
+        registry,
+        &registry_listener,
+        (void*)(&wayland_window)
+    );
+    wl_display_roundtrip(display);
+    if (!compositor || !xdg_shell) {
+        fprintf(stderr, "Error: compositor or xdg_shell is NULL!\n");
+        exit(1);
+    }
+    wl_surface = wl_compositor_create_surface(compositor);
+    pointer_surface = wl_compositor_create_surface(compositor);
+    frame_callback = wl_surface_frame(wl_surface);
+    wl_callback_add_listener(
+        frame_callback,
+        &callback_listener,
+        (void*)(&wayland_window)
+    );
+    xdg_surface = xdg_wm_base_get_xdg_surface(xdg_shell, wl_surface);
+    xdg_surface_add_listener(
+        xdg_surface,
+        &xdg_surface_listener,
+        (void*)(&wayland_window)
+    );
+    xdg_topLevel = xdg_surface_get_toplevel(xdg_surface);
+    xdg_toplevel_add_listener(
+        xdg_topLevel,
+        &xdg_toplevel_listener,
+        (void*)(&wayland_window)
+    );
+    xdg_toplevel_set_title(xdg_topLevel, "wayland glvm client");
+    wl_surface_commit(wl_surface);
+}
+
+bool WindowWaylandVulkan::handle_event([[maybe_unused]] CEvent& event) {
+    event.mouse_pointer_position.position_x = X_POINTER;
+    event.mouse_pointer_position.position_y = Y_POINTER;
+    X_POINTER = 0;
+    Y_POINTER = 0;
+    wl_display_dispatch(display);
+    return close_xdg_toplevel != 0;
+}
+
+// Create transparent cursor.
+struct wl_buffer* WindowWaylandVulkan::create_transparent_cursor(
+    [[maybe_unused]] struct wl_shm* shm
+) {
+    int size = 4 * 64 * 64; // 64x64 RGBA cursor (common size).
+    int32_t file_descriptor = alocate_shared_memory(size);
+    void* data =
+        mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, file_descriptor, 0);
+
+    // Fill with transparent pixels.
+    for (int i = 0; i < 64 * 64; ++i) {
+        ((int*)data)[i] = 0x00000000;
+    }
+
+    struct wl_shm_pool* pool = wl_shm_create_pool(shm, file_descriptor, size);
+    struct wl_buffer* cursor_buffer = wl_shm_pool_create_buffer(
+        pool,
+        0,
+        64,
+        64,
+        64 * 4,
+        WL_SHM_FORMAT_ARGB8888
+    );
+
+    munmap(data, size);
+    ::close(file_descriptor);
+    wl_shm_pool_destroy(pool);
+
+    return cursor_buffer;
+}
+
+void WindowWaylandVulkan::swap_buffers() {}
+
+void WindowWaylandVulkan::clear_display() {}
+
+void WindowWaylandVulkan::cursor_lock(
+    [[maybe_unused]] int pointer_x,
+    [[maybe_unused]] int pointer_y,
+    [[maybe_unused]] int* out_offset_x,
+    [[maybe_unused]] int* out_offset_y
+) {
+    static int flag = 0;
+    if (flag == 0) {
+        *out_offset_x = -((int)width / 2);
+        *out_offset_y = -((int)height / 2);
+        ++flag;
+    } else {
+        *out_offset_x = pointer_x;
+        *out_offset_y = pointer_y;
+    }
+};
+
+void WindowWaylandVulkan::close() {
+    if (keyboard) {
+        wl_keyboard_destroy(keyboard);
+    }
+    // Release the Wayland seat object responsible for managing input devices.
+    wl_seat_release(seat);
+    if (buffer) {
+        wl_buffer_destroy(buffer);
+    }
+    xdg_toplevel_destroy(xdg_topLevel);
+    xdg_surface_destroy(xdg_surface);
+    wl_surface_destroy(wl_surface);
+    wl_display_disconnect(display);
+}
+
+WindowWaylandVulkan* initialize_wayland_window() {
+    wayland_window.xdg_toplevel_listener = {
+        .configure = xdg_toplevel_configure,
+        .close = xdg_toplevel_close,
+        .configure_bounds = nullptr,
+        .wm_capabilities = nullptr
+    };
+    wayland_window.xdg_surface_listener = {.configure = xdg_surface_configure};
+    wayland_window.callback_listener = {
+        // Notify the client when the related request is done.
+        .done = new_frame_callback
+    };
+    wayland_window.shell_listener = {.ping = shell_ping};
+    wayland_window.output_listener =
+        {.geometry = output_geometry, .mode = output_mode, .done = output_done};
+    wayland_window.keyboard_listener = {
+        .keymap = keyboard_keymap,
+        .enter = keyboard_enter,
+        .leave = keyboard_leave,
+        .key = keyboard_key,
+        .modifiers = keyboard_modifiers,
+        .repeat_info = keyboard_repeat_info
+    };
+
+    wayland_window.relative_pointer_listener = {
+        .relative_motion = handle_relative_motion
+    };
+    wayland_window.pointer_listener = {
+        .enter = pointer_enter,
+        .leave = pointer_leave,
+        .motion = pointer_motion,
+        .button = pointer_button,
+        .axis = pointer_axis,
+        .frame = nullptr,
+        .axis_source = nullptr,
+        .axis_stop = nullptr,
+        .axis_discrete = nullptr,
+        .axis_value120 = nullptr,
+        .axis_relative_direction = nullptr
+    };
+    wayland_window.seat_lintener = {
+        .capabilities = seat_capabilities,
+        .name = seat_name
+    };
+    wayland_window.registry_listener = {
+        .global = registry_global,
+        .global_remove = registry_global_remove
+    };
+
+    wayland_window.init();
+    return &wayland_window;
+}
+} // namespace glvm
+#endif // __linux__

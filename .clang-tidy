@@ -38,12 +38,13 @@ SystemHeaders: false
 HeaderFilterRegex: '^(?!.*build[\\/]_deps).*\.hpp$'
 UseColor: true
 CheckOptions:
+  readability-identifier-naming.MacroDefinitionIgnoredRegexp: '^(VK_|WIN32_|NOGDI|NOMINMAX|_WIN32|_MSC_VER)'
   readability-identifier-naming.ConstexprFunctionCase: lower_case
   readability-identifier-naming.ConstexprFunctionIgnoredRegexp: '^(Some|Ok|Err)$'
   readability-identifier-naming.FunctionCase: lower_case
-  readability-identifier-naming.FunctionIgnoredRegexp: '^(Some|Ok|Err)$'
+  readability-identifier-naming.FunctionIgnoredRegexp: '^(Some|Ok|Err|ImGui_|vk[A-Z]|glfw[A-Z])'
   readability-identifier-naming.GlobalFunctionCase: lower_case
-  readability-identifier-naming.GlobalFunctionIgnoredRegexp: '^(Some|Ok|Err)$'
+  readability-identifier-naming.GlobalFunctionIgnoredRegexp: '^(Some|Ok|Err|ImGui_|vk[A-Z]|glfw[A-Z])'
 
   readability-identifier-naming.ConceptCase: CamelCase
 
