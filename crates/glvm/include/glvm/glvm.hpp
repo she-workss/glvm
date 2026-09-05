@@ -320,7 +320,7 @@ struct Attack {
 } // namespace glvm
 
 namespace glvm {
-class Collider {
+struct Collider {
 public:
     Vec<u32> colliders;
 };
@@ -412,7 +412,7 @@ struct Physics {
 }; // namespace glvm
 
 namespace glvm {
-class Projectile {
+struct Projectile {
 public:
     u32 owner;
     bool b_collision_status = false;
@@ -456,7 +456,7 @@ constexpr i32 BOX_INDICES_FOR_INDEX_BUFFER[36] = {0, 1, 2, 3, 0, 2, 4, 0, 3,
 
 namespace glvm {
 
-class CStack;
+struct CStack;
 
 enum EEvents {
     EDefault,
@@ -499,7 +499,8 @@ struct SMousePointerPosition {
     f32 yaw;
 };
 
-class CEvent {
+struct CEvent {
+private:
     EEvents e_event;
     EEvents next_event;
 
@@ -520,7 +521,7 @@ public:
 } // namespace glvm
 
 namespace glvm {
-class IChrono {
+struct IChrono {
 public:
     virtual ~IChrono() {
     }
@@ -1063,7 +1064,7 @@ struct Texture {
 };
 } // namespace glvm
 
-class ThreadPool {
+struct ThreadPool {
 public:
     explicit ThreadPool(usize num_threads);
     ~ThreadPool();
@@ -1071,7 +1072,7 @@ public:
     ThreadPool(const ThreadPool&) = delete;
     ThreadPool& operator=(const ThreadPool&) = delete;
 
-    template<class F, class... Args>
+    template<typename F, typename... Args>
     auto enqueue(F&& f, Args&&... args)
         -> std::future<typename std::invoke_result_t<F, Args...>>;
 
@@ -1084,7 +1085,7 @@ private:
     bool stop;
 };
 
-template<class F, class... Args>
+template<typename F, typename... Args>
 auto ThreadPool::enqueue(F&& f, Args&&... args)
     -> std::future<typename std::invoke_result_t<F, Args...>> {
     auto task = std::make_shared<
@@ -1115,7 +1116,7 @@ auto ThreadPool::enqueue(F&& f, Args&&... args)
 #include "xdg-shell-client-protocol.h"
 #endif // __linux__
 
-template<class T>
+template<typename T>
 struct Point2D {
     T x;
     T y;
@@ -1137,11 +1138,12 @@ T clamp(T lower_threshold, T target_value, T upper_threshold) {
     return target_value;
 }
 
-template<class T2, i32 Var2>
-class Vector;
+template<typename T2, i32 Var2>
+struct Vector;
 
-template<class T, i32 Var>
-class Matrix {
+template<typename T, i32 Var>
+struct Matrix {
+private:
     T m_matrix[Var][Var] {};
 
 public:
@@ -1209,11 +1211,11 @@ public:
     Matrix<T, Var> operator*(const Matrix& matrix);
     T* operator[](const i32 index);
     const T* operator[](const i32 index) const;
-    template<class T2, i32 Var2>
+    template<typename T2, i32 Var2>
     Vector<T2, Var2> operator*(const Vector<T2, Var2>& vector);
 };
 
-template<class T, i32 Var>
+template<typename T, i32 Var>
 Matrix<T, Var> Matrix<T, Var>::operator+(const Matrix& matrix) {
     Matrix<T, Var> temp_matrix;
     for (i32 i = 0; i < Var; ++i) {
@@ -1225,7 +1227,7 @@ Matrix<T, Var> Matrix<T, Var>::operator+(const Matrix& matrix) {
     return temp_matrix;
 }
 
-template<class T, i32 Var>
+template<typename T, i32 Var>
 Matrix<T, Var> Matrix<T, Var>::operator*(const T scalar) {
     Matrix<T, Var> temp_matrix;
     for (i32 i = 0; i < Var; ++i) {
@@ -1237,7 +1239,7 @@ Matrix<T, Var> Matrix<T, Var>::operator*(const T scalar) {
     return temp_matrix;
 }
 
-template<class T, i32 Var>
+template<typename T, i32 Var>
 Matrix<T, Var> Matrix<T, Var>::operator*(const Matrix& matrix) {
     Matrix<T, Var> temp_matrix;
     for (i32 i = 0; i < Var; ++i) {
@@ -1251,18 +1253,18 @@ Matrix<T, Var> Matrix<T, Var>::operator*(const Matrix& matrix) {
     return temp_matrix;
 }
 
-template<class T, i32 Var>
+template<typename T, i32 Var>
 T* Matrix<T, Var>::operator[](const i32 index) {
     return m_matrix[index];
 }
 
-template<class T, i32 Var>
+template<typename T, i32 Var>
 const T* Matrix<T, Var>::operator[](const i32 index) const {
     return m_matrix[index];
 }
 
-template<class T, i32 Var>
-template<class T2, i32 Var2>
+template<typename T, i32 Var>
+template<typename T2, i32 Var2>
 Vector<T2, Var2> Matrix<T, Var>::operator*(const Vector<T2, Var2>& vector) {
     static_assert(Var == Var2, "Size error");
     Vector<T2, Var2> temp_vector;
@@ -1274,8 +1276,8 @@ Vector<T2, Var2> Matrix<T, Var>::operator*(const Vector<T2, Var2>& vector) {
     return temp_vector;
 }
 
-template<class T2, i32 Dim>
-class Vector {
+template<typename T2, i32 Dim>
+struct Vector {
 public:
     T2 m_vector[Dim] {};
 
@@ -1289,7 +1291,7 @@ public:
 
     T2& operator[](const i32 index);
     const T2& operator[](const i32 index) const;
-    template<class T, i32 Dim2>
+    template<typename T, i32 Dim2>
     Vector<T2, Dim> operator*(const Matrix<T, Dim2>& matrix);
     Vector<T2, Dim> operator*(const Vector<T2, Dim>& other);
     Vector<T2, Dim> operator*=(const Vector<T2, Dim>& other);
@@ -1302,7 +1304,7 @@ public:
     T2 length() const;
 };
 
-template<class T2, i32 Var2>
+template<typename T2, i32 Var2>
 T2 Vector<T2, Var2>::length() const {
     return std::sqrt(
         m_vector[0] * m_vector[0] + m_vector[1] * m_vector[1]
@@ -1310,7 +1312,7 @@ T2 Vector<T2, Var2>::length() const {
     );
 }
 
-template<class T2, i32 Var2>
+template<typename T2, i32 Var2>
 Vector<T2, Var2> Vector<T2, Var2>::operator-() {
     Vector<T2, Var2> temp_vector;
     for (i32 i = 0; i < Var2; ++i) {
@@ -1320,18 +1322,18 @@ Vector<T2, Var2> Vector<T2, Var2>::operator-() {
     return temp_vector;
 }
 
-template<class T2, i32 Var2>
+template<typename T2, i32 Var2>
 T2& Vector<T2, Var2>::operator[](const i32 index) {
     return m_vector[index];
 }
 
-template<class T2, i32 Var2>
+template<typename T2, i32 Var2>
 const T2& Vector<T2, Var2>::operator[](const i32 index) const {
     return m_vector[index];
 }
 
-template<class T2, i32 Var2>
-template<class T, i32 Var>
+template<typename T2, i32 Var2>
+template<typename T, i32 Var>
 Vector<T2, Var2> Vector<T2, Var2>::operator*(const Matrix<T, Var>& matrix) {
     static_assert(Var == Var2, "Size error");
     Vector<T2, Var2> temp_vector;
@@ -1700,7 +1702,7 @@ Matrix<T, 4> inverse_matrix_4x4(Matrix<T, 4> matrix) {
     return inverse_matrix;
 }
 
-template<class T, class T2, i32 Var, i32 Var2>
+template<typename T, typename T2, i32 Var, i32 Var2>
 Matrix<T, Var> look_at(Matrix<T, Var> matrix, Vector<T2, Var2> vector) {
     Matrix<T, Var> temp_matrix(1.0f);
     temp_matrix = matrix;
@@ -1713,7 +1715,7 @@ Matrix<T, Var> look_at(Matrix<T, Var> matrix, Vector<T2, Var2> vector) {
     return temp_matrix;
 }
 
-template<class T, class T2, i32 Var, i32 Var2>
+template<typename T, typename T2, i32 Var, i32 Var2>
 Matrix<T, Var> translate(Matrix<T, Var> matrix, Vector<T2, Var2> vector) {
     Matrix<T, Var> temp_matrix(1.0f);
     temp_matrix = matrix;
@@ -1723,7 +1725,7 @@ Matrix<T, Var> translate(Matrix<T, Var> matrix, Vector<T2, Var2> vector) {
     return temp_matrix;
 }
 
-template<class T, class T2, i32 Var, i32 Var2>
+template<typename T, typename T2, i32 Var, i32 Var2>
 Matrix<T, Var> scale(Matrix<T, Var> matrix, Vector<T2, Var2> vector) {
     Matrix<T, Var> temp_matrix;
     temp_matrix = matrix;
@@ -1735,7 +1737,7 @@ Matrix<T, Var> scale(Matrix<T, Var> matrix, Vector<T2, Var2> vector) {
     return temp_matrix;
 }
 
-template<class T, i32 Var>
+template<typename T, i32 Var>
 Matrix<T, Var> rotate_z(Matrix<T, Var> matrix, f32 angle) {
     Matrix<T, Var> temp_matrix(1.0f);
     temp_matrix[0][0] = std::cos(angle * PI / 180);
@@ -1893,7 +1895,7 @@ Matrix<T, 4> fps_view_rh(Vector<T, 3> eye, f32 pitch_deg, f32 yaw_deg) {
     return t_view;
 }
 
-template<class T, i32 Var, i32 VecSize>
+template<typename T, i32 Var, i32 VecSize>
 Matrix<T, Var> rotate(Vector<T, VecSize> vector, f32 angle) {
     vector = (normalize(vector));
     Matrix<T, Var> temp_matrix(1.0f);
@@ -1932,7 +1934,7 @@ Matrix<T, Var> rotate(Vector<T, VecSize> vector, f32 angle) {
     return temp_matrix;
 }
 
-template<class T, i32 Var>
+template<typename T, i32 Var>
 Matrix<T, Var> ortho(f32 w, f32 h, f32 zn, f32 zf) {
     Matrix<T, Var> temp_matrix(1.0f);
     temp_matrix[0][0] = 2 / w;
@@ -1941,7 +1943,7 @@ Matrix<T, Var> ortho(f32 w, f32 h, f32 zn, f32 zf) {
     return temp_matrix;
 }
 
-template<class T>
+template<typename T>
 Matrix<T, 4> ortho_rh_zo(
     T left,
     T right,
@@ -1961,12 +1963,12 @@ Matrix<T, 4> ortho_rh_zo(
     return temp_matrix;
 }
 
-template<class T>
+template<typename T>
 Matrix<T, 4> ortho(T left, T right, T bottom, T top, T near_plane, T far_plane) {
     return ortho_rh_zo<T>(left, right, bottom, top, near_plane, far_plane);
 }
 
-template<class T, i32 Var>
+template<typename T, i32 Var>
 Matrix<T, Var> perspective_rh_zo(T fov, T aspect, T near_plane, T far_plane) {
     const auto tan_half_fov = std::tan((fov * 0.5f) * (PI / 360));
     Matrix<f32, Var> temp_matrix(static_cast<T>(0));
@@ -1978,7 +1980,7 @@ Matrix<T, Var> perspective_rh_zo(T fov, T aspect, T near_plane, T far_plane) {
     return temp_matrix;
 }
 
-template<class T, i32 Var>
+template<typename T, i32 Var>
 Matrix<T, Var> perspective(
     const T fov,
     const T aspect,
@@ -2084,7 +2086,7 @@ inline Quaternion euler_to_quaternion(
     return q;
 }
 
-template<class T, i32 Var>
+template<typename T, i32 Var>
 Matrix<T, Var> rotate_quaternion(Quaternion quaternion) {
     Matrix<f32, 4> result(0.0f);
 
@@ -2124,7 +2126,8 @@ Matrix<T, Var> rotate_quaternion(Quaternion quaternion) {
 }
 
 namespace glvm {
-class SVertex {
+struct SVertex {
+private:
     f32 x;
     f32 y;
     f32 z;
@@ -2144,7 +2147,8 @@ public:
     }
 };
 
-class SFace {
+struct SFace {
+private:
     Vec<i32> vertex_index;
     Vec<i32> texture_index;
     Vec<i32> normal_index;
@@ -2177,7 +2181,8 @@ public:
     }
 };
 
-class CWaveFrontObjParser {
+struct CWaveFrontObjParser {
+private:
     Vec<SVertex> coordinate_vertices;
     Vec<SVertex> texture_vertices;
     Vec<SVertex> normals;
@@ -2211,7 +2216,7 @@ public:
 } // namespace glvm
 
 namespace glvm {
-class Inventory {
+struct Inventory {
 public:
     Inventory() {
         for (u32 i = 0; i < row; ++i) {
@@ -2263,7 +2268,8 @@ public:
 }; // namespace glvm
 
 namespace glvm {
-class MeshManager {
+struct MeshManager {
+private:
     static MeshManager* p_instance;
     static Mutex mutex;
 
@@ -2274,7 +2280,7 @@ public:
     Vec<const char*> paths_array;
     Vec<const char*> paths_gltf;
 
-    // It possibly to get only one instance of this class with this method.
+    // It possibly to get only one instance of this struct with this method.
     static MeshManager* get_instance();
     void set_mesh(const char* mesh_path);
     void set_mesh_gltf(const char* path_to_mesh);
@@ -2282,7 +2288,8 @@ public:
 } // namespace glvm
 
 namespace glvm {
-class CStack {
+struct CStack {
+private:
     i32 i_head = 0;
     static const auto i_stack_range = 6;
     EEvents a_stack[i_stack_range] = {};
@@ -2418,7 +2425,7 @@ public:
 
 namespace glvm {
 
-class IWindow {
+struct IWindow {
 public:
     // Window keyboard focus, updated by each backend.
     bool is_focused = true;
@@ -2440,7 +2447,7 @@ public:
 } // namespace glvm
 
 namespace glvm {
-class CTimerCreator {
+struct CTimerCreator {
 public:
     ~CTimerCreator() {
     }
@@ -2452,7 +2459,8 @@ public:
 #ifdef __linux__
 
 namespace glvm {
-class CTimerX: public IChrono {
+struct CTimerX: public IChrono {
+private:
     timespec start_;
     timespec now_;
     f64 frequency_;
@@ -2472,7 +2480,8 @@ public:
 #ifdef _WIN32
 
 namespace glvm {
-class CTimerWin: public IChrono {
+struct CTimerWin: public IChrono {
+private:
     __int64 i64_freq;
     __int64 i64_start;
     __int64 i64_now;
@@ -2501,7 +2510,7 @@ struct CSoundSample {
     f32 volume;
 };
 
-class ISoundEngine {
+struct ISoundEngine {
 public:
     virtual ~ISoundEngine() {
     }
@@ -2593,7 +2602,7 @@ struct PointLightComponent {
 } // namespace glvm
 
 namespace glvm {
-class RigidBody {
+struct RigidBody {
 public:
     f32 f_mass = 0.0f;
     f32 jump_accumulator = 0.0f;
@@ -2858,7 +2867,8 @@ struct JsonValue {
     }
 };
 
-class CJsonParser {
+struct CJsonParser {
+private:
     String s_json_file_data;
     const char* p_json_file_data;
     char current_char;
@@ -3083,7 +3093,8 @@ struct alignas(64) SdfUbo {
 
 namespace glvm {
 
-class WindowWinVulkan: public IWindow {
+struct WindowWinVulkan: public IWindow {
+private:
     HWND p_classic_window;
     HDC p_classic_dc;
     HGLRC p_classic_context;
@@ -3131,7 +3142,8 @@ public:
 #ifdef __linux__
 
 namespace glvm {
-class CSoundEngineAlsa: public ISoundEngine {
+struct CSoundEngineAlsa: public ISoundEngine {
+private:
     snd_pcm_t* pcm_;
     Vec<CSoundSample*> sound_container;
 
@@ -3155,7 +3167,7 @@ public:
 #endif // __linux__
 
 namespace glvm {
-class CSoundEngineFactory {
+struct CSoundEngineFactory {
 public:
     ISoundEngine* create_sound_engine();
 };
@@ -3164,7 +3176,8 @@ public:
 
 #ifdef _WIN32
 namespace glvm {
-class CSoundEngineWaveform: public ISoundEngine {
+struct CSoundEngineWaveform: public ISoundEngine {
+private:
     HANDLE h_data = NULL;
     HPSTR lp_data = NULL;
 
@@ -3196,7 +3209,8 @@ struct ProjectileBundle {
 }; // namespace glvm
 
 namespace glvm {
-class TextureManager {
+struct TextureManager {
+private:
     static TextureManager* p_instance;
     static Mutex mutex;
 
@@ -3206,7 +3220,7 @@ public:
     TextureManager();
 
     void set_texture_vector(Vec<Texture> textures);
-    // It possibly to get only one instance of this class with this method.
+    // It possibly to get only one instance of this struct with this method.
     static TextureManager* get_instance();
     static TextureManager* get_hud_instance();
     void bind_texture(u32 entity_id, u32 texture_id);
@@ -3217,7 +3231,8 @@ public:
 } // namespace glvm
 
 namespace glvm {
-class ComponentManager {
+struct ComponentManager {
+private:
     static ComponentManager* p_instance;
     static Mutex mutex;
     u32 number_of_base_components;
@@ -3270,7 +3285,7 @@ public:
     ComponentManager(ComponentManager& component_manager) = delete;
     // Don't need assignment operator because of singleton property.
     void operator=(const ComponentManager& component_manager) = delete;
-    // It possibly to get only one instance of this class with this method.
+    // It possibly to get only one instance of this struct with this method.
     static ComponentManager* get_instance();
 
     template<typename ComponentType>
@@ -3873,7 +3888,7 @@ public: // TODO: Delete this.
     EntityManager(EntityManager& entity_manager) = delete;
     // Don't need assignment operator because of singleton property.
     void operator=(const EntityManager& entity_manager) = delete;
-    // It possibly to get only one instance of this class with this method.
+    // It possibly to get only one instance of this struct with this method.
     static EntityManager* get_instance();
     [[nodiscard]] u32 create_entity();
     void remove_entity(u32& entity_id, ComponentManager* component_manager);
@@ -3910,7 +3925,8 @@ extern Vec<Descriptor> GPU_DESCRIPTORS;
 namespace glvm {
 enum DeactivatedSystems { DeactivatedMovementSystem };
 
-class CSystemManager: public ISystem {
+struct CSystemManager: public ISystem {
+private:
     static CSystemManager* p_instance;
     static Mutex mutex;
     Vec<DeactivatedSystems> deactivated_systems;
@@ -3923,7 +3939,7 @@ public:
     CSystemManager(CSystemManager& other) = delete;
     // Don't need assignment operator because of singleton property.
     void operator=(const CSystemManager& other) = delete;
-    // It possibly to get only one instance of this class whith this method.
+    // It possibly to get only one instance of this struct whith this method.
     static CSystemManager* get_instance();
 
     inline static u32 s_i_system_id = 0;
@@ -3938,7 +3954,7 @@ public:
 } // namespace glvm
 
 namespace glvm {
-class DamageSystem: public ISystem {
+struct DamageSystem: public ISystem {
 public:
     void update() override;
 
@@ -3969,7 +3985,7 @@ public:
 } // namespace glvm
 
 namespace glvm {
-class CPhysicsSystem: public ISystem {
+struct CPhysicsSystem: public ISystem {
 public:
     f32 f_acceleration_of_gravity;
     f32 f_delta_time;
@@ -4809,7 +4825,8 @@ void registry_global_remove(void* data, struct wl_registry* registry, u32 name);
 #ifdef __linux__
 
 namespace glvm {
-class WindowXVulkan: public IWindow {
+struct WindowXVulkan: public IWindow {
+private:
     XWindowAttributes x_window_attributes;
     Window root_window;
     XSetWindowAttributes set_window_attributes;
@@ -4842,7 +4859,8 @@ public:
 #ifdef __linux__
 
 namespace glvm {
-class WindowXCBVulkan: public IWindow {
+struct WindowXCBVulkan: public IWindow {
+private:
     xcb_connection_t* connection;
     xcb_screen_t* screen;
     u32 window;
@@ -4877,14 +4895,14 @@ public:
 #endif // __linux__
 
 namespace glvm {
-class CVulkanRenderer;
+struct CVulkanRenderer;
 
 struct DebugVertex {
     f32 x, y, z;
     f32 r, g, b;
 };
 
-class ImGuiOverlay {
+struct ImGuiOverlay {
 public:
     explicit ImGuiOverlay(CVulkanRenderer& renderer);
 
@@ -6234,7 +6252,7 @@ private:
 }; // namespace glvm
 
 namespace glvm {
-class InventorySystem: public ISystem {
+struct InventorySystem: public ISystem {
 public:
     u32 crosshair_archetypes_number = 0;
     u32 inventory_archetypes_number = 0;
@@ -6386,7 +6404,7 @@ struct SwapChainSupportDetails {
     Vec<VkPresentModeKHR> present_modes;
 };
 
-class CVulkanRenderer {
+struct CVulkanRenderer {
 public:
     bool print = true;
     Vector<i32, 4> indirect_texture
@@ -7013,7 +7031,7 @@ void create_projectile(
 }; // namespace glvm
 
 namespace glvm {
-class CMovementSystem: public ISystem {
+struct CMovementSystem: public ISystem {
 public:
     f32 delta_frame_time;
     f32 gravity;
@@ -7059,7 +7077,7 @@ public:
 } // namespace glvm
 
 namespace glvm {
-class ProceduralLevelGeneratingSystem: public ISystem {
+struct ProceduralLevelGeneratingSystem: public ISystem {
 public:
     u32 level_nubmer = 0;
     bool bredo_flag = false;
@@ -7144,7 +7162,7 @@ public:
 } // namespace glvm
 
 namespace glvm {
-class CCollisionSystem: public ISystem {
+struct CCollisionSystem: public ISystem {
 public:
     f32 f_delta_time;
     f32 gravity;
@@ -7188,7 +7206,7 @@ public:
 } // namespace glvm
 
 namespace glvm {
-class EnemySystem: public ISystem {
+struct EnemySystem: public ISystem {
 public:
     u32 player_archetypes_number = 0;
     u32 enemy_archetypes_number = 0;
@@ -7236,7 +7254,7 @@ concept HasAttack = requires(T* t) {
     { t->attacks };
 };
 
-class CProjectileSystem: public ISystem {
+struct CProjectileSystem: public ISystem {
 public:
     f32 f_yaw = -90.0f;
     f32 f_pitch = 0.0f;
@@ -7299,7 +7317,8 @@ void CProjectileSystem::mark_as_attacked(
 
 namespace glvm {
 
-class SpatialGridSystem: public ISystem {
+struct SpatialGridSystem: public ISystem {
+private:
     Archetype* cached_archetypes[32];
     u32 cached_archetypes_number = 0;
     bool is_initialized = false;
@@ -7322,7 +7341,8 @@ class SpatialGridSystem: public ISystem {
 namespace glvm {
 enum RendererType { VulkanRenderer };
 
-class Engine {
+struct Engine {
+private:
     static Engine* p_instance;
     static Mutex mutex;
 
@@ -7473,7 +7493,7 @@ public:
     Engine(Engine& other) = delete;
     // Don't need assignment operator because of singleton property.
     void operator=(const Engine& other) = delete;
-    // It possibly to get only one instance of this class with this method.
+    // It possibly to get only one instance of this struct with this method.
     static Engine* get_instance();
     void game_loop();
     void event_queue_flush();

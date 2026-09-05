@@ -5,7 +5,7 @@
 namespace glvm_log {
 using namespace rusty::prelude;
 
-enum class LogLevel : u8 {
+enum struct LogLevel : u8 {
     Trace = 0,
     Debug = 1,
     Info = 2,

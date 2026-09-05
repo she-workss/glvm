@@ -13372,7 +13372,7 @@ WindowWinVulkan::WindowWinVulkan() {
     instance = this;
     const char* title = "Game";
     i32 window_width = width / 2, window_height = height / 2;
-    // Register the window class for the main window.
+    // Register the window struct for the main window.
     window_class.style = 0;
     window_class.lpfnWndProc = main_wnd_proc;
     window_class.cbClsExtra = 0;

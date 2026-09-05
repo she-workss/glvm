@@ -5,7 +5,7 @@
 namespace glvm_log {
 using namespace rusty::prelude;
 
-enum class LogTimestamp : u8 {
+enum struct LogTimestamp : u8 {
     None,
     SystemTime,
     Uptime,
