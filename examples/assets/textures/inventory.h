@@ -1,2 +1,8 @@
-extern unsigned char inventory_dat[];
-extern unsigned int inventory_dat_len;
+#include "rusty/prelude.hpp"
+
+using namespace rusty::prelude;
+
+#include "rusty/prelude.hpp"
+
+extern u8 inventory_dat[];
+extern u32 inventory_dat_len;

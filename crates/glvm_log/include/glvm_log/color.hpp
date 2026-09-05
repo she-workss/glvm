@@ -37,7 +37,7 @@ inline constexpr str MAGENTA = "\x1b[95m";
 
 #ifdef _WIN32
 inline auto enable_windows_vt() -> void {
-    static std::atomic<bool> DONE {false};
+    static AtomicBool DONE {false};
     if (DONE.load(std::memory_order_relaxed)) {
         return;
     }

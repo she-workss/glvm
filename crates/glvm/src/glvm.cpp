@@ -62,22 +62,20 @@ constexpr auto VK_I = 0x49;
 #endif
 
 namespace glvm {
-auto matches_required_mask(
-    const uint64_t archetype_mask,
-    const uint64_t& system_mask
-) -> bool {
+auto matches_required_mask(const u64 archetype_mask, const u64& system_mask)
+    -> bool {
     return (archetype_mask & system_mask) == system_mask;
 }
 
-auto make_entity(uint32_t id, uint32_t generation) -> uint64_t {
-    return ((uint64_t)generation << ENTITY_ID_BITS) | id;
+auto make_entity(u32 id, u32 generation) -> u64 {
+    return ((u64)generation << ENTITY_ID_BITS) | id;
 }
 
-auto get_id(uint64_t entity) -> uint32_t {
+auto get_id(u64 entity) -> u32 {
     return entity & ENTITY_BITS_MASK;
 }
 
-auto get_gen(uint64_t entity) -> uint32_t {
+auto get_gen(u64 entity) -> u32 {
     return entity >> ENTITY_ID_BITS;
 }
 }; // namespace glvm
@@ -91,20 +89,20 @@ World::World() {
         && spatial_grid.depth > 0
     );
 
-    const float chunk_size = spatial_grid.grid[0][0][0].SIZE;
-    const float half_world_width = spatial_grid.width * chunk_size * 0.5f;
-    const float half_world_height = spatial_grid.height * chunk_size * 0.5f;
-    const float half_world_depth = spatial_grid.depth * chunk_size * 0.5f;
-    const float half_chunk_size = chunk_size * 0.5f;
-    const Vector<float, 3> pivot = Vector<float, 3>(
+    const auto chunk_size = spatial_grid.grid[0][0][0].SIZE;
+    const auto half_world_width = spatial_grid.width * chunk_size * 0.5f;
+    const auto half_world_height = spatial_grid.height * chunk_size * 0.5f;
+    const auto half_world_depth = spatial_grid.depth * chunk_size * 0.5f;
+    const auto half_chunk_size = chunk_size * 0.5f;
+    const Vector<f32, 3> pivot = Vector<f32, 3>(
         -half_world_width + half_chunk_size,
         -half_world_height + half_chunk_size,
         -half_world_depth + half_chunk_size
     );
-    for (uint32_t i0 = 0; i0 < spatial_grid.depth; ++i0) {
-        for (uint32_t i1 = 0; i1 < spatial_grid.height; ++i1) {
-            for (uint32_t i2 = 0; i2 < spatial_grid.width; ++i2) {
-                spatial_grid.grid[i0][i1][i2].position = Vector<float, 3>(
+    for (u32 i0 = 0; i0 < spatial_grid.depth; ++i0) {
+        for (u32 i1 = 0; i1 < spatial_grid.height; ++i1) {
+            for (u32 i2 = 0; i2 < spatial_grid.width; ++i2) {
+                spatial_grid.grid[i0][i1][i2].position = Vector<f32, 3>(
                                                              i2 * chunk_size,
                                                              i1 * chunk_size,
                                                              i0 * chunk_size
@@ -116,14 +114,14 @@ World::World() {
 }
 
 World::~World() {
-    for (unsigned int i = 0; i < archetypes.size(); ++i) {
+    for (u32 i = 0; i < archetypes.size(); ++i) {
         delete archetypes[i];
         archetypes[i] = nullptr;
     }
 }
 
-void World::add_entity_to_archetype(uint64_t entity, Archetype* arch) {
-    uint32_t id = get_id(entity);
+void World::add_entity_to_archetype(u64 entity, Archetype* arch) {
+    u32 id = get_id(entity);
 
     if (id >= entity_locations.size()) {
         entity_locations.resize(id + 1);
@@ -132,28 +130,27 @@ void World::add_entity_to_archetype(uint64_t entity, Archetype* arch) {
     EntityLocation& location = entity_locations[id];
 
     if (location.arch != nullptr) {
-        assert(false && "unsigned int already assigned to archetype");
+        assert(false && "u32 already assigned to archetype");
     }
 
-    uint32_t index = arch->add_entity(entity);
+    u32 index = arch->add_entity(entity);
 
     location.arch = arch;
     location.index = index;
 }
 
-void World::remove_entity(uint64_t entity) {
-    uint32_t id = get_id(entity);
+void World::remove_entity(u64 entity) {
+    u32 id = get_id(entity);
     EntityLocation& location = entity_locations[id];
     // Remove entity from spatial grid cells it occupies, otherwise stale
     // references crash collision/physics on later frames.
     if (location.grid_cell_counter > 0) {
-        for (uint8_t i = 0; i < location.grid_cell_counter; ++i) {
-            uint32_t z = location.grid_cell_indicies[i][0];
-            uint32_t y = location.grid_cell_indicies[i][1];
-            uint32_t x = location.grid_cell_indicies[i][2];
-            std::vector<uint32_t>& chunk_entities =
-                spatial_grid.grid[z][y][x].entities;
-            for (uint32_t k = 0; k < chunk_entities.size(); ++k) {
+        for (u8 i = 0; i < location.grid_cell_counter; ++i) {
+            u32 z = location.grid_cell_indicies[i][0];
+            u32 y = location.grid_cell_indicies[i][1];
+            u32 x = location.grid_cell_indicies[i][2];
+            Vec<u32>& chunk_entities = spatial_grid.grid[z][y][x].entities;
+            for (u32 k = 0; k < chunk_entities.size(); ++k) {
                 if (chunk_entities[k] == entity) {
                     chunk_entities.erase(chunk_entities.begin() + k);
                     break;
@@ -164,12 +161,12 @@ void World::remove_entity(uint64_t entity) {
     }
 
     Archetype* arch = location.arch;
-    uint32_t index = location.index;
+    u32 index = location.index;
 
-    uint64_t moved = arch->remove_entity(index);
+    u64 moved = arch->remove_entity(index);
 
     if (moved != entity) {
-        uint32_t moved_id = get_id(moved);
+        u32 moved_id = get_id(moved);
         entity_locations[moved_id].index = index;
         entity_locations[moved_id].arch = arch;
     }
@@ -177,11 +174,11 @@ void World::remove_entity(uint64_t entity) {
 }
 
 void World::search_cache_archetypes(
-    uint64_t required_mask,
+    u64 required_mask,
     Archetype* cached_archetypes[],
-    uint32_t& cached_archetypes_number
+    u32& cached_archetypes_number
 ) {
-    for (uint32_t i = 0; i < WORLD.archetypes.size(); ++i) {
+    for (u32 i = 0; i < WORLD.archetypes.size(); ++i) {
         Archetype* arch = WORLD.archetypes[i];
 
         if ((arch->mask & required_mask) == required_mask) {
@@ -194,7 +191,7 @@ void World::search_cache_archetypes(
 
 namespace glvm {
 ArchetypeEntityManager* ArchetypeEntityManager::p_instance = nullptr;
-std::mutex ArchetypeEntityManager::mutex;
+Mutex ArchetypeEntityManager::mutex;
 
 ArchetypeEntityManager::ArchetypeEntityManager() {
 }
@@ -203,15 +200,15 @@ ArchetypeEntityManager::~ArchetypeEntityManager() {
 }
 
 ArchetypeEntityManager* ArchetypeEntityManager::get_instance() {
-    std::lock_guard<std::mutex> lock(mutex);
+    MutexGuard<Mutex> lock(mutex);
     if (p_instance == nullptr) {
         p_instance = new ArchetypeEntityManager();
     }
     return p_instance;
 }
 
-[[nodiscard]] uint64_t ArchetypeEntityManager::create_entity() {
-    uint32_t new_id = 0;
+[[nodiscard]] u64 ArchetypeEntityManager::create_entity() {
+    u32 new_id = 0;
     // Check out wether or not free ID in removed entities registry.
     if (!free_list.empty()) {
         new_id = free_list.back();
@@ -224,8 +221,8 @@ ArchetypeEntityManager* ArchetypeEntityManager::get_instance() {
     return make_entity(new_id, generations[new_id]);
 }
 
-void ArchetypeEntityManager::remove_entity(uint64_t entity) {
-    uint32_t id = get_id(entity);
+void ArchetypeEntityManager::remove_entity(u64 entity) {
+    u32 id = get_id(entity);
 
     if (!is_alive(entity)) {
         return;
@@ -235,15 +232,15 @@ void ArchetypeEntityManager::remove_entity(uint64_t entity) {
     free_list.push_back(id);
 }
 
-bool ArchetypeEntityManager::is_alive(uint64_t entity) const {
-    uint32_t id = get_id(entity);
+bool ArchetypeEntityManager::is_alive(u64 entity) const {
+    u32 id = get_id(entity);
     return id < generations.size() && generations[id] == get_gen(entity);
 }
 }; // namespace glvm
 
 namespace glvm {
-uint32_t Archetype::add_entity(uint64_t entity) {
-    uint32_t index = entity_count++;
+u32 Archetype::add_entity(u64 entity) {
+    u32 index = entity_count++;
     assert(index < CAPACITY);
     entities[index] = entity;
 
@@ -251,11 +248,11 @@ uint32_t Archetype::add_entity(uint64_t entity) {
 }
 
 // Swap-remove.
-uint64_t Archetype::remove_entity(uint32_t index) {
-    uint32_t last = entity_count - 1;
+u64 Archetype::remove_entity(u32 index) {
+    u32 last = entity_count - 1;
 
-    for (uint32_t i = 0; i < component_count; ++i) {
-        const uint32_t component_id = component_ids[i];
+    for (u32 i = 0; i < component_count; ++i) {
+        const auto component_id = component_ids[i];
 
         switch (component_id) {
             case ComponentsIndices::TransformComponent:
@@ -383,7 +380,7 @@ uint64_t Archetype::remove_entity(uint32_t index) {
         }
     }
 
-    uint64_t moved = entities[last];
+    u64 moved = entities[last];
     entities[index] = moved;
     --entity_count;
 
@@ -393,10 +390,10 @@ uint64_t Archetype::remove_entity(uint32_t index) {
 
 namespace glvm {
 bool box_collider(
-    const Vector<float, 3> backtracking_pos,
-    const Vector<float, 3> compared_pos,
-    const float backtracking_scale,
-    const float compared_scale,
+    const Vector<f32, 3> backtracking_pos,
+    const Vector<f32, 3> compared_pos,
+    const f32 backtracking_scale,
+    const f32 compared_scale,
     const MeshAxisMaxAbsoluteValues& backtracking_mesh_axis_max_absolute_values,
     const MeshAxisMaxAbsoluteValues& compared_mesh_axis_max_absolute_values
 ) {
@@ -462,29 +459,29 @@ bool box_collider(
                * compared_scale);
 }
 
-std::vector<Vector<float, 3>> compute_box_corner_bound_points(
+Vec<Vector<f32, 3>> compute_box_corner_bound_points(
     const MeshAxisMaxAbsoluteValues entity_chunk_bounds,
-    Vector<float, 3> entity_position,
-    const float scale
+    Vector<f32, 3> entity_position,
+    const f32 scale
 ) {
-    const float half_widht = entity_chunk_bounds.absolute_x * scale;
-    const float half_height = entity_chunk_bounds.absolute_y * scale;
-    const float half_depth = entity_chunk_bounds.absolute_z * scale;
-    const Vector<float, 3> center_offset = {
+    const auto half_widht = entity_chunk_bounds.absolute_x * scale;
+    const auto half_height = entity_chunk_bounds.absolute_y * scale;
+    const auto half_depth = entity_chunk_bounds.absolute_z * scale;
+    const Vector<f32, 3> center_offset = {
         entity_chunk_bounds.origin_offset_x * scale,
         entity_chunk_bounds.origin_offset_y * scale,
         entity_chunk_bounds.origin_offset_z * scale
     };
-    std::vector<Vector<float, 3>> result;
+    Vec<Vector<f32, 3>> result;
     // Left bottom back.
     result.push_back(
         entity_position + center_offset
-        + Vector<float, 3>(-half_widht, -half_height, -half_depth)
+        + Vector<f32, 3>(-half_widht, -half_height, -half_depth)
     );
     // Right upper front.
     result.push_back(
         entity_position + center_offset
-        + Vector<float, 3>(half_widht, half_height, half_depth)
+        + Vector<f32, 3>(half_widht, half_height, half_depth)
     );
     return result;
 }
@@ -520,8 +517,8 @@ void set_mesh_bounds(MeshAxisLimitingValues mesh_axis_limiting_values) {
 }
 
 void create_projectile(
-    const Vector<float, 3>& projectile_position,
-    const Vector<float, 3>& projectile_forward,
+    const Vector<f32, 3>& projectile_position,
+    const Vector<f32, 3>& projectile_forward,
     const MeshHandle& mesh_handle,
     const Material& material,
     const Damage& damage,
@@ -529,7 +526,7 @@ void create_projectile(
 ) {
     ProjectileArchetype* projectile_arch =
         static_cast<ProjectileArchetype*>(projectile_location.arch);
-    const uint32_t projectile_index = projectile_location.index;
+    const auto projectile_index = projectile_location.index;
 
     Mesh* projectile_mesh = &projectile_arch->meshes[projectile_index];
     projectile_mesh->handle = mesh_handle;
@@ -557,19 +554,19 @@ void create_projectile(
 
 namespace glvm {
 ComponentManager* ComponentManager::p_instance = nullptr;
-std::mutex ComponentManager::mutex;
+Mutex ComponentManager::mutex;
 
 ComponentManager::ComponentManager() = default;
 
 ComponentManager::~ComponentManager() {
-    for (int j = 0,
+    for (i32 j = 0,
              i_size_ordered = world_sparse_entities_map_to_components.size();
          j < i_size_ordered;
          ++j) {
         delete world_sparse_entities_map_to_components[j];
         world_sparse_entities_map_to_components[j] = nullptr;
     }
-    for (int j = 0,
+    for (i32 j = 0,
              i_size_ordered = world_dense_components_map_to_entities.size();
          j < i_size_ordered;
          ++j) {
@@ -579,20 +576,20 @@ ComponentManager::~ComponentManager() {
 }
 
 bool ComponentManager::check_availability(
-    std::vector<unsigned int>& sparse,
-    std::vector<unsigned int>& dense,
-    unsigned int entity
+    Vec<u32>& sparse,
+    Vec<u32>& dense,
+    u32 entity
 ) {
     return entity < sparse.size() && sparse[entity] < dense.size()
         && dense[sparse[entity]] == entity;
 }
 
-unsigned int ComponentManager::get_container_id() {
+u32 ComponentManager::get_container_id() {
     return components_container_id;
 }
 
 ComponentManager* ComponentManager::get_instance() {
-    std::lock_guard<std::mutex> lock(mutex);
+    MutexGuard<Mutex> lock(mutex);
     if (p_instance == nullptr) {
         p_instance = new ComponentManager();
     }
@@ -602,24 +599,21 @@ ComponentManager* ComponentManager::get_instance() {
 
 glvm::CStack INPUT_STACK {};
 
-int X_POINTER;
-int Y_POINTER;
+i32 X_POINTER;
+i32 Y_POINTER;
 
 #ifdef __linux__
 #endif
 
 glvm::CEvent G_E_EVENT;
 // Contains all maximum absolute axis values.
-std::vector<glvm::MeshAxisMaxAbsoluteValues> ALL_MESH_MAX_ABSOLUTE_VALUES;
+Vec<glvm::MeshAxisMaxAbsoluteValues> ALL_MESH_MAX_ABSOLUTE_VALUES;
 
 namespace glvm {
 Engine* Engine::p_instance = nullptr;
-std::mutex Engine::mutex;
+Mutex Engine::mutex;
 
-void playback_sound(
-    ISoundEngine* sound_engine,
-    std::atomic<bool>& running_sound
-) {
+void playback_sound(ISoundEngine* sound_engine, AtomicBool& running_sound) {
     running_sound = true;
     while (running_sound) {
         sound_engine->sound_stream();
@@ -641,7 +635,7 @@ Engine::Engine() {
     procudural_level_generating_system = new ProceduralLevelGeneratingSystem();
     inventory_system = new InventorySystem();
 
-    delta_frame_time = 0.0;
+    delta_frame_time = 0.0f;
     G_E_EVENT.set_event(EDefault);
 
     CSystemManager* p_system_manager = CSystemManager::get_instance();
@@ -670,7 +664,7 @@ Engine::~Engine() {
 }
 
 Engine* Engine::get_instance() {
-    std::lock_guard<std::mutex> lock(mutex);
+    MutexGuard<Mutex> lock(mutex);
     if (p_instance == nullptr) {
         p_instance = new Engine();
     }
@@ -932,11 +926,11 @@ void Engine::render_vulkan() {
     delete vulkan_renderer;
 }
 
-void Engine::enlarge_frame_accumulator(float value) {
+void Engine::enlarge_frame_accumulator(f32 value) {
     animation_archetypes_number = 0;
-    for (uint32_t m = 0; m < WORLD.archetypes.size(); ++m) {
+    for (u32 m = 0; m < WORLD.archetypes.size(); ++m) {
         Archetype* arch = WORLD.archetypes[m];
-        uint64_t required_mask = (1ul << ComponentsIndices::MeshComponent)
+        u64 required_mask = (1ul << ComponentsIndices::MeshComponent)
             | (1ul << ComponentsIndices::AnimationComponent);
 
         if (matches_required_mask(arch->mask, required_mask)) {
@@ -945,7 +939,7 @@ void Engine::enlarge_frame_accumulator(float value) {
         }
     }
 
-    for (uint32_t n = 0; n < animation_archetypes_number; ++n) {
+    for (u32 n = 0; n < animation_archetypes_number; ++n) {
         Archetype* arch = cached_animation_archetypes[n];
         Animation* animation_view = nullptr;
         Mesh* mesh_view = nullptr;
@@ -963,11 +957,10 @@ void Engine::enlarge_frame_accumulator(float value) {
                     break;
             }
 
-            for (unsigned int i = 0;
-                 i < cached_animation_archetypes[n]->entity_count;
+            for (u32 i = 0; i < cached_animation_archetypes[n]->entity_count;
                  ++i) {
                 if (&mesh_view[i] != nullptr && &animation_view[i] != nullptr) {
-                    unsigned int mesh_id = mesh_view[i].handle.id;
+                    u32 mesh_id = mesh_view[i].handle.id;
                     if (vulkan_renderer->joint_matrices_per_mesh.size() > 0
                         && vulkan_renderer->joint_matrices_per_mesh[mesh_id]
                                 .size()
@@ -988,19 +981,19 @@ void Engine::set_view_matrix() {
         player_archetypes_number
     );
 
-    for (uint32_t n = 0; n < player_archetypes_number; ++n) {
+    for (u32 n = 0; n < player_archetypes_number; ++n) {
         Archetype* arch = cached_player_archetypes[n];
         Beholder* views =
             (Beholder*)arch->components[ComponentsIndices::ViewComponent];
         Transform* transfroms =
             (Transform*)arch->components[ComponentsIndices::TransformComponent];
 
-        for (uint32_t x = 0; x < arch->entity_count; ++x) {
+        for (u32 x = 0; x < arch->entity_count; ++x) {
             Beholder* camera_component = &views[x];
             Transform* player_transform = &transfroms[x];
 
-            Matrix<float, 4> view_matrix(1.0f);
-            const float k_sensitivity = 0.1f;
+            Matrix<f32, 4> view_matrix(1.0f);
+            const auto k_sensitivity = 0.1f;
             f_yaw = G_E_EVENT.mouse_pointer_position.offset_x;
             f_pitch = G_E_EVENT.mouse_pointer_position.offset_y;
             f_yaw *= k_sensitivity;
@@ -1010,11 +1003,11 @@ void Engine::set_view_matrix() {
             G_E_EVENT.mouse_pointer_position.yaw = f_yaw;
 
             vulkan_renderer->current_x =
-                (float)G_E_EVENT.mouse_pointer_position.offset_x;
+                (f32)G_E_EVENT.mouse_pointer_position.offset_x;
             vulkan_renderer->current_y =
-                (float)G_E_EVENT.mouse_pointer_position.offset_y;
-            float delta_x = 0.0f;
-            float delta_y = 0.0f;
+                (f32)G_E_EVENT.mouse_pointer_position.offset_y;
+            f32 delta_x = 0.0f;
+            f32 delta_y = 0.0f;
             if (!vulkan_renderer->is_inventory_opened) {
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
                 delta_x = vulkan_renderer->current_x;
@@ -1026,19 +1019,19 @@ void Engine::set_view_matrix() {
 #endif
             }
 
-            const Vector<float, 3> right_vec = cross(
+            const Vector<f32, 3> right_vec = cross(
                 camera_component->forward,
-                Vector<float, 3>(0.0f, -1.0f, 0.0)
+                Vector<f32, 3>(0.0f, -1.0f, 0.0f)
             );
-            const Vector<float, 3> new_up_vec =
+            const Vector<f32, 3> new_up_vec =
                 cross(right_vec, camera_component->forward);
-            // 1. The mouse direction determines the "intended direction of
+            // 1.f The mouse direction determines the "intended direction of
             // rotation" for the object.
-            // 2. The camera is "looking forward."
-            // 3. To make the object "rotate as if the mouse is pushing it," you
-            // need to rotate it around an axis that is perpendicular to both
-            // the view direction and the mouse movement.
-            const Vector<float, 3> rotate_axis = normalize(cross(
+            // 2.f The camera is "looking forward."
+            // 3.f To make the object "rotate as if the mouse is pushing it,"
+            // you need to rotate it around an axis that is perpendicular to
+            // both the view direction and the mouse movement.
+            const Vector<f32, 3> rotate_axis = normalize(cross(
                 camera_component->forward,
                 right_vec * delta_x + new_up_vec * delta_y
             ));
@@ -1047,13 +1040,13 @@ void Engine::set_view_matrix() {
                 // A vector in the screen's tangent plane: it indicates the
                 // direction in which the mouse moved, but expressed in world
                 // (or 3D) space.
-                float rotation_angle =
+                f32 rotation_angle =
                     sqrt(delta_y * delta_y + delta_x * delta_x);
-                constexpr float ANGLE_SCALE = 0.05f;
+                constexpr auto ANGLE_SCALE = 0.05f;
                 rotation_angle = radians(rotation_angle * ANGLE_SCALE);
-                // Quaternions need devision by 2.
-                constexpr float QUAT_ANGLE_CORRECTION = 0.5f;
-                const float sin_rotation_angle =
+                // Quaternions need devision by 2.f
+                constexpr auto QUAT_ANGLE_CORRECTION = 0.5f;
+                const auto sin_rotation_angle =
                     sinf(rotation_angle * QUAT_ANGLE_CORRECTION);
                 Point applied_rotation_point =
                     exp(rotation_angle,
@@ -1077,7 +1070,7 @@ void Engine::set_view_matrix() {
             // resolution and mouse sensitivity. Keeps the camera off the
             // vertical pole, where the view basis Cross(forward, up)
             // degenerates and the world starts rolling.
-            constexpr float MAX_PITCH_SIN = 0.9999996f; // sin(89.95°).
+            constexpr auto MAX_PITCH_SIN = 0.9999996f; // sin(89.95f°).
             if (camera_component->forward[1] > MAX_PITCH_SIN) {
                 camera_component->forward[1] = MAX_PITCH_SIN;
             } else if (camera_component->forward[1] < -MAX_PITCH_SIN) {
@@ -1085,14 +1078,14 @@ void Engine::set_view_matrix() {
             }
             camera_component->forward = normalize(camera_component->forward);
             player_transform->forward = camera_component->forward;
-            Matrix<float, 4> view = look_at_main(
+            Matrix<f32, 4> view = look_at_main(
                 camera_component->position + player_transform->position,
                 camera_component->position + player_transform->position
                     + camera_component->forward,
-                Vector<float, 3>(0.0f, -1.0f, 0.0)
+                Vector<f32, 3>(0.0f, -1.0f, 0.0f)
             );
-            for (unsigned int i = 0; i < 4; ++i) {
-                for (unsigned int j = 0; j < 4; ++j) {
+            for (u32 i = 0; i < 4; ++i) {
+                for (u32 j = 0; j < 4; ++j) {
                     view_matrix[i][j] = view[i][j];
                 }
             }
@@ -1100,23 +1093,27 @@ void Engine::set_view_matrix() {
             vulkan_renderer->view_matrix = view_matrix;
 
             vulkan_renderer->prev_y =
-                (float)G_E_EVENT.mouse_pointer_position.offset_y;
+                (f32)G_E_EVENT.mouse_pointer_position.offset_y;
             vulkan_renderer->prev_x =
-                (float)G_E_EVENT.mouse_pointer_position.offset_x;
+                (f32)G_E_EVENT.mouse_pointer_position.offset_x;
         }
     }
 }
 
 void Engine::set_projection_matrix() {
-    Matrix<float, 4> t_projection_matrix =
-        perspective(radians(90.0f), vulkan_renderer->aspect_rate, 0.1f, 100.0f);
+    Matrix<f32, 4> t_projection_matrix = perspective<f32>(
+        radians<f32>(90.0f),
+        vulkan_renderer->aspect_rate,
+        0.1f,
+        100.0f
+    );
     vulkan_renderer->projection_matrix = t_projection_matrix;
     vulkan_renderer->projection_matrix[1][1] *= 1.0f;
 }
 
-[[nodiscard]] std::vector<Matrix<float, 4>> Engine::update_animation_frames(
+[[nodiscard]] Vec<Matrix<f32, 4>> Engine::update_animation_frames(
     Animation* animation_component,
-    unsigned int mesh_id
+    u32 mesh_id
 ) {
     if (vulkan_renderer->joint_matrices_per_mesh.size() > 0
         && vulkan_renderer->joint_matrices_per_mesh[mesh_id].size() > 0
@@ -1133,23 +1130,23 @@ void Engine::set_projection_matrix() {
         }
     }
 
-    unsigned int join_matrices_data_size {};
+    u32 join_matrices_data_size {};
     if (vulkan_renderer->joint_matrices_per_mesh.size() > 0) {
         join_matrices_data_size =
             vulkan_renderer->joint_matrices_per_mesh[mesh_id].size();
     }
 
-    std::vector<Matrix<float, 4>> joint_matrices;
+    Vec<Matrix<f32, 4>> joint_matrices;
     if (join_matrices_data_size == 0) {
         joint_matrices.resize(MAX_JOINTS_NUMBER);
-        for (unsigned int i = 0; i < MAX_JOINTS_NUMBER; ++i) {
-            Matrix<float, 4> unit_matrix(1.0f);
+        for (u32 i = 0; i < MAX_JOINTS_NUMBER; ++i) {
+            Matrix<f32, 4> unit_matrix(1.0f);
             joint_matrices[i] = unit_matrix;
         }
 
     } else {
         joint_matrices.resize(MAX_JOINTS_NUMBER);
-        for (unsigned int i = 0; i < join_matrices_data_size; ++i) {
+        for (u32 i = 0; i < join_matrices_data_size; ++i) {
             if (mesh_id >= vulkan_renderer->joint_matrices_per_mesh.size()) {
                 throw("sdfsdf");
             } else if (
@@ -1168,8 +1165,8 @@ void Engine::set_projection_matrix() {
                     [mesh_id][i][animation_component->current_animation_frame];
         }
 
-        for (uint32_t j = join_matrices_data_size; j < MAX_JOINTS_NUMBER; ++j) {
-            Matrix<float, 4> unit_matrix(1.0f);
+        for (u32 j = join_matrices_data_size; j < MAX_JOINTS_NUMBER; ++j) {
+            Matrix<f32, 4> unit_matrix(1.0f);
             joint_matrices[j] = unit_matrix;
         }
     }
@@ -1177,12 +1174,12 @@ void Engine::set_projection_matrix() {
     return joint_matrices;
 }
 
-Matrix<float, 4> Engine::update_directional_light_space_matrix_shadow_map_ubo(
+Matrix<f32, 4> Engine::update_directional_light_space_matrix_shadow_map_ubo(
     DirectionalLightComponent* light
 ) {
-    float near_plane_flat_shadow_map = 5.5f;
-    float far_plane_flat_shadow_map = 100.0f;
-    Matrix<float, 4> directional_projection_matrix_light = ortho(
+    f32 near_plane_flat_shadow_map = 5.5f;
+    f32 far_plane_flat_shadow_map = 100.0f;
+    Matrix<f32, 4> directional_projection_matrix_light = ortho<f32>(
         -50.0f,
         50.0f,
         -50.0f,
@@ -1191,10 +1188,10 @@ Matrix<float, 4> Engine::update_directional_light_space_matrix_shadow_map_ubo(
         far_plane_flat_shadow_map
     );
 
-    Vector<float, 3> position_vector_light = light->position;
-    Vector<float, 3> direction_vector_light = light->direction;
+    Vector<f32, 3> position_vector_light = light->position;
+    Vector<f32, 3> direction_vector_light = light->direction;
 
-    Matrix<float, 4> view_matrix_light = look_at_main(
+    Matrix<f32, 4> view_matrix_light = look_at_main(
         position_vector_light,
         direction_vector_light,
         {0.0f, -1.0f, 0.0f}
@@ -1202,21 +1199,21 @@ Matrix<float, 4> Engine::update_directional_light_space_matrix_shadow_map_ubo(
     return view_matrix_light * directional_projection_matrix_light;
 }
 
-Matrix<float, 4> Engine::update_spot_light_space_matrix_shadow_map_ubo(
+Matrix<f32, 4> Engine::update_spot_light_space_matrix_shadow_map_ubo(
     SpotLightComponent* light
 ) {
-    float near_plane_flat_shadow_map = 0.5f;
-    float far_plane_flat_shadow_map = 100.0f;
-    Matrix<float, 4> spot_projection_matrix_light = perspective(
-        radians(90.0f),
-        (float)SHADOW_MAP_SIZE / (float)SHADOW_MAP_SIZE,
+    f32 near_plane_flat_shadow_map = 0.5f;
+    f32 far_plane_flat_shadow_map = 100.0f;
+    Matrix<f32, 4> spot_projection_matrix_light = perspective<f32>(
+        radians<f32>(90.0f),
+        (f32)SHADOW_MAP_SIZE / (f32)SHADOW_MAP_SIZE,
         near_plane_flat_shadow_map,
         far_plane_flat_shadow_map
     );
 
-    Vector<float, 3> position_vector_light = light->position;
-    Vector<float, 3> direction_vector_light = light->direction;
-    Matrix<float, 4> view_matrix_light = look_at_main(
+    Vector<f32, 3> position_vector_light = light->position;
+    Vector<f32, 3> direction_vector_light = light->direction;
+    Matrix<f32, 4> view_matrix_light = look_at_main(
         position_vector_light,
         direction_vector_light,
         {0.0f, -1.0f, 0.0f}
@@ -1224,88 +1221,87 @@ Matrix<float, 4> Engine::update_spot_light_space_matrix_shadow_map_ubo(
     return view_matrix_light * spot_projection_matrix_light;
 }
 
-Matrix<float, 4> Engine::update_point_light_space_matrix_shadow_map_ubo(
+Matrix<f32, 4> Engine::update_point_light_space_matrix_shadow_map_ubo(
     PointLightComponent* light,
-    uint32_t layer
+    u32 layer
 ) {
-    Vector<float, 3> position_vector_light = light->position;
-    Vector<float, 3> directional_vector_light =
-        Vector<float, 3>(0.0f, 0.0f, 0.0f);
-    Vector<float, 3> up_vector = {0.0, 0.0, 0.0};
+    Vector<f32, 3> position_vector_light = light->position;
+    Vector<f32, 3> directional_vector_light = Vector<f32, 3>(0.0f, 0.0f, 0.0f);
+    Vector<f32, 3> up_vector = {0.0f, 0.0f, 0.0f};
 
     switch (layer) {
         case 0:
             // Positive X.
             directional_vector_light =
-                position_vector_light + Vector<float, 3>(1.0f, 0.0f, 0.0f);
-            up_vector = Vector<float, 3>(0.0f, -1.0f, 0.0f);
+                position_vector_light + Vector<f32, 3>(1.0f, 0.0f, 0.0f);
+            up_vector = Vector<f32, 3>(0.0f, -1.0f, 0.0f);
             break;
         case 1:
             // Negative X.
             directional_vector_light =
-                position_vector_light + Vector<float, 3>(-1.0f, 0.0f, 0.0f);
-            up_vector = Vector<float, 3>(0.0f, -1.0f, 0.0f);
+                position_vector_light + Vector<f32, 3>(-1.0f, 0.0f, 0.0f);
+            up_vector = Vector<f32, 3>(0.0f, -1.0f, 0.0f);
             break;
         case 2:
             // Positive Y.
             directional_vector_light =
-                position_vector_light + Vector<float, 3>(0.0f, 1.0f, 0.0f);
-            up_vector = Vector<float, 3>(0.0f, 0.0f, 1.0f);
+                position_vector_light + Vector<f32, 3>(0.0f, 1.0f, 0.0f);
+            up_vector = Vector<f32, 3>(0.0f, 0.0f, 1.0f);
             break;
         case 3:
             // Negative Y.
             directional_vector_light =
-                position_vector_light + Vector<float, 3>(0.0f, -1.0f, 0.0f);
-            up_vector = Vector<float, 3>(0.0f, 0.0f, -1.0f);
+                position_vector_light + Vector<f32, 3>(0.0f, -1.0f, 0.0f);
+            up_vector = Vector<f32, 3>(0.0f, 0.0f, -1.0f);
             break;
         case 4:
             // Positive Z.
             directional_vector_light =
-                position_vector_light + Vector<float, 3>(0.0f, 0.0f, 1.0f);
-            up_vector = Vector<float, 3>(0.0f, -1.0f, 0.0f);
+                position_vector_light + Vector<f32, 3>(0.0f, 0.0f, 1.0f);
+            up_vector = Vector<f32, 3>(0.0f, -1.0f, 0.0f);
             break;
             // Negative Z.
         case 5:
             directional_vector_light =
-                position_vector_light + Vector<float, 3>(0.0f, 0.0f, -1.0f);
-            up_vector = Vector<float, 3>(0.0f, -1.0f, 0.0f);
+                position_vector_light + Vector<f32, 3>(0.0f, 0.0f, -1.0f);
+            up_vector = Vector<f32, 3>(0.0f, -1.0f, 0.0f);
             break;
         default:
             break;
     }
 
-    Matrix<float, 4> projection_matrix_cube_shadow_map = perspective(
-        radians(90.0f),
-        (float)SHADOW_MAP_SIZE / (float)SHADOW_MAP_SIZE,
+    Matrix<f32, 4> projection_matrix_cube_shadow_map = perspective<f32>(
+        radians<f32>(90.0f),
+        (f32)SHADOW_MAP_SIZE / (f32)SHADOW_MAP_SIZE,
         0.3f,
         100.0f
     );
 
-    Matrix<float, 4> view_matrix_light =
+    Matrix<f32, 4> view_matrix_light =
         look_at_main(position_vector_light, directional_vector_light, up_vector);
 
     return view_matrix_light * projection_matrix_cube_shadow_map;
 }
 
 [[nodiscard]] SlotData Engine::update_data_ubo_ui(
-    const unsigned int current_inventory_row,
-    const unsigned int current_inventory_column,
+    const u32 current_inventory_row,
+    const u32 current_inventory_column,
     Inventory* inventory_component,
     Transform* slot_transfrom_component,
     Mesh* mesh_component
 ) {
     SlotData hud_ubo {};
-    Matrix<float, 4> model(1.0);
-    const float full_slot_scale = mesh_component->gltf
+    Matrix<f32, 4> model(1.0f);
+    const auto full_slot_scale = mesh_component->gltf
         ? inventory_component->slot_scale * 2.0f
         : inventory_component->slot_scale;
-    const float x = slot_transfrom_component->position[0]
+    const auto x = slot_transfrom_component->position[0]
         + current_inventory_column * full_slot_scale;
-    const float y_scale_multilayer =
+    const auto y_scale_multilayer =
         vulkan_renderer->aspect_rate * full_slot_scale;
-    const float y = slot_transfrom_component->position[1]
+    const auto y = slot_transfrom_component->position[1]
         + current_inventory_row * y_scale_multilayer;
-    const float inventory_slot_scale = inventory_component->slot_scale;
+    const auto inventory_slot_scale = inventory_component->slot_scale;
     model[0][0] = inventory_slot_scale;
     model[1][1] = inventory_slot_scale;
     model[2][2] = inventory_slot_scale;
@@ -1316,8 +1312,7 @@ Matrix<float, 4> Engine::update_point_light_space_matrix_shadow_map_ubo(
     hud_ubo.model = model;
 
     bool high_lighted_slot = false;
-    for (unsigned int i = 0; i < inventory_component->highlighted_slots.size();
-         ++i) {
+    for (u32 i = 0; i < inventory_component->highlighted_slots.size(); ++i) {
         if (inventory_component->highlighted_slots[i]
             == current_inventory_row * inventory_component->col
                 + current_inventory_column) {
@@ -1331,50 +1326,49 @@ Matrix<float, 4> Engine::update_point_light_space_matrix_shadow_map_ubo(
     if (inventory_component->highlighted_slots.size() > 0) {
         if (high_lighted_slot) {
             if (inventory_component->is_available_highlighted_slots) {
-                hud_ubo.color = {0.0, 0.3, 0.0};
+                hud_ubo.color = {0.0f, 0.3f, 0.0f};
             } else {
-                hud_ubo.color = {0.3, 0.0, 0.0};
+                hud_ubo.color = {0.3f, 0.0f, 0.0f};
             }
         }
     } else {
-        hud_ubo.color = {0.0, 0.0, 0.0};
+        hud_ubo.color = {0.0f, 0.0f, 0.0f};
     }
 
     return hud_ubo;
 }
 
-Matrix<float, 4> Engine::update_data_ubo_icons_ui(
+Matrix<f32, 4> Engine::update_data_ubo_icons_ui(
     Transform* item_transfrom_component,
     Collider* item_collider_component,
     Item* item_component,
-    const unsigned int row_inventory,
-    const unsigned int column_inventory,
+    const u32 row_inventory,
+    const u32 column_inventory,
     Transform* inventory_transform_component,
     Mesh* item_mesh,
-    int item_entity
+    i32 item_entity
 ) {
-    float x_result_offset = 0.0f;
-    float y_result_offset = 0.0f;
+    f32 x_result_offset = 0.0f;
+    f32 y_result_offset = 0.0f;
     if (item_component->occupied_slots.size() == 0) {
     } else {
-        const unsigned int inventory_slot_entity_0 =
-            item_component->occupied_slots[0];
-        const unsigned int inventory_slot_entity_3 =
+        const auto inventory_slot_entity_0 = item_component->occupied_slots[0];
+        const auto inventory_slot_entity_3 =
             item_component->occupied_slots.back();
-        const unsigned int row_index_first_slot =
+        const auto row_index_first_slot =
             inventory_slot_entity_0 / row_inventory;
-        const unsigned int col_index_first_slot =
+        const auto col_index_first_slot =
             inventory_slot_entity_0 % column_inventory;
-        const unsigned int row_index_second_slot =
+        const auto row_index_second_slot =
             inventory_slot_entity_3 / row_inventory;
-        const unsigned int col_index_second_slot =
+        const auto col_index_second_slot =
             inventory_slot_entity_3 % column_inventory;
 
-        const float item_scale = item_transfrom_component->scale;
-        const float full_slot_scale =
+        const auto item_scale = item_transfrom_component->scale;
+        const auto full_slot_scale =
             item_mesh->gltf ? item_scale * 2.0f : item_scale;
         // Eather division by 2.0f using multiply on 0.5f.
-        constexpr float CENTRE_MULTIPLAYER = 0.5f;
+        constexpr auto CENTRE_MULTIPLAYER = 0.5f;
         x_result_offset = inventory_transform_component->position[0]
             + (col_index_first_slot * full_slot_scale
                + col_index_second_slot * full_slot_scale)
@@ -1384,16 +1378,16 @@ Matrix<float, 4> Engine::update_data_ubo_icons_ui(
                + row_index_second_slot * full_slot_scale)
                 * CENTRE_MULTIPLAYER * vulkan_renderer->aspect_rate;
     }
-    float item_scale = item_transfrom_component->scale;
+    f32 item_scale = item_transfrom_component->scale;
 
     if (dragged_item_entity != item_entity) {
         item_transfrom_component->position =
-            Vector<float, 3>(x_result_offset, y_result_offset, 0.1f);
+            Vector<f32, 3>(x_result_offset, y_result_offset, 0.1f);
     } else {
         item_scale *= 1.1f;
         item_transfrom_component->position[2] = 0.0f;
     }
-    Matrix<float, 4> model(1.0);
+    Matrix<f32, 4> model(1.0f);
     model[0][0] = item_scale * item_component->item_slot_type.width;
     model[1][1] = item_scale * item_component->item_slot_type.height;
     model[2][2] = 0.0f;
@@ -1404,13 +1398,11 @@ Matrix<float, 4> Engine::update_data_ubo_icons_ui(
     return model;
 }
 
-Matrix<float, 4> Engine::update_data_hud_screen_ubo(
-    Transform* cursor_transform
-) {
-    Matrix<float, 4> model;
-    Vector<float, 3> default_position = Vector<float, 3>(0.0, 0.0, 0.0);
+Matrix<f32, 4> Engine::update_data_hud_screen_ubo(Transform* cursor_transform) {
+    Matrix<f32, 4> model;
+    Vector<f32, 3> default_position = Vector<f32, 3>(0.0f, 0.0f, 0.0f);
 
-    float hud_screen_x = hud_screen_x;
+    f32 hud_screen_x = hud_screen_x;
 #ifndef VK_USE_PLATFORM_WAYLAND_KHR
     hud_screen_x = -hud_screen_x;
 #endif
@@ -1451,14 +1443,14 @@ void Engine::set_frame_data() {
         directional_light_archetypes_number
     );
 
-    uint32_t directional_light_counter = 0;
-    for (uint32_t x = 0; x < directional_light_archetypes_number; ++x) {
+    u32 directional_light_counter = 0;
+    for (u32 x = 0; x < directional_light_archetypes_number; ++x) {
         Archetype* arch = cached_directional_ligth_archetypes[x];
         DirectionalLightComponent* directional_lights =
             (DirectionalLightComponent*)
                 arch->components[ComponentsIndices::DirectionalLightComponent];
 
-        for (uint32_t x1 = 0; x1 < arch->entity_count; ++x1) {
+        for (u32 x1 = 0; x1 < arch->entity_count; ++x1) {
             if (directional_lights) {
                 vulkan_renderer->directional_lights.push_back({});
                 DirectionalLightComponent* light = &directional_lights[x1];
@@ -1466,39 +1458,39 @@ void Engine::set_frame_data() {
                     .directional_light_space_matrix =
                     update_directional_light_space_matrix_shadow_map_ubo(light);
                 vulkan_renderer->directional_lights[directional_light_counter]
-                    .position = Vector<float, 4>(
+                    .position = Vector<f32, 4>(
                     light->position[0],
                     light->position[1],
                     light->position[2],
-                    0.0
+                    0.0f
                 );
                 vulkan_renderer->directional_lights[directional_light_counter]
-                    .direction = Vector<float, 4>(
+                    .direction = Vector<f32, 4>(
                     light->direction[0],
                     light->direction[1],
                     light->direction[2],
-                    0.0
+                    0.0f
                 );
                 vulkan_renderer->directional_lights[directional_light_counter]
-                    .ambient = Vector<float, 4>(
+                    .ambient = Vector<f32, 4>(
                     light->ambient[0],
                     light->ambient[1],
                     light->ambient[2],
-                    0.0
+                    0.0f
                 );
                 vulkan_renderer->directional_lights[directional_light_counter]
-                    .diffuse = Vector<float, 4>(
+                    .diffuse = Vector<f32, 4>(
                     light->diffuse[0],
                     light->diffuse[1],
                     light->diffuse[2],
-                    0.0
+                    0.0f
                 );
                 vulkan_renderer->directional_lights[directional_light_counter]
-                    .specular = Vector<float, 4>(
+                    .specular = Vector<f32, 4>(
                     light->specular[0],
                     light->specular[1],
                     light->specular[2],
-                    0.0
+                    0.0f
                 );
                 ++directional_light_counter;
             }
@@ -1513,14 +1505,14 @@ void Engine::set_frame_data() {
         spot_light_archetypes_number
     );
 
-    uint32_t spot_light_counter = 0;
-    for (uint32_t x = 0; x < spot_light_archetypes_number; ++x) {
+    u32 spot_light_counter = 0;
+    for (u32 x = 0; x < spot_light_archetypes_number; ++x) {
         Archetype* arch = cached_spot_ligth_archetypes[x];
         SpotLightComponent* spot_lights =
             (SpotLightComponent*)
                 arch->components[ComponentsIndices::SpotLightComponent];
 
-        for (uint32_t x1 = 0; x1 < arch->entity_count; ++x1) {
+        for (u32 x1 = 0; x1 < arch->entity_count; ++x1) {
             if (spot_lights) {
                 vulkan_renderer->spot_lights.push_back({});
                 SpotLightComponent* light = &spot_lights[x1];
@@ -1560,20 +1552,20 @@ void Engine::set_frame_data() {
         point_light_archetypes_number
     );
 
-    uint32_t point_light_counter = 0;
-    for (uint32_t x = 0; x < point_light_archetypes_number; ++x) {
+    u32 point_light_counter = 0;
+    for (u32 x = 0; x < point_light_archetypes_number; ++x) {
         Archetype* arch = cached_point_ligth_archetypes[x];
         PointLightComponent* point_lights =
             (PointLightComponent*)
                 arch->components[ComponentsIndices::PointLightComponent];
 
-        for (uint32_t x1 = 0; x1 < arch->entity_count; ++x1) {
+        for (u32 x1 = 0; x1 < arch->entity_count; ++x1) {
             if (point_lights) {
                 vulkan_renderer->point_lights.push_back({});
                 PointLightComponent* light = &point_lights[x1];
-                uint32_t max_cube_map_layers = 6;
+                u32 max_cube_map_layers = 6;
                 // 6 is a number of cube map layers.
-                for (uint32_t cube_map_layer_counter = 0;
+                for (u32 cube_map_layer_counter = 0;
                      cube_map_layer_counter < max_cube_map_layers;
                      ++cube_map_layer_counter) {
                     vulkan_renderer->point_lights[point_light_counter]
@@ -1610,8 +1602,8 @@ void Engine::set_frame_data() {
         health_bars_archetypes_number
     );
 
-    uint32_t health_bar_counter = 0;
-    for (uint32_t x = 0; x < health_bars_archetypes_number; ++x) {
+    u32 health_bar_counter = 0;
+    for (u32 x = 0; x < health_bars_archetypes_number; ++x) {
         Archetype* arch = cached_health_bars_archetypes[x];
         Transform* health_bar_transforms =
             (Transform*)arch->components[ComponentsIndices::TransformComponent];
@@ -1620,12 +1612,12 @@ void Engine::set_frame_data() {
         Health* health_bars =
             (Health*)arch->components[ComponentsIndices::HealthComponent];
 
-        unsigned int ui_vertex_id = 0;
+        u32 ui_vertex_id = 0;
         if (matches_required_mask(arch->mask, PLAYER_COMPONENT_MASK)) {
             ui_vertex_id = health_bar_meshes[0].handle.id;
         }
 
-        for (unsigned int i = 0; i < arch->entity_count; ++i) {
+        for (u32 i = 0; i < arch->entity_count; ++i) {
             vulkan_renderer->health_bars.push_back({});
             Transform* transform_component = &health_bar_transforms[i];
             Health* health_component = &health_bars[i];
@@ -1649,14 +1641,14 @@ void Engine::set_frame_data() {
         fonts_archetypes_number
     );
 
-    uint32_t font_counter = 0;
-    for (uint32_t x = 0; x < fonts_archetypes_number; ++x) {
+    u32 font_counter = 0;
+    for (u32 x = 0; x < fonts_archetypes_number; ++x) {
         Archetype* arch = cached_fonts_archetypes[x];
         Transform* font_transforms =
             (Transform*)arch->components[ComponentsIndices::TransformComponent];
         Font* fonts = (Font*)arch->components[ComponentsIndices::FontComponent];
 
-        for (unsigned int i = 0; i < arch->entity_count; ++i) {
+        for (u32 i = 0; i < arch->entity_count; ++i) {
             vulkan_renderer->fonts.push_back({});
             Font* font_component = &fonts[i];
             Transform* transform_component = &font_transforms[i];
@@ -1672,7 +1664,7 @@ void Engine::set_frame_data() {
 
     if (vulkan_renderer->is_inventory_opened) {
         vulkan_renderer->inventories.clear();
-        uint32_t inventory_counter = 0;
+        u32 inventory_counter = 0;
         inventory_archetypes_number = 0;
         WORLD.search_cache_archetypes(
             inventory_required_mask,
@@ -1680,7 +1672,7 @@ void Engine::set_frame_data() {
             inventory_archetypes_number
         );
 
-        for (uint32_t x = 0; x < inventory_archetypes_number; ++x) {
+        for (u32 x = 0; x < inventory_archetypes_number; ++x) {
             Archetype* arch = cached_inventory_archetypes[x];
             Transform* inventory_transforms =
                 (Transform*)
@@ -1696,12 +1688,12 @@ void Engine::set_frame_data() {
 
             if (inventory_transforms && inventory_materials && inventory_data
                 && inventory_meshes) {
-                for (unsigned int i = 0; i < arch->entity_count; ++i) {
+                for (u32 i = 0; i < arch->entity_count; ++i) {
                     vulkan_renderer->inventories.push_back({});
                     Inventory* inventory_component = &inventory_data[i];
-                    unsigned int inventory_texture_id =
+                    u32 inventory_texture_id =
                         inventory_materials[i].diffuse_texture_id.id;
-                    unsigned int mesh_id = inventory_component->slot_mesh_id.id;
+                    u32 mesh_id = inventory_component->slot_mesh_id.id;
                     vulkan_renderer->inventories[inventory_counter]
                         .inventory_texture_id = inventory_texture_id;
                     vulkan_renderer->inventories[inventory_counter].mesh_id =
@@ -1712,10 +1704,8 @@ void Engine::set_frame_data() {
                         inventory_component->col;
                     vulkan_renderer->inventories[inventory_counter]
                         .slot_data.clear();
-                    for (unsigned int j = 0; j < inventory_component->row;
-                         ++j) {
-                        for (unsigned int m = 0; m < inventory_component->col;
-                             ++m) {
+                    for (u32 j = 0; j < inventory_component->row; ++j) {
+                        for (u32 m = 0; m < inventory_component->col; ++m) {
                             Transform* slot_transform_component =
                                 &inventory_transforms[i];
                             vulkan_renderer->inventories[inventory_counter]
@@ -1734,13 +1724,13 @@ void Engine::set_frame_data() {
                     ++inventory_counter;
                 }
 
-                for (unsigned int i = 0; i < arch->entity_count; ++i) {
+                for (u32 i = 0; i < arch->entity_count; ++i) {
                     Inventory* inventory_component = &inventory_data[i];
                     Transform* inventory_transform_component =
                         &inventory_transforms[i];
 
                     vulkan_renderer->items.clear();
-                    uint32_t item_counter = 0;
+                    u32 item_counter = 0;
                     item_archetypes_number = 0;
                     WORLD.search_cache_archetypes(
                         item_required_mask,
@@ -1748,7 +1738,7 @@ void Engine::set_frame_data() {
                         item_archetypes_number
                     );
 
-                    for (uint32_t c = 0; c < item_archetypes_number; ++c) {
+                    for (u32 c = 0; c < item_archetypes_number; ++c) {
                         Archetype* arch = cached_item_archetypes[c];
                         Transform* item_transforms =
                             (Transform*)arch->components
@@ -1768,14 +1758,12 @@ void Engine::set_frame_data() {
 
                         if (item_transforms && item_materials && item_meshes
                             && item_colliders && items) {
-                            for (unsigned int a = 0; a < arch->entity_count;
-                                 ++a) {
+                            for (u32 a = 0; a < arch->entity_count; ++a) {
                                 Item* item_component = &items[a];
                                 if (!item_component->is_actor) {
                                     vulkan_renderer->items.push_back({});
-                                    unsigned int mesh_id =
-                                        item_meshes[a].handle.id;
-                                    unsigned int diffuse_texture_id =
+                                    u32 mesh_id = item_meshes[a].handle.id;
+                                    u32 diffuse_texture_id =
                                         item_materials[a].diffuse_texture_id.id;
                                     vulkan_renderer->items[item_counter]
                                         .mesh_id = mesh_id;
@@ -1787,7 +1775,7 @@ void Engine::set_frame_data() {
                                     Collider* item_collider_component =
                                         &item_colliders[a];
 
-                                    uint32_t item_entity = arch->entities[a];
+                                    u32 item_entity = arch->entities[a];
                                     vulkan_renderer->items[item_counter].model =
                                         update_data_ubo_icons_ui(
                                             item_transform_component,
@@ -1817,17 +1805,17 @@ void Engine::set_frame_data() {
         crosshair_actors_archetypes_number
     );
 
-    for (uint32_t x = 0; x < crosshair_actors_archetypes_number; ++x) {
+    for (u32 x = 0; x < crosshair_actors_archetypes_number; ++x) {
         Archetype* arch = cached_crosshair_actors_archetypes[x];
         Transform* crosshair_transforms =
             (Transform*)arch->components[ComponentsIndices::TransformComponent];
         Mesh* crosshair_meshes =
             (Mesh*)arch->components[ComponentsIndices::MeshComponent];
 
-        for (unsigned int i = 0; i < arch->entity_count; ++i) {
+        for (u32 i = 0; i < arch->entity_count; ++i) {
             vulkan_renderer->crosshairs.push_back({});
             Transform* cursor_transform = &crosshair_transforms[i];
-            unsigned int mesh_id = crosshair_meshes[i].handle.id;
+            u32 mesh_id = crosshair_meshes[i].handle.id;
             vulkan_renderer->crosshairs[i].mesh_id = mesh_id;
             vulkan_renderer->crosshairs[i].model =
                 update_data_hud_screen_ubo(cursor_transform);
@@ -1842,8 +1830,8 @@ void Engine::set_frame_data() {
         level_chunk_actors_archetypes_number
     );
 
-    uint32_t level_chunk_actors_counter = 0;
-    for (uint32_t x = 0; x < level_chunk_actors_archetypes_number; ++x) {
+    u32 level_chunk_actors_counter = 0;
+    for (u32 x = 0; x < level_chunk_actors_archetypes_number; ++x) {
         Archetype* arch = cached_level_chunk_actors_archetypes[x];
         Transform* level_chunk_transforms =
             (Transform*)arch->components[ComponentsIndices::TransformComponent];
@@ -1857,21 +1845,21 @@ void Engine::set_frame_data() {
             (LevelChunkTagComponent*)
                 arch->components[ComponentsIndices::LevelChunkTagComponent];
 
-        std::vector<Matrix<float, 4>> joint_matrices;
+        Vec<Matrix<f32, 4>> joint_matrices;
         joint_matrices.resize(MAX_JOINTS_NUMBER);
-        for (unsigned int i = 0; i < MAX_JOINTS_NUMBER; ++i) {
-            Matrix<float, 4> unit_matrix(1.0f);
+        for (u32 i = 0; i < MAX_JOINTS_NUMBER; ++i) {
+            Matrix<f32, 4> unit_matrix(1.0f);
             joint_matrices[i] = unit_matrix;
         }
 
-        for (uint32_t n = 0; n < arch->entity_count; ++n) {
+        for (u32 n = 0; n < arch->entity_count; ++n) {
             vulkan_renderer->actors.push_back({});
             Transform* transform_component = &level_chunk_transforms[n];
             Material* material_component = &level_chunk_materials[n];
             Rotation* rotation_component = &level_chunk_rotations[n];
             if (level_chunk_transforms && level_chunk_materials && level_chunks
                 && level_chunk_rotations && level_chunk_meshes) {
-                unsigned int mesh_id = level_chunk_meshes[n].handle.id;
+                u32 mesh_id = level_chunk_meshes[n].handle.id;
                 vulkan_renderer->actors[level_chunk_actors_counter]
                     .model_matrix = compute_model_matrix(
                     transform_component,
@@ -1903,8 +1891,8 @@ void Engine::set_frame_data() {
         animation_actors_archetypes_number
     );
 
-    uint32_t animation_actors_counter = level_chunk_actors_counter;
-    for (uint32_t x = 0; x < animation_actors_archetypes_number; ++x) {
+    u32 animation_actors_counter = level_chunk_actors_counter;
+    for (u32 x = 0; x < animation_actors_archetypes_number; ++x) {
         Archetype* arch = cached_animation_actors_archetypes[x];
         Transform* actor_transforms =
             (Transform*)arch->components[ComponentsIndices::TransformComponent];
@@ -1917,7 +1905,7 @@ void Engine::set_frame_data() {
         Animation* actor_animations =
             (Animation*)arch->components[ComponentsIndices::AnimationComponent];
 
-        for (uint32_t n = 0; n < arch->entity_count; ++n) {
+        for (u32 n = 0; n < arch->entity_count; ++n) {
             vulkan_renderer->actors.push_back({});
             Transform* transform_component = &actor_transforms[n];
             Material* material_component = &actor_materials[n];
@@ -1925,7 +1913,7 @@ void Engine::set_frame_data() {
             Rotation* rotation_component = &actor_rotations[n];
             if (actor_transforms && actor_materials && actor_animations
                 && actor_rotations) {
-                unsigned int mesh_id = actor_meshes[n].handle.id;
+                u32 mesh_id = actor_meshes[n].handle.id;
                 vulkan_renderer->actors[animation_actors_counter].model_matrix =
                     compute_model_matrix(
                         transform_component,
@@ -1958,8 +1946,8 @@ void Engine::set_frame_data() {
         static_actors_archetypes_number
     );
 
-    uint32_t static_actors_counter = animation_actors_counter;
-    for (uint32_t x = 0; x < static_actors_archetypes_number; ++x) {
+    u32 static_actors_counter = animation_actors_counter;
+    for (u32 x = 0; x < static_actors_archetypes_number; ++x) {
         Archetype* arch = cached_static_actors_archetypes[x];
         Transform* static_actor_transforms =
             (Transform*)arch->components[ComponentsIndices::TransformComponent];
@@ -1970,21 +1958,21 @@ void Engine::set_frame_data() {
         Rotation* static_actor_rotations =
             (Rotation*)arch->components[ComponentsIndices::RotationComponent];
 
-        std::vector<Matrix<float, 4>> joint_matrices;
+        Vec<Matrix<f32, 4>> joint_matrices;
         joint_matrices.resize(MAX_JOINTS_NUMBER);
-        for (unsigned int i = 0; i < MAX_JOINTS_NUMBER; ++i) {
-            Matrix<float, 4> unit_matrix(1.0f);
+        for (u32 i = 0; i < MAX_JOINTS_NUMBER; ++i) {
+            Matrix<f32, 4> unit_matrix(1.0f);
             joint_matrices[i] = unit_matrix;
         }
 
-        for (uint32_t n = 0; n < arch->entity_count; ++n) {
+        for (u32 n = 0; n < arch->entity_count; ++n) {
             vulkan_renderer->actors.push_back({});
             Transform* transform_component = &static_actor_transforms[n];
             Material* material_component = &static_actor_materials[n];
             Rotation* rotation_component = &static_actor_rotations[n];
             if (static_actor_transforms && static_actor_materials
                 && static_actor_rotations && static_actor_meshes) {
-                unsigned int mesh_id = static_actor_meshes[n].handle.id;
+                u32 mesh_id = static_actor_meshes[n].handle.id;
                 vulkan_renderer->actors[static_actors_counter].model_matrix =
                     compute_model_matrix(
                         transform_component,
@@ -2016,8 +2004,8 @@ void Engine::set_frame_data() {
         projectile_actors_archetypes_number
     );
 
-    uint32_t projectile_actors_counter = static_actors_counter;
-    for (uint32_t x = 0; x < projectile_actors_archetypes_number; ++x) {
+    u32 projectile_actors_counter = static_actors_counter;
+    for (u32 x = 0; x < projectile_actors_archetypes_number; ++x) {
         Archetype* arch = cached_projectile_actors_archetypes[x];
         Transform* actor_transforms =
             (Transform*)arch->components[ComponentsIndices::TransformComponent];
@@ -2029,14 +2017,14 @@ void Engine::set_frame_data() {
         Rotation* actor_rotations =
             (Rotation*)arch->components[ComponentsIndices::RotationComponent];
 
-        std::vector<Matrix<float, 4>> joint_matrices;
+        Vec<Matrix<f32, 4>> joint_matrices;
         joint_matrices.resize(MAX_JOINTS_NUMBER);
-        for (unsigned int i = 0; i < MAX_JOINTS_NUMBER; ++i) {
-            Matrix<float, 4> unit_matrix(1.0f);
+        for (u32 i = 0; i < MAX_JOINTS_NUMBER; ++i) {
+            Matrix<f32, 4> unit_matrix(1.0f);
             joint_matrices[i] = unit_matrix;
         }
 
-        for (uint32_t n = 0; n < arch->entity_count; ++n) {
+        for (u32 n = 0; n < arch->entity_count; ++n) {
             vulkan_renderer->actors.push_back({});
             Transform* transform_component = &actor_transforms[n];
             Material* material_component =
@@ -2044,7 +2032,7 @@ void Engine::set_frame_data() {
             Rotation* rotation_component = &actor_rotations[n];
             if (actor_transforms && actor_projectile_bundles && actor_rotations
                 && actor_meshes) {
-                unsigned int mesh_id = actor_meshes[n].handle.id;
+                u32 mesh_id = actor_meshes[n].handle.id;
                 vulkan_renderer->actors[projectile_actors_counter].model_matrix =
                     compute_model_matrix(
                         transform_component,
@@ -2078,8 +2066,8 @@ void Engine::set_frame_data() {
         item_actors_archetypes_number
     );
 
-    uint32_t item_actors_counter = projectile_actors_counter;
-    for (uint32_t x = 0; x < item_actors_archetypes_number; ++x) {
+    u32 item_actors_counter = projectile_actors_counter;
+    for (u32 x = 0; x < item_actors_archetypes_number; ++x) {
         Archetype* arch = cached_item_actors_archetypes[x];
         Transform* item_transforms =
             (Transform*)arch->components[ComponentsIndices::TransformComponent];
@@ -2091,14 +2079,14 @@ void Engine::set_frame_data() {
             (Rotation*)arch->components[ComponentsIndices::RotationComponent];
         Item* items = (Item*)arch->components[ComponentsIndices::ItemComponent];
 
-        std::vector<Matrix<float, 4>> joint_matrices;
+        Vec<Matrix<f32, 4>> joint_matrices;
         joint_matrices.resize(MAX_JOINTS_NUMBER);
-        for (unsigned int i = 0; i < MAX_JOINTS_NUMBER; ++i) {
-            Matrix<float, 4> unit_matrix(1.0f);
+        for (u32 i = 0; i < MAX_JOINTS_NUMBER; ++i) {
+            Matrix<f32, 4> unit_matrix(1.0f);
             joint_matrices[i] = unit_matrix;
         }
 
-        for (uint32_t n = 0; n < arch->entity_count; ++n) {
+        for (u32 n = 0; n < arch->entity_count; ++n) {
             if (items[n].is_actor) {
                 vulkan_renderer->actors.push_back({});
                 Transform* transform_component = &item_transforms[n];
@@ -2106,7 +2094,7 @@ void Engine::set_frame_data() {
                 Rotation* rotation_component = &item_rotations[n];
                 if (item_transforms && item_materials && item_rotations
                     && item_meshes) {
-                    unsigned int mesh_id = item_meshes[n].handle.id;
+                    u32 mesh_id = item_meshes[n].handle.id;
                     vulkan_renderer->actors[item_actors_counter].model_matrix =
                         compute_model_matrix(
                             transform_component,
@@ -2140,13 +2128,13 @@ void Engine::set_frame_data() {
         player_archetypes_number
     );
 
-    uint32_t player_entity_count = 0;
-    for (uint32_t x = 0; x < player_archetypes_number; ++x) {
+    u32 player_entity_count = 0;
+    for (u32 x = 0; x < player_archetypes_number; ++x) {
         Archetype* arch = cached_player_archetypes[x];
         Transform* player_transforms =
             (Transform*)arch->components[ComponentsIndices::TransformComponent];
 
-        for (unsigned int n = 0; n < arch->entity_count; ++n) {
+        for (u32 n = 0; n < arch->entity_count; ++n) {
             vulkan_renderer->players.push_back({});
             Transform* player_transform_component = &player_transforms[n];
             if (&player_transforms[n] != nullptr) {
@@ -2161,7 +2149,7 @@ void Engine::set_frame_data() {
 }
 
 void Engine::load_wavefront_obj() {
-    for (unsigned int m = 0; m < paths_array.size(); ++m) {
+    for (u32 m = 0; m < paths_array.size(); ++m) {
         CWaveFrontObjParser parser;
         CWaveFrontObjParser* wavefront_obj_parser = &parser;
 
@@ -2176,15 +2164,14 @@ void Engine::load_wavefront_obj() {
         vulkan_renderer->frames.push_back({});
         vulkan_renderer->joint_matrices_per_mesh.push_back({});
 
-        unsigned int vertex_index = 0;
-        unsigned int texture_index = 0;
-        unsigned int normal_index = 0;
-        unsigned int face_vertices_size =
-            wavefront_obj_parser->get_faces().size();
+        u32 vertex_index = 0;
+        u32 texture_index = 0;
+        u32 normal_index = 0;
+        u32 face_vertices_size = wavefront_obj_parser->get_faces().size();
         vulkan_renderer->mesh_axis_limiting_values.set_to_default_values();
 
-        for (unsigned int i = 0; i < face_vertices_size; ++i) {
-            for (int j = 0; j < 3; ++j) {
+        for (u32 i = 0; i < face_vertices_size; ++i) {
+            for (i32 j = 0; j < 3; ++j) {
                 vertex_index = wavefront_obj_parser->get_faces()[i][0][j] - 1;
                 vulkan_renderer->a_indices[m].push_back(i * 3 + j);
                 SVertex vertex = wavefront_obj_parser
@@ -2196,8 +2183,8 @@ void Engine::load_wavefront_obj() {
                 SVertex normal =
                     wavefront_obj_parser->get_normals()[normal_index];
 
-                Vector<float, 4> joint_indices;
-                Vector<float, 4> weights;
+                Vector<f32, 4> joint_indices;
+                Vector<f32, 4> weights;
 
                 if (vertex[1] > vulkan_renderer->highest_gltf_y[m]) {
                     vulkan_renderer->highest_gltf_y[m] = vertex[1];
@@ -2263,7 +2250,7 @@ void Engine::load_wavefront_obj() {
     }
 }
 
-void Engine::calculate_mesh_bounds(const Vector<float, 4>& animated_vertex) {
+void Engine::calculate_mesh_bounds(const Vector<f32, 4>& animated_vertex) {
     if (animated_vertex[0]
         < vulkan_renderer->mesh_axis_limiting_values.lowest_x) {
         vulkan_renderer->mesh_axis_limiting_values.lowest_x =
@@ -2301,7 +2288,7 @@ void Engine::calculate_mesh_bounds(const Vector<float, 4>& animated_vertex) {
     }
 }
 
-bool Engine::is_model_cache_exists(const std::string& model_file_path) {
+bool Engine::is_model_cache_exists(const String& model_file_path) {
     std::ofstream models_cache(
         "../../../examples/assets/cache/models/cache",
         std::ios::app
@@ -2311,13 +2298,13 @@ bool Engine::is_model_cache_exists(const std::string& model_file_path) {
         throw std::runtime_error("Failed to load mesh cache");
     }
     std::ifstream file("../../../examples/assets/cache/models/cache");
-    std::string line;
+    String line;
     while (std::getline(file, line)) {
-        if (line.find(model_file_path) != std::string::npos) {
+        if (line.find(model_file_path) != String::npos) {
             std::istringstream iss(line);
 
-            std::string keyword;
-            float highest_x, lowest_x, highest_y, lowest_y, highest_z, lowest_z;
+            String keyword;
+            f32 highest_x, lowest_x, highest_y, lowest_y, highest_z, lowest_z;
 
             iss >> keyword >> highest_x >> lowest_x >> highest_y >> lowest_y
                 >> highest_z >> lowest_z;
@@ -2338,7 +2325,7 @@ bool Engine::is_model_cache_exists(const std::string& model_file_path) {
     return false;
 }
 
-void Engine::write_models_cache(const std::string& model_file_path) {
+void Engine::write_models_cache(const String& model_file_path) {
     std::ofstream models_cache(
         "../../../examples/assets/cache/models/cache",
         std::ios::app
@@ -2347,10 +2334,9 @@ void Engine::write_models_cache(const std::string& model_file_path) {
         std::cerr << "Error opening the models cache file" << std::endl;
         throw std::runtime_error("Failed to load mesh cache");
     }
-    std::size_t pos = model_file_path.find(' ');
-    std::string first_part = (pos == std::string::npos)
-        ? model_file_path
-        : model_file_path.substr(0, pos);
+    usize pos = model_file_path.find(' ');
+    String first_part = (pos == String::npos) ? model_file_path
+                                              : model_file_path.substr(0, pos);
 
     models_cache << model_file_path;
     models_cache << " " << vulkan_renderer->mesh_axis_limiting_values.highest_x
@@ -2365,8 +2351,8 @@ void Engine::write_models_cache(const std::string& model_file_path) {
 }
 
 void Engine::initialize_gltf() {
-    std::vector<bool> animation_flags;
-    for (unsigned int m = 0; m < paths_gltf.size(); ++m) {
+    Vec<bool> animation_flags;
+    for (u32 m = 0; m < paths_gltf.size(); ++m) {
         CJsonParser json_parser;
         vulkan_renderer->a_vertexes_temp.emplace_back();
         vulkan_renderer->a_indices.emplace_back();
@@ -2374,7 +2360,7 @@ void Engine::initialize_gltf() {
         vulkan_renderer->joint_matrices_per_mesh.push_back({});
         animation_flags.push_back({});
         vulkan_renderer->highest_gltf_y.emplace_back();
-        uint32_t next_index_gltf = wavefront_obj_counter + m;
+        u32 next_index_gltf = wavefront_obj_counter + m;
         bool animation_flag = false;
         json_parser.load_gltf(
             paths_gltf[m],
@@ -2388,21 +2374,21 @@ void Engine::initialize_gltf() {
         animation_flags[m] = animation_flag;
     }
 
-    for (unsigned int m = 0; m < paths_gltf.size(); ++m) {
+    for (u32 m = 0; m < paths_gltf.size(); ++m) {
         vulkan_renderer->a_vertices.emplace_back();
         vulkan_renderer->mesh_axis_limiting_values.set_to_default_values();
 
         is_already_cached = false;
         is_model_cache_exists(paths_gltf[m]);
 
-        int step_offset = 0;
+        i32 step_offset = 0;
         if (animation_flags[m]) {
             step_offset = 8;
         } else {
             step_offset = 16;
         }
 
-        for (unsigned int n = 0; n < vulkan_renderer->a_vertexes_temp[m].size();
+        for (u32 n = 0; n < vulkan_renderer->a_vertexes_temp[m].size();
              n += step_offset) {
             SVertex vertex;
             vertex[0] = vulkan_renderer->a_vertexes_temp[m][n];
@@ -2416,8 +2402,8 @@ void Engine::initialize_gltf() {
             texture[0] = vulkan_renderer->a_vertexes_temp[m][n + 6];
             texture[1] = vulkan_renderer->a_vertexes_temp[m][n + 7];
 
-            Vector<float, 4> join_indices;
-            Vector<float, 4> weights;
+            Vector<f32, 4> join_indices;
+            Vector<f32, 4> weights;
             if (animation_flags[m]) {
                 join_indices[0] = -1;
                 join_indices[1] = -1;
@@ -2441,7 +2427,7 @@ void Engine::initialize_gltf() {
                 weights[3] = vulkan_renderer->a_vertexes_temp[m][n + 15];
             }
 
-            uint32_t next_index_gltf = wavefront_obj_counter + m;
+            u32 next_index_gltf = wavefront_obj_counter + m;
             vulkan_renderer->a_vertices[next_index_gltf].push_back(
                 {{vertex[0], vertex[1], vertex[2]},
                  {normal[0], normal[1], normal[2]},
@@ -2457,33 +2443,33 @@ void Engine::initialize_gltf() {
                 continue;
             }
 
-            Vector<float, 4> animated_vertex =
-                Vector<float, 4>(vertex[0], vertex[1], vertex[2], 1.0);
+            Vector<f32, 4> animated_vertex =
+                Vector<f32, 4>(vertex[0], vertex[1], vertex[2], 1.0f);
             if (!animation_flags[m]
                 && vulkan_renderer->joint_matrices_per_mesh[next_index_gltf]
                         .size()
                     > 0) {
-                for (unsigned int frame = 0;
+                for (u32 frame = 0;
                      frame < vulkan_renderer
                                  ->joint_matrices_per_mesh[next_index_gltf][0]
                                  .size();
                      ++frame) {
-                    Matrix<float, 4> skin_matrix =
+                    Matrix<f32, 4> skin_matrix =
                         (vulkan_renderer->joint_matrices_per_mesh
-                             [next_index_gltf][int(join_indices[0])][frame]
+                             [next_index_gltf][i32(join_indices[0])][frame]
                          * weights[0])
                         + (vulkan_renderer->joint_matrices_per_mesh
-                               [next_index_gltf][int(join_indices[1])][frame]
+                               [next_index_gltf][i32(join_indices[1])][frame]
                            * weights[1])
                         + (vulkan_renderer->joint_matrices_per_mesh
-                               [next_index_gltf][int(join_indices[2])][frame]
+                               [next_index_gltf][i32(join_indices[2])][frame]
                            * weights[2])
                         + (vulkan_renderer->joint_matrices_per_mesh
-                               [next_index_gltf][int(join_indices[3])][frame]
+                               [next_index_gltf][i32(join_indices[3])][frame]
                            * weights[3]);
 
                     animated_vertex =
-                        Vector<float, 4>(vertex[0], vertex[1], vertex[2], 1.0)
+                        Vector<f32, 4>(vertex[0], vertex[1], vertex[2], 1.0f)
                         * skin_matrix;
                     calculate_mesh_bounds(animated_vertex);
                 }
@@ -2500,9 +2486,9 @@ void Engine::initialize_gltf() {
 }
 
 void Engine::initialize_font_data() {
-    constexpr float FONT_STEP = 1.0 / 12;
-    constexpr unsigned int GLYPH_ROW = 7;
-    constexpr unsigned int GLYPH_COLUMN = 12;
+    constexpr auto FONT_STEP = 1.0f / 12;
+    constexpr auto GLYPH_ROW = 7;
+    constexpr auto GLYPH_COLUMN = 12;
 
     vulkan_renderer->font_vertex_buffer_container.resize(128);
     vulkan_renderer->font_vertex_buffer_memory_container.resize(128);
@@ -2510,9 +2496,9 @@ void Engine::initialize_font_data() {
     vulkan_renderer->font_index_buffer_container.resize(128);
     vulkan_renderer->font_index_buffer_memory_contaner.resize(128);
 
-    for (unsigned int i = 0; i < GLYPH_ROW; ++i) {
-        for (unsigned int j = 0; j < GLYPH_COLUMN; ++j) {
-            std::vector<Vertex> symbol_g_vertices;
+    for (u32 i = 0; i < GLYPH_ROW; ++i) {
+        for (u32 j = 0; j < GLYPH_COLUMN; ++j) {
+            Vec<Vertex> symbol_g_vertices;
             symbol_g_vertices.push_back(
                 {{-0.5f, 0.5f, 0.0f},
                  {0.0f, 1.0f, 0.0f},
@@ -2541,16 +2527,14 @@ void Engine::initialize_font_data() {
                  {0.0f, 0.0f, 0.0f, 0.0f},
                  {1.0f, 0.0f, 0.0f, 0.0f}}
             );
-            unsigned int current_buffer_index = i * GLYPH_COLUMN + j;
+            u32 current_buffer_index = i * GLYPH_COLUMN + j;
 
             bool exit_flag = false;
-            const unsigned int next_buffer_index =
-                static_cast<const unsigned int>(
-                    vulkan_renderer->glyphs[current_buffer_index]
-                );
+            const auto next_buffer_index = static_cast<const u32>(
+                vulkan_renderer->glyphs[current_buffer_index]
+            );
             // TODO: Fix gabage algorithm.
-            for (unsigned int n = 0;
-                 n < vulkan_renderer->font_indices_container.size();
+            for (u32 n = 0; n < vulkan_renderer->font_indices_container.size();
                  ++n) {
                 if (next_buffer_index
                     == vulkan_renderer->font_indices_container[n]) {
@@ -2570,13 +2554,13 @@ void Engine::initialize_font_data() {
     }
 }
 
-Matrix<float, 4> Engine::compute_model_matrix(
+Matrix<f32, 4> Engine::compute_model_matrix(
     Transform* transform,
     Rotation* rotation
 ) {
-    Matrix<float, 4> rotation_matrix(1.0f);
-    Matrix<float, 4> scaling_matrix(1.0f);
-    Matrix<float, 4> translation_matrix(1.0f);
+    Matrix<f32, 4> rotation_matrix(1.0f);
+    Matrix<f32, 4> scaling_matrix(1.0f);
+    Matrix<f32, 4> translation_matrix(1.0f);
 
     scaling_matrix[0][0] = transform->scale;
     scaling_matrix[1][1] = transform->scale;
@@ -2587,10 +2571,10 @@ Matrix<float, 4> Engine::compute_model_matrix(
     translation_matrix[3][2] = transform->position[2];
     translation_matrix[3][3] = 1.0f;
 
-    float sin_pitch = std::sin(radians(-rotation->pitch / 2));
-    float cos_pitch = std::cos(radians(-rotation->pitch / 2));
-    float sin_yaw = std::sin(radians((rotation->yaw) / 2));
-    float cos_yaw = std::cos(radians((rotation->yaw) / 2));
+    f32 sin_pitch = std::sin(radians(-rotation->pitch / 2));
+    f32 cos_pitch = std::cos(radians(-rotation->pitch / 2));
+    f32 sin_yaw = std::sin(radians((rotation->yaw) / 2));
+    f32 cos_yaw = std::cos(radians((rotation->yaw) / 2));
 
     Quaternion pitch_quat;
     Quaternion yaw_quat;
@@ -2609,9 +2593,9 @@ Matrix<float, 4> Engine::compute_model_matrix(
 void Engine::compute_hud_screeen_coordinates() {
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
     hud_screen_y -= G_E_EVENT.mouse_pointer_position.offset_y
-        / (float)vulkan_renderer->window->height;
+        / (f32)vulkan_renderer->window->height;
     hud_screen_x += G_E_EVENT.mouse_pointer_position.offset_x
-        / (float)vulkan_renderer->window->width;
+        / (f32)vulkan_renderer->window->width;
 #else
     if (vulkan_renderer->is_inventory_opened
         || vulkan_renderer->is_cursor_released) {
@@ -2619,18 +2603,18 @@ void Engine::compute_hud_screeen_coordinates() {
         // track its real position instead of the locked-mouse offsets.
         hud_screen_x = 1.0f
             - G_E_EVENT.mouse_pointer_position.position_x
-                / ((float)vulkan_renderer->window->width / 2.0f);
+                / ((f32)vulkan_renderer->window->width / 2.0f);
         hud_screen_y =
             -(G_E_EVENT.mouse_pointer_position.position_y
-                  / ((float)vulkan_renderer->window->height / 2.0f)
+                  / ((f32)vulkan_renderer->window->height / 2.0f)
               - 1.0f);
     } else {
         hud_screen_y -= (previous_mouse_offset_y
                          - G_E_EVENT.mouse_pointer_position.offset_y)
-            / (float)vulkan_renderer->window->height;
+            / (f32)vulkan_renderer->window->height;
         hud_screen_x += (previous_mouse_offset_x
                          - G_E_EVENT.mouse_pointer_position.offset_x)
-            / (float)vulkan_renderer->window->width;
+            / (f32)vulkan_renderer->window->width;
     }
     previous_mouse_offset_x = G_E_EVENT.mouse_pointer_position.offset_x;
     previous_mouse_offset_y = G_E_EVENT.mouse_pointer_position.offset_y;
@@ -2649,7 +2633,7 @@ void Engine::compute_hud_screeen_coordinates() {
 }
 
 TextureHandle Engine::load_texture_from_file(const char* path_to_texture) {
-    uint32_t texture_id = texture_vector.size();
+    u32 texture_id = texture_vector.size();
     TextureHandle texture_handle;
     texture_handle.id = texture_id;
     texture_vector.push_back({.path_to_image = path_to_texture});
@@ -2659,12 +2643,12 @@ TextureHandle Engine::load_texture_from_file(const char* path_to_texture) {
 }
 
 auto Engine::load_texture_from_address(
-    unsigned int i_width,
-    unsigned int i_height,
-    unsigned int dat_length,
-    unsigned char* u_i_data
+    u32 i_width,
+    u32 i_height,
+    u32 dat_length,
+    u8* u_i_data
 ) -> TextureHandle {
-    uint32_t texture_id = texture_vector.size();
+    u32 texture_id = texture_vector.size();
     TextureHandle texture_handle;
     texture_handle.id = texture_id;
     texture_vector.push_back(
@@ -2739,7 +2723,7 @@ void Engine::game_kill() {
 
 namespace glvm {
 EntityManager* EntityManager::instance = nullptr;
-std::mutex EntityManager::mutex;
+Mutex EntityManager::mutex;
 
 EntityManager::EntityManager() {
 }
@@ -2748,15 +2732,15 @@ EntityManager::~EntityManager() {
 }
 
 EntityManager* EntityManager::get_instance() {
-    std::lock_guard<std::mutex> lock(mutex);
+    MutexGuard<Mutex> lock(mutex);
     if (instance == nullptr) {
         instance = new EntityManager();
     }
     return instance;
 }
 
-[[nodiscard]] unsigned int EntityManager::create_entity() {
-    unsigned int new_id;
+[[nodiscard]] u32 EntityManager::create_entity() {
+    u32 new_id;
     // Check out wether or not free ID in removed entities registry.
     if (removed_entity_registry.size() > K_I_NULL) {
         new_id = removed_entity_registry.front();
@@ -2774,7 +2758,7 @@ EntityManager* EntityManager::get_instance() {
 // Don't need to delete real component in this method. Because systems dont work
 // with component without indices for that component in ordered container.
 void EntityManager::remove_entity(
-    unsigned int& entity_id,
+    u32& entity_id,
     ComponentManager* component_manager
 ) {
     component_manager->remove_all_components(entity_id);
@@ -2828,21 +2812,21 @@ void CEvent::set_last_event(CStack stack) {
 } // namespace glvm
 
 namespace glvm {
-std::vector<VkDescriptorSet> DESCRIPTOR_SETS_CHUNKS;
-std::vector<VkRenderPass> RENDER_PASSES;
-std::vector<Descriptor> GPU_DESCRIPTORS;
+Vec<VkDescriptorSet> DESCRIPTOR_SETS_CHUNKS;
+Vec<VkRenderPass> RENDER_PASSES;
+Vec<Descriptor> GPU_DESCRIPTORS;
 } // namespace glvm
 
 namespace glvm {
 void descriptor_set_builder() {
     // Counts ds bindings indexes inside ds.
-    static unsigned int DS_GLOBAL_BINDINGS_COUNTER = 0;
+    static u32 DS_GLOBAL_BINDINGS_COUNTER = 0;
     // Counts host data ds.
-    static unsigned int DS_HOST_NUMBER = 0;
+    static u32 DS_HOST_NUMBER = 0;
     // Counts offsets data descriptors.
-    static unsigned int GLOBAL_DESCRIPTORS_OFFSET = 0;
+    static u32 GLOBAL_DESCRIPTORS_OFFSET = 0;
 
-    for (unsigned int ds_counter = 0;
+    for (u32 ds_counter = 0;
          ds_counter < DescriptorSetDataLink::DescriptorChunksNumber;
          ++ds_counter) {
         // Offset for indexing inside descriptorSetsChunks.
@@ -2851,12 +2835,11 @@ void descriptor_set_builder() {
         DS_HOST_NUMBER +=
             DESCRIPTOR_SETS_CONFIG[ds_counter].host_descriptor_number;
 
-        for (unsigned int ds_local_bindings_counter = 0;
-             ds_local_bindings_counter
+        for (u32 ds_local_bindings_counter = 0; ds_local_bindings_counter
              < DESCRIPTOR_SETS_CONFIG[ds_counter]
                    .actual_linked_descriptor_bindings_number;
              ++ds_local_bindings_counter) {
-            const uint32_t ds_sum_bindings_counter =
+            const auto ds_sum_bindings_counter =
                 DS_GLOBAL_BINDINGS_COUNTER + ds_local_bindings_counter;
             // Global offset for descriptors inside ds binding.
             DESCRIPTOR_BINDINGS_CONFIG[ds_sum_bindings_counter]
@@ -2868,7 +2851,7 @@ void descriptor_set_builder() {
                 ds_sum_bindings_counter;
             if (DESCRIPTOR_BINDINGS_CONFIG[ds_sum_bindings_counter].vk_type
                 == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
-                for (unsigned int descriptor_counter = 0; descriptor_counter
+                for (u32 descriptor_counter = 0; descriptor_counter
                      < DESCRIPTOR_BINDINGS_CONFIG[ds_sum_bindings_counter]
                            .shader_descriptors_number;
                      ++descriptor_counter) {
@@ -2881,7 +2864,7 @@ void descriptor_set_builder() {
                 DESCRIPTOR_BINDINGS_CONFIG[ds_sum_bindings_counter].vk_type
                 == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
             ) {
-                for (unsigned int descriptor_counter = 0; descriptor_counter
+                for (u32 descriptor_counter = 0; descriptor_counter
                      < DESCRIPTOR_BINDINGS_CONFIG[ds_sum_bindings_counter]
                            .shader_descriptors_number;
                      ++descriptor_counter) {
@@ -2900,11 +2883,11 @@ void descriptor_set_builder() {
 }
 
 void pipeline_builder() {
-    static unsigned int DESCRIPTOR_SETS_LAYOUT_ID_COUNTER = 0;
-    for (unsigned int pipeline_counter = 0;
+    static u32 DESCRIPTOR_SETS_LAYOUT_ID_COUNTER = 0;
+    for (u32 pipeline_counter = 0;
          pipeline_counter < SpecificPipeline::PipelinesNumber;
          ++pipeline_counter) {
-        for (unsigned int linked_ds_layout_counter = 0; linked_ds_layout_counter
+        for (u32 linked_ds_layout_counter = 0; linked_ds_layout_counter
              < PIPELINE_CONFIGS[pipeline_counter]
                    .actual_linked_descriptor_sets_number;
              ++linked_ds_layout_counter) {
@@ -2990,66 +2973,66 @@ VkResult set_debug_object_name(
 void set_image_debug_object_name(
     VkDevice device,
     GpuImage image,
-    std::string image_name
+    String image_name
 ) {
     VkDebugUtilsObjectNameInfoEXT image_object_info {};
     image_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string image_name1 = std::string(VK_DEBUG_IMAGE_SET_RED) + " \x1b[31m"
+    String image_name1 = String(VK_DEBUG_IMAGE_SET_RED) + " \x1b[31m"
         + image_name + " pipeline #\x1b[0m " + std::to_string(0);
     const char* str_image_name = image_name1.c_str();
     image_object_info.pObjectName = str_image_name;
     image_object_info.objectType = VK_OBJECT_TYPE_IMAGE;
-    image_object_info.objectHandle = (uint64_t)image.image;
+    image_object_info.objectHandle = (u64)image.image;
     set_debug_object_name(device, &image_object_info);
 }
 
 void set_pipeline_debug_object_name(
     VkDevice device,
     VkPipeline pipeline,
-    std::string pipeline_name
+    String pipeline_name
 ) {
     VkDebugUtilsObjectNameInfoEXT main_pipeline_object_info {};
     main_pipeline_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string main_pipe_line_image_name = std::string(VK_DEBUG_PIPELINE_RED)
+    String main_pipe_line_image_name = String(VK_DEBUG_PIPELINE_RED)
         + " \x1b[31m" + pipeline_name + " pipeline #\x1b[0m "
         + std::to_string(0);
     const char* main_pipe_line_str_image_name =
         main_pipe_line_image_name.c_str();
     main_pipeline_object_info.pObjectName = main_pipe_line_str_image_name;
     main_pipeline_object_info.objectType = VK_OBJECT_TYPE_PIPELINE;
-    main_pipeline_object_info.objectHandle = (uint64_t)pipeline;
+    main_pipeline_object_info.objectHandle = (u64)pipeline;
     set_debug_object_name(device, &main_pipeline_object_info);
 }
 
 void set_descriptor_set_object_name(
     VkDevice device,
     VkDescriptorSet descriptor_set,
-    std::string descriptor_set_name,
-    unsigned int index
+    String descriptor_set_name,
+    u32 index
 ) {
     VkDebugUtilsObjectNameInfoEXT descriptor_set_object_info {};
     descriptor_set_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string name = std::string(VK_DEBUG_DESCRIPTOR_SET_RED) + " \x1b[31m"
+    String name = String(VK_DEBUG_DESCRIPTOR_SET_RED) + " \x1b[31m"
         + descriptor_set_name + " descriptor set #\x1b[0m "
         + std::to_string(index);
     const char* str_name = name.c_str();
     descriptor_set_object_info.pObjectName = str_name;
     descriptor_set_object_info.objectType = VK_OBJECT_TYPE_DESCRIPTOR_SET;
-    descriptor_set_object_info.objectHandle = (uint64_t)descriptor_set;
+    descriptor_set_object_info.objectHandle = (u64)descriptor_set;
     set_debug_object_name(device, &descriptor_set_object_info);
 }
 
 void set_debug_object_names(
     VkDevice device,
-    const std::vector<VkBuffer>& vertex_buffer_container,
-    const std::vector<VkBuffer>& index_buffer_container,
-    const std::vector<Descriptor>& gpu_descriptors,
-    const std::vector<unsigned int>& font_indices_container,
-    const std::vector<VkBuffer>& font_vertex_buffer_container,
-    const std::vector<VkBuffer>& font_index_buffer_container
+    const Vec<VkBuffer>& vertex_buffer_container,
+    const Vec<VkBuffer>& index_buffer_container,
+    const Vec<Descriptor>& gpu_descriptors,
+    const Vec<u32>& font_indices_container,
+    const Vec<VkBuffer>& font_vertex_buffer_container,
+    const Vec<VkBuffer>& font_index_buffer_container
 ) {
     set_pipeline_debug_object_name(
         device,
@@ -3070,22 +3053,21 @@ void set_debug_object_names(
     VkDebugUtilsObjectNameInfoEXT main_pipeline_object_info {};
     main_pipeline_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string main_pipe_line_image_name = std::string(VK_DEBUG_PIPELINE_RED)
+    String main_pipe_line_image_name = String(VK_DEBUG_PIPELINE_RED)
         + " \x1b[31mMain pipeline #\x1b[0m " + std::to_string(0);
     const char* main_pipe_line_str_image_name =
         main_pipe_line_image_name.c_str();
     main_pipeline_object_info.pObjectName = main_pipe_line_str_image_name;
     main_pipeline_object_info.objectType = VK_OBJECT_TYPE_PIPELINE;
     main_pipeline_object_info.objectHandle =
-        (uint64_t)PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline]
-            .pipeline;
+        (u64)PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline].pipeline;
     set_debug_object_name(device, &main_pipeline_object_info);
 
     VkDebugUtilsObjectNameInfoEXT main_pipeline_layout_object_info {};
     main_pipeline_layout_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string main_pipeline_layout_image_name =
-        std::string(VK_DEBUG_PIPELINE_LAYOUT_RED)
+    String main_pipeline_layout_image_name =
+        String(VK_DEBUG_PIPELINE_LAYOUT_RED)
         + " \x1b[31mMain pipeline layout #\x1b[0m " + std::to_string(0);
     const char* main_pipeline_layout_str_image_name =
         main_pipeline_layout_image_name.c_str();
@@ -3094,15 +3076,15 @@ void set_debug_object_names(
     main_pipeline_layout_object_info.objectType =
         VK_OBJECT_TYPE_PIPELINE_LAYOUT;
     main_pipeline_layout_object_info.objectHandle =
-        (uint64_t)PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline]
+        (u64)PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline]
             .pipeline_layout;
     set_debug_object_name(device, &main_pipeline_object_info);
 
     VkDebugUtilsObjectNameInfoEXT directional_light_pipeline_object_info {};
     directional_light_pipeline_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string directional_light_pipe_line_image_name =
-        std::string(VK_DEBUG_PIPELINE_RED)
+    String directional_light_pipe_line_image_name =
+        String(VK_DEBUG_PIPELINE_RED)
         + " \x1b[31mDirectional light pipeline #\x1b[0m " + std::to_string(0);
     const char* directional_light_pipe_line_str_image_name =
         directional_light_pipe_line_image_name.c_str();
@@ -3110,7 +3092,7 @@ void set_debug_object_names(
         directional_light_pipe_line_str_image_name;
     directional_light_pipeline_object_info.objectType = VK_OBJECT_TYPE_PIPELINE;
     directional_light_pipeline_object_info.objectHandle =
-        (uint64_t)PIPELINE_CONFIGS[SpecificPipeline::DirectionalLightPipeline]
+        (u64)PIPELINE_CONFIGS[SpecificPipeline::DirectionalLightPipeline]
             .pipeline;
     set_debug_object_name(device, &directional_light_pipeline_object_info);
 
@@ -3118,8 +3100,8 @@ void set_debug_object_names(
         directional_light_pipeline_layout_object_info {};
     directional_light_pipeline_layout_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string directional_light_pipeline_layout_image_name =
-        std::string(VK_DEBUG_PIPELINE_LAYOUT_RED)
+    String directional_light_pipeline_layout_image_name =
+        String(VK_DEBUG_PIPELINE_LAYOUT_RED)
         + " \x1b[31mDirectional light pipeline layout #\x1b[0m "
         + std::to_string(0);
     const char* directional_light_pipeline_layout_str_image_name =
@@ -3129,7 +3111,7 @@ void set_debug_object_names(
     directional_light_pipeline_layout_object_info.objectType =
         VK_OBJECT_TYPE_PIPELINE_LAYOUT;
     directional_light_pipeline_layout_object_info.objectHandle =
-        (uint64_t)PIPELINE_CONFIGS[SpecificPipeline::DirectionalLightPipeline]
+        (u64)PIPELINE_CONFIGS[SpecificPipeline::DirectionalLightPipeline]
             .pipeline_layout;
     set_debug_object_name(
         device,
@@ -3139,8 +3121,7 @@ void set_debug_object_names(
     VkDebugUtilsObjectNameInfoEXT spot_light_pipeline_object_info {};
     spot_light_pipeline_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string spot_light_pipe_line_image_name =
-        std::string(VK_DEBUG_PIPELINE_RED)
+    String spot_light_pipe_line_image_name = String(VK_DEBUG_PIPELINE_RED)
         + " \x1b[31mSpot light pipeline #\x1b[0m " + std::to_string(0);
     const char* spot_light_pipe_line_str_image_name =
         spot_light_pipe_line_image_name.c_str();
@@ -3148,14 +3129,14 @@ void set_debug_object_names(
         spot_light_pipe_line_str_image_name;
     spot_light_pipeline_object_info.objectType = VK_OBJECT_TYPE_PIPELINE;
     spot_light_pipeline_object_info.objectHandle =
-        (uint64_t)PIPELINE_CONFIGS[SpecificPipeline::SpotLightPipeline].pipeline;
+        (u64)PIPELINE_CONFIGS[SpecificPipeline::SpotLightPipeline].pipeline;
     set_debug_object_name(device, &spot_light_pipeline_object_info);
 
     VkDebugUtilsObjectNameInfoEXT spot_light_pipeline_layout_object_info {};
     spot_light_pipeline_layout_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string spot_light_pipeline_layout_image_name =
-        std::string(VK_DEBUG_PIPELINE_LAYOUT_RED)
+    String spot_light_pipeline_layout_image_name =
+        String(VK_DEBUG_PIPELINE_LAYOUT_RED)
         + " \x1b[31mSpot light pipeline layout #\x1b[0m " + std::to_string(0);
     const char* spot_light_pipeline_layout_str_image_name =
         spot_light_pipeline_layout_image_name.c_str();
@@ -3164,15 +3145,14 @@ void set_debug_object_names(
     spot_light_pipeline_layout_object_info.objectType =
         VK_OBJECT_TYPE_PIPELINE_LAYOUT;
     spot_light_pipeline_layout_object_info.objectHandle =
-        (uint64_t)PIPELINE_CONFIGS[SpecificPipeline::SpotLightPipeline]
+        (u64)PIPELINE_CONFIGS[SpecificPipeline::SpotLightPipeline]
             .pipeline_layout;
     set_debug_object_name(device, &spot_light_pipeline_layout_object_info);
 
     VkDebugUtilsObjectNameInfoEXT point_light_pipeline_object_info {};
     point_light_pipeline_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string point_light_pipe_line_image_name =
-        std::string(VK_DEBUG_PIPELINE_RED)
+    String point_light_pipe_line_image_name = String(VK_DEBUG_PIPELINE_RED)
         + " \x1b[31mPoint light pipeline #\x1b[0m " + std::to_string(0);
     const char* point_light_pipe_line_str_image_name =
         point_light_pipe_line_image_name.c_str();
@@ -3180,15 +3160,14 @@ void set_debug_object_names(
         point_light_pipe_line_str_image_name;
     point_light_pipeline_object_info.objectType = VK_OBJECT_TYPE_PIPELINE;
     point_light_pipeline_object_info.objectHandle =
-        (uint64_t)PIPELINE_CONFIGS[SpecificPipeline::PointLightPipeline]
-            .pipeline;
+        (u64)PIPELINE_CONFIGS[SpecificPipeline::PointLightPipeline].pipeline;
     set_debug_object_name(device, &point_light_pipeline_object_info);
 
     VkDebugUtilsObjectNameInfoEXT point_light_pipeline_layout_object_info {};
     point_light_pipeline_layout_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string point_light_pipeline_layout_image_name =
-        std::string(VK_DEBUG_PIPELINE_LAYOUT_RED)
+    String point_light_pipeline_layout_image_name =
+        String(VK_DEBUG_PIPELINE_LAYOUT_RED)
         + " \x1b[31mPoint light pipeline layout #\x1b[0m " + std::to_string(0);
     const char* point_light_pipeline_layout_str_image_name =
         point_light_pipeline_layout_image_name.c_str();
@@ -3197,23 +3176,23 @@ void set_debug_object_names(
     point_light_pipeline_layout_object_info.objectType =
         VK_OBJECT_TYPE_PIPELINE_LAYOUT;
     point_light_pipeline_layout_object_info.objectHandle =
-        (uint64_t)PIPELINE_CONFIGS[SpecificPipeline::PointLightPipeline]
+        (u64)PIPELINE_CONFIGS[SpecificPipeline::PointLightPipeline]
             .pipeline_layout;
     set_debug_object_name(device, &point_light_pipeline_layout_object_info);
 
     VkDebugUtilsObjectNameInfoEXT hud_uniform_buffer_object_info {};
     hud_uniform_buffer_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string hud_image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
+    String hud_image_name = String(VK_DEBUG_IMAGE_SET_RED)
         + " Hud uniform buffer # " + std::to_string(0);
     const char* hud_str_image_name = hud_image_name.c_str();
     hud_uniform_buffer_object_info.pObjectName = hud_str_image_name;
     hud_uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
-    unsigned int hud_ubo_descriptor_binding_index =
+    u32 hud_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::HUD]
             .descriptors_bindings_i_ds[0];
     hud_uniform_buffer_object_info.objectHandle =
-        (uint64_t)gpu_descriptors
+        (u64)gpu_descriptors
             [DESCRIPTOR_BINDINGS_CONFIG[hud_ubo_descriptor_binding_index]
                  .global_descriptor_offset]
                 .gpu_buffer->buffer;
@@ -3222,16 +3201,16 @@ void set_debug_object_names(
     VkDebugUtilsObjectNameInfoEXT font_uniform_buffer_object_info {};
     font_uniform_buffer_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string font_image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
+    String font_image_name = String(VK_DEBUG_IMAGE_SET_RED)
         + " Font uniform buffer # " + std::to_string(0);
     const char* font_str_image_name = font_image_name.c_str();
     font_uniform_buffer_object_info.pObjectName = font_str_image_name;
     font_uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
-    unsigned int font_ubo_descriptor_binding_index =
+    u32 font_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::FontRenderUbo]
             .descriptors_bindings_i_ds[0];
     font_uniform_buffer_object_info.objectHandle =
-        (uint64_t)gpu_descriptors
+        (u64)gpu_descriptors
             [DESCRIPTOR_BINDINGS_CONFIG[font_ubo_descriptor_binding_index]
                  .global_descriptor_offset]
                 .gpu_buffer->buffer;
@@ -3239,16 +3218,16 @@ void set_debug_object_names(
     VkDebugUtilsObjectNameInfoEXT ui_uniform_buffer_object_info {};
     ui_uniform_buffer_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string ui_image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
+    String ui_image_name = String(VK_DEBUG_IMAGE_SET_RED)
         + " UI uniform buffer # " + std::to_string(0);
     const char* ui_str_image_name = ui_image_name.c_str();
     ui_uniform_buffer_object_info.pObjectName = ui_str_image_name;
     ui_uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
-    unsigned int ui_ubo_descriptor_binding_index =
+    u32 ui_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::UI]
             .descriptors_bindings_i_ds[0];
     ui_uniform_buffer_object_info.objectHandle =
-        (uint64_t)gpu_descriptors
+        (u64)gpu_descriptors
             [DESCRIPTOR_BINDINGS_CONFIG[ui_ubo_descriptor_binding_index]
                  .global_descriptor_offset]
                 .gpu_buffer->buffer;
@@ -3256,16 +3235,16 @@ void set_debug_object_names(
     VkDebugUtilsObjectNameInfoEXT ui_icons_uniform_buffer_object_info {};
     ui_icons_uniform_buffer_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string ui_icons_image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
+    String ui_icons_image_name = String(VK_DEBUG_IMAGE_SET_RED)
         + " UI icons uniform buffer # " + std::to_string(0);
     const char* ui_icons_str_image_name = ui_icons_image_name.c_str();
     ui_icons_uniform_buffer_object_info.pObjectName = ui_icons_str_image_name;
     ui_icons_uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
-    unsigned int ui_icons_ubo_descriptor_binding_index =
+    u32 ui_icons_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::UiIcons]
             .descriptors_bindings_i_ds[0];
     ui_icons_uniform_buffer_object_info.objectHandle =
-        (uint64_t)gpu_descriptors
+        (u64)gpu_descriptors
             [DESCRIPTOR_BINDINGS_CONFIG[ui_icons_ubo_descriptor_binding_index]
                  .global_descriptor_offset]
                 .gpu_buffer->buffer;
@@ -3274,8 +3253,7 @@ void set_debug_object_names(
         directional_light_uniform_buffer_object_info {};
     directional_light_uniform_buffer_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string directional_light_image_name =
-        std::string(VK_DEBUG_IMAGE_SET_RED)
+    String directional_light_image_name = String(VK_DEBUG_IMAGE_SET_RED)
         + " Shadow map directional light model matrix uniform buffer # "
         + std::to_string(0);
     const char* directional_light_str_image_name =
@@ -3284,11 +3262,11 @@ void set_debug_object_names(
         directional_light_str_image_name;
     directional_light_uniform_buffer_object_info.objectType =
         VK_OBJECT_TYPE_BUFFER;
-    unsigned int shadow_map_directional_light_descriptor_binding_index =
+    u32 shadow_map_directional_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ShadowMapDirectionalLight]
             .descriptors_bindings_i_ds[0];
     directional_light_uniform_buffer_object_info.objectHandle =
-        (uint64_t)gpu_descriptors
+        (u64)gpu_descriptors
             [DESCRIPTOR_BINDINGS_CONFIG
                  [shadow_map_directional_light_descriptor_binding_index]
                      .global_descriptor_offset]
@@ -3297,18 +3275,18 @@ void set_debug_object_names(
     VkDebugUtilsObjectNameInfoEXT point_light_uniform_buffer_object_info {};
     point_light_uniform_buffer_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string point_light_image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
+    String point_light_image_name = String(VK_DEBUG_IMAGE_SET_RED)
         + " Shadow map point light model matrix uniform buffer # "
         + std::to_string(0);
     const char* point_light_str_image_name = point_light_image_name.c_str();
     point_light_uniform_buffer_object_info.pObjectName =
         point_light_str_image_name;
     point_light_uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
-    unsigned int shadow_map_point_light_descriptor_binding_index =
+    u32 shadow_map_point_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ShadowMapPointLight]
             .descriptors_bindings_i_ds[0];
     point_light_uniform_buffer_object_info.objectHandle =
-        (uint64_t)
+        (u64)
             gpu_descriptors[DESCRIPTOR_BINDINGS_CONFIG
                                 [shadow_map_point_light_descriptor_binding_index]
                                     .global_descriptor_offset]
@@ -3317,103 +3295,102 @@ void set_debug_object_names(
     VkDebugUtilsObjectNameInfoEXT spot_light_uniform_buffer_object_info {};
     spot_light_uniform_buffer_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string spot_light_image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
+    String spot_light_image_name = String(VK_DEBUG_IMAGE_SET_RED)
         + " Shadow map spot light model matrix uniform buffer # "
         + std::to_string(0);
     const char* spot_light_str_image_name = spot_light_image_name.c_str();
     spot_light_uniform_buffer_object_info.pObjectName =
         spot_light_str_image_name;
     spot_light_uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
-    unsigned int shadow_map_spot_light_descriptor_binding_index =
+    u32 shadow_map_spot_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ShadowMapSpotLight]
             .descriptors_bindings_i_ds[0];
     spot_light_uniform_buffer_object_info.objectHandle =
-        (uint64_t)
-            gpu_descriptors[DESCRIPTOR_BINDINGS_CONFIG
-                                [shadow_map_spot_light_descriptor_binding_index]
-                                    .global_descriptor_offset]
-                .gpu_buffer->buffer;
+        (u64)gpu_descriptors[DESCRIPTOR_BINDINGS_CONFIG
+                                 [shadow_map_spot_light_descriptor_binding_index]
+                                     .global_descriptor_offset]
+            .gpu_buffer->buffer;
     set_debug_object_name(device, &spot_light_uniform_buffer_object_info);
-    for (unsigned long i = 0; i < vertex_buffer_container.size(); ++i) {
+    for (usize i = 0; i < vertex_buffer_container.size(); ++i) {
         VkDebugUtilsObjectNameInfoEXT uniform_buffer_object_info {};
         uniform_buffer_object_info.sType =
             VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-        std::string image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
+        String image_name = String(VK_DEBUG_IMAGE_SET_RED)
             + " Vertex uniform buffer # " + std::to_string(i);
         const char* str_image_name = image_name.c_str();
         uniform_buffer_object_info.pObjectName = str_image_name;
         uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
         uniform_buffer_object_info.objectHandle =
-            (uint64_t)vertex_buffer_container[i];
+            (u64)vertex_buffer_container[i];
         set_debug_object_name(device, &uniform_buffer_object_info);
     }
-    for (unsigned long i = 0; i < index_buffer_container.size(); ++i) {
+    for (usize i = 0; i < index_buffer_container.size(); ++i) {
         VkDebugUtilsObjectNameInfoEXT uniform_buffer_object_info {};
         uniform_buffer_object_info.sType =
             VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-        std::string image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
+        String image_name = String(VK_DEBUG_IMAGE_SET_RED)
             + " Index uniform buffer # " + std::to_string(i);
         const char* str_image_name = image_name.c_str();
         uniform_buffer_object_info.pObjectName = str_image_name;
         uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
         uniform_buffer_object_info.objectHandle =
-            (uint64_t)index_buffer_container[i];
+            (u64)index_buffer_container[i];
         set_debug_object_name(device, &uniform_buffer_object_info);
     }
-    for (unsigned long i = 0; i < font_indices_container.size(); ++i) {
+    for (usize i = 0; i < font_indices_container.size(); ++i) {
         VkDebugUtilsObjectNameInfoEXT uniform_buffer_object_info {};
         uniform_buffer_object_info.sType =
             VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-        std::string image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
+        String image_name = String(VK_DEBUG_IMAGE_SET_RED)
             + " Font vertex uniform buffer # "
             + std::to_string(font_indices_container[i]);
         const char* str_image_name = image_name.c_str();
         uniform_buffer_object_info.pObjectName = str_image_name;
         uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
         uniform_buffer_object_info.objectHandle =
-            (uint64_t)font_vertex_buffer_container[font_indices_container[i]];
+            (u64)font_vertex_buffer_container[font_indices_container[i]];
         set_debug_object_name(device, &uniform_buffer_object_info);
     }
-    for (unsigned long i = 0; i < font_indices_container.size(); ++i) {
+    for (usize i = 0; i < font_indices_container.size(); ++i) {
         VkDebugUtilsObjectNameInfoEXT uniform_buffer_object_info {};
         uniform_buffer_object_info.sType =
             VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-        std::string image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
+        String image_name = String(VK_DEBUG_IMAGE_SET_RED)
             + " Font index uniform buffer # "
             + std::to_string(font_indices_container[i]);
         const char* str_image_name = image_name.c_str();
         uniform_buffer_object_info.pObjectName = str_image_name;
         uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
         uniform_buffer_object_info.objectHandle =
-            (uint64_t)font_index_buffer_container[font_indices_container[i]];
+            (u64)font_index_buffer_container[font_indices_container[i]];
         set_debug_object_name(device, &uniform_buffer_object_info);
     }
     VkDebugUtilsObjectNameInfoEXT uniform_buffer_object_info {};
     uniform_buffer_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
+    String image_name = String(VK_DEBUG_IMAGE_SET_RED)
         + " Model matrix uniform buffer # " + std::to_string(0);
     const char* str_image_name = image_name.c_str();
     uniform_buffer_object_info.pObjectName = str_image_name;
     uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
     uniform_buffer_object_info.objectHandle =
-        (uint64_t)gpu_descriptors[DescriptorSetDataLink::MainRenderMatrixUbo]
+        (u64)gpu_descriptors[DescriptorSetDataLink::MainRenderMatrixUbo]
             .gpu_buffer->buffer;
     set_debug_object_name(device, &uniform_buffer_object_info);
     VkDebugUtilsObjectNameInfoEXT light_data_uniform_buffer_object_info {};
     light_data_uniform_buffer_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    std::string light_data_image_name = std::string(VK_DEBUG_IMAGE_SET_RED)
+    String light_data_image_name = String(VK_DEBUG_IMAGE_SET_RED)
         + " Light data uniform buffer # " + std::to_string(0);
     const char* light_data_str_image_name = light_data_image_name.c_str();
     light_data_uniform_buffer_object_info.pObjectName =
         light_data_str_image_name;
     light_data_uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
-    unsigned int light_data_ubo_descriptor_binding_index =
+    u32 light_data_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
             .descriptors_bindings_i_ds[0];
     light_data_uniform_buffer_object_info.objectHandle =
-        (uint64_t)gpu_descriptors
+        (u64)gpu_descriptors
             [DESCRIPTOR_BINDINGS_CONFIG[light_data_ubo_descriptor_binding_index]
                  .global_descriptor_offset]
                 .gpu_buffer->buffer;
@@ -3424,24 +3401,24 @@ void set_debug_object_names(
 namespace glvm {
 namespace {
 // 16k verts, shared line + quad buffer.
-constexpr uint32_t K_MAX_DEBUG_VERTICES = 1 << 14;
+constexpr auto K_MAX_DEBUG_VERTICES = 1 << 14;
 
 void push_line(
-    std::vector<DebugVertex>& out,
-    const Vector<float, 3>& a,
-    const Vector<float, 3>& b,
-    const Vector<float, 3>& color
+    Vec<DebugVertex>& out,
+    const Vector<f32, 3>& a,
+    const Vector<f32, 3>& b,
+    const Vector<f32, 3>& color
 ) {
     out.push_back({a[0], a[1], a[2], color[0], color[1], color[2]});
     out.push_back({b[0], b[1], b[2], color[0], color[1], color[2]});
 }
 
 void push_box(
-    std::vector<DebugVertex>& out,
-    const Vector<float, 3> corners[8],
-    const Vector<float, 3>& color
+    Vec<DebugVertex>& out,
+    const Vector<f32, 3> corners[8],
+    const Vector<f32, 3>& color
 ) {
-    static const unsigned int EDGES[12][2] = {
+    static const u32 EDGES[12][2] = {
         {0, 1},
         {1, 2},
         {2, 3},
@@ -3460,12 +3437,12 @@ void push_box(
     }
 }
 
-Vector<float, 4> to_vec4(const Vector<float, 3>& v, float w) {
-    return Vector<float, 4>(v[0], v[1], v[2], w);
+Vector<f32, 4> to_vec4(const Vector<f32, 3>& v, f32 w) {
+    return Vector<f32, 4>(v[0], v[1], v[2], w);
 }
 
-Vector<float, 3> from_vec4(const Vector<float, 4>& v) {
-    return Vector<float, 3>(v[0], v[1], v[2]);
+Vector<f32, 3> from_vec4(const Vector<f32, 4>& v) {
+    return Vector<f32, 3>(v[0], v[1], v[2]);
 }
 } // namespace
 
@@ -3505,8 +3482,7 @@ void ImGuiOverlay::init() {
     init_info.Queue = renderer.graphics_queue;
     init_info.DescriptorPoolSize = 512;
     init_info.MinImageCount = MAX_FRAMES_IN_FLIGHT;
-    init_info.ImageCount =
-        static_cast<uint32_t>(renderer.swap_chain_images.size());
+    init_info.ImageCount = static_cast<u32>(renderer.swap_chain_images.size());
     init_info.PipelineInfoMain.RenderPass = render_pass;
     init_info.PipelineInfoMain.Subpass = 0;
     if (!ImGui_ImplVulkan_Init(&init_info)) {
@@ -3543,7 +3519,7 @@ void ImGuiOverlay::create_swap_chain_resources() {
         return;
     }
     framebuffers.resize(renderer.swap_chain_image_views.size());
-    for (size_t i = 0; i < framebuffers.size(); ++i) {
+    for (usize i = 0; i < framebuffers.size(); ++i) {
         VkImageView attachment = renderer.swap_chain_image_views[i];
         VkFramebufferCreateInfo info {};
         info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -3578,11 +3554,11 @@ void ImGuiOverlay::new_frame() {
 #else
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize =
-        ImVec2((float)renderer.window->width, (float)renderer.window->height);
+        ImVec2((f32)renderer.window->width, (f32)renderer.window->height);
     static auto last_frame_time = std::chrono::steady_clock::now();
     const auto now_time = std::chrono::steady_clock::now();
     io.DeltaTime =
-        std::chrono::duration<float>(now_time - last_frame_time).count();
+        std::chrono::duration<f32>(now_time - last_frame_time).count();
     last_frame_time = now_time;
     // No OS cursor plumbing yet: let ImGui draw its own cursor.
     io.MouseDrawCursor = true;
@@ -3608,7 +3584,7 @@ void ImGuiOverlay::new_frame() {
 
 void ImGuiOverlay::record_command_buffer(
     VkCommandBuffer command_buffer,
-    uint32_t image_index
+    u32 image_index
 ) {
     if (!initialized) {
         return;
@@ -3629,8 +3605,8 @@ void ImGuiOverlay::record_command_buffer(
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = static_cast<float>(renderer.swap_chain_extent.width);
-    viewport.height = static_cast<float>(renderer.swap_chain_extent.height);
+    viewport.width = static_cast<f32>(renderer.swap_chain_extent.width);
+    viewport.height = static_cast<f32>(renderer.swap_chain_extent.height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);
@@ -3646,14 +3622,14 @@ void ImGuiOverlay::record_command_buffer(
         );
         VkDeviceSize offset = 0;
         vkCmdBindVertexBuffers(command_buffer, 0, 1, &vertex_buffer, &offset);
-        Matrix<float, 4> view_proj =
+        Matrix<f32, 4> view_proj =
             renderer.view_matrix * renderer.projection_matrix;
         vkCmdPushConstants(
             command_buffer,
             line_layout,
             VK_SHADER_STAGE_VERTEX_BIT,
             0,
-            sizeof(Matrix<float, 4>),
+            sizeof(Matrix<f32, 4>),
             &view_proj
         );
         vkCmdDraw(command_buffer, line_vertex_count, 1, 0, 0);
@@ -3678,9 +3654,9 @@ void ImGuiOverlay::build_panel() {
         ImGui::RadioButton("Directional", &shadow_map_mode, 0);
         ImGui::SameLine();
         ImGui::RadioButton("Spot", &shadow_map_mode, 1);
-        int max_light = (shadow_map_mode == 0)
-            ? static_cast<int>(renderer.directional_light_number)
-            : static_cast<int>(renderer.spot_light_number);
+        i32 max_light = (shadow_map_mode == 0)
+            ? static_cast<i32>(renderer.directional_light_number)
+            : static_cast<i32>(renderer.spot_light_number);
         ImGui::SliderInt(
             "Light",
             &shadow_map_light,
@@ -3707,17 +3683,17 @@ void ImGuiOverlay::build_panel() {
 }
 
 void ImGuiOverlay::build_debug_vertices() {
-    std::vector<DebugVertex> vertices;
+    Vec<DebugVertex> vertices;
     vertices.reserve(K_MAX_DEBUG_VERTICES);
     line_vertex_count = 0;
     if (show_actor_bounds) {
-        const Vector<float, 3> green = {0.0f, 1.0f, 0.0f};
-        const Vector<float, 3> red = {1.0f, 0.0f, 0.0f};
-        std::vector<Vector<float, 3>> mins;
-        std::vector<Vector<float, 3>> maxs;
+        const Vector<f32, 3> green = {0.0f, 1.0f, 0.0f};
+        const Vector<f32, 3> red = {1.0f, 0.0f, 0.0f};
+        Vec<Vector<f32, 3>> mins;
+        Vec<Vector<f32, 3>> maxs;
         mins.reserve(renderer.actors.size());
         maxs.reserve(renderer.actors.size());
-        for (size_t i = 0; i < renderer.actors.size(); ++i) {
+        for (usize i = 0; i < renderer.actors.size(); ++i) {
             RenderActor actor = renderer.actors[i];
             if (actor.mesh_id >= ALL_MESH_MAX_ABSOLUTE_VALUES.size()) {
                 mins.push_back({0, 0, 0});
@@ -3726,31 +3702,31 @@ void ImGuiOverlay::build_debug_vertices() {
             }
             const MeshAxisMaxAbsoluteValues& bounds =
                 ALL_MESH_MAX_ABSOLUTE_VALUES[actor.mesh_id];
-            const Vector<float, 3> center = {
+            const Vector<f32, 3> center = {
                 bounds.origin_offset_x,
                 bounds.origin_offset_y,
                 bounds.origin_offset_z
             };
-            const Vector<float, 3> half =
+            const Vector<f32, 3> half =
                 {bounds.absolute_x, bounds.absolute_y, bounds.absolute_z};
-            Vector<float, 3> local_corners[8] = {
-                center + Vector<float, 3>(-half[0], -half[1], -half[2]),
-                center + Vector<float, 3>(half[0], -half[1], -half[2]),
-                center + Vector<float, 3>(half[0], half[1], -half[2]),
-                center + Vector<float, 3>(-half[0], half[1], -half[2]),
-                center + Vector<float, 3>(-half[0], -half[1], half[2]),
-                center + Vector<float, 3>(half[0], -half[1], half[2]),
-                center + Vector<float, 3>(half[0], half[1], half[2]),
-                center + Vector<float, 3>(-half[0], half[1], half[2])
+            Vector<f32, 3> local_corners[8] = {
+                center + Vector<f32, 3>(-half[0], -half[1], -half[2]),
+                center + Vector<f32, 3>(half[0], -half[1], -half[2]),
+                center + Vector<f32, 3>(half[0], half[1], -half[2]),
+                center + Vector<f32, 3>(-half[0], half[1], -half[2]),
+                center + Vector<f32, 3>(-half[0], -half[1], half[2]),
+                center + Vector<f32, 3>(half[0], -half[1], half[2]),
+                center + Vector<f32, 3>(half[0], half[1], half[2]),
+                center + Vector<f32, 3>(-half[0], half[1], half[2])
             };
-            Vector<float, 3> mn =
+            Vector<f32, 3> mn =
                 from_vec4(to_vec4(local_corners[0], 1.0f) * actor.model_matrix);
-            Vector<float, 3> mx = mn;
-            for (int c = 1; c < 8; ++c) {
-                Vector<float, 3> w = from_vec4(
+            Vector<f32, 3> mx = mn;
+            for (i32 c = 1; c < 8; ++c) {
+                Vector<f32, 3> w = from_vec4(
                     to_vec4(local_corners[c], 1.0f) * actor.model_matrix
                 );
-                for (int a = 0; a < 3; ++a) {
+                for (i32 a = 0; a < 3; ++a) {
                     mn[a] = std::min(mn[a], w[a]);
                     mx[a] = std::max(mx[a], w[a]);
                 }
@@ -3758,9 +3734,9 @@ void ImGuiOverlay::build_debug_vertices() {
             mins.push_back(mn);
             maxs.push_back(mx);
         }
-        std::vector<bool> collides(renderer.actors.size(), false);
-        for (size_t i = 0; i < renderer.actors.size(); ++i) {
-            for (size_t j = i + 1; j < renderer.actors.size(); ++j) {
+        Vec<bool> collides(renderer.actors.size(), false);
+        for (usize i = 0; i < renderer.actors.size(); ++i) {
+            for (usize j = i + 1; j < renderer.actors.size(); ++j) {
                 // Non-strict: the collision system resolves contact by pushing
                 // the mover back to exactly touch the target, so overlapping
                 // boxes (<) alone misses face-to-face contact.
@@ -3772,32 +3748,32 @@ void ImGuiOverlay::build_debug_vertices() {
                 }
             }
         }
-        for (size_t i = 0; i < renderer.actors.size(); ++i) {
+        for (usize i = 0; i < renderer.actors.size(); ++i) {
             if (renderer.actors[i].mesh_id
                 >= ALL_MESH_MAX_ABSOLUTE_VALUES.size()) {
                 continue;
             }
             const MeshAxisMaxAbsoluteValues& bounds =
                 ALL_MESH_MAX_ABSOLUTE_VALUES[renderer.actors[i].mesh_id];
-            const Vector<float, 3> center = {
+            const Vector<f32, 3> center = {
                 bounds.origin_offset_x,
                 bounds.origin_offset_y,
                 bounds.origin_offset_z
             };
-            const Vector<float, 3> half =
+            const Vector<f32, 3> half =
                 {bounds.absolute_x, bounds.absolute_y, bounds.absolute_z};
-            Vector<float, 3> local_corners[8] = {
-                center + Vector<float, 3>(-half[0], -half[1], -half[2]),
-                center + Vector<float, 3>(half[0], -half[1], -half[2]),
-                center + Vector<float, 3>(half[0], half[1], -half[2]),
-                center + Vector<float, 3>(-half[0], half[1], -half[2]),
-                center + Vector<float, 3>(-half[0], -half[1], half[2]),
-                center + Vector<float, 3>(half[0], -half[1], half[2]),
-                center + Vector<float, 3>(half[0], half[1], half[2]),
-                center + Vector<float, 3>(-half[0], half[1], half[2])
+            Vector<f32, 3> local_corners[8] = {
+                center + Vector<f32, 3>(-half[0], -half[1], -half[2]),
+                center + Vector<f32, 3>(half[0], -half[1], -half[2]),
+                center + Vector<f32, 3>(half[0], half[1], -half[2]),
+                center + Vector<f32, 3>(-half[0], half[1], -half[2]),
+                center + Vector<f32, 3>(-half[0], -half[1], half[2]),
+                center + Vector<f32, 3>(half[0], -half[1], half[2]),
+                center + Vector<f32, 3>(half[0], half[1], half[2]),
+                center + Vector<f32, 3>(-half[0], half[1], half[2])
             };
-            Vector<float, 3> world_corners[8];
-            for (int c = 0; c < 8; ++c) {
+            Vector<f32, 3> world_corners[8];
+            for (i32 c = 0; c < 8; ++c) {
                 world_corners[c] = from_vec4(
                     to_vec4(local_corners[c], 1.0f)
                     * renderer.actors[i].model_matrix
@@ -3808,31 +3784,31 @@ void ImGuiOverlay::build_debug_vertices() {
     }
 
     if (show_light_frustums) {
-        const Vector<float, 3> yellow = {1.0f, 1.0f, 0.0f};
-        for (uint32_t i = 0; i < renderer.directional_light_number; ++i) {
-            Vector<float, 3> corners[8];
-            Matrix<float, 4> inverse_light =
+        const Vector<f32, 3> yellow = {1.0f, 1.0f, 0.0f};
+        for (u32 i = 0; i < renderer.directional_light_number; ++i) {
+            Vector<f32, 3> corners[8];
+            Matrix<f32, 4> inverse_light =
                 inverse_matrix_4x4(renderer.dir_light_space_matrix[i]);
-            for (int c = 0; c < 8; ++c) {
-                const float s = (c & 4) ? 1.0f : -1.0f; // z (near/far).
-                const float u = (c & 2) ? 1.0f : -1.0f; // y.
-                const float v = (c & 1) ? 1.0f : -1.0f; // x.
+            for (i32 c = 0; c < 8; ++c) {
+                const auto s = (c & 4) ? 1.0f : -1.0f; // z (near/far).
+                const auto u = (c & 2) ? 1.0f : -1.0f; // y.
+                const auto v = (c & 1) ? 1.0f : -1.0f; // x.
                 corners[c] =
-                    from_vec4(Vector<float, 4>(u, v, s, 1.0f) * inverse_light);
+                    from_vec4(Vector<f32, 4>(u, v, s, 1.0f) * inverse_light);
             }
             push_box(vertices, corners, yellow);
         }
-        const Vector<float, 3> cyan = {0.0f, 1.0f, 1.0f};
-        for (uint32_t i = 0; i < renderer.spot_light_number; ++i) {
-            Vector<float, 3> corners[8];
-            Matrix<float, 4> inverse_light =
+        const Vector<f32, 3> cyan = {0.0f, 1.0f, 1.0f};
+        for (u32 i = 0; i < renderer.spot_light_number; ++i) {
+            Vector<f32, 3> corners[8];
+            Matrix<f32, 4> inverse_light =
                 inverse_matrix_4x4(renderer.spot_light_space_matrix[i]);
-            for (int c = 0; c < 8; ++c) {
-                const float s = (c & 4) ? 1.0f : -1.0f;
-                const float u = (c & 2) ? 1.0f : -1.0f;
-                const float v = (c & 1) ? 1.0f : -1.0f;
+            for (i32 c = 0; c < 8; ++c) {
+                const auto s = (c & 4) ? 1.0f : -1.0f;
+                const auto u = (c & 2) ? 1.0f : -1.0f;
+                const auto v = (c & 1) ? 1.0f : -1.0f;
                 corners[c] =
-                    from_vec4(Vector<float, 4>(u, v, s, 1.0f) * inverse_light);
+                    from_vec4(Vector<f32, 4>(u, v, s, 1.0f) * inverse_light);
             }
             push_box(vertices, corners, cyan);
         }
@@ -3840,39 +3816,39 @@ void ImGuiOverlay::build_debug_vertices() {
 
     if (show_spatial_grid) {
         const auto& grid = glvm::WORLD.spatial_grid;
-        const float half_chunk = grid.grid[0][0][0].SIZE * 0.5f;
-        const float cross = 1.5f;
-        for (uint32_t z = 0; z < grid.depth; ++z) {
-            for (uint32_t y = 0; y < grid.height; ++y) {
-                for (uint32_t x = 0; x < grid.width; ++x) {
+        const auto half_chunk = grid.grid[0][0][0].SIZE * 0.5f;
+        const auto cross = 1.5f;
+        for (u32 z = 0; z < grid.depth; ++z) {
+            for (u32 y = 0; y < grid.height; ++y) {
+                for (u32 x = 0; x < grid.width; ++x) {
                     const auto& chunk = grid.grid[z][y][x];
-                    const size_t count = chunk.entities.size();
+                    const auto count = chunk.entities.size();
                     if (count == 0) {
                         continue;
                     }
                     // Only occupied cells, colored by entity count.
-                    const Vector<float, 3> color = count == 1
-                        ? Vector<float, 3>(0.0f, 1.0f, 0.0f)
-                        : count <= 3 ? Vector<float, 3>(1.0f, 1.0f, 0.0f)
-                                     : Vector<float, 3>(1.0f, 0.0f, 0.0f);
-                    const Vector<float, 3> center = chunk.position
-                        + Vector<float, 3>(half_chunk, half_chunk, half_chunk);
+                    const Vector<f32, 3> color = count == 1
+                        ? Vector<f32, 3>(0.0f, 1.0f, 0.0f)
+                        : count <= 3 ? Vector<f32, 3>(1.0f, 1.0f, 0.0f)
+                                     : Vector<f32, 3>(1.0f, 0.0f, 0.0f);
+                    const Vector<f32, 3> center = chunk.position
+                        + Vector<f32, 3>(half_chunk, half_chunk, half_chunk);
                     push_line(
                         vertices,
-                        center - Vector<float, 3>(cross, 0, 0),
-                        center + Vector<float, 3>(cross, 0, 0),
+                        center - Vector<f32, 3>(cross, 0, 0),
+                        center + Vector<f32, 3>(cross, 0, 0),
                         color
                     );
                     push_line(
                         vertices,
-                        center - Vector<float, 3>(0, cross, 0),
-                        center + Vector<float, 3>(0, cross, 0),
+                        center - Vector<f32, 3>(0, cross, 0),
+                        center + Vector<f32, 3>(0, cross, 0),
                         color
                     );
                     push_line(
                         vertices,
-                        center - Vector<float, 3>(0, 0, cross),
-                        center + Vector<float, 3>(0, 0, cross),
+                        center - Vector<f32, 3>(0, 0, cross),
+                        center + Vector<f32, 3>(0, 0, cross),
                         color
                     );
                 }
@@ -3880,11 +3856,11 @@ void ImGuiOverlay::build_debug_vertices() {
         }
     }
 
-    line_vertex_count = static_cast<uint32_t>(vertices.size());
+    line_vertex_count = static_cast<u32>(vertices.size());
 
     if (!vertices.empty() && vertex_buffer_mapped) {
-        const size_t bytes = vertices.size() * sizeof(DebugVertex);
-        const size_t capacity = K_MAX_DEBUG_VERTICES * sizeof(DebugVertex);
+        const auto bytes = vertices.size() * sizeof(DebugVertex);
+        const auto capacity = K_MAX_DEBUG_VERTICES * sizeof(DebugVertex);
         memcpy(vertex_buffer_mapped, vertices.data(), std::min(bytes, capacity));
     }
 }
@@ -3946,19 +3922,17 @@ void ImGuiOverlay::create_line_pipeline() {
     auto create_shader_module = [&](const char* path) {
         std::ifstream file(path, std::ios::ate | std::ios::binary);
         if (!file.is_open()) {
-            throw std::runtime_error(
-                std::string("failed to open shader: ") + path
-            );
+            throw std::runtime_error(String("failed to open shader: ") + path);
         }
         file.seekg(0, std::ios::beg);
-        std::vector<char> code(
+        Vec<char> code(
             (std::istreambuf_iterator<char>(file)),
             std::istreambuf_iterator<char>()
         );
         VkShaderModuleCreateInfo create_info {};
         create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
         create_info.codeSize = code.size();
-        create_info.pCode = reinterpret_cast<const uint32_t*>(code.data());
+        create_info.pCode = reinterpret_cast<const u32*>(code.data());
         VkShaderModule module;
         if (vkCreateShaderModule(renderer.device, &create_info, nullptr, &module)
             != VK_SUCCESS) {
@@ -3991,7 +3965,7 @@ void ImGuiOverlay::create_line_pipeline() {
     binding_description.stride = sizeof(DebugVertex);
     binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-    std::array<VkVertexInputAttributeDescription, 2> attribute_descriptions {};
+    Array<VkVertexInputAttributeDescription, 2> attribute_descriptions {};
     attribute_descriptions[0].binding = 0;
     attribute_descriptions[0].location = 0;
     attribute_descriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
@@ -4007,7 +3981,7 @@ void ImGuiOverlay::create_line_pipeline() {
     vertex_input_info.vertexBindingDescriptionCount = 1;
     vertex_input_info.pVertexBindingDescriptions = &binding_description;
     vertex_input_info.vertexAttributeDescriptionCount =
-        static_cast<uint32_t>(attribute_descriptions.size());
+        static_cast<u32>(attribute_descriptions.size());
     vertex_input_info.pVertexAttributeDescriptions =
         attribute_descriptions.data();
 
@@ -4064,7 +4038,7 @@ void ImGuiOverlay::create_line_pipeline() {
     VkPushConstantRange push_constant_range {};
     push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     push_constant_range.offset = 0;
-    push_constant_range.size = sizeof(Matrix<float, 4>);
+    push_constant_range.size = sizeof(Matrix<f32, 4>);
 
     VkPipelineLayoutCreateInfo layout_info {};
     layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -4171,26 +4145,26 @@ void CVulkanRenderer::draw() {
     main_render_draw_frame();
 }
 
-void CVulkanRenderer::set_view_matrix(Matrix<float, 4> new_view_matrix) {
+void CVulkanRenderer::set_view_matrix(Matrix<f32, 4> new_view_matrix) {
     view_matrix = new_view_matrix;
 }
 
 void CVulkanRenderer::set_projection_matrix(
-    Matrix<float, 4> new_projection_matrix
+    Matrix<f32, 4> new_projection_matrix
 ) {
     projection_matrix = new_projection_matrix;
 }
 
 void CVulkanRenderer::create_texture_image() {
-    uint32_t tex_width, tex_height;
-    uint32_t tex_channels;
+    u32 tex_width, tex_height;
+    u32 tex_channels;
 
-    unsigned int readable_texture_descriptor_binding_index =
+    u32 readable_texture_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::RidableTextures]
             .descriptors_bindings_i_ds[0];
-    for (unsigned int i = 0; i < initialize_texture_data.size(); ++i) {
+    for (u32 i = 0; i < initialize_texture_data.size(); ++i) {
         VkDeviceSize image_size {};
-        unsigned char* pixels;
+        u8* pixels;
         const char* path_to_stb_image = nullptr;
 
 #ifndef STB_IMAGE_IMPLEMENTATION
@@ -4204,9 +4178,9 @@ void CVulkanRenderer::create_texture_image() {
         path_to_stb_image = initializeTextureData_[i].path_to_image;
         pixels = stbi_load(
             path_to_stb_image,
-            reinterpret_cast<int*>(&tex_width),
-            reinterpret_cast<int*>(&tex_height),
-            reinterpret_cast<int*>(&tex_channels),
+            reinterpret_cast<i32*>(&tex_width),
+            reinterpret_cast<i32*>(&tex_height),
+            reinterpret_cast<i32*>(&tex_channels),
             STBI_rgb_alpha
         );
         image_size = tex_width * tex_height * 4;
@@ -4229,7 +4203,7 @@ void CVulkanRenderer::create_texture_image() {
 
         void* data;
         vkMapMemory(device, staging_buffer_memory, 0, image_size, 0, &data);
-        memcpy(data, pixels, static_cast<size_t>(image_size));
+        memcpy(data, pixels, static_cast<usize>(image_size));
         vkUnmapMemory(device, staging_buffer_memory);
         GpuImage texture_image = {
             .image = VkImage {},
@@ -4257,8 +4231,8 @@ void CVulkanRenderer::create_texture_image() {
         copy_buffer_to_image(
             staging_buffer,
             texture_image.image,
-            static_cast<uint32_t>(tex_width),
-            static_cast<uint32_t>(tex_height)
+            static_cast<u32>(tex_width),
+            static_cast<u32>(tex_height)
         );
         transition_image_layout(
             texture_image.image,
@@ -4289,7 +4263,7 @@ void CVulkanRenderer::recreate_swap_chain() {
     create_swap_chain();
     window->width = swap_chain_extent.width;
     window->height = swap_chain_extent.height;
-    aspect_rate = (float)window->width / (float)window->height;
+    aspect_rate = (f32)window->width / (f32)window->height;
     create_image_views();
     create_depth_resources();
     create_directional_light_shadow_map_depth_resources();
@@ -4301,14 +4275,14 @@ void CVulkanRenderer::recreate_swap_chain() {
 }
 
 void CVulkanRenderer::set_mesh_data(
-    std::vector<const char*> paths,
-    std::vector<const char*> paths_gltf
+    Vec<const char*> paths,
+    Vec<const char*> paths_gltf
 ) {
-    for (unsigned int i = 0; i < paths.size(); ++i) {
+    for (u32 i = 0; i < paths.size(); ++i) {
         paths_array.push_back(paths[i]);
     }
 
-    for (unsigned int i = 0; i < paths_gltf.size(); ++i) {
+    for (u32 i = 0; i < paths_gltf.size(); ++i) {
         paths_gltf.push_back(paths_gltf[i]);
     }
 }
@@ -4330,7 +4304,7 @@ void CVulkanRenderer::init_window() {
     window = initialize_wayland_window();
     create_wayland_surface_info.display = window->display;
     create_wayland_surface_info.surface = window->wl_surface;
-    aspect_rate = (float)window->width / (float)window->height;
+    aspect_rate = (f32)window->width / (f32)window->height;
     create_wayland_surface_info.sType =
         VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
     create_wayland_surface_info.pNext = nullptr;
@@ -4341,7 +4315,7 @@ void CVulkanRenderer::init_window() {
     window = new glvm::WindowXVulkan();
     createXlibSurfaceInfo.dpy = window->get_display();
     createXlibSurfaceInfo.window = window->get_window();
-    aspect_rate = (float)window->width / (float)window->height;
+    aspect_rate = (f32)window->width / (f32)window->height;
 
     createXlibSurfaceInfo.sType =
         VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
@@ -4353,7 +4327,7 @@ void CVulkanRenderer::init_window() {
     window = new glvm::WindowXCBVulkan();
     createXcbSurfaceInfo.window = window->get_window();
     createXcbSurfaceInfo.connection = window->get_connection();
-    aspect_rate = (float)window->width / (float)window->height;
+    aspect_rate = (f32)window->width / (f32)window->height;
 
     createXcbSurfaceInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
     createXcbSurfaceInfo.pNext = nullptr;
@@ -4363,7 +4337,7 @@ void CVulkanRenderer::init_window() {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     window = new glvm::WindowWinVulkan();
     create_win32_surface_info.hwnd = window->get_modern_window_hwnd();
-    aspect_rate = (float)window->width / (float)window->height;
+    aspect_rate = (f32)window->width / (f32)window->height;
 
     create_win32_surface_info.sType =
         VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
@@ -4373,21 +4347,21 @@ void CVulkanRenderer::init_window() {
 }
 
 void CVulkanRenderer::initialize_game_level_vertices() {
-    for (unsigned int m = 0; m < level_generated_vertices.size(); ++m) {
+    for (u32 m = 0; m < level_generated_vertices.size(); ++m) {
         a_vertices.push_back(level_generated_vertices[m]);
         a_indices.push_back(level_generated_indices[m]);
         joint_matrices_per_mesh.push_back({});
         frames.push_back({});
-        for (int i = 0; i < 64; ++i) {
+        for (i32 i = 0; i < 64; ++i) {
             frames[frames.size() - 1].push_back(0.0f);
         }
-        int maximum_joints = 64;
-        std::vector<std::vector<Matrix<float, 4>>> joint_matrices;
-        for (int i = 0; i < maximum_joints; ++i) {
-            std::vector<Matrix<float, 4>> global_all_frame_node_matrix;
-            int number_of_frames = 64;
-            for (int j = 0; j < number_of_frames; ++j) {
-                Matrix<float, 4> unit_matrix(1.0f);
+        i32 maximum_joints = 64;
+        Vec<Vec<Matrix<f32, 4>>> joint_matrices;
+        for (i32 i = 0; i < maximum_joints; ++i) {
+            Vec<Matrix<f32, 4>> global_all_frame_node_matrix;
+            i32 number_of_frames = 64;
+            for (i32 j = 0; j < number_of_frames; ++j) {
+                Matrix<f32, 4> unit_matrix(1.0f);
                 global_all_frame_node_matrix.push_back(unit_matrix);
             }
 
@@ -4396,7 +4370,7 @@ void CVulkanRenderer::initialize_game_level_vertices() {
         joint_matrices_per_mesh[joint_matrices_per_mesh.size() - 1] =
             joint_matrices;
 
-        uint32_t next_index_gltf = wavefront_obj_counter + gltf_counter + m;
+        u32 next_index_gltf = wavefront_obj_counter + gltf_counter + m;
 
         vertex_buffer_container.emplace_back();
         vertex_buffer_memory_container.emplace_back();
@@ -4428,11 +4402,11 @@ void CVulkanRenderer::init_vulkan() {
     create_descriptor_set_layout();
     create_graphics_pipeline();
     create_command_pool(main_render_command_pool);
-    const uint32_t secondary_buffers_command_pools_number = 3;
+    const auto secondary_buffers_command_pools_number = 3;
     secondary_buffers_command_pools.resize(
         secondary_buffers_command_pools_number
     );
-    for (uint32_t i = 0; i < secondary_buffers_command_pools.size(); ++i) {
+    for (u32 i = 0; i < secondary_buffers_command_pools.size(); ++i) {
         create_command_pool(secondary_buffers_command_pools[i]);
     }
     create_depth_resources();
@@ -4460,7 +4434,7 @@ void CVulkanRenderer::init_vulkan() {
         font_vertex_buffer_container,
         font_index_buffer_container
     );
-    const uint32_t main_render_command_buffers_number = 1;
+    const auto main_render_command_buffers_number = 1;
     create_command_buffers(
         main_render_command_pool,
         main_render_command_buffers,
@@ -4494,7 +4468,7 @@ void CVulkanRenderer::init_vulkan() {
 }
 
 void CVulkanRenderer::initialize_vertex_buffers_with_wavefront_data() {
-    for (unsigned int m = 0; m < paths_array.size(); ++m) {
+    for (u32 m = 0; m < paths_array.size(); ++m) {
         vertex_buffer_container.emplace_back();
         vertex_buffer_memory_container.emplace_back();
         create_vertex_buffer(
@@ -4515,8 +4489,8 @@ void CVulkanRenderer::initialize_vertex_buffers_with_wavefront_data() {
 }
 
 void CVulkanRenderer::initialize_vertex_buffers_with_gltf_data() {
-    for (unsigned int m = 0; m < paths_gltf.size(); ++m) {
-        uint32_t next_index_gltf = wavefront_obj_counter + m;
+    for (u32 m = 0; m < paths_gltf.size(); ++m) {
+        u32 next_index_gltf = wavefront_obj_counter + m;
         vertex_buffer_container.emplace_back();
         vertex_buffer_memory_container.emplace_back();
         create_vertex_buffer(
@@ -4537,9 +4511,9 @@ void CVulkanRenderer::initialize_vertex_buffers_with_gltf_data() {
 }
 
 void CVulkanRenderer::initialize_vertex_buffers_with_font_data() {
-    for (unsigned int i = 0; i < symbol_g_vertices_container.size(); ++i) {
-        const unsigned int next_buffer_index = font_indices_container[i];
-        std::vector<Vertex> symbol_g_vertices = symbol_g_vertices_container[i];
+    for (u32 i = 0; i < symbol_g_vertices_container.size(); ++i) {
+        const auto next_buffer_index = font_indices_container[i];
+        Vec<Vertex> symbol_g_vertices = symbol_g_vertices_container[i];
 
         create_vertex_buffer(
             font_vertex_buffer_container[next_buffer_index],
@@ -4556,7 +4530,7 @@ void CVulkanRenderer::initialize_vertex_buffers_with_font_data() {
 
 void CVulkanRenderer::clear_vk_image(GpuImage* texture_images) {
     vkDestroySampler(device, texture_images->sampler, nullptr);
-    for (unsigned int j = 0; j < texture_images->views.size(); ++j) {
+    for (u32 j = 0; j < texture_images->views.size(); ++j) {
         vkDestroyImageView(device, texture_images->views[j], nullptr);
     }
 
@@ -4585,7 +4559,7 @@ void CVulkanRenderer::cleanup_swap_chain() {
         vkDestroyFramebuffer(device, framebuffer, nullptr);
     }
 
-    for (std::vector<VkFramebuffer>& inner_vector :
+    for (Vec<VkFramebuffer>& inner_vector :
          point_light_shadow_map_frame_buffers) {
         for (VkFramebuffer& framebuffer : inner_vector) {
             vkDestroyFramebuffer(device, framebuffer, nullptr);
@@ -4603,7 +4577,7 @@ void CVulkanRenderer::cleanup() {
     cleanup_swap_chain();
     imgui_overlay->shutdown();
 
-    for (unsigned int i = 0, j = 0; i < GPU_DESCRIPTORS.size(); ++j) {
+    for (u32 i = 0, j = 0; i < GPU_DESCRIPTORS.size(); ++j) {
         if (DESCRIPTOR_BINDINGS_CONFIG[j].vk_type
             == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
             vkDestroyBuffer(
@@ -4622,7 +4596,7 @@ void CVulkanRenderer::cleanup() {
             DESCRIPTOR_BINDINGS_CONFIG[j].vk_type
             == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
         ) {
-            for (unsigned int n = i; n
+            for (u32 n = i; n
                  < i + DESCRIPTOR_BINDINGS_CONFIG[j].shader_descriptors_number;
                  ++n) {
                 if (GPU_DESCRIPTORS[n].gpu_image->views.size()) {
@@ -4679,15 +4653,15 @@ void CVulkanRenderer::cleanup() {
     vkDestroyBuffer(device, virtual_textures_uniform_buffer, nullptr);
     vkFreeMemory(device, virtual_textures_uniform_buffer_memory, nullptr);
 
-    for (size_t j = 0; j < vertex_buffer_container.size(); ++j) {
+    for (usize j = 0; j < vertex_buffer_container.size(); ++j) {
         vkDestroyBuffer(device, vertex_buffer_container[j], nullptr);
         vkFreeMemory(device, vertex_buffer_memory_container[j], nullptr);
     }
-    for (size_t j = 0; j < index_buffer_container.size(); ++j) {
+    for (usize j = 0; j < index_buffer_container.size(); ++j) {
         vkDestroyBuffer(device, index_buffer_container[j], nullptr);
         vkFreeMemory(device, index_buffer_memory_contaner[j], nullptr);
     }
-    for (size_t j = 0; j < font_indices_container.size(); ++j) {
+    for (usize j = 0; j < font_indices_container.size(); ++j) {
         vkDestroyBuffer(
             device,
             font_vertex_buffer_container[font_indices_container[j]],
@@ -4699,7 +4673,7 @@ void CVulkanRenderer::cleanup() {
             nullptr
         );
     }
-    for (size_t j = 0; j < font_indices_container.size(); ++j) {
+    for (usize j = 0; j < font_indices_container.size(); ++j) {
         vkDestroyBuffer(
             device,
             font_index_buffer_container[font_indices_container[j]],
@@ -4718,19 +4692,18 @@ void CVulkanRenderer::cleanup() {
 
     vkDeviceWaitIdle(device);
 
-    for (int i = 0; i < SpecificPipeline::PipelinesNumber; ++i) {
+    for (i32 i = 0; i < SpecificPipeline::PipelinesNumber; ++i) {
         vkDestroyRenderPass(device, RENDER_PASSES[i], nullptr);
     }
 
-    for (unsigned int i = 0; i < DescriptorSetDataLink::DescriptorChunksNumber;
-         ++i) {
+    for (u32 i = 0; i < DescriptorSetDataLink::DescriptorChunksNumber; ++i) {
         vkDestroyDescriptorSetLayout(
             device,
             DESCRIPTOR_SETS_CONFIG[i].set_layout,
             nullptr
         );
     }
-    for (unsigned int i = 0; i < SpecificPipeline::PipelinesNumber; ++i) {
+    for (u32 i = 0; i < SpecificPipeline::PipelinesNumber; ++i) {
         vkDestroyPipeline(device, PIPELINE_CONFIGS[i].pipeline, nullptr);
         vkDestroyPipelineLayout(
             device,
@@ -4741,9 +4714,9 @@ void CVulkanRenderer::cleanup() {
 
     vkDestroySampler(device, texture_sampler, nullptr);
     vkDestroySampler(device, shadow_map_sampler, nullptr);
-    for (unsigned int i = 0; i < texture_images.size(); ++i) {
+    for (u32 i = 0; i < texture_images.size(); ++i) {
         vkDestroySampler(device, texture_images[i].sampler, nullptr);
-        for (unsigned int j = 0; j < texture_images[i].views.size(); ++j) {
+        for (u32 j = 0; j < texture_images[i].views.size(); ++j) {
             vkDestroyImageView(device, texture_images[i].views[j], nullptr);
         }
 
@@ -4751,12 +4724,12 @@ void CVulkanRenderer::cleanup() {
         vkFreeMemory(device, texture_images[i].device_memory, nullptr);
     }
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+    for (usize i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
         vkDestroySemaphore(device, image_available_semaphores[i], nullptr);
         vkDestroyFence(device, in_flight_fences[i], nullptr);
     }
 
-    for (size_t i = 0; i < swap_chain_images.size(); ++i) {
+    for (usize i = 0; i < swap_chain_images.size(); ++i) {
         vkDestroySemaphore(device, render_finished_semaphores[i], nullptr);
     }
 
@@ -4770,7 +4743,7 @@ void CVulkanRenderer::cleanup() {
     vkDestroyCommandPool(device, ui_command_pool, nullptr);
     vkDestroyCommandPool(device, ui_icons_command_pool, nullptr);
     vkDestroyCommandPool(device, virtual_textures_command_pool, nullptr);
-    for (uint32_t i = 0; i < secondary_buffers_command_pools.size(); ++i) {
+    for (u32 i = 0; i < secondary_buffers_command_pools.size(); ++i) {
         vkDestroyCommandPool(
             device,
             secondary_buffers_command_pools[i],
@@ -4810,16 +4783,15 @@ void CVulkanRenderer::create_instance() {
     create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     create_info.pApplicationInfo = &app_info;
 
-    std::vector<const char*> extensions = get_required_extensions();
+    Vec<const char*> extensions = get_required_extensions();
 
-    create_info.enabledExtensionCount =
-        static_cast<uint32_t>(extensions.size());
+    create_info.enabledExtensionCount = static_cast<u32>(extensions.size());
     create_info.ppEnabledExtensionNames = extensions.data();
 
     VkDebugUtilsMessengerCreateInfoEXT debug_create_info {};
     if (ENABLE_VALIDATION_LAYERS) {
         create_info.enabledLayerCount =
-            static_cast<uint32_t>(VALIDATION_LAYERS.size());
+            static_cast<u32>(VALIDATION_LAYERS.size());
         create_info.ppEnabledLayerNames = VALIDATION_LAYERS.data();
 
         populate_debug_messenger_create_info(debug_create_info);
@@ -4916,14 +4888,14 @@ void CVulkanRenderer::create_surface() {
 }
 
 void CVulkanRenderer::pick_physical_device() {
-    uint32_t device_count = 0;
+    u32 device_count = 0;
     vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
 
     if (device_count == 0) {
         throw std::runtime_error("failed to find GPUs with Vulkan support!");
     }
 
-    std::vector<VkPhysicalDevice> devices(device_count);
+    Vec<VkPhysicalDevice> devices(device_count);
     vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
 
     for (const VkPhysicalDevice& device : devices) {
@@ -4944,19 +4916,20 @@ void CVulkanRenderer::pick_physical_device() {
 void CVulkanRenderer::create_logical_device() {
     QueueFamilyIndices indices = find_queue_families(physical_device);
 
-    std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
-    std::set<uint32_t> unique_queue_families = {
+    Vec<VkDeviceQueueCreateInfo> queue_create_infos;
+    BTreeSet<u32> unique_queue_families = {
         indices.graphics_family.value(),
         indices.present_family.value()
     };
 
-    float queue_priority = 1.0f;
-    for (uint32_t queue_family : unique_queue_families) {
+    f32 queue_priority = 1.0f;
+    for (u32 queue_family : unique_queue_families) {
         VkDeviceQueueCreateInfo queue_create_info {};
         queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queue_create_info.queueFamilyIndex = queue_family;
         queue_create_info.queueCount = 1;
-        queue_create_info.pQueuePriorities = &queue_priority;
+        queue_create_info.pQueuePriorities =
+            reinterpret_cast<const float*>(&queue_priority);
         queue_create_infos.push_back(queue_create_info);
     }
 
@@ -4968,18 +4941,18 @@ void CVulkanRenderer::create_logical_device() {
     create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
     create_info.queueCreateInfoCount =
-        static_cast<uint32_t>(queue_create_infos.size());
+        static_cast<u32>(queue_create_infos.size());
     create_info.pQueueCreateInfos = queue_create_infos.data();
 
     create_info.pEnabledFeatures = &device_features;
 
     create_info.enabledExtensionCount =
-        static_cast<uint32_t>(DEVICE_EXTENSIONS.size());
+        static_cast<u32>(DEVICE_EXTENSIONS.size());
     create_info.ppEnabledExtensionNames = DEVICE_EXTENSIONS.data();
 
     if (ENABLE_VALIDATION_LAYERS) {
         create_info.enabledLayerCount =
-            static_cast<uint32_t>(VALIDATION_LAYERS.size());
+            static_cast<u32>(VALIDATION_LAYERS.size());
         create_info.ppEnabledLayerNames = VALIDATION_LAYERS.data();
     } else {
         create_info.enabledLayerCount = 0;
@@ -5007,7 +4980,7 @@ void CVulkanRenderer::create_swap_chain() {
     VkPresentModeKHR present_mode =
         choose_swap_present_mode(swap_chain_support.present_modes);
     VkExtent2D extent = choose_swap_extent(swap_chain_support.capabilities);
-    uint32_t image_count = swap_chain_support.capabilities.minImageCount + 1;
+    u32 image_count = swap_chain_support.capabilities.minImageCount + 1;
     if (swap_chain_support.capabilities.maxImageCount > 0
         && image_count > swap_chain_support.capabilities.maxImageCount) {
         image_count = swap_chain_support.capabilities.maxImageCount;
@@ -5022,7 +4995,7 @@ void CVulkanRenderer::create_swap_chain() {
     create_info.imageArrayLayers = 1;
     create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     QueueFamilyIndices indices = find_queue_families(physical_device);
-    uint32_t queue_family_indices[] = {
+    u32 queue_family_indices[] = {
         indices.graphics_family.value(),
         indices.present_family.value()
     };
@@ -5057,7 +5030,7 @@ void CVulkanRenderer::create_swap_chain() {
 
 void CVulkanRenderer::create_image_views() {
     swap_chain_image_views.resize(swap_chain_images.size());
-    for (uint32_t i = 0; i < swap_chain_images.size(); i++) {
+    for (u32 i = 0; i < swap_chain_images.size(); i++) {
         GpuImage swap_chain_image = {
             .image = swap_chain_images[i],
             .view_type = VK_IMAGE_VIEW_TYPE_2D,
@@ -5076,8 +5049,8 @@ void CVulkanRenderer::create_image_views() {
 }
 
 void CVulkanRenderer::create_main_render_pass() {
-    for (unsigned int j = 0; j < SpecificPipeline::PipelinesNumber; ++j) {
-        for (unsigned int i = 0;
+    for (u32 j = 0; j < SpecificPipeline::PipelinesNumber; ++j) {
+        for (u32 i = 0;
              i < RENDER_PASS_CONFIGS[j].actual_attachment_description_number;
              ++i) {
             if (RENDER_PASS_CONFIGS[j].attachment_descriptions[i].finalLayout
@@ -5093,7 +5066,7 @@ void CVulkanRenderer::create_main_render_pass() {
         }
         VkSubpassDescription subpass {};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        for (unsigned int i = 0;
+        for (u32 i = 0;
              i < RENDER_PASS_CONFIGS[j].actual_attachment_reference_number;
              ++i) {
             if (RENDER_PASS_CONFIGS[j].attachment_references[i].layout
@@ -5111,7 +5084,7 @@ void CVulkanRenderer::create_main_render_pass() {
         }
         VkRenderPassCreateInfo render_pass_info {};
         render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        render_pass_info.attachmentCount = static_cast<uint32_t>(
+        render_pass_info.attachmentCount = static_cast<u32>(
             RENDER_PASS_CONFIGS[j].actual_attachment_description_number
         );
         render_pass_info.pAttachments =
@@ -5135,16 +5108,16 @@ void CVulkanRenderer::create_main_render_pass() {
 }
 
 void CVulkanRenderer::create_descriptor_set_layout() {
-    for (int descriptor_set_counter = 0;
+    for (i32 descriptor_set_counter = 0;
          descriptor_set_counter < DescriptorSetDataLink::DescriptorChunksNumber;
          ++descriptor_set_counter) {
         DescriptorSet& descriptor_set =
             DESCRIPTOR_SETS_CONFIG[descriptor_set_counter];
-        std::vector<VkDescriptorSetLayoutBinding> bindings;
-        for (uint32_t j = 0;
+        Vec<VkDescriptorSetLayoutBinding> bindings;
+        for (u32 j = 0;
              j < descriptor_set.actual_linked_descriptor_bindings_number;
              ++j) {
-            uint32_t current_descriptor_binding_id =
+            u32 current_descriptor_binding_id =
                 descriptor_set.descriptors_bindings_i_ds[j];
             VkDescriptorSetLayoutBinding model_matrix_ubo_layout {};
             model_matrix_ubo_layout.binding =
@@ -5166,7 +5139,7 @@ void CVulkanRenderer::create_descriptor_set_layout() {
         VkDescriptorSetLayoutCreateInfo layout_info {};
         layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         layout_info.flags = 0;
-        layout_info.bindingCount = static_cast<uint32_t>(bindings.size());
+        layout_info.bindingCount = static_cast<u32>(bindings.size());
         layout_info.pBindings = bindings.data();
         if (vkCreateDescriptorSetLayout(
                 device,
@@ -5181,17 +5154,16 @@ void CVulkanRenderer::create_descriptor_set_layout() {
 }
 
 void CVulkanRenderer::create_graphics_pipeline() {
-    for (int graphics_pipeline_counter = 0;
+    for (i32 graphics_pipeline_counter = 0;
          graphics_pipeline_counter < SpecificPipeline::PipelinesNumber;
          ++graphics_pipeline_counter) {
         Pipeline& pipeline = PIPELINE_CONFIGS[graphics_pipeline_counter];
         VkRenderPass render_pass = RENDER_PASSES[graphics_pipeline_counter];
-        std::vector<VkPipelineShaderStageCreateInfo> shader_stages;
+        Vec<VkPipelineShaderStageCreateInfo> shader_stages;
         VkShaderModule vert_shader_module;
         VkShaderModule frag_shader_module;
         if (pipeline.vert_shader != nullptr) {
-            std::vector<char> vert_shader_code =
-                read_file(pipeline.vert_shader);
+            Vec<char> vert_shader_code = read_file(pipeline.vert_shader);
             vert_shader_module = create_shader_module(vert_shader_code);
             VkPipelineShaderStageCreateInfo vert_shader_stage_info {};
             vert_shader_stage_info.sType =
@@ -5202,8 +5174,7 @@ void CVulkanRenderer::create_graphics_pipeline() {
             shader_stages.push_back(vert_shader_stage_info);
         }
         if (pipeline.frag_shader != nullptr) {
-            std::vector<char> frag_shader_code =
-                read_file(pipeline.frag_shader);
+            Vec<char> frag_shader_code = read_file(pipeline.frag_shader);
             frag_shader_module = create_shader_module(frag_shader_code);
             VkPipelineShaderStageCreateInfo frag_shader_stage_info {};
             frag_shader_stage_info.sType =
@@ -5219,7 +5190,7 @@ void CVulkanRenderer::create_graphics_pipeline() {
             VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vertex_input_info.vertexBindingDescriptionCount = 1;
         vertex_input_info.vertexAttributeDescriptionCount =
-            static_cast<uint32_t>(pipeline.attribute_descriptions.size());
+            static_cast<u32>(pipeline.attribute_descriptions.size());
         vertex_input_info.pVertexBindingDescriptions =
             &pipeline.binding_description;
         vertex_input_info.pVertexAttributeDescriptions =
@@ -5291,7 +5262,7 @@ void CVulkanRenderer::create_graphics_pipeline() {
         color_blending.blendConstants[1] = 0.0f;
         color_blending.blendConstants[2] = 0.0f;
         color_blending.blendConstants[3] = 0.0f;
-        std::vector<VkDynamicState> dynamic_states = {
+        Vec<VkDynamicState> dynamic_states = {
             VK_DYNAMIC_STATE_VIEWPORT,
             VK_DYNAMIC_STATE_SCISSOR
         };
@@ -5299,14 +5270,14 @@ void CVulkanRenderer::create_graphics_pipeline() {
         dynamic_state.sType =
             VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
         dynamic_state.dynamicStateCount =
-            static_cast<uint32_t>(dynamic_states.size());
+            static_cast<u32>(dynamic_states.size());
         dynamic_state.pDynamicStates = dynamic_states.data();
         // Need to access inside pipeline and take ID for specific descriptor
         // set, then with that ID we got descriptor set and take it's layout.
-        unsigned int descriptor_layouts_number =
+        u32 descriptor_layouts_number =
             pipeline.actual_linked_descriptor_sets_number;
-        std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
-        for (unsigned i = 0; i < descriptor_layouts_number; ++i) {
+        Vec<VkDescriptorSetLayout> descriptor_set_layouts;
+        for (u32 i = 0; i < descriptor_layouts_number; ++i) {
             descriptor_set_layouts.push_back(
                 DESCRIPTOR_SETS_CONFIG[pipeline.linked_descriptor_set_i_ds[i]]
                     .set_layout
@@ -5365,8 +5336,8 @@ void CVulkanRenderer::create_graphics_pipeline() {
 void CVulkanRenderer::create_framebuffers() {
     // Main renderer frame buffers initialization.
     swap_chain_framebuffers.resize(swap_chain_image_views.size());
-    for (size_t i = 0; i < swap_chain_image_views.size(); ++i) {
-        std::vector<VkImageView> main_render_attachments;
+    for (usize i = 0; i < swap_chain_image_views.size(); ++i) {
+        Vec<VkImageView> main_render_attachments;
         main_render_attachments.push_back(swap_chain_image_views[i]);
         main_render_attachments.push_back(main_depth_image_view);
         create_render_pass_framebuffers(
@@ -5378,12 +5349,12 @@ void CVulkanRenderer::create_framebuffers() {
         );
     }
     // Directional lights shadow map renderer frame buffers initialization.
-    unsigned int directional_light_descriptor_binding_index =
+    u32 directional_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
             .descriptors_bindings_i_ds[1];
     directional_light_shadow_map_frame_buffers.resize(DIRECTIONAL_LIGHTS_NUMBER);
-    for (size_t i = 0; i < DIRECTIONAL_LIGHTS_NUMBER; ++i) {
-        std::vector<VkImageView> directional_lights_render_attachments;
+    for (usize i = 0; i < DIRECTIONAL_LIGHTS_NUMBER; ++i) {
+        Vec<VkImageView> directional_lights_render_attachments;
         directional_lights_render_attachments.push_back(
             (*GPU_DESCRIPTORS
                   [DESCRIPTOR_BINDINGS_CONFIG
@@ -5402,12 +5373,12 @@ void CVulkanRenderer::create_framebuffers() {
         );
     }
     // Spot lights shadow map renderer frame buffers initialization.
-    unsigned int spot_light_descriptor_binding_index =
+    u32 spot_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
             .descriptors_bindings_i_ds[3];
     spot_light_shadow_map_frame_buffers.resize(SPOT_LIGHTS_NUMBER);
-    for (size_t i = 0; i < SPOT_LIGHTS_NUMBER; ++i) {
-        std::vector<VkImageView> spot_lights_render_attachments;
+    for (usize i = 0; i < SPOT_LIGHTS_NUMBER; ++i) {
+        Vec<VkImageView> spot_lights_render_attachments;
         spot_lights_render_attachments.push_back(
             (*GPU_DESCRIPTORS
                   [DESCRIPTOR_BINDINGS_CONFIG[spot_light_descriptor_binding_index]
@@ -5425,13 +5396,13 @@ void CVulkanRenderer::create_framebuffers() {
         );
     }
     // Point lights shadow map renderer frame buffers initialization.
-    unsigned int descriptor_binding_index =
+    u32 descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
             .descriptors_bindings_i_ds[2];
     point_light_shadow_map_frame_buffers.resize(POINT_LIGHTS_NUMBER);
-    for (size_t j = 0; j < POINT_LIGHTS_NUMBER; ++j) {
-        for (size_t m = 0; m < 6; ++m) {
-            std::vector<VkImageView> point_lights_render_attachments;
+    for (usize j = 0; j < POINT_LIGHTS_NUMBER; ++j) {
+        for (usize m = 0; m < 6; ++m) {
+            Vec<VkImageView> point_lights_render_attachments;
             point_lights_render_attachments.push_back(
                 (*GPU_DESCRIPTORS
                       [DESCRIPTOR_BINDINGS_CONFIG[descriptor_binding_index]
@@ -5453,17 +5424,16 @@ void CVulkanRenderer::create_framebuffers() {
 }
 
 void CVulkanRenderer::create_render_pass_framebuffers(
-    std::vector<VkImageView>& attachments,
+    Vec<VkImageView>& attachments,
     VkRenderPass& render_pass,
     VkFramebuffer& swap_chain_framebuffer,
-    uint32_t width,
-    uint32_t height
+    u32 width,
+    u32 height
 ) {
     VkFramebufferCreateInfo framebuffer_info {};
     framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     framebuffer_info.renderPass = render_pass;
-    framebuffer_info.attachmentCount =
-        static_cast<uint32_t>(attachments.size());
+    framebuffer_info.attachmentCount = static_cast<u32>(attachments.size());
     framebuffer_info.pAttachments = attachments.data();
     framebuffer_info.width = width;
     framebuffer_info.height = height;
@@ -5521,10 +5491,10 @@ void CVulkanRenderer::create_depth_resources() {
 }
 
 void CVulkanRenderer::create_directional_light_shadow_map_depth_resources() {
-    unsigned int directional_light_descriptor_binding_index =
+    u32 directional_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
             .descriptors_bindings_i_ds[1];
-    for (unsigned int i = 0; i < DIRECTIONAL_LIGHTS_NUMBER; ++i) {
+    for (u32 i = 0; i < DIRECTIONAL_LIGHTS_NUMBER; ++i) {
         GpuImage depth_image = {
             .image = VkImage {},
             .device_memory = VkDeviceMemory {},
@@ -5594,10 +5564,10 @@ void CVulkanRenderer::create_directional_light_shadow_map_depth_resources() {
 }
 
 void CVulkanRenderer::create_spot_light_shadow_map_depth_resources() {
-    unsigned int spot_light_descriptor_binding_index =
+    u32 spot_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
             .descriptors_bindings_i_ds[3];
-    for (unsigned int i = 0; i < SPOT_LIGHTS_NUMBER; ++i) {
+    for (u32 i = 0; i < SPOT_LIGHTS_NUMBER; ++i) {
         GpuImage depth_image = {
             .image = VkImage {},
             .device_memory = VkDeviceMemory {},
@@ -5667,10 +5637,10 @@ void CVulkanRenderer::create_spot_light_shadow_map_depth_resources() {
 }
 
 void CVulkanRenderer::create_point_light_shadow_map_depth_resources() {
-    unsigned int descriptor_binding_index =
+    u32 descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
             .descriptors_bindings_i_ds[2];
-    for (unsigned int i = 0; i < POINT_LIGHTS_NUMBER; ++i) {
+    for (u32 i = 0; i < POINT_LIGHTS_NUMBER; ++i) {
         GpuImage depth_image = {
             .image = VkImage {},
             .device_memory = VkDeviceMemory {},
@@ -5689,7 +5659,7 @@ void CVulkanRenderer::create_point_light_shadow_map_depth_resources() {
 
         create_image(depth_image);
 
-        for (unsigned int j = 0; j < 6; ++j) {
+        for (u32 j = 0; j < 6; ++j) {
             VkCommandBuffer command_buffer =
                 begin_single_time_commands(main_render_command_pool);
 
@@ -5741,7 +5711,7 @@ void CVulkanRenderer::create_point_light_shadow_map_depth_resources() {
                  .gpu_image = depth_image;
     }
 
-    for (unsigned int i = 0; i < POINT_LIGHTS_NUMBER; ++i) {
+    for (u32 i = 0; i < POINT_LIGHTS_NUMBER; ++i) {
         (*GPU_DESCRIPTORS
               [DESCRIPTOR_BINDINGS_CONFIG[descriptor_binding_index]
                    .global_descriptor_offset
@@ -5776,7 +5746,7 @@ void CVulkanRenderer::create_point_light_shadow_map_depth_resources() {
 }
 
 VkFormat CVulkanRenderer::find_supported_format(
-    const std::vector<VkFormat>& candidates,
+    const Vec<VkFormat>& candidates,
     VkImageTiling tiling,
     VkFormatFeatureFlags features
 ) {
@@ -5814,10 +5784,10 @@ bool CVulkanRenderer::has_stencil_component(VkFormat format) {
 }
 
 void CVulkanRenderer::create_texture_image_view() {
-    unsigned int readable_texture_descriptor_binding_index =
+    u32 readable_texture_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::RidableTextures]
             .descriptors_bindings_i_ds[0];
-    for (unsigned int i = 0; i < initialize_texture_data.size(); ++i) {
+    for (u32 i = 0; i < initialize_texture_data.size(); ++i) {
         GpuImage* image = GPU_DESCRIPTORS
                               [DESCRIPTOR_BINDINGS_CONFIG
                                    [readable_texture_descriptor_binding_index]
@@ -5876,8 +5846,8 @@ void CVulkanRenderer::create_shadow_map_sampler() {
 
 VkImageView CVulkanRenderer::create_image_view(
     GpuImage image,
-    uint32_t base_array_layers,
-    uint32_t layer_count
+    u32 base_array_layers,
+    u32 layer_count
 ) {
     VkImageViewCreateInfo view_info {};
     view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -6065,8 +6035,8 @@ void CVulkanRenderer::transition_shadow_map_image_layout(
 void CVulkanRenderer::copy_buffer_to_image(
     VkBuffer& buffer,
     VkImage image,
-    uint32_t width,
-    uint32_t height
+    u32 width,
+    u32 height
 ) {
     VkCommandBuffer command_buffer =
         begin_single_time_commands(main_render_command_pool);
@@ -6097,7 +6067,7 @@ void CVulkanRenderer::copy_buffer_to_image(
 void CVulkanRenderer::create_vertex_buffer(
     VkBuffer& dst_vertex_buffer,
     VkDeviceMemory& dst_vertex_buffer_memory,
-    std::vector<Vertex>& vertex_data
+    Vec<Vertex>& vertex_data
 ) {
     VkDeviceSize buffer_size = sizeof(vertex_data[0]) * vertex_data.size();
     if (vertex_data.size() == 0) {
@@ -6118,7 +6088,7 @@ void CVulkanRenderer::create_vertex_buffer(
     void* data;
     vkMapMemory(device, staging_buffer_memory, 0, buffer_size, 0, &data);
     if (vertex_data.size() > 0) {
-        memcpy(data, vertex_data.data(), (size_t)buffer_size);
+        memcpy(data, vertex_data.data(), (usize)buffer_size);
     }
     vkUnmapMemory(device, staging_buffer_memory);
 
@@ -6139,7 +6109,7 @@ void CVulkanRenderer::create_vertex_buffer(
 void CVulkanRenderer::create_index_buffer(
     VkBuffer& dst_index_buffer,
     VkDeviceMemory& dst_index_buffer_memory,
-    const std::vector<uint32_t>& index_data
+    const Vec<u32>& index_data
 ) {
     VkDeviceSize buffer_size = sizeof(index_data[0]) * index_data.size();
     if (index_data.empty()) {
@@ -6160,7 +6130,7 @@ void CVulkanRenderer::create_index_buffer(
     void* data;
     vkMapMemory(device, staging_buffer_memory, 0, buffer_size, 0, &data);
     if (!index_data.empty()) {
-        memcpy(data, index_data.data(), (size_t)buffer_size);
+        memcpy(data, index_data.data(), (usize)buffer_size);
     }
     vkUnmapMemory(device, staging_buffer_memory);
 
@@ -6179,21 +6149,20 @@ void CVulkanRenderer::create_index_buffer(
 }
 
 void CVulkanRenderer::create_main_render_uniform_buffers() {
-    for (unsigned int descriptor_set_config_counter = 0;
-         descriptor_set_config_counter
+    for (u32 descriptor_set_config_counter = 0; descriptor_set_config_counter
          < DescriptorSetDataLink::DescriptorChunksNumber;
          ++descriptor_set_config_counter) {
-        for (unsigned int j = 0;
+        for (u32 j = 0;
              j < DESCRIPTOR_SETS_CONFIG[descriptor_set_config_counter]
                      .actual_linked_descriptor_bindings_number;
              ++j) {
-            unsigned int descriptor_binding_index =
+            u32 descriptor_binding_index =
                 DESCRIPTOR_SETS_CONFIG[descriptor_set_config_counter]
                     .descriptors_bindings_i_ds[j];
             VkDescriptorType descriptor_type =
                 DESCRIPTOR_BINDINGS_CONFIG[descriptor_binding_index].vk_type;
             if (descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
-                uint32_t memory =
+                u32 memory =
                     DESCRIPTOR_BINDINGS_CONFIG[descriptor_binding_index]
                         .ubo_chunk_size
                     * DESCRIPTOR_SETS_CONFIG[descriptor_set_config_counter]
@@ -6220,19 +6189,19 @@ void CVulkanRenderer::create_main_render_uniform_buffers() {
 }
 
 void CVulkanRenderer::create_main_render_descriptor_pool() {
-    std::array<VkDescriptorPoolSize, 2> pool_sizes {};
+    Array<VkDescriptorPoolSize, 2> pool_sizes {};
 
-    uint32_t descriptor_count = 10000;
+    u32 descriptor_count = 10000;
     pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    pool_sizes[0].descriptorCount = static_cast<uint32_t>(descriptor_count);
+    pool_sizes[0].descriptorCount = static_cast<u32>(descriptor_count);
     pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    pool_sizes[1].descriptorCount = static_cast<uint32_t>(descriptor_count);
+    pool_sizes[1].descriptorCount = static_cast<u32>(descriptor_count);
 
     VkDescriptorPoolCreateInfo pool_info {};
     pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    pool_info.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
+    pool_info.poolSizeCount = static_cast<u32>(pool_sizes.size());
     pool_info.pPoolSizes = pool_sizes.data();
-    pool_info.maxSets = static_cast<uint32_t>(descriptor_count);
+    pool_info.maxSets = static_cast<u32>(descriptor_count);
 
     if (vkCreateDescriptorPool(device, &pool_info, nullptr, &descriptor_pool)
         != VK_SUCCESS) {
@@ -6241,20 +6210,19 @@ void CVulkanRenderer::create_main_render_descriptor_pool() {
 }
 
 void CVulkanRenderer::allocate_descriptor_sets(
-    std::vector<VkDescriptorSet>& descriptor_sets,
+    Vec<VkDescriptorSet>& descriptor_sets,
     VkDescriptorSetLayout set_layout,
-    const unsigned int descriptor_sets_number,
-    const unsigned int descriptor_offset
+    const u32 descriptor_sets_number,
+    const u32 descriptor_offset
 ) {
-    std::vector<VkDescriptorSetLayout> matrix_ubo_layouts(
+    Vec<VkDescriptorSetLayout> matrix_ubo_layouts(
         descriptor_sets_number,
         set_layout
     );
     VkDescriptorSetAllocateInfo alloc_info {};
     alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     alloc_info.descriptorPool = descriptor_pool;
-    alloc_info.descriptorSetCount =
-        static_cast<uint32_t>(descriptor_sets_number);
+    alloc_info.descriptorSetCount = static_cast<u32>(descriptor_sets_number);
     alloc_info.pSetLayouts = matrix_ubo_layouts.data();
     if (vkAllocateDescriptorSets(
             device,
@@ -6269,15 +6237,15 @@ void CVulkanRenderer::allocate_descriptor_sets(
 void CVulkanRenderer::update_descriptor_sets_ubo(
     VkBuffer ubo,
     const VkDeviceSize& ubo_struct_size,
-    const unsigned int& ubo_descriptors_number,
-    int ubo_binding,
-    std::vector<VkDescriptorSet>& ubo_descriptor_sets,
-    const unsigned int offset
+    const u32& ubo_descriptors_number,
+    i32 ubo_binding,
+    Vec<VkDescriptorSet>& ubo_descriptor_sets,
+    const u32 offset
 ) {
-    for (size_t i = 0; i < ubo_descriptors_number; ++i) {
+    for (usize i = 0; i < ubo_descriptors_number; ++i) {
         VkDescriptorBufferInfo model_matrix_buffer_info =
             create_descriptor_buffer_info(ubo, ubo_struct_size, i);
-        std::array<VkWriteDescriptorSet, 1> descriptor_writes {};
+        Array<VkWriteDescriptorSet, 1> descriptor_writes {};
 
         descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptor_writes[0].dstSet =
@@ -6290,7 +6258,7 @@ void CVulkanRenderer::update_descriptor_sets_ubo(
 
         vkUpdateDescriptorSets(
             device,
-            static_cast<uint32_t>(descriptor_writes.size()),
+            static_cast<u32>(descriptor_writes.size()),
             descriptor_writes.data(),
             0,
             nullptr
@@ -6301,12 +6269,12 @@ void CVulkanRenderer::update_descriptor_sets_ubo(
 void CVulkanRenderer::update_light_data_descriptor_sets(
     const DescriptorSet& current_descriptor_set1
 ) {
-    const unsigned int linked_descriptor_set_bindings_number =
+    const auto linked_descriptor_set_bindings_number =
         current_descriptor_set1.actual_linked_descriptor_bindings_number;
-    std::vector<uint32_t> shader_bindings;
-    std::vector<uint32_t> descriptor_number_per_binding;
-    std::vector<uint32_t> bindings_i_ds;
-    for (size_t j = 0; j < linked_descriptor_set_bindings_number; ++j) {
+    Vec<u32> shader_bindings;
+    Vec<u32> descriptor_number_per_binding;
+    Vec<u32> bindings_i_ds;
+    for (usize j = 0; j < linked_descriptor_set_bindings_number; ++j) {
         shader_bindings.push_back(
             DESCRIPTOR_BINDINGS_CONFIG[current_descriptor_set1
                                            .descriptors_bindings_i_ds[j]]
@@ -6317,18 +6285,17 @@ void CVulkanRenderer::update_light_data_descriptor_sets(
         );
     }
 
-    for (size_t i = 0; i < current_descriptor_set1.host_descriptor_number;
-         ++i) {
-        std::vector<VkWriteDescriptorSet> descriptor_writes;
+    for (usize i = 0; i < current_descriptor_set1.host_descriptor_number; ++i) {
+        Vec<VkWriteDescriptorSet> descriptor_writes;
         descriptor_writes.resize(shader_bindings.size());
-        std::vector<VkDescriptorBufferInfo> descriptor_buffer_infos;
-        std::vector<std::vector<VkDescriptorImageInfo>> descriptor_image_infos;
-        for (size_t j = 0; j < shader_bindings.size(); ++j) {
+        Vec<VkDescriptorBufferInfo> descriptor_buffer_infos;
+        Vec<Vec<VkDescriptorImageInfo>> descriptor_image_infos;
+        for (usize j = 0; j < shader_bindings.size(); ++j) {
             if (DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]].vk_type
                 == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
                 descriptor_buffer_infos.push_back({});
 
-                for (size_t m = 0;
+                for (usize m = 0;
                      m < DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]]
                              .shader_descriptors_number;
                      ++m) {
@@ -6350,11 +6317,11 @@ void CVulkanRenderer::update_light_data_descriptor_sets(
             ) {
                 descriptor_image_infos.push_back({});
 
-                for (size_t m = 0;
+                for (usize m = 0;
                      m < DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]]
                              .shader_descriptors_number;
                      ++m) {
-                    uint32_t image_view_index =
+                    u32 image_view_index =
                         GPU_DESCRIPTORS
                             [DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]]
                                  .global_descriptor_offset
@@ -6395,7 +6362,7 @@ void CVulkanRenderer::update_light_data_descriptor_sets(
 
         vkUpdateDescriptorSets(
             device,
-            static_cast<uint32_t>(descriptor_writes.size()),
+            static_cast<u32>(descriptor_writes.size()),
             descriptor_writes.data(),
             0,
             nullptr
@@ -6406,19 +6373,19 @@ void CVulkanRenderer::update_light_data_descriptor_sets(
 void CVulkanRenderer::update_descriptor_sets_combined_image_sampler(
     const DescriptorSet& descriptor_set
 ) {
-    std::vector<uint32_t> bindings_i_ds;
-    for (size_t j = 0;
+    Vec<u32> bindings_i_ds;
+    for (usize j = 0;
          j < descriptor_set.actual_linked_descriptor_bindings_number;
          ++j) {
         bindings_i_ds.push_back(descriptor_set.descriptors_bindings_i_ds[j]);
     }
 
-    unsigned int readable_texture_descriptor_binding_index =
+    u32 readable_texture_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::RidableTextures]
             .descriptors_bindings_i_ds[0];
-    for (size_t i = 0; i < descriptor_set.host_descriptor_number; ++i) {
-        const unsigned int texture_index = i / 2;
-        constexpr unsigned int TEXTURE_VIEW_INDEX = 0;
+    for (usize i = 0; i < descriptor_set.host_descriptor_number; ++i) {
+        const auto texture_index = i / 2;
+        constexpr auto TEXTURE_VIEW_INDEX = 0;
         VkDescriptorImageInfo image_info = create_descriptor_image_info(
             *GPU_DESCRIPTORS
                  [DESCRIPTOR_BINDINGS_CONFIG
@@ -6430,11 +6397,11 @@ void CVulkanRenderer::update_descriptor_sets_combined_image_sampler(
             TEXTURE_VIEW_INDEX,
             texture_sampler
         );
-        std::vector<VkWriteDescriptorSet> descriptor_writes {};
+        Vec<VkWriteDescriptorSet> descriptor_writes {};
 
-        for (unsigned int j = 0; j < bindings_i_ds.size(); ++j) {
+        for (u32 j = 0; j < bindings_i_ds.size(); ++j) {
             descriptor_writes.push_back({});
-            const unsigned int last_element = descriptor_writes.size() - 1;
+            const auto last_element = descriptor_writes.size() - 1;
             descriptor_writes[last_element].sType =
                 VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptor_writes[last_element].dstSet =
@@ -6450,7 +6417,7 @@ void CVulkanRenderer::update_descriptor_sets_combined_image_sampler(
         }
         vkUpdateDescriptorSets(
             device,
-            static_cast<uint32_t>(descriptor_writes.size()),
+            static_cast<u32>(descriptor_writes.size()),
             descriptor_writes.data(),
             0,
             nullptr
@@ -6459,13 +6426,13 @@ void CVulkanRenderer::update_descriptor_sets_combined_image_sampler(
 }
 
 void CVulkanRenderer::create_descriptor_image_info(
-    const unsigned int descriptor_number,
+    const u32 descriptor_number,
     VkImageLayout image_layout,
-    std::vector<GpuImage>& texture_images,
-    const unsigned int image_view_index,
+    Vec<GpuImage>& texture_images,
+    const u32 image_view_index,
     VkDescriptorImageInfo descriptor_image_infos[]
 ) {
-    for (size_t i = 0; i < descriptor_number; ++i) {
+    for (usize i = 0; i < descriptor_number; ++i) {
         descriptor_image_infos[i] = {};
         descriptor_image_infos[i].imageLayout = image_layout;
         descriptor_image_infos[i].imageView =
@@ -6476,14 +6443,14 @@ void CVulkanRenderer::create_descriptor_image_info(
 
 void CVulkanRenderer::create_main_render_descriptor_sets() {
     vkResetDescriptorPool(device, descriptor_pool, 0);
-    for (unsigned int pipeline_counter = 0;
+    for (u32 pipeline_counter = 0;
          pipeline_counter < SpecificPipeline::PipelinesNumber;
          ++pipeline_counter) {
-        for (unsigned int descriptor_set_counter = 0;
+        for (u32 descriptor_set_counter = 0;
              descriptor_set_counter < PIPELINE_CONFIGS[pipeline_counter]
                                           .actual_linked_descriptor_sets_number;
              ++descriptor_set_counter) {
-            const unsigned int linked_descriptor_set_matrix_ubo_id =
+            const auto linked_descriptor_set_matrix_ubo_id =
                 PIPELINE_CONFIGS[pipeline_counter]
                     .linked_descriptor_set_i_ds[descriptor_set_counter];
             const DescriptorSet& current_descriptor_set0 =
@@ -6534,8 +6501,7 @@ void CVulkanRenderer::create_buffer(
     alloc_info.memoryTypeIndex =
         find_memory_type(mem_requirements.memoryTypeBits, properties);
 
-    int32_t result =
-        vkAllocateMemory(device, &alloc_info, nullptr, &buffer_memory);
+    i32 result = vkAllocateMemory(device, &alloc_info, nullptr, &buffer_memory);
     if (result != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate buffer memory!");
     }
@@ -6596,14 +6562,14 @@ void CVulkanRenderer::copy_buffer(
     end_single_time_commands(main_render_command_pool, command_buffer);
 }
 
-uint32_t CVulkanRenderer::find_memory_type(
-    uint32_t type_filter,
+u32 CVulkanRenderer::find_memory_type(
+    u32 type_filter,
     VkMemoryPropertyFlags properties
 ) {
     VkPhysicalDeviceMemoryProperties mem_properties;
     vkGetPhysicalDeviceMemoryProperties(physical_device, &mem_properties);
 
-    for (uint32_t i = 0; i < mem_properties.memoryTypeCount; i++) {
+    for (u32 i = 0; i < mem_properties.memoryTypeCount; i++) {
         if ((type_filter & (1 << i))
             && (mem_properties.memoryTypes[i].propertyFlags & properties)
                 == properties) {
@@ -6616,8 +6582,8 @@ uint32_t CVulkanRenderer::find_memory_type(
 
 void CVulkanRenderer::create_command_buffers(
     VkCommandPool& command_pool,
-    std::vector<VkCommandBuffer>& command_buffers,
-    uint32_t command_buffers_number,
+    Vec<VkCommandBuffer>& command_buffers,
+    u32 command_buffers_number,
     VkCommandBufferLevel command_buffer_level_flag
 ) {
     command_buffers.resize(command_buffers_number * MAX_FRAMES_IN_FLIGHT);
@@ -6626,7 +6592,7 @@ void CVulkanRenderer::create_command_buffers(
     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     alloc_info.commandPool = command_pool;
     alloc_info.level = command_buffer_level_flag;
-    alloc_info.commandBufferCount = (uint32_t)command_buffers.size();
+    alloc_info.commandBufferCount = (u32)command_buffers.size();
 
     if (vkAllocateCommandBuffers(device, &alloc_info, command_buffers.data())
         != VK_SUCCESS) {
@@ -6668,10 +6634,10 @@ void CVulkanRenderer::execute_secondary_command_buffer(
 }
 
 void CVulkanRenderer::update_hud_ubo(
-    uint32_t offset,
+    u32 offset,
     bool is_hud_exists,
-    float highest_y,
-    uint32_t health_counter
+    f32 highest_y,
+    u32 health_counter
 ) {
     HudUbo hud_ubo {};
 
@@ -6685,7 +6651,7 @@ void CVulkanRenderer::update_hud_ubo(
     hud_ubo.highest_y = highest_y;
 
     void* hud_matrix_data;
-    unsigned int hud_ubo_descriptor_binding_index =
+    u32 hud_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::HUD]
             .descriptors_bindings_i_ds[0];
     vkMapMemory(
@@ -6709,12 +6675,12 @@ void CVulkanRenderer::update_hud_ubo(
     );
 }
 
-void CVulkanRenderer::update_hud_screen_ubo(uint32_t offset, uint32_t crosshair) {
+void CVulkanRenderer::update_hud_screen_ubo(u32 offset, u32 crosshair) {
     HudScreenUbo hud_ubo {};
     hud_ubo.model = crosshairs[crosshair].model;
 
     void* hud_matrix_data;
-    unsigned int hud_screen_ubo_descriptor_binding_index =
+    u32 hud_screen_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::HudScreen]
             .descriptors_bindings_i_ds[0];
     vkMapMemory(
@@ -6738,19 +6704,19 @@ void CVulkanRenderer::update_hud_screen_ubo(uint32_t offset, uint32_t crosshair)
     );
 }
 
-void CVulkanRenderer::update_sdf_ubo(uint32_t offset, uint32_t crosshair) {
+void CVulkanRenderer::update_sdf_ubo(u32 offset, u32 crosshair) {
     SdfUbo hud_ubo {};
     hud_ubo.model = crosshairs[crosshair].model;
 
-    float current_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-                             std::chrono::steady_clock::now() - start_time
-                         )
-                             .count()
-        * 0.001;
+    f32 current_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+                           std::chrono::steady_clock::now() - start_time
+                       )
+                           .count()
+        * 0.001f;
     hud_ubo.i_time = current_time;
 
     void* hud_matrix_data;
-    unsigned int hud_screen_ubo_descriptor_binding_index =
+    u32 hud_screen_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::SdfData]
             .descriptors_bindings_i_ds[0];
     vkMapMemory(
@@ -6775,14 +6741,14 @@ void CVulkanRenderer::update_sdf_ubo(uint32_t offset, uint32_t crosshair) {
 }
 
 void CVulkanRenderer::update_ubo_ui(
-    const unsigned int current_inventory_row,
-    const unsigned int current_inventory_column,
-    const unsigned int inventory,
-    uint32_t offset
+    const u32 current_inventory_row,
+    const u32 current_inventory_column,
+    const u32 inventory,
+    u32 offset
 ) {
     UiUbo hud_ubo {};
 
-    const unsigned int col_size = inventories[inventory].col;
+    const auto col_size = inventories[inventory].col;
     hud_ubo.model =
         inventories[inventory]
             .slot_data[col_size * current_inventory_row + current_inventory_column]
@@ -6793,7 +6759,7 @@ void CVulkanRenderer::update_ubo_ui(
             .color;
 
     void* hud_matrix_data;
-    unsigned int ui_ubo_descriptor_binding_index =
+    u32 ui_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::UI]
             .descriptors_bindings_i_ds[0];
     vkMapMemory(
@@ -6815,12 +6781,12 @@ void CVulkanRenderer::update_ubo_ui(
     );
 }
 
-void CVulkanRenderer::update_ubo_icons_ui(uint32_t offset, uint32_t item) {
+void CVulkanRenderer::update_ubo_icons_ui(u32 offset, u32 item) {
     UiUbo hud_ubo {};
     hud_ubo.model = items[item].model;
 
     void* hud_matrix_data;
-    unsigned int ui_icons_ubo_descriptor_binding_index =
+    u32 ui_icons_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::UiIcons]
             .descriptors_bindings_i_ds[0];
     vkMapMemory(
@@ -6846,7 +6812,7 @@ void CVulkanRenderer::update_ubo_icons_ui(uint32_t offset, uint32_t item) {
 
 void CVulkanRenderer::hud_record_command_buffer(
     VkCommandBuffer& command_buffer,
-    uint32_t image_index
+    u32 image_index
 ) {
     VkCommandBufferBeginInfo begin_info {};
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -6858,12 +6824,11 @@ void CVulkanRenderer::hud_record_command_buffer(
     render_pass_info.renderArea.extent.height = swap_chain_extent.height;
     render_pass_info.renderArea.extent.width = swap_chain_extent.width;
 
-    std::array<VkClearValue, 2> clear_values {};
+    Array<VkClearValue, 2> clear_values {};
     clear_values[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
     clear_values[1].depthStencil = {1.0f, 0};
 
-    render_pass_info.clearValueCount =
-        static_cast<uint32_t>(clear_values.size());
+    render_pass_info.clearValueCount = static_cast<u32>(clear_values.size());
     render_pass_info.pClearValues = clear_values.data();
 
     vkCmdBeginRenderPass(
@@ -6881,8 +6846,8 @@ void CVulkanRenderer::hud_record_command_buffer(
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)swap_chain_extent.width;
-    viewport.height = (float)swap_chain_extent.height;
+    viewport.width = (f32)swap_chain_extent.width;
+    viewport.height = (f32)swap_chain_extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);
@@ -6892,11 +6857,11 @@ void CVulkanRenderer::hud_record_command_buffer(
     scissor.extent = swap_chain_extent;
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
-    for (unsigned int i = 0; i < health_bars.size(); ++i) {
-        unsigned int ui_vertex_id = health_bars[i].mesh_id;
-        unsigned int ubo_index = current_frame * hud_ubo_descriptor_number + i;
+    for (u32 i = 0; i < health_bars.size(); ++i) {
+        u32 ui_vertex_id = health_bars[i].mesh_id;
+        u32 ubo_index = current_frame * hud_ubo_descriptor_number + i;
         update_hud_ubo(ubo_index, true, highest_gltf_y[ui_vertex_id], i);
-        const unsigned int linked_descriptor_set_id =
+        const auto linked_descriptor_set_id =
             PIPELINE_CONFIGS[SpecificPipeline::HudPipeline]
                 .linked_descriptor_set_i_ds[0];
         const DescriptorSet& current_descriptor_set =
@@ -6924,11 +6889,11 @@ void CVulkanRenderer::hud_record_command_buffer(
             VK_INDEX_TYPE_UINT32
         );
 
-        unsigned int indices_container_size = a_indices[ui_vertex_id].size();
+        u32 indices_container_size = a_indices[ui_vertex_id].size();
 
         vkCmdDrawIndexed(
             command_buffer,
-            static_cast<uint32_t>(indices_container_size),
+            static_cast<u32>(indices_container_size),
             1,
             0,
             0,
@@ -6941,7 +6906,7 @@ void CVulkanRenderer::hud_record_command_buffer(
 
 void CVulkanRenderer::ui_record_command_buffer(
     VkCommandBuffer& command_buffer,
-    uint32_t image_index
+    u32 image_index
 ) {
     VkCommandBufferBeginInfo begin_info {};
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -6953,12 +6918,11 @@ void CVulkanRenderer::ui_record_command_buffer(
     render_pass_info.renderArea.extent.height = swap_chain_extent.height;
     render_pass_info.renderArea.extent.width = swap_chain_extent.width;
 
-    std::array<VkClearValue, 2> clear_values {};
+    Array<VkClearValue, 2> clear_values {};
     clear_values[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
     clear_values[1].depthStencil = {1.0f, 0};
 
-    render_pass_info.clearValueCount =
-        static_cast<uint32_t>(clear_values.size());
+    render_pass_info.clearValueCount = static_cast<u32>(clear_values.size());
     render_pass_info.pClearValues = clear_values.data();
 
     vkCmdBeginRenderPass(
@@ -6976,8 +6940,8 @@ void CVulkanRenderer::ui_record_command_buffer(
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)swap_chain_extent.width;
-    viewport.height = (float)swap_chain_extent.height;
+    viewport.width = (f32)swap_chain_extent.width;
+    viewport.height = (f32)swap_chain_extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);
@@ -6987,17 +6951,16 @@ void CVulkanRenderer::ui_record_command_buffer(
     scissor.extent = swap_chain_extent;
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
-    for (unsigned int i = 0; i < inventories.size(); ++i) {
+    for (u32 i = 0; i < inventories.size(); ++i) {
         RenderInventory inventory = inventories[i];
-        unsigned int inventory_texture_id = inventory.inventory_texture_id;
-        unsigned int ui_vertex_id = inventory.mesh_id;
-        for (unsigned int j = 0; j < inventory.row; ++j) {
-            for (unsigned int m = 0; m < inventory.col; ++m) {
-                unsigned int ubo_index =
-                    current_frame * ui_ubo_descriptors_number
+        u32 inventory_texture_id = inventory.inventory_texture_id;
+        u32 ui_vertex_id = inventory.mesh_id;
+        for (u32 j = 0; j < inventory.row; ++j) {
+            for (u32 m = 0; m < inventory.col; ++m) {
+                u32 ubo_index = current_frame * ui_ubo_descriptors_number
                     + j * inventory.col + m;
                 update_ubo_ui(j, m, i, ubo_index);
-                const unsigned int linked_descriptor_set_id =
+                const auto linked_descriptor_set_id =
                     PIPELINE_CONFIGS[SpecificPipeline::UiPipeline]
                         .linked_descriptor_set_i_ds[0];
                 const DescriptorSet& current_descriptor_set =
@@ -7016,7 +6979,7 @@ void CVulkanRenderer::ui_record_command_buffer(
                     nullptr
                 );
 
-                const unsigned int linked_descriptor_set_i_d1 =
+                const auto linked_descriptor_set_i_d1 =
                     PIPELINE_CONFIGS[SpecificPipeline::UiPipeline]
                         .linked_descriptor_set_i_ds[1];
                 const DescriptorSet& current_descriptor_set1 =
@@ -7055,12 +7018,11 @@ void CVulkanRenderer::ui_record_command_buffer(
                     VK_INDEX_TYPE_UINT32
                 );
 
-                unsigned int indices_container_size =
-                    a_indices[ui_vertex_id].size();
+                u32 indices_container_size = a_indices[ui_vertex_id].size();
 
                 vkCmdDrawIndexed(
                     command_buffer,
-                    static_cast<uint32_t>(indices_container_size),
+                    static_cast<u32>(indices_container_size),
                     1,
                     0,
                     0,
@@ -7075,7 +7037,7 @@ void CVulkanRenderer::ui_record_command_buffer(
 
 void CVulkanRenderer::ui_icons_record_command_buffer(
     VkCommandBuffer& command_buffer,
-    uint32_t image_index
+    u32 image_index
 ) {
     VkCommandBufferBeginInfo begin_info {};
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -7088,12 +7050,11 @@ void CVulkanRenderer::ui_icons_record_command_buffer(
     render_pass_info.renderArea.extent.height = swap_chain_extent.height;
     render_pass_info.renderArea.extent.width = swap_chain_extent.width;
 
-    std::array<VkClearValue, 2> clear_values {};
+    Array<VkClearValue, 2> clear_values {};
     clear_values[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
     clear_values[1].depthStencil = {1.0f, 0};
 
-    render_pass_info.clearValueCount =
-        static_cast<uint32_t>(clear_values.size());
+    render_pass_info.clearValueCount = static_cast<u32>(clear_values.size());
     render_pass_info.pClearValues = clear_values.data();
 
     vkCmdBeginRenderPass(
@@ -7111,8 +7072,8 @@ void CVulkanRenderer::ui_icons_record_command_buffer(
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)swap_chain_extent.width;
-    viewport.height = (float)swap_chain_extent.height;
+    viewport.width = (f32)swap_chain_extent.width;
+    viewport.height = (f32)swap_chain_extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);
@@ -7122,14 +7083,14 @@ void CVulkanRenderer::ui_icons_record_command_buffer(
     scissor.extent = swap_chain_extent;
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
-    for (unsigned int i = 0; i < items.size(); ++i) {
+    for (u32 i = 0; i < items.size(); ++i) {
         RenderItem item = items[i];
-        unsigned int ui_vertex_id = item.mesh_id;
-        unsigned int diffuse_texture_id = item.diffuse_texture_id;
-        unsigned int ubo_index = current_frame * items.size() + i;
+        u32 ui_vertex_id = item.mesh_id;
+        u32 diffuse_texture_id = item.diffuse_texture_id;
+        u32 ubo_index = current_frame * items.size() + i;
 
         update_ubo_icons_ui(ubo_index, i);
-        const unsigned int linked_descriptor_set_id =
+        const auto linked_descriptor_set_id =
             PIPELINE_CONFIGS[SpecificPipeline::UiIconsPipeline]
                 .linked_descriptor_set_i_ds[0];
         const DescriptorSet& current_descriptor_set =
@@ -7146,7 +7107,7 @@ void CVulkanRenderer::ui_icons_record_command_buffer(
             nullptr
         );
 
-        const unsigned int linked_descriptor_set_i_d1 =
+        const auto linked_descriptor_set_i_d1 =
             PIPELINE_CONFIGS[SpecificPipeline::UiIconsPipeline]
                 .linked_descriptor_set_i_ds[1];
         const DescriptorSet& current_descriptor_set1 =
@@ -7175,11 +7136,11 @@ void CVulkanRenderer::ui_icons_record_command_buffer(
             VK_INDEX_TYPE_UINT32
         );
 
-        unsigned int indices_container_size = a_indices[ui_vertex_id].size();
+        u32 indices_container_size = a_indices[ui_vertex_id].size();
 
         vkCmdDrawIndexed(
             command_buffer,
-            static_cast<uint32_t>(indices_container_size),
+            static_cast<u32>(indices_container_size),
             1,
             0,
             0,
@@ -7192,7 +7153,7 @@ void CVulkanRenderer::ui_icons_record_command_buffer(
 
 void CVulkanRenderer::hud_screen_record_command_buffer(
     VkCommandBuffer& command_buffer,
-    uint32_t image_index
+    u32 image_index
 ) {
     VkCommandBufferBeginInfo begin_info {};
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -7206,12 +7167,11 @@ void CVulkanRenderer::hud_screen_record_command_buffer(
     render_pass_info.renderArea.extent.height = swap_chain_extent.height;
     render_pass_info.renderArea.extent.width = swap_chain_extent.width;
 
-    std::array<VkClearValue, 2> clear_values {};
+    Array<VkClearValue, 2> clear_values {};
     clear_values[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
     clear_values[1].depthStencil = {1.0f, 0};
 
-    render_pass_info.clearValueCount =
-        static_cast<uint32_t>(clear_values.size());
+    render_pass_info.clearValueCount = static_cast<u32>(clear_values.size());
     render_pass_info.pClearValues = clear_values.data();
 
     vkCmdBeginRenderPass(
@@ -7229,8 +7189,8 @@ void CVulkanRenderer::hud_screen_record_command_buffer(
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)swap_chain_extent.width;
-    viewport.height = (float)swap_chain_extent.height;
+    viewport.width = (f32)swap_chain_extent.width;
+    viewport.height = (f32)swap_chain_extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);
@@ -7240,14 +7200,13 @@ void CVulkanRenderer::hud_screen_record_command_buffer(
     scissor.extent = swap_chain_extent;
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
-    for (unsigned int i = 0; i < crosshairs.size(); ++i) {
+    for (u32 i = 0; i < crosshairs.size(); ++i) {
         RenderCrosshair crosshair = crosshairs[i];
-        unsigned int ui_vertex_id = crosshair.mesh_id;
+        u32 ui_vertex_id = crosshair.mesh_id;
 
-        unsigned int ubo_index =
-            current_frame * hud_screen_ubo_descriptor_number + i;
+        u32 ubo_index = current_frame * hud_screen_ubo_descriptor_number + i;
         update_hud_screen_ubo(ubo_index, i);
-        const unsigned int linked_descriptor_set_id =
+        const auto linked_descriptor_set_id =
             PIPELINE_CONFIGS[SpecificPipeline::HudScreenPipeline]
                 .linked_descriptor_set_i_ds[0];
         const DescriptorSet& current_descriptor_set =
@@ -7276,11 +7235,11 @@ void CVulkanRenderer::hud_screen_record_command_buffer(
             VK_INDEX_TYPE_UINT32
         );
 
-        unsigned int indices_container_size = a_indices[ui_vertex_id].size();
+        u32 indices_container_size = a_indices[ui_vertex_id].size();
 
         vkCmdDrawIndexed(
             command_buffer,
-            static_cast<uint32_t>(indices_container_size),
+            static_cast<u32>(indices_container_size),
             1,
             0,
             0,
@@ -7297,7 +7256,7 @@ void CVulkanRenderer::hud_screen_record_command_buffer(
 
 void CVulkanRenderer::sdf_record_command_buffer(
     VkCommandBuffer& command_buffer,
-    uint32_t image_index
+    u32 image_index
 ) {
     VkCommandBufferBeginInfo begin_info {};
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -7309,12 +7268,11 @@ void CVulkanRenderer::sdf_record_command_buffer(
     render_pass_info.renderArea.extent.height = swap_chain_extent.height;
     render_pass_info.renderArea.extent.width = swap_chain_extent.width;
 
-    std::array<VkClearValue, 2> clear_values {};
+    Array<VkClearValue, 2> clear_values {};
     clear_values[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
     clear_values[1].depthStencil = {1.0f, 0};
 
-    render_pass_info.clearValueCount =
-        static_cast<uint32_t>(clear_values.size());
+    render_pass_info.clearValueCount = static_cast<u32>(clear_values.size());
     render_pass_info.pClearValues = clear_values.data();
 
     vkCmdBeginRenderPass(
@@ -7332,8 +7290,8 @@ void CVulkanRenderer::sdf_record_command_buffer(
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)swap_chain_extent.width;
-    viewport.height = (float)swap_chain_extent.height;
+    viewport.width = (f32)swap_chain_extent.width;
+    viewport.height = (f32)swap_chain_extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);
@@ -7343,14 +7301,13 @@ void CVulkanRenderer::sdf_record_command_buffer(
     scissor.extent = swap_chain_extent;
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
-    for (unsigned int i = 0; i < crosshairs.size(); ++i) {
+    for (u32 i = 0; i < crosshairs.size(); ++i) {
         RenderCrosshair crosshair = crosshairs[i];
-        unsigned int ui_vertex_id = crosshair.mesh_id;
+        u32 ui_vertex_id = crosshair.mesh_id;
 
-        unsigned int ubo_index =
-            current_frame * hud_screen_ubo_descriptor_number + i;
+        u32 ubo_index = current_frame * hud_screen_ubo_descriptor_number + i;
         update_sdf_ubo(ubo_index, i);
-        const unsigned int linked_descriptor_set_id =
+        const auto linked_descriptor_set_id =
             PIPELINE_CONFIGS[SpecificPipeline::SdfPipeline]
                 .linked_descriptor_set_i_ds[0];
         const DescriptorSet& current_descriptor_set =
@@ -7389,7 +7346,7 @@ void CVulkanRenderer::sdf_record_command_buffer(
 
 void CVulkanRenderer::font_record_command_buffer(
     VkCommandBuffer& command_buffer,
-    uint32_t image_index
+    u32 image_index
 ) {
     VkCommandBufferBeginInfo begin_info {};
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -7400,12 +7357,11 @@ void CVulkanRenderer::font_record_command_buffer(
     render_pass_info.renderArea.offset = {0, 0};
     render_pass_info.renderArea.extent.height = swap_chain_extent.height;
     render_pass_info.renderArea.extent.width = swap_chain_extent.width;
-    std::array<VkClearValue, 2> clear_values {};
+    Array<VkClearValue, 2> clear_values {};
     clear_values[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
     clear_values[1].depthStencil = {1.0f, 0};
 
-    render_pass_info.clearValueCount =
-        static_cast<uint32_t>(clear_values.size());
+    render_pass_info.clearValueCount = static_cast<u32>(clear_values.size());
     render_pass_info.pClearValues = clear_values.data();
 
     vkCmdBeginRenderPass(
@@ -7423,8 +7379,8 @@ void CVulkanRenderer::font_record_command_buffer(
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)swap_chain_extent.width;
-    viewport.height = (float)swap_chain_extent.height;
+    viewport.width = (f32)swap_chain_extent.width;
+    viewport.height = (f32)swap_chain_extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);
@@ -7433,24 +7389,23 @@ void CVulkanRenderer::font_record_command_buffer(
     scissor.offset = {0, 0};
     scissor.extent = swap_chain_extent;
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
-    for (unsigned int player_counter = 0; player_counter < players.size();
+    for (u32 player_counter = 0; player_counter < players.size();
          ++player_counter) {
         player = players[player_counter];
     }
-    unsigned int current_actor_memory_offset =
+    u32 current_actor_memory_offset =
         current_frame * font_ubo_descriptor_number;
-    for (unsigned int i = 0; i < fonts.size(); ++i) {
+    for (u32 i = 0; i < fonts.size(); ++i) {
         RenderFont font = fonts[i];
-        Vector<float, 3> player_traget_direction =
+        Vector<f32, 3> player_traget_direction =
             font.position - player.position;
-        float dot_product = dot(player_traget_direction, player.forward);
+        f32 dot_product = dot(player_traget_direction, player.forward);
         if (dot_product <= 0) {
             continue;
         }
 
-        for (unsigned int j = 0; j < font.font_string.size(); ++j) {
-            unsigned int ascii_code =
-                static_cast<unsigned int>(font.font_string[j]);
+        for (u32 j = 0; j < font.font_string.size(); ++j) {
+            u32 ascii_code = static_cast<u32>(font.font_string[j]);
             VkBuffer vertex_buffers[] = {
                 font_vertex_buffer_container[ascii_code]
             };
@@ -7470,19 +7425,19 @@ void CVulkanRenderer::font_record_command_buffer(
                 VK_INDEX_TYPE_UINT32
             );
 
-            unsigned int indices_container_size = symbol_g_indices.size();
+            u32 indices_container_size = symbol_g_indices.size();
             FontUbo font_ubo {};
-            Vector<float, 3> result;
-            Vector<float, 4> pos = Vector<float, 4>(
+            Vector<f32, 3> result;
+            Vector<f32, 4> pos = Vector<f32, 4>(
                 font.position[0],
                 font.position[1],
                 font.position[2],
                 1.0f
             );
 
-            Vector<float, 4> clip_space_position =
+            Vector<f32, 4> clip_space_position =
                 pos * view_matrix * projection_matrix;
-            Vector<float, 3> ndc_position = Vector<float, 3>(
+            Vector<f32, 3> ndc_position = Vector<f32, 3>(
                 clip_space_position[0] / clip_space_position[3],
                 clip_space_position[1] / clip_space_position[3],
                 clip_space_position[2] / clip_space_position[3]
@@ -7492,12 +7447,12 @@ void CVulkanRenderer::font_record_command_buffer(
             font_ubo.proj = projection_matrix;
 
             font_ubo.scale = 0.3f;
-            ndc_position[0] += (float)j * 0.17f * font_ubo.scale;
+            ndc_position[0] += (f32)j * 0.17f * font_ubo.scale;
             ndc_position[1] -= font.life_time / 5.0f;
             font_ubo.position = ndc_position;
 
             void* model_matrix_data;
-            unsigned int font_ubo_descriptor_binding_index =
+            u32 font_ubo_descriptor_binding_index =
                 DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::FontRenderUbo]
                     .descriptors_bindings_i_ds[0];
             vkMapMemory(
@@ -7520,7 +7475,7 @@ void CVulkanRenderer::font_record_command_buffer(
                     .gpu_buffer->device_memory
             );
 
-            const unsigned int linked_descriptor_set_id =
+            const auto linked_descriptor_set_id =
                 PIPELINE_CONFIGS[SpecificPipeline::FontPipeline]
                     .linked_descriptor_set_i_ds[0];
             const DescriptorSet& current_descriptor_set =
@@ -7537,10 +7492,10 @@ void CVulkanRenderer::font_record_command_buffer(
                 0,
                 nullptr
             );
-            const unsigned int linked_descriptor_set_i_d1 =
+            const auto linked_descriptor_set_i_d1 =
                 PIPELINE_CONFIGS[SpecificPipeline::FontPipeline]
                     .linked_descriptor_set_i_ds[1];
-            const unsigned int font_atlas_texture_id = 6;
+            const auto font_atlas_texture_id = 6;
             const DescriptorSet& current_descriptor_set1 =
                 DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_i_d1];
             vkCmdBindDescriptorSets(
@@ -7559,7 +7514,7 @@ void CVulkanRenderer::font_record_command_buffer(
 
             vkCmdDrawIndexed(
                 command_buffer,
-                static_cast<uint32_t>(indices_container_size),
+                static_cast<u32>(indices_container_size),
                 1,
                 0,
                 0,
@@ -7573,7 +7528,7 @@ void CVulkanRenderer::font_record_command_buffer(
 
 void CVulkanRenderer::record_command_buffer(
     VkCommandBuffer& command_buffer,
-    uint32_t image_index
+    u32 image_index
 ) {
     VkRenderPassBeginInfo render_pass_info {};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -7584,11 +7539,11 @@ void CVulkanRenderer::record_command_buffer(
     render_pass_info.renderArea.extent.height = swap_chain_extent.height;
     render_pass_info.renderArea.extent.width = swap_chain_extent.width;
 
-    for (unsigned int player = 0; player < players.size(); ++player) {
+    for (u32 player = 0; player < players.size(); ++player) {
         update_view_position_uniform_buffer(current_frame, player);
     }
 
-    std::array<VkClearValue, 2> clear_values {};
+    Array<VkClearValue, 2> clear_values {};
     // Player death screen.
     if (players.size() == 0) {
         clear_values[0].color = {{0.7f, 0.2f, 0.2f, 1.0f}};
@@ -7597,8 +7552,7 @@ void CVulkanRenderer::record_command_buffer(
     }
     clear_values[1].depthStencil = {1.0f, 0};
 
-    render_pass_info.clearValueCount =
-        static_cast<uint32_t>(clear_values.size());
+    render_pass_info.clearValueCount = static_cast<u32>(clear_values.size());
     render_pass_info.pClearValues = clear_values.data();
 
     vkCmdBeginRenderPass(
@@ -7616,8 +7570,8 @@ void CVulkanRenderer::record_command_buffer(
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)swap_chain_extent.width;
-    viewport.height = (float)swap_chain_extent.height;
+    viewport.width = (f32)swap_chain_extent.width;
+    viewport.height = (f32)swap_chain_extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);
@@ -7627,16 +7581,15 @@ void CVulkanRenderer::record_command_buffer(
     scissor.extent = swap_chain_extent;
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
-    for (unsigned int i = 0; i < actors.size(); ++i) {
+    for (u32 i = 0; i < actors.size(); ++i) {
         RenderActor actor = actors[i];
-        unsigned int ui_vertex_id = actor.mesh_id;
-        unsigned int diffuse_texture_index = actor.diffuse_texture_index;
-        unsigned int specular_texture_index = actor.specular_texture_index;
+        u32 ui_vertex_id = actor.mesh_id;
+        u32 diffuse_texture_index = actor.diffuse_texture_index;
+        u32 specular_texture_index = actor.specular_texture_index;
 
-        unsigned int ubo_index =
-            current_frame * matrix_ubo_descriptors_number + i;
+        u32 ubo_index = current_frame * matrix_ubo_descriptors_number + i;
         update_matrix_uniform_buffer(ubo_index, i);
-        const unsigned int linked_descriptor_set_id =
+        const auto linked_descriptor_set_id =
             PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline]
                 .linked_descriptor_set_i_ds[0];
         const DescriptorSet& current_descriptor_set =
@@ -7654,7 +7607,7 @@ void CVulkanRenderer::record_command_buffer(
             nullptr
         );
 
-        const unsigned int linked_descriptor_set_i_d1 =
+        const auto linked_descriptor_set_i_d1 =
             PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline]
                 .linked_descriptor_set_i_ds[1];
         const DescriptorSet& current_descriptor_set1 =
@@ -7684,9 +7637,9 @@ void CVulkanRenderer::record_command_buffer(
             VK_INDEX_TYPE_UINT32
         );
 
-        unsigned int indices_container_size = a_indices[ui_vertex_id].size();
+        u32 indices_container_size = a_indices[ui_vertex_id].size();
 
-        const unsigned int linked_descriptor_set_i_d2 =
+        const auto linked_descriptor_set_i_d2 =
             PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline]
                 .linked_descriptor_set_i_ds[2];
         const DescriptorSet& current_descriptor_set2 =
@@ -7705,7 +7658,7 @@ void CVulkanRenderer::record_command_buffer(
             0,
             nullptr
         );
-        const unsigned int linked_descriptor_set_i_d3 =
+        const auto linked_descriptor_set_i_d3 =
             PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline]
                 .linked_descriptor_set_i_ds[3];
         const DescriptorSet& current_descriptor_set3 =
@@ -7727,7 +7680,7 @@ void CVulkanRenderer::record_command_buffer(
 
         vkCmdDrawIndexed(
             command_buffer,
-            static_cast<uint32_t>(indices_container_size),
+            static_cast<u32>(indices_container_size),
             1,
             0,
             0,
@@ -7738,9 +7691,9 @@ void CVulkanRenderer::record_command_buffer(
 }
 
 void CVulkanRenderer::create_sync_objects(
-    std::vector<VkSemaphore>& image_available_semaphores,
-    std::vector<VkSemaphore>& render_finished_semaphores,
-    std::vector<VkFence>& in_flight_fences
+    Vec<VkSemaphore>& image_available_semaphores,
+    Vec<VkSemaphore>& render_finished_semaphores,
+    Vec<VkFence>& in_flight_fences
 ) {
     image_available_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
     render_finished_semaphores.resize(swap_chain_images.size());
@@ -7753,7 +7706,7 @@ void CVulkanRenderer::create_sync_objects(
     fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+    for (usize i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
         if (vkCreateSemaphore(
                 device,
                 &semaphore_info,
@@ -7768,7 +7721,7 @@ void CVulkanRenderer::create_sync_objects(
         }
     }
 
-    for (size_t i = 0; i < swap_chain_images.size(); ++i) {
+    for (usize i = 0; i < swap_chain_images.size(); ++i) {
         if (vkCreateSemaphore(
                 device,
                 &semaphore_info,
@@ -7784,21 +7737,21 @@ void CVulkanRenderer::create_sync_objects(
 }
 
 void CVulkanRenderer::update_directional_light_shadow_map_matrix_ubo(
-    uint32_t current_image,
-    uint32_t current_light,
-    unsigned int actor
+    u32 current_image,
+    u32 current_light,
+    u32 actor
 ) {
     ShadowMapMatrixUBO model_matrix_ubo {};
 
     model_matrix_ubo.model = actors[actor].model_matrix;
     model_matrix_ubo.light_space_matrix = dir_light_space_matrix[current_light];
 
-    for (unsigned int j = 0; j < MAX_JOINTS_NUMBER; ++j) {
+    for (u32 j = 0; j < MAX_JOINTS_NUMBER; ++j) {
         model_matrix_ubo.joint_matrices[j] = actors[actor].joint_matrices[j];
     }
 
     void* model_matrix_data = nullptr;
-    unsigned int shadow_map_directional_light_descriptor_binding_index =
+    u32 shadow_map_directional_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ShadowMapDirectionalLight]
             .descriptors_bindings_i_ds[0];
     vkMapMemory(
@@ -7823,9 +7776,9 @@ void CVulkanRenderer::update_directional_light_shadow_map_matrix_ubo(
 }
 
 void CVulkanRenderer::update_spot_light_shadow_map_matrix_ubo(
-    uint32_t current_image,
-    uint32_t current_light,
-    unsigned int actor
+    u32 current_image,
+    u32 current_light,
+    u32 actor
 ) {
     ShadowMapMatrixUBO model_matrix_ubo {};
 
@@ -7833,12 +7786,12 @@ void CVulkanRenderer::update_spot_light_shadow_map_matrix_ubo(
     model_matrix_ubo.light_space_matrix =
         spot_light_space_matrix[current_light];
 
-    for (unsigned int j = 0; j < MAX_JOINTS_NUMBER; ++j) {
+    for (u32 j = 0; j < MAX_JOINTS_NUMBER; ++j) {
         model_matrix_ubo.joint_matrices[j] = actors[actor].joint_matrices[j];
     }
 
     void* model_matrix_data;
-    unsigned int shadow_map_spot_light_descriptor_binding_index =
+    u32 shadow_map_spot_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ShadowMapSpotLight]
             .descriptors_bindings_i_ds[0];
     vkMapMemory(
@@ -7863,10 +7816,10 @@ void CVulkanRenderer::update_spot_light_shadow_map_matrix_ubo(
 }
 
 void CVulkanRenderer::update_point_light_shadow_map_matrix_ubo(
-    uint32_t current_image,
-    uint32_t current_light,
-    uint32_t layer,
-    unsigned int actor
+    u32 current_image,
+    u32 current_light,
+    u32 layer,
+    u32 actor
 ) {
     PointLightShadowMapMatrixUBO model_matrix_ubo {};
 
@@ -7877,12 +7830,12 @@ void CVulkanRenderer::update_point_light_shadow_map_matrix_ubo(
     model_matrix_ubo.far_plane = 100.0f;
     model_matrix_ubo.light_position = point_lights[current_light].position;
 
-    for (unsigned int j = 0; j < MAX_JOINTS_NUMBER; ++j) {
+    for (u32 j = 0; j < MAX_JOINTS_NUMBER; ++j) {
         model_matrix_ubo.joint_matrices[j] = actors[actor].joint_matrices[j];
     }
 
     void* model_matrix_data;
-    unsigned int shadow_map_point_light_descriptor_binding_index =
+    u32 shadow_map_point_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ShadowMapPointLight]
             .descriptors_bindings_i_ds[0];
     vkMapMemory(
@@ -7906,10 +7859,7 @@ void CVulkanRenderer::update_point_light_shadow_map_matrix_ubo(
     );
 }
 
-void CVulkanRenderer::update_matrix_uniform_buffer(
-    uint32_t offset,
-    unsigned int actor
-) {
+void CVulkanRenderer::update_matrix_uniform_buffer(u32 offset, u32 actor) {
     ModelMatrixUBO model_matrix_ubo {};
 
     model_matrix_ubo.model = actors[actor].model_matrix;
@@ -7917,18 +7867,18 @@ void CVulkanRenderer::update_matrix_uniform_buffer(
     model_matrix_ubo.view = view_matrix;
     model_matrix_ubo.proj = projection_matrix;
 
-    for (unsigned int j = 0; j < MAX_JOINTS_NUMBER; ++j) {
+    for (u32 j = 0; j < MAX_JOINTS_NUMBER; ++j) {
         model_matrix_ubo.joint_matrices[j] = actors[actor].joint_matrices[j];
     }
 
     model_matrix_ubo.ambient = actors[actor].ambient;
     model_matrix_ubo.shininess = actors[actor].shininess;
 
-    for (uint32_t i = 0; i < directional_light_number; ++i) {
+    for (u32 i = 0; i < directional_light_number; ++i) {
         model_matrix_ubo.dir_space_matrix[i] = dir_light_space_matrix[i];
     }
 
-    for (uint32_t i = 0; i < spot_light_number; ++i) {
+    for (u32 i = 0; i < spot_light_number; ++i) {
         model_matrix_ubo.spot_space_matrix[i] = spot_light_space_matrix[i];
     }
 
@@ -7954,8 +7904,8 @@ void CVulkanRenderer::update_matrix_uniform_buffer(
 }
 
 void CVulkanRenderer::update_view_position_uniform_buffer(
-    uint32_t current_image,
-    uint32_t player
+    u32 current_image,
+    u32 player
 ) {
     LightData light_data_ubo {};
     light_data_ubo.view_position = players[player].position;
@@ -7966,7 +7916,7 @@ void CVulkanRenderer::update_view_position_uniform_buffer(
         directional_light_number <= 4
         && "Directional lights number greater then 4"
     );
-    for (unsigned int i = 0; i < directional_light_number; ++i) {
+    for (u32 i = 0; i < directional_light_number; ++i) {
         RenderDirectionalLight dir_light = directional_lights[i];
 
         directional_light.position = dir_light.position;
@@ -7984,7 +7934,7 @@ void CVulkanRenderer::update_view_position_uniform_buffer(
         point_light_number <= POINT_LIGHTS_NUMBER
         && "Point lights number greater than 32"
     );
-    for (unsigned int i = 0; i < point_light_number; ++i) {
+    for (u32 i = 0; i < point_light_number; ++i) {
         RenderPointLight point_light = point_lights[i];
         PointLight point_light_ubo {};
 
@@ -8004,7 +7954,7 @@ void CVulkanRenderer::update_view_position_uniform_buffer(
     SpotLight spot_light_ubo {};
     spot_light_number = spot_lights.size();
     assert(spot_light_number <= 8 && "Spot light number greater then 8");
-    for (unsigned int i = 0; i < spot_light_number; ++i) {
+    for (u32 i = 0; i < spot_light_number; ++i) {
         RenderSpotLight spot_light = spot_lights[i];
 
         spot_light_ubo.position = spot_light.position;
@@ -8025,24 +7975,24 @@ void CVulkanRenderer::update_view_position_uniform_buffer(
 
     std::random_device rd;
     std::mt19937 mersenne(rd());
-    std::uniform_int_distribution<int> distribution_tile_index(
+    std::uniform_int_distribution<i32> distribution_tile_index(
         0,
         INDIRECT_TEXTURE_HEIGHT * INDIRECT_TEXTURE_WIDTH
     );
 
     if (print == true) {
-        for (int i = 0;
+        for (i32 i = 0;
              i < INDIRECT_TEXTURE_HEIGHT * INDIRECT_TEXTURE_WIDTH / 4 + 1;
              ++i) {
-            for (int j = 0; j < 4; ++j) {
-                int random_tile_index = distribution_tile_index(mersenne);
+            for (i32 j = 0; j < 4; ++j) {
+                i32 random_tile_index = distribution_tile_index(mersenne);
                 indirect_texture[i][j] = random_tile_index;
             }
         }
     }
     print = false;
     light_data_ubo.tileset_tiles_count =
-        Vector<float, 2>(TILESET_ROW, TILESET_COLUMN);
+        Vector<f32, 2>(TILESET_ROW, TILESET_COLUMN);
     light_data_ubo.tiles_raw = 8;
     light_data_ubo.tiles_column = 8;
     light_data_ubo.debug_shadow_mode = imgui_overlay->show_shadow_maps
@@ -8050,14 +8000,14 @@ void CVulkanRenderer::update_view_position_uniform_buffer(
         : 0;
     light_data_ubo.debug_shadow_light = imgui_overlay->shadow_map_light;
     light_data_ubo.shadows_enabled = imgui_overlay->shadows_enabled ? 1 : 0;
-    for (int i = 0;
+    for (i32 i = 0;
          i < INDIRECT_TEXTURE_HEIGHT * INDIRECT_TEXTURE_WIDTH / 4 + 1;
          ++i) {
         light_data_ubo.indirect_texture[i] = indirect_texture[i];
     }
 
     void* data;
-    unsigned int light_data_ubo_descriptor_binding_index =
+    u32 light_data_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
             .descriptors_bindings_i_ds[0];
     vkMapMemory(
@@ -8090,7 +8040,7 @@ void CVulkanRenderer::main_render_draw_frame() {
         UINT64_MAX
     );
 
-    uint32_t image_index;
+    u32 image_index;
     // vkAcquireNextImageKHR give index of image that WILL BE SOON available for
     // rendering and signal imageAvailablesemaphore when its so. GraphicsQueue
     // waint for this semaphore bacause we pass it in submitInfo.
@@ -8151,7 +8101,7 @@ void CVulkanRenderer::main_render_draw_frame() {
         != VK_SUCCESS) {
         throw std::runtime_error("failed to begin recording command buffer!");
     }
-    for (uint32_t directional_light_counter = 0;
+    for (u32 directional_light_counter = 0;
          directional_light_counter < directional_lights.size();
          ++directional_light_counter) {
         VkExtent2D flat_shadow_map_extent;
@@ -8167,8 +8117,7 @@ void CVulkanRenderer::main_render_draw_frame() {
                  + directional_light_counter]
         );
     }
-    for (uint32_t spot_light_counter = 0;
-         spot_light_counter < spot_lights.size();
+    for (u32 spot_light_counter = 0; spot_light_counter < spot_lights.size();
          ++spot_light_counter) {
         VkExtent2D flat_shadow_map_extent;
         flat_shadow_map_extent.width = FLAT_SHADOW_MAP_SIZE;
@@ -8182,11 +8131,10 @@ void CVulkanRenderer::main_render_draw_frame() {
                 [current_frame * spot_light_number + spot_light_counter]
         );
     }
-    for (uint32_t point_light_counter = 0;
-         point_light_counter < point_lights.size();
+    for (u32 point_light_counter = 0; point_light_counter < point_lights.size();
          ++point_light_counter) {
-        uint32_t max_cube_map_layers = 6;
-        for (uint32_t cube_map_layer_counter = 0;
+        u32 max_cube_map_layers = 6;
+        for (u32 cube_map_layer_counter = 0;
              cube_map_layer_counter < max_cube_map_layers;
              ++cube_map_layer_counter) {
             VkExtent2D extent;
@@ -8305,7 +8253,7 @@ void CVulkanRenderer::directional_light_shadow_map_draw_frame() {
         UINT64_MAX
     );
 
-    uint32_t image_index = 0;
+    u32 image_index = 0;
 
     vkResetFences(
         device,
@@ -8348,7 +8296,7 @@ void CVulkanRenderer::spot_light_shadow_map_draw_frame() {
         UINT64_MAX
     );
 
-    uint32_t image_index = 0;
+    u32 image_index = 0;
 
     vkResetFences(
         device,
@@ -8390,7 +8338,7 @@ void CVulkanRenderer::point_light_shadow_map_draw_frame() {
         UINT64_MAX
     );
 
-    uint32_t image_index = 0;
+    u32 image_index = 0;
 
     vkResetFences(
         device,
@@ -8424,10 +8372,10 @@ void CVulkanRenderer::point_light_shadow_map_draw_frame() {
 }
 
 void CVulkanRenderer::directional_light_record_coomand_buffer(
-    std::vector<VkCommandBuffer>& command_buffers,
-    uint32_t current_frame
+    Vec<VkCommandBuffer>& command_buffers,
+    u32 current_frame
 ) {
-    for (uint32_t directional_light_counter = 0;
+    for (u32 directional_light_counter = 0;
          directional_light_counter < directional_lights.size();
          ++directional_light_counter) {
         VkCommandBufferInheritanceInfo inheritance_info {};
@@ -8478,12 +8426,12 @@ void CVulkanRenderer::directional_light_record_coomand_buffer(
             directional_lights[directional_light_counter]
                 .directional_light_space_matrix;
 
-        uint32_t actors_number = actors.size();
-        for (unsigned int actor_counter = 0; actor_counter < actors_number;
+        u32 actors_number = actors.size();
+        for (u32 actor_counter = 0; actor_counter < actors_number;
              ++actor_counter) {
             RenderActor actor = actors[actor_counter];
-            unsigned int mesh_id = actor.mesh_id;
-            unsigned int ubo_directional_light_index = directional_light_number
+            u32 mesh_id = actor.mesh_id;
+            u32 ubo_directional_light_index = directional_light_number
                     * actors_number * directional_light_current_frame
                 + actors_number * directional_light_counter + actor_counter;
 
@@ -8492,7 +8440,7 @@ void CVulkanRenderer::directional_light_record_coomand_buffer(
                 directional_light_counter,
                 actor_counter
             );
-            const unsigned int linked_descriptor_set_id =
+            const auto linked_descriptor_set_id =
                 PIPELINE_CONFIGS[SpecificPipeline::DirectionalLightPipeline]
                     .linked_descriptor_set_i_ds[0];
             const DescriptorSet& current_descriptor_set =
@@ -8528,10 +8476,10 @@ void CVulkanRenderer::directional_light_record_coomand_buffer(
                 VK_INDEX_TYPE_UINT32
             );
 
-            unsigned int indices_container_size = a_indices[mesh_id].size();
+            u32 indices_container_size = a_indices[mesh_id].size();
             vkCmdDrawIndexed(
                 command_buffer,
-                static_cast<uint32_t>(indices_container_size),
+                static_cast<u32>(indices_container_size),
                 1,
                 0,
                 0,
@@ -8546,11 +8494,10 @@ void CVulkanRenderer::directional_light_record_coomand_buffer(
 }
 
 void CVulkanRenderer::spot_light_record_command_buffer(
-    std::vector<VkCommandBuffer>& command_buffers,
-    uint32_t current_frame
+    Vec<VkCommandBuffer>& command_buffers,
+    u32 current_frame
 ) {
-    for (uint32_t spot_light_counter = 0;
-         spot_light_counter < spot_lights.size();
+    for (u32 spot_light_counter = 0; spot_light_counter < spot_lights.size();
          ++spot_light_counter) {
         VkCommandBufferInheritanceInfo inheritance_info {};
         inheritance_info.sType =
@@ -8598,12 +8545,12 @@ void CVulkanRenderer::spot_light_record_command_buffer(
 
         spot_light_space_matrix[spot_light_counter] =
             spot_lights[spot_light_counter].spot_ligth_space_matrix;
-        uint32_t actors_number = actors.size();
-        for (unsigned int actors_counter = 0; actors_counter < actors_number;
+        u32 actors_number = actors.size();
+        for (u32 actors_counter = 0; actors_counter < actors_number;
              ++actors_counter) {
             RenderActor actor = actors[actors_counter];
-            unsigned int mesh_id = actor.mesh_id;
-            unsigned int ubo_spot_light_index =
+            u32 mesh_id = actor.mesh_id;
+            u32 ubo_spot_light_index =
                 spot_light_number * actors_number * spot_light_current_frame
                 + actors_number * spot_light_counter + actors_counter;
 
@@ -8612,7 +8559,7 @@ void CVulkanRenderer::spot_light_record_command_buffer(
                 spot_light_counter,
                 actors_counter
             );
-            const unsigned int linked_descriptor_set_id =
+            const auto linked_descriptor_set_id =
                 PIPELINE_CONFIGS[SpecificPipeline::SpotLightPipeline]
                     .linked_descriptor_set_i_ds[0];
             const DescriptorSet& current_descriptor_set =
@@ -8647,10 +8594,10 @@ void CVulkanRenderer::spot_light_record_command_buffer(
                 VK_INDEX_TYPE_UINT32
             );
 
-            unsigned int indices_container_size = a_indices[mesh_id].size();
+            u32 indices_container_size = a_indices[mesh_id].size();
             vkCmdDrawIndexed(
                 command_buffer,
-                static_cast<uint32_t>(indices_container_size),
+                static_cast<u32>(indices_container_size),
                 1,
                 0,
                 0,
@@ -8665,15 +8612,14 @@ void CVulkanRenderer::spot_light_record_command_buffer(
 }
 
 void CVulkanRenderer::point_light_record_command_buffer(
-    std::vector<VkCommandBuffer>& command_buffers,
-    uint32_t current_frame
+    Vec<VkCommandBuffer>& command_buffers,
+    u32 current_frame
 ) {
-    for (uint32_t point_light_counter = 0;
-         point_light_counter < point_lights.size();
+    for (u32 point_light_counter = 0; point_light_counter < point_lights.size();
          ++point_light_counter) {
-        uint32_t max_cube_map_layers = 6;
+        u32 max_cube_map_layers = 6;
         // 6 is a number of cube map layers.
-        for (uint32_t cube_map_layer_counter = 0;
+        for (u32 cube_map_layer_counter = 0;
              cube_map_layer_counter < max_cube_map_layers;
              ++cube_map_layer_counter) {
             VkCommandBufferInheritanceInfo inheritance_info {};
@@ -8734,13 +8680,13 @@ void CVulkanRenderer::point_light_record_command_buffer(
                 PIPELINE_CONFIGS[SpecificPipeline::PointLightPipeline].pipeline
             );
 
-            uint32_t actors_number = actors.size();
-            for (unsigned int actor_counter = 0; actor_counter < actors_number;
+            u32 actors_number = actors.size();
+            for (u32 actor_counter = 0; actor_counter < actors_number;
                  ++actor_counter) {
                 RenderActor actor = actors[actor_counter];
-                unsigned int mesh_id = actor.mesh_id;
+                u32 mesh_id = actor.mesh_id;
 
-                unsigned int ubo_index = point_light_number * actors_number
+                u32 ubo_index = point_light_number * actors_number
                         * max_cube_map_layers * point_light_current_frame
                     + actors_number * max_cube_map_layers * point_light_counter
                     + max_cube_map_layers * actor_counter
@@ -8752,7 +8698,7 @@ void CVulkanRenderer::point_light_record_command_buffer(
                     cube_map_layer_counter,
                     actor_counter
                 );
-                const unsigned int linked_descriptor_set_id =
+                const auto linked_descriptor_set_id =
                     PIPELINE_CONFIGS[SpecificPipeline::PointLightPipeline]
                         .linked_descriptor_set_i_ds[0];
                 const DescriptorSet& current_descriptor_set =
@@ -8788,10 +8734,10 @@ void CVulkanRenderer::point_light_record_command_buffer(
                     VK_INDEX_TYPE_UINT32
                 );
 
-                unsigned int indices_container_size = a_indices[mesh_id].size();
+                u32 indices_container_size = a_indices[mesh_id].size();
                 vkCmdDrawIndexed(
                     command_buffer,
-                    static_cast<uint32_t>(indices_container_size),
+                    static_cast<u32>(indices_container_size),
                     1,
                     0,
                     0,
@@ -8806,13 +8752,11 @@ void CVulkanRenderer::point_light_record_command_buffer(
     }
 }
 
-VkShaderModule CVulkanRenderer::create_shader_module(
-    const std::vector<char>& code
-) {
+VkShaderModule CVulkanRenderer::create_shader_module(const Vec<char>& code) {
     VkShaderModuleCreateInfo create_info {};
     create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     create_info.codeSize = code.size();
-    create_info.pCode = reinterpret_cast<const uint32_t*>(code.data());
+    create_info.pCode = reinterpret_cast<const u32*>(code.data());
 
     VkShaderModule shader_module;
     if (vkCreateShaderModule(device, &create_info, nullptr, &shader_module)
@@ -8824,7 +8768,7 @@ VkShaderModule CVulkanRenderer::create_shader_module(
 }
 
 VkSurfaceFormatKHR CVulkanRenderer::choose_swap_surface_format(
-    const std::vector<VkSurfaceFormatKHR>& available_formats
+    const Vec<VkSurfaceFormatKHR>& available_formats
 ) {
     for (const auto& available_format : available_formats) {
         if (available_format.format == VK_FORMAT_B8G8R8A8_SRGB
@@ -8838,7 +8782,7 @@ VkSurfaceFormatKHR CVulkanRenderer::choose_swap_surface_format(
 }
 
 VkPresentModeKHR CVulkanRenderer::choose_swap_present_mode(
-    const std::vector<VkPresentModeKHR>& available_present_modes
+    const Vec<VkPresentModeKHR>& available_present_modes
 ) {
     for (const auto& available_present_mode : available_present_modes) {
         if (available_present_mode == VK_PRESENT_MODE_MAILBOX_KHR
@@ -8853,8 +8797,7 @@ VkPresentModeKHR CVulkanRenderer::choose_swap_present_mode(
 VkExtent2D CVulkanRenderer::choose_swap_extent(
     const VkSurfaceCapabilitiesKHR& capabilities
 ) {
-    if (capabilities.currentExtent.width
-        != std::numeric_limits<uint32_t>::max()) {
+    if (capabilities.currentExtent.width != std::numeric_limits<u32>::max()) {
         return capabilities.currentExtent;
     } else {
         VkExtent2D actual_extent {
@@ -8887,7 +8830,7 @@ SwapChainSupportDetails CVulkanRenderer::query_swap_chain_support(
         &details.capabilities
     );
 
-    uint32_t format_count = 0;
+    u32 format_count = 0;
     if (vkGetPhysicalDeviceSurfaceFormatsKHR(
             device,
             surface,
@@ -8908,7 +8851,7 @@ SwapChainSupportDetails CVulkanRenderer::query_swap_chain_support(
         );
     }
 
-    uint32_t present_mode_count = 0;
+    u32 present_mode_count = 0;
     if (vkGetPhysicalDeviceSurfacePresentModesKHR(
             device,
             surface,
@@ -8954,7 +8897,7 @@ bool CVulkanRenderer::is_device_suitable(VkPhysicalDevice device) {
 }
 
 bool CVulkanRenderer::check_device_extension_support(VkPhysicalDevice device) {
-    uint32_t extension_count;
+    u32 extension_count;
     vkEnumerateDeviceExtensionProperties(
         device,
         nullptr,
@@ -8962,7 +8905,7 @@ bool CVulkanRenderer::check_device_extension_support(VkPhysicalDevice device) {
         nullptr
     );
 
-    std::vector<VkExtensionProperties> available_extensions(extension_count);
+    Vec<VkExtensionProperties> available_extensions(extension_count);
     vkEnumerateDeviceExtensionProperties(
         device,
         nullptr,
@@ -8970,7 +8913,7 @@ bool CVulkanRenderer::check_device_extension_support(VkPhysicalDevice device) {
         available_extensions.data()
     );
 
-    std::set<std::string> required_extensions(
+    BTreeSet<String> required_extensions(
         DEVICE_EXTENSIONS.begin(),
         DEVICE_EXTENSIONS.end()
     );
@@ -8987,24 +8930,24 @@ QueueFamilyIndices CVulkanRenderer::find_queue_families(
 ) {
     QueueFamilyIndices indices;
 
-    uint32_t queue_family_count = 0;
+    u32 queue_family_count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(
         device,
         &queue_family_count,
         nullptr
     );
 
-    std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
+    Vec<VkQueueFamilyProperties> queue_families(queue_family_count);
     vkGetPhysicalDeviceQueueFamilyProperties(
         device,
         &queue_family_count,
         queue_families.data()
     );
 
-    int i = 0;
+    i32 i = 0;
     for (const auto& queue_family : queue_families) {
         if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            indices.graphics_family = i;
+            indices.graphics_family = Option<u32>(u32(i));
         }
 
         VkBool32 present_support = false;
@@ -9016,7 +8959,7 @@ QueueFamilyIndices CVulkanRenderer::find_queue_families(
         );
 
         if (present_support) {
-            indices.present_family = i;
+            indices.present_family = Option<u32>(u32(i));
         }
 
         if (indices.is_complete()) {
@@ -9029,9 +8972,9 @@ QueueFamilyIndices CVulkanRenderer::find_queue_families(
     return indices;
 }
 
-std::vector<const char*> CVulkanRenderer::get_required_extensions() {
+Vec<const char*> CVulkanRenderer::get_required_extensions() {
 #ifdef VK_USE_PLATFORM_XLIB_KHR
-    std::vector<const char*> p_required_extensions = {
+    Vec<const char*> p_required_extensions = {
         "VK_KHR_xlib_surface",
         "VK_EXT_acquire_xlib_display",
         "VK_KHR_display",
@@ -9040,7 +8983,7 @@ std::vector<const char*> CVulkanRenderer::get_required_extensions() {
     };
 #endif
 #ifdef VK_USE_PLATFORM_XCB_KHR
-    std::vector<const char*> p_required_extensions = {
+    Vec<const char*> p_required_extensions = {
         "VK_KHR_xcb_surface",
         "VK_KHR_display",
         "VK_KHR_surface",
@@ -9048,13 +8991,13 @@ std::vector<const char*> CVulkanRenderer::get_required_extensions() {
     };
 #endif
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    std::vector<const char*> p_required_extensions = {
+    Vec<const char*> p_required_extensions = {
         "VK_KHR_win32_surface",
         "VK_KHR_surface"
     };
 #endif
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-    std::vector<const char*> p_required_extensions = {
+    Vec<const char*> p_required_extensions = {
         "VK_KHR_wayland_surface",
         "VK_KHR_display",
         "VK_EXT_direct_mode_display",
@@ -9068,9 +9011,9 @@ std::vector<const char*> CVulkanRenderer::get_required_extensions() {
 }
 
 bool CVulkanRenderer::check_validation_layer_support() {
-    uint32_t layer_count;
+    u32 layer_count;
     vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
-    std::vector<VkLayerProperties> available_layers(layer_count);
+    Vec<VkLayerProperties> available_layers(layer_count);
     vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
     for (const char* layer_name : VALIDATION_LAYERS) {
         bool layer_found = false;
@@ -9102,7 +9045,7 @@ VkDescriptorBufferInfo CVulkanRenderer::create_descriptor_buffer_info(
 VkDescriptorImageInfo CVulkanRenderer::create_descriptor_image_info(
     const GpuImage& texture_image,
     VkImageLayout layout,
-    unsigned int texture_view_index,
+    u32 texture_view_index,
     VkSampler texture_sampler
 ) {
     VkDescriptorImageInfo image_info {};
@@ -9112,13 +9055,13 @@ VkDescriptorImageInfo CVulkanRenderer::create_descriptor_image_info(
     return image_info;
 }
 
-std::vector<char> CVulkanRenderer::read_file(const std::string& filename) {
+Vec<char> CVulkanRenderer::read_file(const String& filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
     if (!file.is_open()) {
         throw std::runtime_error("failed to open file!");
     }
-    size_t file_size = (size_t)file.tellg();
-    std::vector<char> buffer(file_size);
+    usize file_size = (usize)file.tellg();
+    Vec<char> buffer(file_size);
     file.seekg(0);
     file.read(buffer.data(), file_size);
     file.close();
@@ -9183,9 +9126,9 @@ void CJsonParser::parse() {
             || current_char == '-'
         ) {
             buffer_string = number_as_string_parse();
-            std::vector<char> vector = string_to_vector_of_chars(buffer_string);
-            double f_number = 0.0f;
-            int i_number = 0;
+            Vec<char> vector = string_to_vector_of_chars(buffer_string);
+            f64 f_number = 0.0f;
+            i32 i_number = 0;
             if (is_contain_char(buffer_string, '.')) {
                 f_number = parse_floating(vector);
 
@@ -9217,7 +9160,7 @@ void CJsonParser::parse() {
         } else if (
             current_char == 't' || current_char == 'f' || current_char == 'n'
         ) {
-            std::string bool_or_null_string = bool_or_null_parse();
+            String bool_or_null_string = bool_or_null_parse();
 
             if (bool_or_null_string == "true") {
                 if (key_flag) {
@@ -9325,19 +9268,19 @@ void CJsonParser::parse() {
 JsonValue CJsonParser::create_json_hash_map() {
     JsonValue json_object;
     json_object.type = JsonObject;
-    json_object.value.object = new HashMap<std::string, JsonValue>;
+    json_object.value.object = new HashMap<String, JsonValue>;
     return json_object;
 }
 
 JsonValue CJsonParser::create_json_array() {
     JsonValue json_array;
     json_array.type = JsonArray;
-    json_array.value.array = new std::vector<JsonValue>;
+    json_array.value.array = new Vec<JsonValue>;
     return json_array;
 }
 
-std::string CJsonParser::bool_or_null_parse() {
-    std::string bool_or_null_string = "";
+String CJsonParser::bool_or_null_parse() {
+    String bool_or_null_string = "";
     while (1) {
         current_char = p_json_file_data[global_file_counter];
         if (current_char >= 'a' && current_char <= 'z') {
@@ -9349,8 +9292,8 @@ std::string CJsonParser::bool_or_null_parse() {
     }
 }
 
-bool CJsonParser::is_contain_char(std::string text, char character) {
-    for (unsigned int i = 0; i < text.size(); ++i) {
+bool CJsonParser::is_contain_char(String text, char character) {
+    for (u32 i = 0; i < text.size(); ++i) {
         if (text[i] == character) {
             return true;
         }
@@ -9359,8 +9302,8 @@ bool CJsonParser::is_contain_char(std::string text, char character) {
     return false;
 }
 
-std::string CJsonParser::number_as_string_parse() {
-    std::string number_as_string = "";
+String CJsonParser::number_as_string_parse() {
+    String number_as_string = "";
     while (1) {
         current_char = p_json_file_data[global_file_counter];
         if ((current_char >= '0' && current_char <= '9') || current_char == '+'
@@ -9376,9 +9319,9 @@ std::string CJsonParser::number_as_string_parse() {
     }
 }
 
-std::string CJsonParser::string_parse() {
+String CJsonParser::string_parse() {
     ++global_file_counter;
-    std::string local_buffer = "";
+    String local_buffer = "";
     while (1) {
         current_char = p_json_file_data[global_file_counter];
         if (current_char == '"') {
@@ -9392,27 +9335,27 @@ std::string CJsonParser::string_parse() {
     }
 }
 
-std::vector<char> CJsonParser::string_to_vector_of_chars(std::string text) {
-    std::vector<char> vector_with_chars;
-    for (unsigned int i = 0; i < text.size(); ++i) {
+Vec<char> CJsonParser::string_to_vector_of_chars(String text) {
+    Vec<char> vector_with_chars;
+    for (u32 i = 0; i < text.size(); ++i) {
         vector_with_chars.push_back(text[i]);
     }
 
     return vector_with_chars;
 }
 
-int CJsonParser::parse_integer(std::vector<char> digits) {
-    std::vector<int> base_container;
+i32 CJsonParser::parse_integer(Vec<char> digits) {
+    Vec<i32> base_container;
 
-    for (unsigned int i = 0; i < digits.size(); ++i) {
+    for (u32 i = 0; i < digits.size(); ++i) {
         base_container.push_back(digits[i] - 48);
     }
 
-    int i_result = 0;
+    i32 i_result = 0;
     bool negate_flag = false;
 
-    unsigned int base_container_size = base_container.size();
-    for (unsigned int i = 0; i < base_container_size; ++i) {
+    u32 base_container_size = base_container.size();
+    for (u32 i = 0; i < base_container_size; ++i) {
         if (base_container[i] == -3 && i == 0) {
             negate_flag = true;
             continue;
@@ -9431,31 +9374,31 @@ int CJsonParser::parse_integer(std::vector<char> digits) {
     return i_result;
 }
 
-double CJsonParser::parse_floating(std::vector<char> digits) {
-    std::vector<int> base_container;
+f64 CJsonParser::parse_floating(Vec<char> digits) {
+    Vec<i32> base_container;
 
-    for (unsigned int i = 0; i < digits.size(); ++i) {
+    for (u32 i = 0; i < digits.size(); ++i) {
         base_container.push_back(digits[i] - 48);
     }
 
-    int integer_part = 0;
-    double floating_part = 0;
-    int e_number = 0;
-    std::vector<int> integer_part_container;
-    std::vector<int> floating_part_container;
-    std::vector<int> e_part_container;
+    i32 integer_part = 0;
+    f64 floating_part = 0;
+    i32 e_number = 0;
+    Vec<i32> integer_part_container;
+    Vec<i32> floating_part_container;
+    Vec<i32> e_part_container;
     bool dot_flag = false;
     bool negate_flag = false;
     bool e_flag = false;
     // False value equal "+" sign.
     bool e_sign = false;
-    unsigned int base_container_size = base_container.size();
+    u32 base_container_size = base_container.size();
 
     if (base_container[0] == -3) {
         negate_flag = true;
     }
 
-    for (unsigned int i = 0; i < base_container_size; ++i) {
+    for (u32 i = 0; i < base_container_size; ++i) {
         if (negate_flag && i == 0) {
             continue;
         } else if (base_container[i] == -5 && i == 0) {
@@ -9491,25 +9434,25 @@ double CJsonParser::parse_floating(std::vector<char> digits) {
         }
     }
 
-    unsigned int e_part_container_size = e_part_container.size();
-    for (unsigned int i = 0; i < e_part_container_size; ++i) {
+    u32 e_part_container_size = e_part_container.size();
+    for (u32 i = 0; i < e_part_container_size; ++i) {
         e_number +=
             e_part_container[i] * std::pow(10, (e_part_container_size - 1) - i);
     }
 
-    unsigned int integer_part_container_size = integer_part_container.size();
-    for (unsigned int i = 0; i < integer_part_container_size; ++i) {
+    u32 integer_part_container_size = integer_part_container.size();
+    for (u32 i = 0; i < integer_part_container_size; ++i) {
         integer_part += integer_part_container[i]
             * std::pow(10, (integer_part_container_size - 1) - i);
     }
 
-    unsigned int floating_part_container_size = floating_part_container.size();
-    for (unsigned int i = 0; i < floating_part_container_size; ++i) {
+    u32 floating_part_container_size = floating_part_container.size();
+    for (u32 i = 0; i < floating_part_container_size; ++i) {
         floating_part += floating_part_container[i] / std::pow(10, i + 1);
     }
 
-    double result = 0;
-    result = (double)(integer_part + floating_part);
+    f64 result = 0;
+    result = (f64)(integer_part + floating_part);
 
     if (e_flag) {
         if (e_sign) {
@@ -9527,11 +9470,11 @@ double CJsonParser::parse_floating(std::vector<char> digits) {
 }
 
 void CJsonParser::search_in_json_array(
-    std::vector<JsonValue>* array_value,
+    Vec<JsonValue>* array_value,
     const char* key,
-    std::vector<JsonValue>& result_vector
+    Vec<JsonValue>& result_vector
 ) const {
-    for (unsigned int i = 0; i < array_value->size(); ++i) {
+    for (u32 i = 0; i < array_value->size(); ++i) {
         if ((*array_value)[i].type == JsonObject) {
             search_in_json_object(
                 (*array_value)[i].value.object,
@@ -9551,9 +9494,9 @@ void CJsonParser::search_in_json_array(
 }
 
 void CJsonParser::search_in_json_object(
-    HashMap<std::string, JsonValue>* map_value,
+    HashMap<String, JsonValue>* map_value,
     const char* key,
-    std::vector<JsonValue>& result_vector
+    Vec<JsonValue>& result_vector
 ) const {
     for (auto& [current_key, current_value] : *map_value) {
         if (current_key == key) {
@@ -9574,15 +9517,15 @@ void CJsonParser::search_in_json_object(
     }
 }
 
-std::vector<JsonValue> CJsonParser::search(const char* key) const {
-    std::vector<JsonValue> result_vector;
+Vec<JsonValue> CJsonParser::search(const char* key) const {
+    Vec<JsonValue> result_vector;
     search_in_json_object(root->value.object, key, result_vector);
     return result_vector;
 }
 
 template<typename T>
-bool is_element_exist(const T element, const std::vector<T>& array) {
-    for (uint32_t n = 0; n < array.size(); ++n) {
+bool is_element_exist(const T element, const Vec<T>& array) {
+    for (u32 n = 0; n < array.size(); ++n) {
         if (element == array[n]) {
             return true;
         }
@@ -9592,8 +9535,8 @@ bool is_element_exist(const T element, const std::vector<T>& array) {
 }
 
 template<typename T>
-T get_element_index(const T element, const std::vector<T>& array) {
-    for (uint32_t n = 0; n < array.size(); ++n) {
+T get_element_index(const T element, const Vec<T>& array) {
+    for (u32 n = 0; n < array.size(); ++n) {
         if (element == array[n]) {
             return n;
         }
@@ -9603,10 +9546,10 @@ T get_element_index(const T element, const std::vector<T>& array) {
 }
 
 void calculate_elements_memory_size(
-    const uint32_t indices_elements_count,
-    std::string* indices_element_type,
-    const uint32_t indices_componet_type,
-    uint32_t* indices_buffer_view_byte_length
+    const u32 indices_elements_count,
+    String* indices_element_type,
+    const u32 indices_componet_type,
+    u32* indices_buffer_view_byte_length
 ) {
     if (*indices_element_type == "VEC2") {
         if (indices_componet_type == 5120 || indices_componet_type == 5121) {
@@ -9656,7 +9599,7 @@ struct ComponentType {
     };
 };
 
-void calculate_byte_step(uint32_t componet_type, unsigned int* byte_step) {
+void calculate_byte_step(u32 componet_type, u32* byte_step) {
     if (componet_type == ComponentType::I8
         || componet_type == ComponentType::U8) {
         *byte_step = 1;
@@ -9675,21 +9618,21 @@ void calculate_byte_step(uint32_t componet_type, unsigned int* byte_step) {
 
 // Metadata structs to binary buffer with actual data.
 struct AccessorMetaData {
-    uint32_t buffer_view;
-    uint32_t byte_offset;
-    uint32_t component_type;
-    uint32_t count;
-    std::string type;
+    u32 buffer_view;
+    u32 byte_offset;
+    u32 component_type;
+    u32 count;
+    String type;
 };
 
 struct BufferViewMetaData {
-    uint32_t byte_length;
-    uint32_t byte_offset;
+    u32 byte_length;
+    u32 byte_offset;
 };
 
 [[nodiscard]] AccessorMetaData read_accessor_meta_data(
     JsonValue* gltf,
-    const uint32_t accessor_index
+    const u32 accessor_index
 ) {
     AccessorMetaData buffer_meta_data;
     buffer_meta_data.buffer_view =
@@ -9703,7 +9646,7 @@ struct BufferViewMetaData {
 
     buffer_meta_data.byte_offset = 0;
     if ((*gltf)["accessors"][accessor_index].is_object() == JsonObject) {
-        HashMap<std::string, JsonValue>* ptr =
+        HashMap<String, JsonValue>* ptr =
             (*gltf)["accessors"][accessor_index].value.object;
         if (ptr->contains("byteOffset")) {
             buffer_meta_data.byte_offset =
@@ -9717,14 +9660,14 @@ struct BufferViewMetaData {
 
 [[nodiscard]] BufferViewMetaData read_buffer_view_meta_data(
     JsonValue* gltf,
-    const uint32_t buffer_view_index
+    const u32 buffer_view_index
 ) {
     BufferViewMetaData buffer_view_meta_data;
     buffer_view_meta_data.byte_length =
         (*gltf)["bufferViews"][buffer_view_index]["byteLength"].value.i_number;
     buffer_view_meta_data.byte_offset = 0;
     if ((*gltf)["bufferViews"][buffer_view_index].is_object() == JsonObject) {
-        HashMap<std::string, JsonValue>* ptr =
+        HashMap<String, JsonValue>* ptr =
             (*gltf)["bufferViews"][buffer_view_index].value.object;
         if (ptr->contains("byteOffset")) {
             buffer_view_meta_data.byte_offset =
@@ -9741,41 +9684,35 @@ void read_binary_buffer_data(
     char* buffer,
     AccessorMetaData accessor_meta_data,
     BufferViewMetaData buffer_view_meta_data,
-    std::vector<T>& output_data
+    Vec<T>& output_data
 ) {
-    uint32_t indices_byte_step = 0;
+    u32 indices_byte_step = 0;
     calculate_byte_step(accessor_meta_data.component_type, &indices_byte_step);
 
-    unsigned int byte_length = 0;
+    u32 byte_length = 0;
     calculate_elements_memory_size(
         accessor_meta_data.count,
         &accessor_meta_data.type,
         accessor_meta_data.component_type,
         &byte_length
     );
-    for (unsigned int i =
+    for (u32 i =
              buffer_view_meta_data.byte_offset + accessor_meta_data.byte_offset;
          i < buffer_view_meta_data.byte_offset + accessor_meta_data.byte_offset
              + byte_length;
          i += indices_byte_step) {
         switch (accessor_meta_data.component_type) {
             case ComponentType::U8:
-                output_data.push_back(
-                    reinterpret_cast<unsigned char&>(buffer[i])
-                );
+                output_data.push_back(reinterpret_cast<u8&>(buffer[i]));
                 break;
             case ComponentType::U16:
-                output_data.push_back(
-                    reinterpret_cast<unsigned short&>(buffer[i])
-                );
+                output_data.push_back(reinterpret_cast<u16&>(buffer[i]));
                 break;
             case ComponentType::U32:
-                output_data.push_back(
-                    reinterpret_cast<unsigned int&>(buffer[i])
-                );
+                output_data.push_back(reinterpret_cast<u32&>(buffer[i]));
                 break;
             case ComponentType::F32:
-                output_data.push_back(reinterpret_cast<float&>(buffer[i]));
+                output_data.push_back(reinterpret_cast<f32&>(buffer[i]));
                 break;
         }
     }
@@ -9783,22 +9720,22 @@ void read_binary_buffer_data(
 
 void CJsonParser::load_gltf(
     const char* paths_gltf,
-    std::vector<float>& a_vertexes,
-    std::vector<uint32_t>& a_indices,
-    std::vector<std::vector<Matrix<float, 4>>>& joint_matrices_per_mesh,
-    std::vector<float>& frames,
+    Vec<f32>& a_vertexes,
+    Vec<u32>& a_indices,
+    Vec<Vec<Matrix<f32, 4>>>& joint_matrices_per_mesh,
+    Vec<f32>& frames,
     bool& no_animations,
-    float& top_y
+    f32& top_y
 ) {
     read_file(paths_gltf);
     parse();
     JsonValue* gltf = get_root();
-    std::string binary_path = *(*gltf)["buffers"][0]["uri"].value.string;
-    int full_byte_size = (*gltf)["buffers"][0]["byteLength"].value.i_number;
-    size_t last_separator = std::string(paths_gltf).find_last_of("/\\");
-    std::string binary_full_path = last_separator == std::string::npos
+    String binary_path = *(*gltf)["buffers"][0]["uri"].value.string;
+    i32 full_byte_size = (*gltf)["buffers"][0]["byteLength"].value.i_number;
+    usize last_separator = String(paths_gltf).find_last_of("/\\");
+    String binary_full_path = last_separator == String::npos
         ? binary_path
-        : std::string(paths_gltf).substr(0, last_separator + 1) + binary_path;
+        : String(paths_gltf).substr(0, last_separator + 1) + binary_path;
     std::ifstream in_stream;
     in_stream.open(binary_full_path, std::ios::binary);
     if (!in_stream.is_open()) {
@@ -9809,20 +9746,20 @@ void CJsonParser::load_gltf(
     char* buffer = new char[full_byte_size];
     in_stream.read(buffer, full_byte_size);
     in_stream.close();
-    const uint32_t indices_accessor_index =
+    const auto indices_accessor_index =
         (*gltf)["meshes"][0]["primitives"][0]["indices"].value.i_number;
     AccessorMetaData indices_accessor_meta_data =
         read_accessor_meta_data(gltf, indices_accessor_index);
     BufferViewMetaData indices_buffer_view_meta_data =
         read_buffer_view_meta_data(gltf, indices_accessor_meta_data.buffer_view);
-    std::vector<uint32_t> indices;
+    Vec<u32> indices;
     read_binary_buffer_data(
         buffer,
         indices_accessor_meta_data,
         indices_buffer_view_meta_data,
         indices
     );
-    const uint32_t vertices_position_accessor_index =
+    const auto vertices_position_accessor_index =
         (*gltf)["meshes"][0]["primitives"][0]["attributes"]["POSITION"]
             .value.i_number;
     AccessorMetaData vertices_position_accessor_meta_data =
@@ -9832,14 +9769,14 @@ void CJsonParser::load_gltf(
             gltf,
             vertices_position_accessor_meta_data.buffer_view
         );
-    std::vector<float> vertices_position;
+    Vec<f32> vertices_position;
     read_binary_buffer_data(
         buffer,
         vertices_position_accessor_meta_data,
         vertices_position_buffer_view_meta_data,
         vertices_position
     );
-    const uint32_t texture_coordinates_accessor_index =
+    const auto texture_coordinates_accessor_index =
         (*gltf)["meshes"][0]["primitives"][0]["attributes"]["TEXCOORD_0"]
             .value.i_number;
     AccessorMetaData texture_coordinates_accessor_meta_data =
@@ -9849,51 +9786,51 @@ void CJsonParser::load_gltf(
             gltf,
             texture_coordinates_accessor_meta_data.buffer_view
         );
-    std::vector<float> texture_coordinates;
+    Vec<f32> texture_coordinates;
     read_binary_buffer_data(
         buffer,
         texture_coordinates_accessor_meta_data,
         texture_coordinates_buffer_view_meta_data,
         texture_coordinates
     );
-    const uint32_t normals_accessor_index =
+    const auto normals_accessor_index =
         (*gltf)["meshes"][0]["primitives"][0]["attributes"]["NORMAL"]
             .value.i_number;
     AccessorMetaData normals_accessor_meta_data =
         read_accessor_meta_data(gltf, normals_accessor_index);
     BufferViewMetaData normals_buffer_view_meta_data =
         read_buffer_view_meta_data(gltf, normals_accessor_meta_data.buffer_view);
-    std::vector<float> normals;
+    Vec<f32> normals;
     read_binary_buffer_data(
         buffer,
         normals_accessor_meta_data,
         normals_buffer_view_meta_data,
         normals
     );
-    std::vector<JsonValue> skins = search("skins");
+    Vec<JsonValue> skins = search("skins");
     JsonValue joints;
-    std::vector<Matrix<float, 4>> global_transform_joint_node;
-    std::vector<Matrix<float, 4>> inverse_bind_matrix_set;
-    std::vector<std::vector<Matrix<float, 4>>> joint_matrices;
-    std::vector<float> weights_container;
-    std::vector<int> joints_indices;
-    std::vector<std::vector<int>> children;
+    Vec<Matrix<f32, 4>> global_transform_joint_node;
+    Vec<Matrix<f32, 4>> inverse_bind_matrix_set;
+    Vec<Vec<Matrix<f32, 4>>> joint_matrices;
+    Vec<f32> weights_container;
+    Vec<i32> joints_indices;
+    Vec<Vec<i32>> children;
     if (skins.size() > 0) {
         no_animations = false;
         joints = (*gltf)["skins"][0]["joints"];
         JsonValue nodes = (*gltf)["nodes"];
         // Loop on joints.
-        for (unsigned int i = 0; i < joints.value.array->size(); ++i) {
-            unsigned int joint_index_map_to_node =
+        for (u32 i = 0; i < joints.value.array->size(); ++i) {
+            u32 joint_index_map_to_node =
                 (*joints.value.array)[i].value.i_number;
             JsonValue node = nodes[joint_index_map_to_node];
             Quaternion rotation_quaternion;
-            Matrix<float, 4> rotation(1.0f);
-            Matrix<float, 4> scale(1.0f);
-            Matrix<float, 4> translation(1.0f);
+            Matrix<f32, 4> rotation(1.0f);
+            Matrix<f32, 4> scale(1.0f);
+            Matrix<f32, 4> translation(1.0f);
             if (node.value.object->contains("rotation")) {
                 JsonValue array = (*node.value.object)["rotation"];
-                for (unsigned int i = 0; i < array.value.array->size(); ++i) {
+                for (u32 i = 0; i < array.value.array->size(); ++i) {
                     switch (i) {
                         case 0:
                             if (array[i].is_interger()) {
@@ -9925,26 +9862,26 @@ void CJsonParser::load_gltf(
                             break;
                     }
                 }
-                rotation = rotate_quaternion<float, 4>(rotation_quaternion);
+                rotation = rotate_quaternion<f32, 4>(rotation_quaternion);
                 rotation.self_tensor_transpose();
             }
-            std::vector<int> local_children;
+            Vec<i32> local_children;
             // Collect children indices.
             if (node.value.object->contains("children")) {
                 JsonValue array = (*node.value.object)["children"];
-                for (unsigned int i = 0; i < array.value.array->size(); ++i) {
+                for (u32 i = 0; i < array.value.array->size(); ++i) {
                     local_children.push_back(array[i].value.i_number);
                 }
                 // Linearly put all children to every root joint.
                 children.push_back(local_children);
             } else {
-                std::vector<int> empty_children;
+                Vec<i32> empty_children;
                 // Put empty pack of children if can find a one.
                 children.push_back(empty_children);
             }
             if (node.value.object->contains("scale")) {
                 JsonValue array = (*node.value.object)["scale"];
-                for (unsigned int i = 0; i < array.value.array->size(); ++i) {
+                for (u32 i = 0; i < array.value.array->size(); ++i) {
                     if (array[i].is_interger()) {
                         scale[i][i] = array[i].value.i_number;
                     } else if (array[i].is_float()) {
@@ -9954,7 +9891,7 @@ void CJsonParser::load_gltf(
             }
             if (node.value.object->contains("translation")) {
                 JsonValue array = (*node.value.object)["translation"];
-                for (unsigned int i = 0; i < array.value.array->size(); ++i) {
+                for (u32 i = 0; i < array.value.array->size(); ++i) {
                     if (array[i].is_interger()) {
                         translation[3][i] = array[i].value.i_number;
                     } else if (array[i].is_float()) {
@@ -9963,11 +9900,11 @@ void CJsonParser::load_gltf(
                 }
             }
             // Compute model matrix.
-            Matrix<float, 4> model = scale * rotation * translation;
+            Matrix<f32, 4> model = scale * rotation * translation;
             global_transform_joint_node.push_back(model);
         }
         // Get the inverse bind matrices accessor index.
-        const uint32_t inverse_bind_matrices_accessor_index =
+        const auto inverse_bind_matrices_accessor_index =
             (*gltf)["skins"][0]["inverseBindMatrices"].value.i_number;
         AccessorMetaData inverse_bind_matrices_accessor_meta_data =
             read_accessor_meta_data(gltf, inverse_bind_matrices_accessor_index);
@@ -9976,25 +9913,25 @@ void CJsonParser::load_gltf(
                 gltf,
                 inverse_bind_matrices_accessor_meta_data.buffer_view
             );
-        std::vector<float> inverse_bind_matrices_data;
+        Vec<f32> inverse_bind_matrices_data;
         read_binary_buffer_data(
             buffer,
             inverse_bind_matrices_accessor_meta_data,
             inveres_bind_matrices_buffer_view_meta_data,
             inverse_bind_matrices_data
         );
-        Matrix<float, 4> inverse_bind_matrix(0.0f);
-        for (unsigned int n = 0; n < joints.value.array->size(); ++n) {
-            for (unsigned int g = 0; g < 4; ++g) {
-                for (unsigned int j = 0; j < 4; ++j) {
-                    // Put row float data into mat4.
+        Matrix<f32, 4> inverse_bind_matrix(0.0f);
+        for (u32 n = 0; n < joints.value.array->size(); ++n) {
+            for (u32 g = 0; g < 4; ++g) {
+                for (u32 j = 0; j < 4; ++j) {
+                    // Put row f32 data into mat4.
                     inverse_bind_matrix[g][j] =
                         inverse_bind_matrices_data[n * 16 + g * 4 + j];
                 }
             }
             inverse_bind_matrix_set.push_back(inverse_bind_matrix);
         }
-        const uint32_t joints_accessor_index =
+        const auto joints_accessor_index =
             (*gltf)["meshes"][0]["primitives"][0]["attributes"]["JOINTS_0"]
                 .value.i_number;
         AccessorMetaData joints_accessor_meta_data =
@@ -10010,7 +9947,7 @@ void CJsonParser::load_gltf(
             joints_buffer_view_meta_data,
             joints_indices
         );
-        unsigned int weights_accessor_index =
+        u32 weights_accessor_index =
             (*gltf)["meshes"][0]["primitives"][0]["attributes"]["WEIGHTS_0"]
                 .value.i_number;
         AccessorMetaData weights_accessor_meta_data =
@@ -10029,28 +9966,28 @@ void CJsonParser::load_gltf(
     } else {
         no_animations = true;
     }
-    std::vector<JsonValue> animations = search("animations");
+    Vec<JsonValue> animations = search("animations");
     if (animations.size() > 0) {
-        std::vector<JsonValue> sampler_indices;
-        std::vector<JsonValue> target_nodes;
-        std::vector<JsonValue> target_paths;
+        Vec<JsonValue> sampler_indices;
+        Vec<JsonValue> target_nodes;
+        Vec<JsonValue> target_paths;
         JsonValue channels = (*gltf)["animations"][0]["channels"];
-        for (unsigned int i = 0; i < channels.value.array->size(); ++i) {
+        for (u32 i = 0; i < channels.value.array->size(); ++i) {
             sampler_indices.push_back(channels[i]["sampler"]);
         }
-        for (unsigned int i = 0; i < channels.value.array->size(); ++i) {
+        for (u32 i = 0; i < channels.value.array->size(); ++i) {
             target_nodes.push_back(channels[i]["target"]["node"]);
         }
-        for (unsigned int i = 0; i < channels.value.array->size(); ++i) {
+        for (u32 i = 0; i < channels.value.array->size(); ++i) {
             target_paths.push_back(channels[i]["target"]["path"]);
         }
-        std::vector<unsigned int> translation_sampler_indices;
-        std::vector<unsigned int> rotation_sampler_indices;
-        std::vector<unsigned int> scale_sampler_indices;
-        std::vector<uint32_t> nodes_map_translations;
-        std::vector<uint32_t> nodes_map_rotations;
-        std::vector<uint32_t> nodes_map_scales;
-        for (unsigned int i = 0; i < sampler_indices.size(); ++i) {
+        Vec<u32> translation_sampler_indices;
+        Vec<u32> rotation_sampler_indices;
+        Vec<u32> scale_sampler_indices;
+        Vec<u32> nodes_map_translations;
+        Vec<u32> nodes_map_rotations;
+        Vec<u32> nodes_map_scales;
+        for (u32 i = 0; i < sampler_indices.size(); ++i) {
             if (*target_paths[i].value.string == "translation") {
                 translation_sampler_indices.push_back(
                     sampler_indices[i].value.i_number
@@ -10069,20 +10006,20 @@ void CJsonParser::load_gltf(
             }
         }
         JsonValue samplers = (*gltf)["animations"][0]["samplers"];
-        std::vector<unsigned int> translation_inputs;
-        std::vector<unsigned int> translation_outputs;
-        for (unsigned int i = 0; i < translation_sampler_indices.size(); ++i) {
+        Vec<u32> translation_inputs;
+        Vec<u32> translation_outputs;
+        for (u32 i = 0; i < translation_sampler_indices.size(); ++i) {
             translation_inputs.push_back(
                 samplers[translation_sampler_indices[i]]["input"].value.i_number
             );
         }
-        for (unsigned int i = 0; i < translation_sampler_indices.size(); ++i) {
+        for (u32 i = 0; i < translation_sampler_indices.size(); ++i) {
             translation_outputs.push_back(
                 samplers[translation_sampler_indices[i]]["output"].value.i_number
             );
         }
-        std::vector<std::vector<float>> frame_inputs_translation;
-        for (unsigned int i = 0; i < translation_inputs.size(); ++i) {
+        Vec<Vec<f32>> frame_inputs_translation;
+        for (u32 i = 0; i < translation_inputs.size(); ++i) {
             AccessorMetaData frame_inputs_translation_accessor_meta_data =
                 read_accessor_meta_data(gltf, translation_inputs[i]);
             BufferViewMetaData frame_inputs_translation_buffer_view_meta_data =
@@ -10090,7 +10027,7 @@ void CJsonParser::load_gltf(
                     gltf,
                     frame_inputs_translation_accessor_meta_data.buffer_view
                 );
-            std::vector<float> temp;
+            Vec<f32> temp;
             read_binary_buffer_data(
                 buffer,
                 frame_inputs_translation_accessor_meta_data,
@@ -10099,8 +10036,8 @@ void CJsonParser::load_gltf(
             );
             frame_inputs_translation.push_back(temp);
         }
-        std::vector<std::vector<float>> translations;
-        for (unsigned int i = 0; i < translation_outputs.size(); ++i) {
+        Vec<Vec<f32>> translations;
+        for (u32 i = 0; i < translation_outputs.size(); ++i) {
             AccessorMetaData frame_outputs_translation_accessor_meta_data =
                 read_accessor_meta_data(gltf, translation_outputs[i]);
             BufferViewMetaData frame_outputs_translation_buffer_view_meta_data =
@@ -10108,7 +10045,7 @@ void CJsonParser::load_gltf(
                     gltf,
                     frame_outputs_translation_accessor_meta_data.buffer_view
                 );
-            std::vector<float> temp;
+            Vec<f32> temp;
             read_binary_buffer_data(
                 buffer,
                 frame_outputs_translation_accessor_meta_data,
@@ -10117,20 +10054,20 @@ void CJsonParser::load_gltf(
             );
             translations.push_back(temp);
         }
-        std::vector<unsigned int> rotation_inputs;
-        std::vector<unsigned int> rotation_outputs;
-        for (unsigned int i = 0; i < rotation_sampler_indices.size(); ++i) {
+        Vec<u32> rotation_inputs;
+        Vec<u32> rotation_outputs;
+        for (u32 i = 0; i < rotation_sampler_indices.size(); ++i) {
             rotation_inputs.push_back(
                 samplers[rotation_sampler_indices[i]]["input"].value.i_number
             );
         }
-        for (unsigned int i = 0; i < rotation_sampler_indices.size(); ++i) {
+        for (u32 i = 0; i < rotation_sampler_indices.size(); ++i) {
             rotation_outputs.push_back(
                 samplers[rotation_sampler_indices[i]]["output"].value.i_number
             );
         }
-        std::vector<std::vector<float>> frame_inputs_rotation;
-        for (unsigned int i = 0; i < rotation_inputs.size(); ++i) {
+        Vec<Vec<f32>> frame_inputs_rotation;
+        for (u32 i = 0; i < rotation_inputs.size(); ++i) {
             AccessorMetaData frame_inputs_rotation_accessor_meta_data =
                 read_accessor_meta_data(gltf, rotation_inputs[i]);
             BufferViewMetaData frame_inputs_rotation_buffer_view_meta_data =
@@ -10138,7 +10075,7 @@ void CJsonParser::load_gltf(
                     gltf,
                     frame_inputs_rotation_accessor_meta_data.buffer_view
                 );
-            std::vector<float> temp;
+            Vec<f32> temp;
             read_binary_buffer_data(
                 buffer,
                 frame_inputs_rotation_accessor_meta_data,
@@ -10147,8 +10084,8 @@ void CJsonParser::load_gltf(
             );
             frame_inputs_rotation.push_back(temp);
         }
-        std::vector<std::vector<float>> rotations;
-        for (unsigned int i = 0; i < rotation_outputs.size(); ++i) {
+        Vec<Vec<f32>> rotations;
+        for (u32 i = 0; i < rotation_outputs.size(); ++i) {
             AccessorMetaData frame_outputs_rotation_accessor_meta_data =
                 read_accessor_meta_data(gltf, rotation_outputs[i]);
             BufferViewMetaData frame_outputs_rotation_buffer_view_meta_data =
@@ -10156,7 +10093,7 @@ void CJsonParser::load_gltf(
                     gltf,
                     frame_outputs_rotation_accessor_meta_data.buffer_view
                 );
-            std::vector<float> temp;
+            Vec<f32> temp;
             read_binary_buffer_data(
                 buffer,
                 frame_outputs_rotation_accessor_meta_data,
@@ -10165,20 +10102,20 @@ void CJsonParser::load_gltf(
             );
             rotations.push_back(temp);
         }
-        std::vector<unsigned int> scale_inputs;
-        std::vector<unsigned int> scale_outputs;
-        for (unsigned int i = 0; i < scale_sampler_indices.size(); ++i) {
+        Vec<u32> scale_inputs;
+        Vec<u32> scale_outputs;
+        for (u32 i = 0; i < scale_sampler_indices.size(); ++i) {
             scale_inputs.push_back(
                 samplers[scale_sampler_indices[i]]["input"].value.i_number
             );
         }
-        for (unsigned int i = 0; i < scale_sampler_indices.size(); ++i) {
+        for (u32 i = 0; i < scale_sampler_indices.size(); ++i) {
             scale_outputs.push_back(
                 samplers[scale_sampler_indices[i]]["output"].value.i_number
             );
         }
-        std::vector<std::vector<float>> frame_inputs_scale;
-        for (unsigned int i = 0; i < scale_inputs.size(); ++i) {
+        Vec<Vec<f32>> frame_inputs_scale;
+        for (u32 i = 0; i < scale_inputs.size(); ++i) {
             AccessorMetaData frame_inputs_scale_accessor_meta_data =
                 read_accessor_meta_data(gltf, scale_inputs[i]);
             BufferViewMetaData frame_inputs_scale_buffer_view_meta_data =
@@ -10186,7 +10123,7 @@ void CJsonParser::load_gltf(
                     gltf,
                     frame_inputs_scale_accessor_meta_data.buffer_view
                 );
-            std::vector<float> temp;
+            Vec<f32> temp;
             read_binary_buffer_data(
                 buffer,
                 frame_inputs_scale_accessor_meta_data,
@@ -10195,8 +10132,8 @@ void CJsonParser::load_gltf(
             );
             frame_inputs_scale.push_back(temp);
         }
-        std::vector<std::vector<float>> scales;
-        for (unsigned int i = 0; i < scale_outputs.size(); ++i) {
+        Vec<Vec<f32>> scales;
+        for (u32 i = 0; i < scale_outputs.size(); ++i) {
             AccessorMetaData frame_outputs_scale_accessor_meta_data =
                 read_accessor_meta_data(gltf, scale_outputs[i]);
             BufferViewMetaData frame_outputs_scale_buffer_view_meta_data =
@@ -10204,7 +10141,7 @@ void CJsonParser::load_gltf(
                     gltf,
                     frame_outputs_scale_accessor_meta_data.buffer_view
                 );
-            std::vector<float> temp;
+            Vec<f32> temp;
             read_binary_buffer_data(
                 buffer,
                 frame_outputs_scale_accessor_meta_data,
@@ -10214,11 +10151,11 @@ void CJsonParser::load_gltf(
             scales.push_back(temp);
         }
         // Searching for root joins.
-        std::vector<int> root_nodes;
-        for (unsigned int s = 0; s < joints.value.array->size(); ++s) {
-            int current_joint = (*joints.value.array)[s].value.i_number;
-            for (unsigned w = 0; w < children.size(); ++w) {
-                for (unsigned q = 0; q < children[w].size(); ++q) {
+        Vec<i32> root_nodes;
+        for (u32 s = 0; s < joints.value.array->size(); ++s) {
+            i32 current_joint = (*joints.value.array)[s].value.i_number;
+            for (u32 w = 0; w < children.size(); ++w) {
+                for (u32 q = 0; q < children[w].size(); ++q) {
                     if (children[w][q] == current_joint) {
                         goto most_scary_operator_of_all_time;
                     }
@@ -10229,15 +10166,15 @@ void CJsonParser::load_gltf(
         most_scary_operator_of_all_time: // Not so scary at all. Am i right?
             continue;
         }
-        std::vector<std::vector<unsigned int>> nodes_hierarchy;
+        Vec<Vec<u32>> nodes_hierarchy;
         // Loop on parent joints.
-        for (unsigned int w = 0; w < root_nodes.size(); ++w) {
-            std::vector<std::vector<unsigned int>> nodes_bones;
-            unsigned int current_root = root_nodes[w];
-            std::vector<uint32_t> node_stack;
+        for (u32 w = 0; w < root_nodes.size(); ++w) {
+            Vec<Vec<u32>> nodes_bones;
+            u32 current_root = root_nodes[w];
+            Vec<u32> node_stack;
             // Start from root joint.
             node_stack.push_back(current_root);
-            std::vector<uint32_t> deepness_stack;
+            Vec<u32> deepness_stack;
             traversal_bones(
                 children,
                 joints,
@@ -10245,106 +10182,101 @@ void CJsonParser::load_gltf(
                 deepness_stack,
                 nodes_bones
             );
-            for (unsigned int e = 0; e < nodes_bones.size(); ++e) {
+            for (u32 e = 0; e < nodes_bones.size(); ++e) {
                 nodes_hierarchy.push_back(nodes_bones[e]);
             }
         }
         // This logic related to joints that has inverseBindMatrices.
-        uint32_t transformations_max = translations.size() > scales.size()
+        u32 transformations_max = translations.size() > scales.size()
             ? (translations.size() > rotations.size() ? translations.size()
                                                       : rotations.size())
             : (scales.size() > rotations.size() ? scales.size()
                                                 : rotations.size());
-        const uint32_t num_joints = joints.value.array->size();
-        uint32_t translation_frames_number = 0;
-        for (uint32_t k = 0; k < frame_inputs_translation.size(); ++k) {
+        const auto num_joints = joints.value.array->size();
+        u32 translation_frames_number = 0;
+        for (u32 k = 0; k < frame_inputs_translation.size(); ++k) {
             if (frame_inputs_translation[k].size()
                 > translation_frames_number) {
                 translation_frames_number = frame_inputs_translation[k].size();
             }
         }
-        uint32_t rotation_frames_number = 0;
-        for (uint32_t k = 0; k < frame_inputs_rotation.size(); ++k) {
+        u32 rotation_frames_number = 0;
+        for (u32 k = 0; k < frame_inputs_rotation.size(); ++k) {
             if (frame_inputs_rotation[k].size() > rotation_frames_number) {
                 rotation_frames_number = frame_inputs_rotation[k].size();
             }
         }
-        uint32_t scale_frames_number = 0;
-        for (uint32_t k = 0; k < frame_inputs_scale.size(); ++k) {
+        u32 scale_frames_number = 0;
+        for (u32 k = 0; k < frame_inputs_scale.size(); ++k) {
             if (frame_inputs_scale[k].size() > scale_frames_number) {
                 scale_frames_number = frame_inputs_scale[k].size();
             }
         }
-        const uint32_t frames_max =
-            translation_frames_number > scale_frames_number
+        const auto frames_max = translation_frames_number > scale_frames_number
             ? (translation_frames_number > rotation_frames_number
                    ? translation_frames_number
                    : rotation_frames_number)
             : (scale_frames_number > rotation_frames_number
                    ? scale_frames_number
                    : rotation_frames_number);
-        for (uint32_t k = 0; k < frame_inputs_translation.size(); ++k) {
+        for (u32 k = 0; k < frame_inputs_translation.size(); ++k) {
             if (frame_inputs_translation[k].size() > frames.size()) {
                 frames = frame_inputs_translation[k];
             }
         }
-        for (uint32_t k = 0; k < frame_inputs_rotation.size(); ++k) {
+        for (u32 k = 0; k < frame_inputs_rotation.size(); ++k) {
             if (frame_inputs_rotation[k].size() > frames.size()) {
                 frames = frame_inputs_rotation[k];
             }
         }
-        for (uint32_t k = 0; k < frame_inputs_scale.size(); ++k) {
+        for (u32 k = 0; k < frame_inputs_scale.size(); ++k) {
             if (frame_inputs_scale[k].size() > frames.size()) {
                 frames = frame_inputs_scale[k];
             }
         }
-        std::vector<int> joint_to_translation_ch;
-        std::vector<int> joint_to_rotation_ch;
-        std::vector<int> joint_to_scale_ch;
-        for (uint32_t k = 0; k < num_joints; ++k) {
+        Vec<i32> joint_to_translation_ch;
+        Vec<i32> joint_to_rotation_ch;
+        Vec<i32> joint_to_scale_ch;
+        for (u32 k = 0; k < num_joints; ++k) {
             joint_to_translation_ch.push_back(-1);
             joint_to_rotation_ch.push_back(-1);
             joint_to_scale_ch.push_back(-1);
         }
-        for (uint32_t k = 0; k < nodes_map_translations.size(); ++k) {
-            uint32_t j_idx =
-                get_joint_index(joints, (int32_t)nodes_map_translations[k]);
+        for (u32 k = 0; k < nodes_map_translations.size(); ++k) {
+            u32 j_idx = get_joint_index(joints, (i32)nodes_map_translations[k]);
             if (j_idx != UINT32_MAX) {
-                joint_to_translation_ch[j_idx] = (int)k;
+                joint_to_translation_ch[j_idx] = (i32)k;
             }
         }
-        for (uint32_t k = 0; k < nodes_map_rotations.size(); ++k) {
-            uint32_t j_idx =
-                get_joint_index(joints, (int32_t)nodes_map_rotations[k]);
+        for (u32 k = 0; k < nodes_map_rotations.size(); ++k) {
+            u32 j_idx = get_joint_index(joints, (i32)nodes_map_rotations[k]);
             if (j_idx != UINT32_MAX) {
-                joint_to_rotation_ch[j_idx] = (int)k;
+                joint_to_rotation_ch[j_idx] = (i32)k;
             }
         }
-        for (uint32_t k = 0; k < nodes_map_scales.size(); ++k) {
-            uint32_t j_idx =
-                get_joint_index(joints, (int32_t)nodes_map_scales[k]);
+        for (u32 k = 0; k < nodes_map_scales.size(); ++k) {
+            u32 j_idx = get_joint_index(joints, (i32)nodes_map_scales[k]);
             if (j_idx != UINT32_MAX) {
-                joint_to_scale_ch[j_idx] = (int)k;
+                joint_to_scale_ch[j_idx] = (i32)k;
             }
         }
         // Build animatedNodesMatricesAccumulator indexed by joint-index
         // (0..numJoints - 1).
-        std::vector<std::vector<Matrix<float, 4>>>
-            animated_nodes_matrices_accumulator;
-        for (unsigned int j = 0; j < num_joints; ++j) {
-            int t_idx = joint_to_translation_ch[j];
-            int r_idx = joint_to_rotation_ch[j];
-            int s_idx = joint_to_scale_ch[j];
+        Vec<Vec<Matrix<f32, 4>>> animated_nodes_matrices_accumulator;
+        for (u32 j = 0; j < num_joints; ++j) {
+            i32 t_idx = joint_to_translation_ch[j];
+            i32 r_idx = joint_to_rotation_ch[j];
+            i32 s_idx = joint_to_scale_ch[j];
             // Local defaults fresh on every joint, for not make possible to
             // collect data from previous iterations.
-            std::vector<float> default_translations;
-            std::vector<float> default_rotations;
-            std::vector<float> default_scales;
+            Vec<f32> default_translations;
+            Vec<f32> default_rotations;
+            Vec<f32> default_scales;
             // Static TRS from node. Using if channel not exists.
-            int32_t node_idx = (int32_t)(*joints.value.array)[j].value.i_number;
-            float s_tx = 0.f, s_ty = 0.f, s_tz = 0.f;
-            float s_rx = 0.f, s_ry = 0.f, s_rz = 0.f, s_rw = 1.f;
-            float s_sx = 1.f, s_sy = 1.f, s_sz = 1.f;
+            i32 node_idx = (i32)(*joints.value.array)[j].value.i_number;
+            f32 s_tx = 0.f, s_ty = 0.f, s_tz = 0.f;
+            f32 s_rx = 0.f, s_ry = 0.f, s_rz = 0.f, s_rw = 1.f;
+            f32 s_sx = 1.f, s_sy = 1.f, s_sz = 1.f;
             if ((*gltf)["nodes"][node_idx].is_object() == JsonObject) {
                 auto* nd = (*gltf)["nodes"][node_idx].value.object;
                 if (nd->contains("translation")) {
@@ -10375,14 +10307,14 @@ void CJsonParser::load_gltf(
                 }
             }
             if (t_idx < 0) {
-                for (uint32_t f = 0; f < frames_max; ++f) {
+                for (u32 f = 0; f < frames_max; ++f) {
                     default_translations.push_back(s_tx);
                     default_translations.push_back(s_ty);
                     default_translations.push_back(s_tz);
                 }
             }
             if (r_idx < 0) {
-                for (uint32_t f = 0; f < frames_max; ++f) {
+                for (u32 f = 0; f < frames_max; ++f) {
                     default_rotations.push_back(s_rx);
                     default_rotations.push_back(s_ry);
                     default_rotations.push_back(s_rz);
@@ -10390,51 +10322,50 @@ void CJsonParser::load_gltf(
                 }
             }
             if (s_idx < 0) {
-                for (uint32_t f = 0; f < frames_max; ++f) {
+                for (u32 f = 0; f < frames_max; ++f) {
                     default_scales.push_back(s_sx);
                     default_scales.push_back(s_sy);
                     default_scales.push_back(s_sz);
                 }
             }
-            std::vector<float>& bone_t =
+            Vec<f32>& bone_t =
                 (t_idx >= 0) ? translations[t_idx] : default_translations;
-            std::vector<float>& bone_r =
+            Vec<f32>& bone_r =
                 (r_idx >= 0) ? rotations[r_idx] : default_rotations;
-            std::vector<float>& bone_s =
-                (s_idx >= 0) ? scales[s_idx] : default_scales;
+            Vec<f32>& bone_s = (s_idx >= 0) ? scales[s_idx] : default_scales;
             // Chennels can has verious number of frames; framesMax - gloabal
             // maximum. Clamp index to last valid chennel frame, for not run out
             // after vectors bounds.
-            const uint32_t t_frames = bone_t.size() / 3;
-            const uint32_t r_frames = bone_r.size() / 4;
-            const uint32_t s_frames = bone_s.size() / 3;
-            std::vector<Matrix<float, 4>> per_frame_matrices;
-            for (unsigned int i = 0; i < frames_max; ++i) {
+            const auto t_frames = bone_t.size() / 3;
+            const auto r_frames = bone_r.size() / 4;
+            const auto s_frames = bone_s.size() / 3;
+            Vec<Matrix<f32, 4>> per_frame_matrices;
+            for (u32 i = 0; i < frames_max; ++i) {
                 if (t_frames == 0 || r_frames == 0 || s_frames == 0) {
                     // Malformed data; skip joint.
-                    std::vector<Matrix<float, 4>> empty;
+                    Vec<Matrix<f32, 4>> empty;
                     animated_nodes_matrices_accumulator.push_back(empty);
                     continue;
                 }
-                const uint32_t ti = (i < t_frames) ? i : t_frames - 1;
-                const uint32_t ri = (i < r_frames) ? i : r_frames - 1;
-                const uint32_t si = (i < s_frames) ? i : s_frames - 1;
-                Matrix<float, 4> frame_translation(1.0f);
-                Matrix<float, 4> frame_scale(1.0f);
-                for (unsigned int q = 0; q < 3; ++q) {
+                const auto ti = (i < t_frames) ? i : t_frames - 1;
+                const auto ri = (i < r_frames) ? i : r_frames - 1;
+                const auto si = (i < s_frames) ? i : s_frames - 1;
+                Matrix<f32, 4> frame_translation(1.0f);
+                Matrix<f32, 4> frame_scale(1.0f);
+                for (u32 q = 0; q < 3; ++q) {
                     frame_translation[3][q] = bone_t[ti * 3 + q];
                     frame_scale[q][q] = bone_s[si * 3 + q];
                 }
                 Quaternion frame_rotation_quaternion;
-                Matrix<float, 4> frame_rotation(1.0f);
+                Matrix<f32, 4> frame_rotation(1.0f);
                 frame_rotation_quaternion.x = bone_r[ri * 4];
                 frame_rotation_quaternion.y = bone_r[ri * 4 + 1];
                 frame_rotation_quaternion.z = bone_r[ri * 4 + 2];
                 frame_rotation_quaternion.w = bone_r[ri * 4 + 3];
                 frame_rotation =
-                    rotate_quaternion<float, 4>(frame_rotation_quaternion);
+                    rotate_quaternion<f32, 4>(frame_rotation_quaternion);
                 frame_rotation.self_tensor_transpose();
-                Matrix<float, 4> local_transform =
+                Matrix<f32, 4> local_transform =
                     frame_scale * frame_rotation * frame_translation;
                 per_frame_matrices.push_back(local_transform);
             }
@@ -10443,12 +10374,11 @@ void CJsonParser::load_gltf(
         // Final comstruction of joint-matrices. Both arrays indexed by
         // joint-index now, that's why nodesHierarchy[j][b] address accumulator
         // correctly.
-        for (unsigned int j = 0; j < num_joints; ++j) {
-            std::vector<Matrix<float, 4>> global_all_frame_node_matrix;
-            for (unsigned int i = 0; i < frames_max; ++i) {
-                Matrix<float, 4> root_transform(1.0f);
-                for (unsigned int b = 0; b < nodes_hierarchy[j].size() - 1;
-                     ++b) {
+        for (u32 j = 0; j < num_joints; ++j) {
+            Vec<Matrix<f32, 4>> global_all_frame_node_matrix;
+            for (u32 i = 0; i < frames_max; ++i) {
+                Matrix<f32, 4> root_transform(1.0f);
+                for (u32 b = 0; b < nodes_hierarchy[j].size() - 1; ++b) {
                     root_transform = animated_nodes_matrices_accumulator
                                          [nodes_hierarchy[j][b]][i]
                         * root_transform;
@@ -10463,11 +10393,11 @@ void CJsonParser::load_gltf(
     }
     joint_matrices_per_mesh = joint_matrices;
     top_y = -999.999f;
-    for (uint32_t i = 0; i < indices.size(); ++i) {
+    for (u32 i = 0; i < indices.size(); ++i) {
         a_indices.push_back(i);
-        unsigned int index = indices[i] * 3;
+        u32 index = indices[i] * 3;
         if (index + 2 < vertices_position.size()) {
-            Vector<float, 3> position = {
+            Vector<f32, 3> position = {
                 vertices_position[index],
                 vertices_position[index + 1],
                 vertices_position[index + 2]
@@ -10480,7 +10410,7 @@ void CJsonParser::load_gltf(
             a_vertexes.push_back(position[2]);
         }
         if (index + 2 < normals.size()) {
-            Vector<float, 3> normal =
+            Vector<f32, 3> normal =
                 {normals[index], normals[index + 1], normals[index + 2]};
             a_vertexes.push_back(normal[0]);
             a_vertexes.push_back(normal[1]);
@@ -10510,13 +10440,13 @@ void CJsonParser::load_gltf(
 }
 
 void CJsonParser::traversal_bones(
-    std::vector<std::vector<int>> children,
+    Vec<Vec<i32>> children,
     JsonValue joints,
-    std::vector<uint32_t> node_stack,
-    std::vector<uint32_t> deepness_stack,
-    std::vector<std::vector<uint32_t>>& result
+    Vec<u32> node_stack,
+    Vec<u32> deepness_stack,
+    Vec<Vec<u32>>& result
 ) {
-    uint32_t top_joint_index = 0;
+    u32 top_joint_index = 0;
     if (!node_stack.empty()) {
         // Pass array of all joints and root joint and return index of root
         // joint in array.
@@ -10524,14 +10454,14 @@ void CJsonParser::traversal_bones(
     }
     if (node_stack.size() > deepness_stack.size()) {
         // First 0 level start from.
-        uint32_t first_child = 0;
+        u32 first_child = 0;
         deepness_stack.push_back(first_child);
     }
     // Main exit check.
     if (deepness_stack.empty()) {
         return;
     }
-    uint32_t next_node_index = 0;
+    u32 next_node_index = 0;
     // Check current root joint has any children. Children maps linearly with
     // root joint array index.
     if (top_joint_index != UINT32_MAX && !children[top_joint_index].empty()) {
@@ -10554,10 +10484,9 @@ void CJsonParser::traversal_bones(
             && deepness_stack.back() < children[top_joint_index].size()) {
             next_node_index = children[top_joint_index][deepness_stack.back()];
             node_stack.push_back(next_node_index);
-            std::vector<uint32_t> current_node_indices;
-            for (uint32_t i = 0; i < node_stack.size(); ++i) {
-                uint32_t current_join_index =
-                    get_joint_index(joints, node_stack[i]);
+            Vec<u32> current_node_indices;
+            for (u32 i = 0; i < node_stack.size(); ++i) {
+                u32 current_join_index = get_joint_index(joints, node_stack[i]);
                 current_node_indices.push_back(current_join_index);
             }
             ++deepness_stack.back();
@@ -10570,10 +10499,9 @@ void CJsonParser::traversal_bones(
             );
             return;
         } else {
-            std::vector<uint32_t> current_node_indices;
-            for (uint32_t i = 0; i < node_stack.size(); ++i) {
-                uint32_t current_join_index =
-                    get_joint_index(joints, node_stack[i]);
+            Vec<u32> current_node_indices;
+            for (u32 i = 0; i < node_stack.size(); ++i) {
+                u32 current_join_index = get_joint_index(joints, node_stack[i]);
                 current_node_indices.push_back(current_join_index);
             }
             result.push_back(current_node_indices);
@@ -10590,15 +10518,14 @@ void CJsonParser::traversal_bones(
             return;
         }
     } else {
-        std::vector<uint32_t> current_node_indices;
+        Vec<u32> current_node_indices;
         if (top_joint_index == UINT32_MAX) {
             current_node_indices.push_back(node_stack.back());
             result.push_back(current_node_indices);
             return;
         }
-        for (uint32_t i = 0; i < node_stack.size(); ++i) {
-            uint32_t current_join_index =
-                get_joint_index(joints, node_stack[i]);
+        for (u32 i = 0; i < node_stack.size(); ++i) {
+            u32 current_join_index = get_joint_index(joints, node_stack[i]);
             current_node_indices.push_back(current_join_index);
         }
         result.push_back(current_node_indices);
@@ -10609,17 +10536,15 @@ void CJsonParser::traversal_bones(
     }
 }
 
-std::vector<std::vector<unsigned int>> CJsonParser::make_render_joints_indices(
-    std::vector<std::vector<unsigned int>>& input
-) {
-    std::vector<std::vector<unsigned int>> result;
+Vec<Vec<u32>> CJsonParser::make_render_joints_indices(Vec<Vec<u32>>& input) {
+    Vec<Vec<u32>> result;
     bool accumulator_flag = false;
     bool inner_flag = false;
-    unsigned int accumulator = input[0][0];
-    for (unsigned int i = 0; i < input.size(); ++i) {
-        for (unsigned int j = 0; j < input[i].size(); ++j) {
-            std::vector<unsigned int> inner;
-            for (unsigned int v = 0; v < j + 1; ++v) {
+    u32 accumulator = input[0][0];
+    for (u32 i = 0; i < input.size(); ++i) {
+        for (u32 j = 0; j < input[i].size(); ++j) {
+            Vec<u32> inner;
+            for (u32 v = 0; v < j + 1; ++v) {
                 if (input[i][j] == accumulator && accumulator_flag) {
                     inner_flag = false;
                     continue;
@@ -10640,13 +10565,10 @@ std::vector<std::vector<unsigned int>> CJsonParser::make_render_joints_indices(
     return result;
 }
 
-bool CJsonParser::contains_element(
-    std::vector<std::vector<unsigned int>> container,
-    unsigned int element
-) {
+bool CJsonParser::contains_element(Vec<Vec<u32>> container, u32 element) {
     bool flag = false;
-    for (unsigned int i = 0; i < container.size(); ++i) {
-        for (unsigned int j = 0; j < container[i].size(); ++j) {
+    for (u32 i = 0; i < container.size(); ++i) {
+        for (u32 j = 0; j < container[i].size(); ++j) {
             if (container[i][j] == element) {
                 return true;
             }
@@ -10655,9 +10577,9 @@ bool CJsonParser::contains_element(
     return flag;
 }
 
-uint32_t CJsonParser::get_joint_index(JsonValue joints, int32_t searching_index) {
-    for (unsigned int i = 0; i < joints.value.array->size(); ++i) {
-        int current_joint_index = (*joints.value.array)[i].value.i_number;
+u32 CJsonParser::get_joint_index(JsonValue joints, i32 searching_index) {
+    for (u32 i = 0; i < joints.value.array->size(); ++i) {
+        i32 current_joint_index = (*joints.value.array)[i].value.i_number;
         if (current_joint_index == searching_index) {
             return i;
         }
@@ -10672,7 +10594,7 @@ CJsonParser::~CJsonParser() {
 
 namespace glvm {
 MeshManager* MeshManager::p_instance = nullptr;
-std::mutex MeshManager::mutex;
+Mutex MeshManager::mutex;
 
 MeshManager::MeshManager() {
 }
@@ -10689,7 +10611,7 @@ void MeshManager::set_mesh_gltf(const char* path_to_mesh) {
 }
 
 MeshManager* MeshManager::get_instance() {
-    std::lock_guard<std::mutex> lock(mutex);
+    MutexGuard<Mutex> lock(mutex);
     if (p_instance == nullptr) {
         p_instance = new MeshManager();
     }
@@ -10716,23 +10638,23 @@ void ProceduralLevelGeneratingSystem::update() {
             ->components[ComponentsIndices::TransformComponent];
 
     while (level_nubmer < 5) {
-        std::vector<Vertex> next_level;
-        std::vector<uint32_t> indices;
-        std::vector<Vertex> transition_bridge_vertices;
-        std::vector<uint32_t> transition_bridge_indices;
+        Vec<Vertex> next_level;
+        Vec<u32> indices;
+        Vec<Vertex> transition_bridge_vertices;
+        Vec<u32> transition_bridge_indices;
 
         if (level_nubmer < 5) {
             std::random_device rd;
             std::mt19937 mersenne(rd());
-            std::uniform_int_distribution<int> dist_current_level_y(1, 1);
-            unsigned int level_half_y = dist_current_level_y(mersenne);
-            std::uniform_int_distribution<int> dist_current_level_x_z(16, 16);
-            unsigned int level_half_x = dist_current_level_x_z(mersenne);
-            unsigned int level_half_z = dist_current_level_x_z(mersenne);
+            std::uniform_int_distribution<i32> dist_current_level_y(1, 1);
+            u32 level_half_y = dist_current_level_y(mersenne);
+            std::uniform_int_distribution<i32> dist_current_level_x_z(16, 16);
+            u32 level_half_x = dist_current_level_x_z(mersenne);
+            u32 level_half_z = dist_current_level_x_z(mersenne);
 
             // Need to move on half.
-            constexpr float TRANSITION_BRIDGE_HALF_WIDTH = 0.5f;
-            constexpr float TRANSITION_BRIDGE_HALF_HEIGHT = 1.0f;
+            constexpr auto TRANSITION_BRIDGE_HALF_WIDTH = 0.5f;
+            constexpr auto TRANSITION_BRIDGE_HALF_HEIGHT = 1.0f;
             // On first iteration we dont need to define where locate current
             // level depends on previousTransitionBridge.
             if (level_nubmer != 0) {
@@ -10767,7 +10689,7 @@ void ProceduralLevelGeneratingSystem::update() {
                 TRANSITION_BRIDGE_HALF_HEIGHT
             );
 
-            for (unsigned int i = 0; i < 36; ++i) {
+            for (u32 i = 0; i < 36; ++i) {
                 indices.push_back(BOX_INDICES_FOR_INDEX_BUFFER[i]);
             }
 
@@ -10784,8 +10706,7 @@ void ProceduralLevelGeneratingSystem::update() {
             set_mesh_bounds(mesh_axis_limiting_values);
 
             MeshHandle game_level_mesh_handle = glvm->load_mesh();
-            uint64_t game_level_chunk_entity =
-                arch_entity_manager->create_entity();
+            u64 game_level_chunk_entity = arch_entity_manager->create_entity();
 
             cached_level_chunk_arch_number = 0;
             // Search and cache one time for LevelChunkArch.
@@ -10806,12 +10727,11 @@ void ProceduralLevelGeneratingSystem::update() {
                 static_cast<LevelChunkArchetype*>(
                     game_level_chunk_location.arch
                 );
-            const uint32_t game_level_chunk_index =
-                game_level_chunk_location.index;
+            const auto game_level_chunk_index = game_level_chunk_location.index;
             TextureHandle game_level_texture = texture_handlers[2];
             if (level_nubmer == 0) {
                 // Set up current level position to player position.
-                components_view.player_transforms->position = Vector<float, 3>(
+                components_view.player_transforms->position = Vector<f32, 3>(
                     current_level_position[0],
                     components_view.player_transforms->position[1],
                     current_level_position[2]
@@ -10830,7 +10750,7 @@ void ProceduralLevelGeneratingSystem::update() {
             level_chunk_arch->meshes[game_level_chunk_index].handle =
                 game_level_mesh_handle;
 
-            for (unsigned int i = 0; i < 36; ++i) {
+            for (u32 i = 0; i < 36; ++i) {
                 transition_bridge_indices.push_back(
                     BOX_INDICES_FOR_INDEX_BUFFER[i]
                 );
@@ -10838,9 +10758,9 @@ void ProceduralLevelGeneratingSystem::update() {
 
             mesh_axis_limiting_values.set_to_default_values();
 
-            float half_x = 0.0f;
-            float half_y = level_half_y;
-            float half_z = 0.0f;
+            f32 half_x = 0.0f;
+            f32 half_y = level_half_y;
+            f32 half_z = 0.0f;
             set_half_extents_from_direction(
                 half_x,
                 half_z,
@@ -10859,8 +10779,7 @@ void ProceduralLevelGeneratingSystem::update() {
             set_mesh_bounds(mesh_axis_limiting_values);
 
             MeshHandle transition_bridge_mesh_handle = glvm->load_mesh();
-            uint64_t transition_bridge_entity =
-                arch_entity_manager->create_entity();
+            u64 transition_bridge_entity = arch_entity_manager->create_entity();
             WORLD.add_entity_to_archetype(
                 transition_bridge_entity,
                 arch_view.cached_level_chunk_arch
@@ -10873,7 +10792,7 @@ void ProceduralLevelGeneratingSystem::update() {
                 static_cast<LevelChunkArchetype*>(
                     transition_bridge_location.arch
                 );
-            const uint32_t transition_bridge_index =
+            const auto transition_bridge_index =
                 transition_bridge_location.index;
             TextureHandle transition_bridge_texture = texture_handlers[3];
             transition_bridge_arch->transforms[transition_bridge_index] = {
@@ -10902,11 +10821,11 @@ void ProceduralLevelGeneratingSystem::update() {
 }
 
 void ProceduralLevelGeneratingSystem::set_half_extents_from_direction(
-    float& half_x,
-    float& half_z,
-    const float& transition_bridge_half_width,
-    const float& transition_bridge_half_height,
-    const float& next_level_transition_direction
+    f32& half_x,
+    f32& half_z,
+    const f32& transition_bridge_half_width,
+    const f32& transition_bridge_half_height,
+    const f32& next_level_transition_direction
 ) {
     if (next_level_transition_direction == 1
         || next_level_transition_direction == 3) {
@@ -10922,20 +10841,20 @@ void ProceduralLevelGeneratingSystem::set_half_extents_from_direction(
 }
 
 void ProceduralLevelGeneratingSystem::generate_level(
-    const unsigned int level_half_x,
-    const unsigned int level_half_y,
-    const unsigned int level_half_z,
-    const float transition_bridge_half_width,
-    const float transition_bridge_half_height
+    const u32 level_half_x,
+    const u32 level_half_y,
+    const u32 level_half_z,
+    const f32 transition_bridge_half_width,
+    const f32 transition_bridge_half_height
 ) {
     std::random_device rd;
     std::mt19937 mersenne(rd());
-    unsigned int previous_transition_bridge_anchor_point = 0;
+    u32 previous_transition_bridge_anchor_point = 0;
     bool valid_level = false;
     while (!valid_level) {
         switch (previous_iteration_transition_bridge_direction) {
             case 1: {
-                std::uniform_int_distribution<int>
+                std::uniform_int_distribution<i32>
                     dist_previous_transition_bridge_anchor_point(
                         0,
                         level_half_x * 2 - 1
@@ -10949,7 +10868,7 @@ void ProceduralLevelGeneratingSystem::generate_level(
                     + level_half_z + transition_bridge_half_height;
             } break;
             case 2: {
-                std::uniform_int_distribution<int>
+                std::uniform_int_distribution<i32>
                     dist_previous_transition_bridge_anchor_point(
                         0,
                         level_half_z * 2 - 1
@@ -10963,7 +10882,7 @@ void ProceduralLevelGeneratingSystem::generate_level(
                     + level_half_x + transition_bridge_half_height;
             } break;
             case 3: {
-                std::uniform_int_distribution<int>
+                std::uniform_int_distribution<i32>
                     dist_previous_transition_bridge_anchor_point(
                         0,
                         level_half_x * 2 - 1
@@ -10977,7 +10896,7 @@ void ProceduralLevelGeneratingSystem::generate_level(
                     - level_half_z - transition_bridge_half_height;
             } break;
             case 4: {
-                std::uniform_int_distribution<int>
+                std::uniform_int_distribution<i32>
                     dist_previous_transition_bridge_anchor_point(
                         0,
                         level_half_z * 2 - 1
@@ -11004,9 +10923,9 @@ void ProceduralLevelGeneratingSystem::generate_level(
             coordinate_maximum_value_per_direction
                 .compare_per_direction_and_set_to_maximum_value_by_module(
                     current_level_position,
-                    (float)level_half_x,
-                    (float)level_half_y,
-                    (float)level_half_z
+                    (f32)level_half_x,
+                    (f32)level_half_y,
+                    (f32)level_half_z
                 );
             valid_level = true;
         }
@@ -11015,56 +10934,56 @@ void ProceduralLevelGeneratingSystem::generate_level(
 }
 
 void ProceduralLevelGeneratingSystem::generate_transition_bridge(
-    const unsigned int level_half_x,
-    const unsigned int level_half_y,
-    const unsigned int level_half_z,
-    const float transition_bridge_half_width,
-    const float transition_bridge_half_height
+    const u32 level_half_x,
+    const u32 level_half_y,
+    const u32 level_half_z,
+    const f32 transition_bridge_half_width,
+    const f32 transition_bridge_half_height
 ) {
     std::random_device rd;
     std::mt19937 mersenne(rd());
     // 1 - north, 2 - east, 3 - south, 4 - west.
-    std::uniform_int_distribution<int> dist_next_level_transition_direction(
+    std::uniform_int_distribution<i32> dist_next_level_transition_direction(
         1,
         4
     );
     // Randomly chose direction in where next level will appeared.
     next_level_transition_direction =
         dist_next_level_transition_direction(mersenne);
-    unsigned int transition_bridge_anchor_point = 0;
-    float transition_bridge_offset_x = 0.0f;
-    float transition_bridge_offset_z = 0.0f;
+    u32 transition_bridge_anchor_point = 0;
+    f32 transition_bridge_offset_x = 0.0f;
+    f32 transition_bridge_offset_z = 0.0f;
     bool valid_transition_bridge = false;
     while (!valid_transition_bridge) {
         // Choose up (1) or down (3) insert point direction.
         if (next_level_transition_direction == 1
             || next_level_transition_direction == 3) {
             // In what point we connect next transition bridge to current level.
-            std::uniform_int_distribution<int>
+            std::uniform_int_distribution<i32>
                 dist_transition_bridge_anchor_point(0, level_half_x * 2 - 1);
             transition_bridge_anchor_point =
                 dist_transition_bridge_anchor_point(mersenne);
             // Summarize most left position with random value of point where
             // transition bridge will be insert.
             transition_bridge_offset_x =
-                -(float)level_half_x + (float)transition_bridge_anchor_point;
+                -(f32)level_half_x + (f32)transition_bridge_anchor_point;
             if (next_level_transition_direction == 1) {
                 // Move to the bottom level edge.
                 transition_bridge_offset_z = level_half_z;
                 transition_bridge_position = {
                     current_level_position[0] + transition_bridge_offset_x
                         + transition_bridge_half_width,
-                    (float)level_half_y,
+                    (f32)level_half_y,
                     current_level_position[2] + transition_bridge_offset_z
                         + transition_bridge_half_height
                 };
             } else {
                 // Move to the upper level edge.
-                transition_bridge_offset_z = -(float)level_half_z;
+                transition_bridge_offset_z = -(f32)level_half_z;
                 transition_bridge_position = {
                     current_level_position[0] + transition_bridge_offset_x
                         + transition_bridge_half_width,
-                    (float)level_half_y,
+                    (f32)level_half_y,
                     current_level_position[2] + transition_bridge_offset_z
                         - transition_bridge_half_height
                 };
@@ -11075,39 +10994,39 @@ void ProceduralLevelGeneratingSystem::generate_transition_bridge(
             || next_level_transition_direction == 4
         ) {
             // In what point we connect next transition bridge to current level.
-            std::uniform_int_distribution<int>
+            std::uniform_int_distribution<i32>
                 dist_transition_bridge_anchor_point(0, level_half_z * 2 - 1);
             transition_bridge_anchor_point =
                 dist_transition_bridge_anchor_point(mersenne);
             // Summarize forward most position with random value of point where
             // transition bridge will be insert.
             transition_bridge_offset_z =
-                -(float)level_half_z + (float)transition_bridge_anchor_point;
+                -(f32)level_half_z + (f32)transition_bridge_anchor_point;
             if (next_level_transition_direction == 2) {
                 // Move to the right level edge.
                 transition_bridge_offset_x = level_half_x;
                 transition_bridge_position = {
                     current_level_position[0] + transition_bridge_offset_x
                         + transition_bridge_half_height,
-                    (float)level_half_y,
+                    (f32)level_half_y,
                     current_level_position[2] + transition_bridge_offset_z
                         + transition_bridge_half_width
                 };
             } else {
                 // Move to the left level edge.
-                transition_bridge_offset_x = -(float)level_half_x;
+                transition_bridge_offset_x = -(f32)level_half_x;
                 transition_bridge_position = {
                     current_level_position[0] + transition_bridge_offset_x
                         - transition_bridge_half_height,
-                    (float)level_half_y,
+                    (f32)level_half_y,
                     current_level_position[2] + transition_bridge_offset_z
                         + transition_bridge_half_width
                 };
             }
         }
 
-        float width = 0;
-        float height = 0;
+        f32 width = 0;
+        f32 height = 0;
         // Chose transitionBridgeHalfWidth as X and transitionBridgeHalfHeight
         // as Z.
         set_half_extents_from_direction(
@@ -11132,9 +11051,9 @@ void ProceduralLevelGeneratingSystem::generate_transition_bridge(
             coordinate_maximum_value_per_direction
                 .compare_per_direction_and_set_to_maximum_value_by_module(
                     transition_bridge_position,
-                    (float)width,
-                    (float)level_half_y,
-                    (float)height
+                    (f32)width,
+                    (f32)level_half_y,
+                    (f32)height
                 );
             valid_transition_bridge = true;
         }
@@ -11145,15 +11064,15 @@ void ProceduralLevelGeneratingSystem::generate_transition_bridge(
 }
 
 void ProceduralLevelGeneratingSystem::make_cube_object_vertices(
-    Vector<float, 4> join_indices,
-    Vector<float, 4> weights,
-    float half_x,
-    float half_y,
-    float half_z,
-    std::vector<Vertex>& destination_vertices_container
+    Vector<f32, 4> join_indices,
+    Vector<f32, 4> weights,
+    f32 half_x,
+    f32 half_y,
+    f32 half_z,
+    Vec<Vertex>& destination_vertices_container
 ) {
-    unsigned int cube_vertices = 8;
-    for (unsigned int i = 0; i < cube_vertices; ++i) {
+    u32 cube_vertices = 8;
+    for (u32 i = 0; i < cube_vertices; ++i) {
         SVertex vertex;
 
         switch (i) {
@@ -11163,39 +11082,39 @@ void ProceduralLevelGeneratingSystem::make_cube_object_vertices(
                 vertex[2] = half_z;
                 break;
             case 1:
-                vertex[0] = -(float)half_x;
+                vertex[0] = -(f32)half_x;
                 vertex[1] = half_y;
                 vertex[2] = half_z;
                 break;
             case 2:
-                vertex[0] = -(float)half_x;
-                vertex[1] = -(float)half_y;
+                vertex[0] = -(f32)half_x;
+                vertex[1] = -(f32)half_y;
                 vertex[2] = half_z;
                 break;
             case 3:
                 vertex[0] = half_x;
-                vertex[1] = -(float)half_y;
+                vertex[1] = -(f32)half_y;
                 vertex[2] = half_z;
                 break;
             case 4:
                 vertex[0] = half_x;
                 vertex[1] = half_y;
-                vertex[2] = -(float)half_z;
+                vertex[2] = -(f32)half_z;
                 break;
             case 5:
-                vertex[0] = -(float)half_x;
+                vertex[0] = -(f32)half_x;
                 vertex[1] = half_y;
-                vertex[2] = -(float)half_z;
+                vertex[2] = -(f32)half_z;
                 break;
             case 6:
-                vertex[0] = -(float)half_x;
-                vertex[1] = -(float)half_y;
-                vertex[2] = -(float)half_z;
+                vertex[0] = -(f32)half_x;
+                vertex[1] = -(f32)half_y;
+                vertex[2] = -(f32)half_z;
                 break;
             case 7:
                 vertex[0] = half_x;
-                vertex[1] = -(float)half_y;
-                vertex[2] = -(float)half_z;
+                vertex[1] = -(f32)half_y;
+                vertex[2] = -(f32)half_z;
                 break;
         }
 
@@ -11225,10 +11144,10 @@ void ProceduralLevelGeneratingSystem::make_cube_object_vertices(
 
 bool ProceduralLevelGeneratingSystem::
     check_collision_intersection_with_maximum_coordinates(
-        Vector<float, 3> position,
-        float half_x,
-        float half_y,
-        float half_z
+        Vector<f32, 3> position,
+        f32 half_x,
+        f32 half_y,
+        f32 half_z
     ) {
     return position[0] + half_x
         > coordinate_maximum_value_per_direction.lowest_x
@@ -11263,7 +11182,7 @@ ISoundEngine* CSoundEngineFactory::create_sound_engine() {
 }
 #ifdef __linux__
 CSoundEngineAlsa::~CSoundEngineAlsa() {
-    for (uint32_t i = 0; i < sound_container.size(); ++i) {
+    for (u32 i = 0; i < sound_container.size(); ++i) {
         delete sound_container[i];
         sound_container[i] = nullptr;
     }
@@ -11279,7 +11198,7 @@ void CSoundEngineAlsa::close_device() {
 }
 
 void CSoundEngineAlsa::sound_stream() {
-    for (unsigned int i = 0; i < sound_container.size(); ++i) {
+    for (u32 i = 0; i < sound_container.size(); ++i) {
         playback_sound_sample(*sound_container[i]);
         sound_container.erase(sound_container.begin() + i);
     }
@@ -11288,11 +11207,11 @@ void CSoundEngineAlsa::sound_stream() {
 void CSoundEngineAlsa::playback_sound_sample(CSoundSample& sample) {
     const snd_pcm_format_t format = SND_PCM_FORMAT_S16_LE;
     const snd_pcm_access_t access = SND_PCM_ACCESS_RW_INTERLEAVED;
-    constexpr unsigned int channels = 2;
+    constexpr auto channels = 2;
     // 0.5 s.
-    constexpr unsigned int latency = 500000;
-    constexpr unsigned int frame_size = channels * 2;
-    constexpr int alsa_frames = 32;
+    constexpr auto latency = 500000;
+    constexpr auto frame_size = channels * 2;
+    constexpr auto alsa_frames = 32;
 
     snd_pcm_set_params(
         pcm_,
@@ -11309,19 +11228,18 @@ void CSoundEngineAlsa::playback_sound_sample(CSoundSample& sample) {
         return;
     }
     char* buffer = (char*)malloc(alsa_frames * frame_size);
-    for (int i = 0; i < 300; ++i) {
-        int frames = fread(buffer, frame_size, alsa_frames, file_descriptor);
+    for (i32 i = 0; i < 300; ++i) {
+        i32 frames = fread(buffer, frame_size, alsa_frames, file_descriptor);
         if (frames <= 0) {
             break;
         }
-        int rest = frames;
+        i32 rest = frames;
 
-        int16_t* samples = reinterpret_cast<int16_t*>(buffer);
-        int sample_count = frames * channels;
-        for (int j = 0; j < sample_count; ++j) {
-            int32_t scaled = static_cast<int32_t>(samples[j] * sample.volume);
-            samples[j] =
-                static_cast<int16_t>(std::clamp(scaled, -32768, 32767));
+        i16* samples = reinterpret_cast<i16*>(buffer);
+        i32 sample_count = frames * channels;
+        for (i32 j = 0; j < sample_count; ++j) {
+            i32 scaled = static_cast<i32>(samples[j] * sample.volume);
+            samples[j] = static_cast<i16>(std::clamp(scaled, -32768, 32767));
         }
 
         char* data = buffer;
@@ -11365,15 +11283,15 @@ void CSoundEngineAlsa::set_master_volume(long volume_percent) {
     snd_mixer_close(mixer);
 }
 
-std::vector<CSoundSample*>& CSoundEngineAlsa::get_sound_container() {
+Vec<CSoundSample*>& CSoundEngineAlsa::get_sound_container() {
     return sound_container;
 }
 
 void CSoundEngineAlsa::create_sound_sample(
     const char* file_path,
-    uint32_t duration,
-    uint32_t rate,
-    float volume
+    u32 duration,
+    u32 rate,
+    f32 volume
 ) {
     sound_container.push_back(
         new CSoundSample {file_path, duration, rate, volume}
@@ -11390,9 +11308,9 @@ void CSoundEngineWaveform::close_device() {
 
 void CSoundEngineWaveform::create_sound_sample(
     const char* file_path,
-    uint32_t duration,
-    uint32_t rate,
-    float volume
+    u32 duration,
+    u32 rate,
+    f32 volume
 ) {
     CSoundSample* sample = new CSoundSample {file_path, duration, rate, volume};
     t_sound_container.push_back(sample);
@@ -11402,7 +11320,7 @@ void CSoundEngineWaveform::create_sound_sample(
 
 namespace glvm {
 CSystemManager* CSystemManager::p_instance = nullptr;
-std::mutex CSystemManager::mutex;
+Mutex CSystemManager::mutex;
 
 CSystemManager::CSystemManager() {
 }
@@ -11413,7 +11331,7 @@ CSystemManager::~CSystemManager() {
 }
 
 CSystemManager* CSystemManager::get_instance() {
-    std::lock_guard<std::mutex> lock(mutex);
+    MutexGuard<Mutex> lock(mutex);
     if (p_instance == nullptr) {
         p_instance = new CSystemManager();
     }
@@ -11432,7 +11350,7 @@ void CSystemManager::deactivate_system(DeactivatedSystems system) {
 void CSystemManager::return_system_to_activated_state(
     DeactivatedSystems system
 ) {
-    for (unsigned int i = 0; i < deactivated_systems.size(); ++i) {
+    for (u32 i = 0; i < deactivated_systems.size(); ++i) {
         if (system == deactivated_systems[i]) {
             deactivated_systems.erase(deactivated_systems.begin() + i);
             return;
@@ -11442,9 +11360,9 @@ void CSystemManager::return_system_to_activated_state(
 
 void CSystemManager::update() {
     bool removed_system_flag = false;
-    for (unsigned int i = 0; i < s_i_system_id; ++i) {
-        for (unsigned int j = 0; j < deactivated_systems.size(); ++j) {
-            if ((unsigned int)deactivated_systems[j] == i) {
+    for (u32 i = 0; i < s_i_system_id; ++i) {
+        for (u32 j = 0; j < deactivated_systems.size(); ++j) {
+            if ((u32)deactivated_systems[j] == i) {
                 removed_system_flag = true;
                 continue;
             }
@@ -11468,11 +11386,11 @@ void CCollisionSystem::update() {
         spatial_grid.width > 0 && spatial_grid.height > 0
         && spatial_grid.depth > 0
     );
-    const float chunk_size = spatial_grid.grid[0][0][0].SIZE;
+    const auto chunk_size = spatial_grid.grid[0][0][0].SIZE;
 
-    const float chunk_half_width = spatial_grid.width * chunk_size * 0.5f;
-    const float chunk_half_height = spatial_grid.height * chunk_size * 0.5f;
-    const float chunk_half_depth = spatial_grid.depth * chunk_size * 0.5f;
+    const auto chunk_half_width = spatial_grid.width * chunk_size * 0.5f;
+    const auto chunk_half_height = spatial_grid.height * chunk_size * 0.5f;
+    const auto chunk_half_depth = spatial_grid.depth * chunk_size * 0.5f;
 
     cached_archetypes_number = 0;
     WORLD.search_cache_archetypes(
@@ -11481,9 +11399,9 @@ void CCollisionSystem::update() {
         cached_archetypes_number
     );
 
-    const float camera_speed = 5.5f * f_delta_time;
+    const auto camera_speed = 5.5f * f_delta_time;
     // Outer cycle on every archetype.
-    for (uint32_t x = 0; x < cached_archetypes_number; ++x) {
+    for (u32 x = 0; x < cached_archetypes_number; ++x) {
         Archetype* arch = cached_archetypes[x];
         view.backtracking_transforms =
             (Transform*)arch->components[ComponentsIndices::TransformComponent];
@@ -11495,11 +11413,11 @@ void CCollisionSystem::update() {
         view.backtracking_meshes =
             (Mesh*)arch->components[ComponentsIndices::MeshComponent];
 
-        for (unsigned int i = 0; i < arch->entity_count; ++i) {
+        for (u32 i = 0; i < arch->entity_count; ++i) {
             // Count on every entity in current outer archetype.
-            uint32_t backtracking_entity_id = arch->entities[i];
+            u32 backtracking_entity_id = arch->entities[i];
 
-            uint8_t groud_collision_turn_off_mask =
+            u8 groud_collision_turn_off_mask =
                 (1u << 0) | (0u << 1) | (1u << 2) | (1u << 3);
             if (view.backtracking_collider_flags && view.backtracking_colliders
                 && view.backtracking_meshes && view.backtracking_transforms) {
@@ -11512,12 +11430,12 @@ void CCollisionSystem::update() {
                     backtrackin_entity_mesh.handle;
                 Transform* backtracking_transform_component =
                     &view.backtracking_transforms[i];
-                Vector<float, 3> backtracking_transform =
+                Vector<f32, 3> backtracking_transform =
                     backtracking_transform_component->position;
-                float backtracking_scale =
+                f32 backtracking_scale =
                     backtracking_transform_component->scale;
 
-                uint64_t move_required_mask =
+                u64 move_required_mask =
                     (1ul << ComponentsIndices::MoveComponent);
                 // Check if outer current archetype has move component.
                 if (matches_required_mask(arch->mask, move_required_mask)) {
@@ -11534,7 +11452,7 @@ void CCollisionSystem::update() {
                 MeshAxisMaxAbsoluteValues entity_chunk_bounds =
                     ALL_MESH_MAX_ABSOLUTE_VALUES[backtracking_entity_mesh_handle
                                                      .id];
-                std::vector<Vector<float, 3>> entity_box_corner_bound_points =
+                Vec<Vector<f32, 3>> entity_box_corner_bound_points =
                     compute_box_corner_bound_points(
                         entity_chunk_bounds,
                         backtracking_transform_component->position,
@@ -11542,57 +11460,56 @@ void CCollisionSystem::update() {
                     );
 
                 // Result array with collected entities.
-                std::vector<uint32_t> collected_entities;
+                Vec<u32> collected_entities;
                 // Need only left bottom back corner point and right upper front
                 // corner point to obtain all box bounds
-                const Vector<float, 3> min_entity_position =
+                const Vector<f32, 3> min_entity_position =
                     entity_box_corner_bound_points[0];
-                const Vector<float, 3> max_entity_position =
+                const Vector<f32, 3> max_entity_position =
                     entity_box_corner_bound_points[1];
 
-                int index_min_x = static_cast<int>(
+                i32 index_min_x = static_cast<i32>(
                     (min_entity_position[0] + chunk_half_width) / chunk_size
                 );
-                int index_min_y = static_cast<int>(
+                i32 index_min_y = static_cast<i32>(
                     (min_entity_position[1] + chunk_half_height) / chunk_size
                 );
-                int index_min_z = static_cast<int>(
+                i32 index_min_z = static_cast<i32>(
                     (min_entity_position[2] + chunk_half_depth) / chunk_size
                 );
 
-                int index_max_x = static_cast<int>(
+                i32 index_max_x = static_cast<i32>(
                     (max_entity_position[0] + chunk_half_width) / chunk_size
                 );
-                int index_max_y = static_cast<int>(
+                i32 index_max_y = static_cast<i32>(
                     (max_entity_position[1] + chunk_half_height) / chunk_size
                 );
-                int index_max_z = static_cast<int>(
+                i32 index_max_z = static_cast<i32>(
                     (max_entity_position[2] + chunk_half_depth) / chunk_size
                 );
 
                 // Entity can legitimately leave the fixed-size world grid -
                 // clamp to nearest edge cell instead of crashing.
                 index_min_x =
-                    std::clamp(index_min_x, 0, (int)spatial_grid.width - 1);
+                    std::clamp(index_min_x, 0, (i32)spatial_grid.width - 1);
                 index_min_y =
-                    std::clamp(index_min_y, 0, (int)spatial_grid.height - 1);
+                    std::clamp(index_min_y, 0, (i32)spatial_grid.height - 1);
                 index_min_z =
-                    std::clamp(index_min_z, 0, (int)spatial_grid.depth - 1);
+                    std::clamp(index_min_z, 0, (i32)spatial_grid.depth - 1);
                 index_max_x =
-                    std::clamp(index_max_x, 0, (int)spatial_grid.width - 1);
+                    std::clamp(index_max_x, 0, (i32)spatial_grid.width - 1);
                 index_max_y =
-                    std::clamp(index_max_y, 0, (int)spatial_grid.height - 1);
+                    std::clamp(index_max_y, 0, (i32)spatial_grid.height - 1);
                 index_max_z =
-                    std::clamp(index_max_z, 0, (int)spatial_grid.depth - 1);
+                    std::clamp(index_max_z, 0, (i32)spatial_grid.depth - 1);
 
                 for (auto i2 = index_min_z; i2 <= index_max_z; ++i2) {
                     for (auto i3 = index_min_y; i3 <= index_max_y; ++i3) {
                         for (auto i4 = index_min_x; i4 <= index_max_x; ++i4) {
-                            const std::vector<uint32_t>& chunk_entities =
+                            const Vec<u32>& chunk_entities =
                                 spatial_grid.grid[i2][i3][i4].entities;
-                            for (uint32_t i5 = 0; i5 < chunk_entities.size();
-                                 ++i5) {
-                                const uint32_t entity = chunk_entities[i5];
+                            for (u32 i5 = 0; i5 < chunk_entities.size(); ++i5) {
+                                const auto entity = chunk_entities[i5];
                                 if (!is_exist(collected_entities, entity)) {
                                     collected_entities.push_back(entity);
                                 }
@@ -11603,16 +11520,16 @@ void CCollisionSystem::update() {
 
                 // Inner cycle on every archetype.
                 // Count on every entity in current inner archetype.
-                for (unsigned int j = 0; j < collected_entities.size(); ++j) {
+                for (u32 j = 0; j < collected_entities.size(); ++j) {
                     // Check for same entityID and iteration.
-                    uint32_t compared_entity_id = collected_entities[j];
+                    u32 compared_entity_id = collected_entities[j];
                     if (backtracking_entity_id == compared_entity_id) {
                         continue;
                     }
 
                     EntityLocation compared_entity_location =
                         WORLD.entity_locations[get_id(compared_entity_id)];
-                    const uint32_t compared_entity_index =
+                    const auto compared_entity_index =
                         compared_entity_location.index;
 
                     MeshHandle compared_entity_mesh_handle;
@@ -11638,7 +11555,7 @@ void CCollisionSystem::update() {
                         compared_entity_mesh_handle =
                             view.compared_meshes->handle;
 
-                        uint64_t move_required_mask =
+                        u64 move_required_mask =
                             (1ul << ComponentsIndices::MoveComponent);
                         if (matches_required_mask(
                                 compared_entity_location.arch->mask,
@@ -11655,13 +11572,13 @@ void CCollisionSystem::update() {
                         view.compared_transforms;
                     Move* compared_move_component = view.compared_move;
 
-                    Vector<float, 3> compared_transform =
-                        Vector<float, 3>(0.0f, 0.0f, 0.0f);
-                    float compared_scale = 0.0f;
+                    Vector<f32, 3> compared_transform =
+                        Vector<f32, 3>(0.0f, 0.0f, 0.0f);
+                    f32 compared_scale = 0.0f;
                     compared_transform = compared_transform_component->position;
                     compared_scale = compared_transform_component->scale;
 
-                    Vector<float, 3> gravity_test {};
+                    Vector<f32, 3> gravity_test {};
                     if (compared_move_component != nullptr) {
                         compared_transform +=
                             normalize(compared_move_component->frame_movement)
@@ -11707,7 +11624,7 @@ void CCollisionSystem::update() {
                     }
 
                     if (upper_actor_check_flag && box_collider_flag) {
-                        uint8_t groud_collision_turn_on_mask =
+                        u8 groud_collision_turn_on_mask =
                             (0u << 0) | (1u << 1) | (0u << 2) | (0u << 3);
                         view.backtracking_collider_flags[i].flags =
                             view.backtracking_collider_flags[i].flags
@@ -11720,7 +11637,7 @@ void CCollisionSystem::update() {
                     }
 
                     if (box_collider_flag) {
-                        uint8_t wall_collision_turn_on_mask =
+                        u8 wall_collision_turn_on_mask =
                             (1u << 0) | (0u << 1) | (0u << 2) | (0u << 3);
                         view.backtracking_collider_flags[i].flags =
                             view.backtracking_collider_flags[i].flags
@@ -11739,10 +11656,10 @@ void CCollisionSystem::update() {
 }
 
 bool CCollisionSystem::upper_actor_check(
-    Vector<float, 3> backtracking_position,
-    Vector<float, 3> compared_position,
-    float backtracking_scale,
-    float compared_scale,
+    Vector<f32, 3> backtracking_position,
+    Vector<f32, 3> compared_position,
+    f32 backtracking_scale,
+    f32 compared_scale,
     MeshHandle backtracking_mesh_handle,
     MeshHandle compared_mesh_handle
 ) {
@@ -11752,7 +11669,7 @@ bool CCollisionSystem::upper_actor_check(
     MeshAxisMaxAbsoluteValues compared_mesh_axis_max_absolute_values =
         ALL_MESH_MAX_ABSOLUTE_VALUES[compared_mesh_handle.id];
 
-    constexpr float EPSILON = 0.15f;
+    constexpr auto EPSILON = 0.15f;
     return backtracking_position[1]
         + backtracking_mesh_axis_max_absolute_values.origin_offset_y
             * backtracking_scale
@@ -11775,7 +11692,7 @@ void DamageSystem::update() {
         cached_attackable_archetypes_number
     );
 
-    for (uint32_t x = 0; x < cached_attackable_archetypes_number; ++x) {
+    for (u32 x = 0; x < cached_attackable_archetypes_number; ++x) {
         Archetype* arch = arch_view.cached_attackable_archetypes[x];
         components_view.attackable_attacks =
             (Attack*)arch->components[ComponentsIndices::AttackComponent];
@@ -11784,8 +11701,8 @@ void DamageSystem::update() {
         components_view.attackable_fonts =
             (Font*)arch->components[ComponentsIndices::FontComponent];
 
-        for (unsigned int i = 0; i < arch->entity_count; ++i) {
-            uint64_t entity = arch->entities[i];
+        for (u32 i = 0; i < arch->entity_count; ++i) {
+            u64 entity = arch->entities[i];
             if (&components_view.attackable_health[i] != nullptr
                 && &components_view.attackable_attacks[i] != nullptr) {
                 Health& health_component = components_view.attackable_health[i];
@@ -11818,18 +11735,18 @@ void DamageSystem::update() {
         cached_font_archetypes_number
     );
 
-    for (uint32_t x = 0; x < cached_font_archetypes_number; ++x) {
+    for (u32 x = 0; x < cached_font_archetypes_number; ++x) {
         Archetype* arch = arch_view.cached_font_archetypes[x];
         components_view.fonts =
             (Font*)arch->components[ComponentsIndices::FontComponent];
 
-        for (unsigned int i = 0; i < arch->entity_count; ++i) {
+        for (u32 i = 0; i < arch->entity_count; ++i) {
             if (components_view.fonts) {
                 Font& font_component = components_view.fonts[i];
                 if (font_component.removeble) {
                     font_component.life_time += delta_time;
                 }
-                if (font_component.life_time >= 1.5) {
+                if (font_component.life_time >= 1.5f) {
                 }
             }
         }
@@ -11872,30 +11789,28 @@ void EnemySystem::update() {
         projectile_archetypes_number
     );
 
-    for (uint32_t j = 0; j < arch_view.player_cached_archetype->entity_count;
-         ++j) {
+    for (u32 j = 0; j < arch_view.player_cached_archetype->entity_count; ++j) {
         Transform* player_transform_component =
             &components_view.player_transforms[j];
-        for (unsigned int i = 0;
-             i < arch_view.enemy_cached_archetype->entity_count;
+        for (u32 i = 0; i < arch_view.enemy_cached_archetype->entity_count;
              ++i) {
             Transform* enemy_transform_component =
                 &components_view.enemy_transforms[i];
             State* state_enemy_component = &components_view.enemy_states[i];
             Enemy* enemy_component = &components_view.enemies[i];
 
-            Vector<float, 3> distance = player_transform_component->position
+            Vector<f32, 3> distance = player_transform_component->position
                 - enemy_transform_component->position;
-            float camera_speed = 5.5f * delta_frame_time;
+            f32 camera_speed = 5.5f * delta_frame_time;
 
             if (projectile_cooldown > 0) {
                 projectile_cooldown -= camera_speed;
             }
             if (distance.length() > enemy_component->detect_radius
                 && state_enemy_component->state == States::ATTACK) {
-                float delta_length =
+                f32 delta_length =
                     distance.length() - enemy_component->detect_radius;
-                Vector<float, 3> enemy_move =
+                Vector<f32, 3> enemy_move =
                     distance * (delta_length / distance.length());
 
                 enemy_transform_component->position += enemy_move;
@@ -11904,13 +11819,13 @@ void EnemySystem::update() {
             if (distance.length() <= enemy_component->detect_radius) {
                 if (projectile_cooldown <= 0) {
                     MeshHandle mesh_handle {};
-                    const uint32_t sphere_mesh_handle_index = 2;
+                    const auto sphere_mesh_handle_index = 2;
                     if (mesh_handlers.size() > 2) {
                         mesh_handle = mesh_handlers[sphere_mesh_handle_index];
                     }
 
                     TextureHandle texture_handle {};
-                    const uint32_t gray_texture_handle = 2;
+                    const auto gray_texture_handle = 2;
                     if (texture_handlers.size() > 2) {
                         texture_handle = texture_handlers[gray_texture_handle];
                     }
@@ -11931,7 +11846,7 @@ void EnemySystem::update() {
 
                     ArchetypeEntityManager* arch_entity_manager =
                         ArchetypeEntityManager::get_instance();
-                    uint64_t projectile_entity =
+                    u64 projectile_entity =
                         arch_entity_manager->create_entity();
                     WORLD.add_entity_to_archetype(
                         projectile_entity,
@@ -11956,7 +11871,7 @@ void EnemySystem::update() {
                         22050,
                         0.05
                     );
-                    projectile_cooldown = 5.0;
+                    projectile_cooldown = 5.0f;
                 }
 
                 state_enemy_component->state = States::ATTACK;
@@ -12009,10 +11924,10 @@ void InventorySystem::update() {
             Mesh* inventory_mesh_component =
                 &components_view.inventory_meshes_view[0];
 
-            const float inventory_slot_scale = inventory_mesh_component->gltf
+            const auto inventory_slot_scale = inventory_mesh_component->gltf
                 ? inventory_component->slot_scale * 2.0f
                 : inventory_component->slot_scale;
-            const float inventory_slot_half_scale =
+            const auto inventory_slot_half_scale =
                 inventory_mesh_component->gltf
                 ? inventory_component->slot_scale
                 : inventory_component->slot_scale * 0.5f;
@@ -12027,34 +11942,33 @@ void InventorySystem::update() {
                         inventory_slot_scale,
                         inventory_slot_half_scale
                     )) {
-                    Point2D<int> intersection_slot =
+                    Point2D<i32> intersection_slot =
                         determine_actual_intersection_slot(
                             crosshair_transform_component,
                             inventory_transform_component,
                             inventory_slot_scale,
                             inventory_slot_half_scale
                         );
-                    const unsigned int row = intersection_slot.y;
-                    const unsigned int column = intersection_slot.x;
-                    const unsigned int entity =
-                        inventory_component->slots[row][column];
+                    const auto row = intersection_slot.y;
+                    const auto column = intersection_slot.x;
+                    const auto entity = inventory_component->slots[row][column];
                     // Check slot is not empty and hold an item.
                     if (entity != UINT_MAX && entity >= 0) {
                         EntityLocation item_location =
                             WORLD.entity_locations[get_id(entity)];
                         ItemArchetype* item_arch =
                             static_cast<ItemArchetype*>(item_location.arch);
-                        const uint32_t item_index = item_location.index;
+                        const auto item_index = item_location.index;
                         Item* item_component = &item_arch->items[item_index];
 
                         if (item_component != nullptr) {
-                            for (unsigned int i = 0;
+                            for (u32 i = 0;
                                  i < item_component->occupied_slots.size();
                                  ++i) {
-                                unsigned int row_index =
+                                u32 row_index =
                                     item_component->occupied_slots[i]
                                     / inventory_component->row;
-                                unsigned int col_index =
+                                u32 col_index =
                                     item_component->occupied_slots[i]
                                     % inventory_component->col;
                                 // Need to free all slots that hold an item.
@@ -12077,7 +11991,7 @@ void InventorySystem::update() {
                         inventory_slot_scale,
                         inventory_slot_half_scale
                     )) {
-                    Point2D<int> intersection_slot =
+                    Point2D<i32> intersection_slot =
                         determine_actual_intersection_slot(
                             crosshair_transform_component,
                             inventory_transform_component,
@@ -12089,11 +12003,11 @@ void InventorySystem::update() {
                         WORLD.entity_locations[get_id(*is_item_draged)];
                     ItemArchetype* item_arch =
                         static_cast<ItemArchetype*>(item_location.arch);
-                    const uint32_t item_index = item_location.index;
+                    const auto item_index = item_location.index;
                     Item* item_component = &item_arch->items[item_index];
 
-                    std::vector<unsigned int> potential_occupied_slots;
-                    int is_swapable = 0;
+                    Vec<u32> potential_occupied_slots;
+                    i32 is_swapable = 0;
                     is_swapable = determine_swappable_status_and_slots(
                         item_component,
                         inventory_transform_component,
@@ -12116,7 +12030,7 @@ void InventorySystem::update() {
             // Item drop to inventory, swapped or we just can't place.
             if (*is_item_draged >= 0 && is_left_mouse_button_pressed
                 && *is_left_mouse_button_released) {
-                int is_swapable = 0;
+                i32 is_swapable = 0;
                 if (check_crosshair_inventory_intersection(
                         crosshair_transform_component,
                         inventory_transform_component,
@@ -12124,7 +12038,7 @@ void InventorySystem::update() {
                         inventory_slot_scale,
                         inventory_slot_half_scale
                     )) {
-                    Point2D<int> intersection_slot =
+                    Point2D<i32> intersection_slot =
                         determine_actual_intersection_slot(
                             crosshair_transform_component,
                             inventory_transform_component,
@@ -12136,10 +12050,10 @@ void InventorySystem::update() {
                         WORLD.entity_locations[get_id(*is_item_draged)];
                     ItemArchetype* item_arch =
                         static_cast<ItemArchetype*>(item_location.arch);
-                    const uint32_t item_index = item_location.index;
+                    const auto item_index = item_location.index;
                     Item* item_component = &item_arch->items[item_index];
 
-                    std::vector<unsigned int> potential_occupied_slots;
+                    Vec<u32> potential_occupied_slots;
                     is_swapable = determine_swappable_status_and_slots(
                         item_component,
                         inventory_transform_component,
@@ -12150,8 +12064,9 @@ void InventorySystem::update() {
                         inventory_slot_scale
                     );
 
-                    const int item_width = item_component->item_slot_type.width;
-                    const int item_height =
+                    const auto item_width =
+                        item_component->item_slot_type.width;
+                    const auto item_height =
                         item_component->item_slot_type.height;
 
                     // Default value. Just drop item to all empty slots.
@@ -12172,7 +12087,7 @@ void InventorySystem::update() {
                             WORLD.entity_locations[get_id(is_swapable)];
                         ItemArchetype* item_arch =
                             static_cast<ItemArchetype*>(item_location.arch);
-                        const uint32_t item_index = item_location.index;
+                        const auto item_index = item_location.index;
                         Item* swaped_item_component =
                             &item_arch->items[item_index];
 
@@ -12213,23 +12128,23 @@ void InventorySystem::update() {
                         WORLD.entity_locations[get_id(*is_item_draged)];
                     ItemArchetype* item_arch =
                         static_cast<ItemArchetype*>(item_location.arch);
-                    const uint32_t item_index = item_location.index;
+                    const auto item_index = item_location.index;
                     item_arch->rigid_bodies[item_index] = {.f_mass = 2.0f};
                     Transform* item_transform =
                         &item_arch->transforms[item_index];
                     Item* item = &item_arch->items[item_index];
                     item->is_actor = true;
                     // Remove this cringe.
-                    const uint32_t player = 0;
+                    const auto player = 0;
                     EntityLocation player_location =
                         WORLD.entity_locations[get_id(player)];
                     PlayerArchetype* player_arch =
                         static_cast<PlayerArchetype*>(player_location.arch);
-                    const uint32_t player_index = player_location.index;
+                    const auto player_index = player_location.index;
                     Transform* player_transform =
                         &player_arch->transforms[player_index];
                     item_transform->position = player_transform->position;
-                    Vector<float, 3> normalized_forward =
+                    Vector<f32, 3> normalized_forward =
                         normalize(player_transform->forward);
                     item_transform->position[0] += normalized_forward[0] * 2.5f;
                     item_transform->position[1] += normalized_forward[1] * 2.5f;
@@ -12244,25 +12159,25 @@ void InventorySystem::update() {
     }
 }
 
-int InventorySystem::determine_swappable_status_and_slots(
+i32 InventorySystem::determine_swappable_status_and_slots(
     Item* item_component,
     Transform* inventory_transform_component,
-    std::vector<unsigned int>& potential_occupied_slots,
+    Vec<u32>& potential_occupied_slots,
     Transform* crosshair_transform_component,
-    Point2D<int> intersection_slot,
+    Point2D<i32> intersection_slot,
     Inventory* inventory_component,
-    const float inventory_slot_scale
+    const f32 inventory_slot_scale
 ) {
     if (item_component != nullptr) {
-        const int item_width = item_component->item_slot_type.width;
-        const int item_height = item_component->item_slot_type.height;
+        const auto item_width = item_component->item_slot_type.width;
+        const auto item_height = item_component->item_slot_type.height;
 
-        const int row = intersection_slot.y;
-        const int column = intersection_slot.x;
+        const auto row = intersection_slot.y;
+        const auto column = intersection_slot.x;
 
         // Find left-upper pivot slot inventory.
-        int row_basic_offset = 0;
-        int column_basic_offset = 0;
+        i32 row_basic_offset = 0;
+        i32 column_basic_offset = 0;
 
         // Set as pivot point slot in left upper corner.
         // Need to calculate offset for row and column
@@ -12284,18 +12199,18 @@ int InventorySystem::determine_swappable_status_and_slots(
             inventory_slot_scale * aspect_rate
         );
 
-        int pivot_row = row - row_basic_offset;
-        int pivot_column = column - column_basic_offset;
+        i32 pivot_row = row - row_basic_offset;
+        i32 pivot_column = column - column_basic_offset;
 
-        pivot_row = clamp<int>(
+        pivot_row = clamp<i32>(
             0,
             pivot_row,
-            static_cast<int>(inventory_component->row) - item_height
+            static_cast<i32>(inventory_component->row) - item_height
         );
-        pivot_column = clamp<int>(
+        pivot_column = clamp<i32>(
             0,
             pivot_column,
-            static_cast<int>(inventory_component->col) - item_width
+            static_cast<i32>(inventory_component->col) - item_width
         );
 
         return determine_swappable_field(
@@ -12315,17 +12230,17 @@ int InventorySystem::determine_swappable_status_and_slots(
 
 void InventorySystem::fill_inventory_slots(
     Item* item_component,
-    const int item_width,
-    const int item_height,
+    const i32 item_width,
+    const i32 item_height,
     Inventory* inventory_component,
-    const int fill_value
+    const i32 fill_value
 ) {
-    for (int i = 0; i < item_height; ++i) {
-        for (int j = 0; j < item_width; ++j) {
-            const unsigned int slots_row =
+    for (i32 i = 0; i < item_height; ++i) {
+        for (i32 j = 0; j < item_width; ++j) {
+            const auto slots_row =
                 item_component->occupied_slots[i * item_width + j]
                 / inventory_component->col;
-            const unsigned int slots_column =
+            const auto slots_column =
                 item_component->occupied_slots[i * item_width + j]
                 % inventory_component->col;
 
@@ -12334,23 +12249,23 @@ void InventorySystem::fill_inventory_slots(
     }
 }
 
-int InventorySystem::determine_swappable_field(
+i32 InventorySystem::determine_swappable_field(
     Item* item_component,
-    const int item_width,
-    const int item_height,
-    int pivot_row,
-    int pivot_column,
+    const i32 item_width,
+    const i32 item_height,
+    i32 pivot_row,
+    i32 pivot_column,
     Inventory* inventory_component,
-    std::vector<unsigned int>& potential_occupied_slots
+    Vec<u32>& potential_occupied_slots
 ) {
     item_component->occupied_slots.clear();
     // -1: default value. -2: found two entities in potential slots. Any other
     // value: swappable.
-    int is_swapable = -1;
-    for (int i = 0; i < item_height; ++i) {
-        for (int j = 0; j < item_width; ++j) {
-            const unsigned int final_row = pivot_row + i;
-            const unsigned int final_column = pivot_column + j;
+    i32 is_swapable = -1;
+    for (i32 i = 0; i < item_height; ++i) {
+        for (i32 j = 0; j < item_width; ++j) {
+            const auto final_row = pivot_row + i;
+            const auto final_column = pivot_column + j;
             if (is_swapable == -1
                 && inventory_component->slots[final_row][final_column]
                     != UINT_MAX) {
@@ -12360,7 +12275,7 @@ int InventorySystem::determine_swappable_field(
                 is_swapable > 0
                 && inventory_component->slots[final_row][final_column]
                     != UINT_MAX
-                && (int)inventory_component->slots[final_row][final_column]
+                && (i32)inventory_component->slots[final_row][final_column]
                     != is_swapable
             ) {
                 is_swapable = -2;
@@ -12375,16 +12290,16 @@ int InventorySystem::determine_swappable_field(
     return is_swapable;
 }
 
-int InventorySystem::calculate_basic_offset(
-    const int item_axis_size,
-    const float axis_value,
-    const float crosshair_axis_position,
-    const int axis_slot_index,
-    const float inventory_slot_scale
+i32 InventorySystem::calculate_basic_offset(
+    const i32 item_axis_size,
+    const f32 axis_value,
+    const f32 crosshair_axis_position,
+    const i32 axis_slot_index,
+    const f32 inventory_slot_scale
 ) {
     if (item_axis_size % 2 == 0) {
-        const float slot_center_x = axis_value
-            + static_cast<float>(axis_slot_index) * inventory_slot_scale;
+        const auto slot_center_x = axis_value
+            + static_cast<f32>(axis_slot_index) * inventory_slot_scale;
         if (slot_center_x > crosshair_axis_position) {
             return item_axis_size / 2;
         }
@@ -12397,8 +12312,8 @@ bool InventorySystem::check_crosshair_inventory_intersection(
     Transform* crosshair_transform_component,
     Transform* inventory_transform_component,
     Inventory* inventory_component,
-    const float inventory_slot_scale,
-    const float inventory_slot_half_scale
+    const f32 inventory_slot_scale,
+    const f32 inventory_slot_half_scale
 ) {
     return crosshair_transform_component->position[0]
         > inventory_transform_component->position[0] - inventory_slot_half_scale
@@ -12414,22 +12329,22 @@ bool InventorySystem::check_crosshair_inventory_intersection(
             + inventory_slot_scale * inventory_component->row * aspect_rate;
 }
 
-Point2D<int> InventorySystem::determine_actual_intersection_slot(
+Point2D<i32> InventorySystem::determine_actual_intersection_slot(
     Transform* crosshair_transform_component,
     Transform* inventory_transform_component,
-    const float inventory_slot_scale,
-    const float inventory_slot_half_scale
+    const f32 inventory_slot_scale,
+    const f32 inventory_slot_half_scale
 ) {
-    float x_delta = crosshair_transform_component->position[0]
+    f32 x_delta = crosshair_transform_component->position[0]
         - inventory_transform_component->position[0]
         + inventory_slot_half_scale;
-    float y_delta = crosshair_transform_component->position[1]
+    f32 y_delta = crosshair_transform_component->position[1]
         - inventory_transform_component->position[1]
         + inventory_slot_half_scale * aspect_rate;
 
-    return Point2D<int> {
-        (int)(x_delta / inventory_slot_scale),
-        (int)(y_delta / (inventory_slot_scale * aspect_rate))
+    return Point2D<i32> {
+        (i32)(x_delta / inventory_slot_scale),
+        (i32)(y_delta / (inventory_slot_scale * aspect_rate))
     };
 }
 } // namespace glvm
@@ -12437,27 +12352,24 @@ Point2D<int> InventorySystem::determine_actual_intersection_slot(
 namespace glvm {
 // This method is trying to search for suitable slots for the given specific
 // type item. It returns true if it finds them and false otherwise.
-bool ItemSystem::put_item2x2(
-    Inventory* inventory_component,
-    unsigned int item_entity
-) {
+bool ItemSystem::put_item2x2(Inventory* inventory_component, u32 item_entity) {
     bool is_slot_found = false;
-    unsigned int row = inventory_component->row;
-    unsigned int col = inventory_component->col;
+    u32 row = inventory_component->row;
+    u32 col = inventory_component->col;
 
     EntityLocation item_location = WORLD.entity_locations[get_id(item_entity)];
     ItemArchetype* item_arch = static_cast<ItemArchetype*>(item_location.arch);
-    const uint32_t item_index = item_location.index;
+    const auto item_index = item_location.index;
     Item* item_component = &item_arch->items[item_index];
 
-    unsigned int item_width = item_component->item_slot_type.width;
-    unsigned int item_height = item_component->item_slot_type.height;
-    for (unsigned int i = 0; i < row - item_height + 1; ++i) {
-        for (unsigned int j = 0; j < col - item_width + 1; ++j) {
-            std::vector<unsigned int> maybe_availabe_slots;
-            std::vector<unsigned int> indices_of_maybe_available_slots;
-            for (unsigned int m = i; m < i + item_height; ++m) {
-                for (unsigned int n = j; n < j + item_width; ++n) {
+    u32 item_width = item_component->item_slot_type.width;
+    u32 item_height = item_component->item_slot_type.height;
+    for (u32 i = 0; i < row - item_height + 1; ++i) {
+        for (u32 j = 0; j < col - item_width + 1; ++j) {
+            Vec<u32> maybe_availabe_slots;
+            Vec<u32> indices_of_maybe_available_slots;
+            for (u32 m = i; m < i + item_height; ++m) {
+                for (u32 n = j; n < j + item_width; ++n) {
                     maybe_availabe_slots.push_back(
                         inventory_component->slots[m][n]
                     );
@@ -12465,8 +12377,8 @@ bool ItemSystem::put_item2x2(
                 }
             }
 
-            unsigned int is_all_slots_available = 0;
-            for (unsigned int v = 0; v < maybe_availabe_slots.size(); ++v) {
+            u32 is_all_slots_available = 0;
+            for (u32 v = 0; v < maybe_availabe_slots.size(); ++v) {
                 if (maybe_availabe_slots[v] == UINT_MAX) {
                     ++is_all_slots_available;
                 } else {
@@ -12474,11 +12386,9 @@ bool ItemSystem::put_item2x2(
                 }
             }
             if (maybe_availabe_slots.size() == is_all_slots_available) {
-                for (unsigned int w = 0; w < maybe_availabe_slots.size(); ++w) {
-                    unsigned int row_index =
-                        indices_of_maybe_available_slots[w] / row;
-                    unsigned int col_index =
-                        indices_of_maybe_available_slots[w] % col;
+                for (u32 w = 0; w < maybe_availabe_slots.size(); ++w) {
+                    u32 row_index = indices_of_maybe_available_slots[w] / row;
+                    u32 col_index = indices_of_maybe_available_slots[w] % col;
                     inventory_component->slots[row_index][col_index] =
                         item_entity;
                     item_component->occupied_slots.push_back(
@@ -12520,21 +12430,17 @@ void ItemSystem::update() {
             (Collider*)arch_view.item_archetype
                 ->components[ComponentsIndices::ColliderComponent];
 
-        for (unsigned int m = 0;
-             m < arch_view.inventory_cached_archetype->entity_count;
+        for (u32 m = 0; m < arch_view.inventory_cached_archetype->entity_count;
              ++m) {
             Inventory* inventory_component =
                 &components_view.inventories_view[m];
 
-            for (unsigned int i = 0; i < arch_view.item_archetype->entity_count;
-                 ++i) {
-                unsigned int item_entity =
-                    arch_view.item_archetype->entities[i];
+            for (u32 i = 0; i < arch_view.item_archetype->entity_count; ++i) {
+                u32 item_entity = arch_view.item_archetype->entities[i];
                 Collider* item_collider_component =
                     &components_view.item_colliders_view[i];
 
-                for (unsigned int j = 0;
-                     j < item_collider_component->colliders.size();
+                for (u32 j = 0; j < item_collider_component->colliders.size();
                      ++j) {
                     if (item_collider_component->colliders[j]
                             == inventory_component->entity_owner
@@ -12571,14 +12477,12 @@ void ItemSystem::update() {
 
         Transform* crosshair_transform_component =
             &components_view.crosshair_transforms[0];
-        for (unsigned int i = 0; i < arch_view.item_archetype->entity_count;
-             ++i) {
-            uint32_t entity_item_containing =
-                arch_view.item_archetype->entities[i];
+        for (u32 i = 0; i < arch_view.item_archetype->entity_count; ++i) {
+            u32 entity_item_containing = arch_view.item_archetype->entities[i];
             Transform* item_transform_component =
                 &components_view.item_transforms_view[i];
             if (*dragged_item_entity >= 0
-                && *dragged_item_entity == (int)entity_item_containing) {
+                && *dragged_item_entity == (i32)entity_item_containing) {
                 // Set crosshair position to dragged items.
                 item_transform_component->position =
                     crosshair_transform_component->position;
@@ -12612,11 +12516,9 @@ void CMovementSystem::update() {
         (RigidBody*)arch_view.player_cached_archetype
             ->components[ComponentsIndices::RigidBodyComponent];
 
-    const float camera_speed = 3.0f * delta_frame_time;
-    for (unsigned int i = 0;
-         i < arch_view.player_cached_archetype->entity_count;
-         ++i) {
-        const uint64_t entity = arch_view.player_cached_archetype->entities[i];
+    const auto camera_speed = 3.0f * delta_frame_time;
+    for (u32 i = 0; i < arch_view.player_cached_archetype->entity_count; ++i) {
+        const auto entity = arch_view.player_cached_archetype->entities[i];
         EntityLocation& entity_location =
             WORLD.entity_locations[get_id(entity)];
         Beholder* player_view = &components_view.player_views[i];
@@ -12624,9 +12526,9 @@ void CMovementSystem::update() {
         ColliderFlags* player_collider_flags =
             &components_view.player_collider_flags[i];
         RigidBody* player_rigid_body = &components_view.player_rigid_body[i];
-        for (int n = 0; n < 6; ++n) {
-            Vector<float, 3> right;
-            Vector<float, 3> forward;
+        for (i32 n = 0; n < 6; ++n) {
+            Vector<f32, 3> right;
+            Vector<f32, 3> forward;
             switch (input_stack[n]) {
                 case EEvents::EMoveLeft:
                     right = calculate_vector_rl(*player_view);
@@ -12650,7 +12552,7 @@ void CMovementSystem::update() {
                     break;
                 case EEvents::EJump: {
                     entity_location.is_dirty = true;
-                    uint8_t is_groud_collision_mask =
+                    u8 is_groud_collision_mask =
                         (0u << 0) | (1u << 1) | (0u << 2) | (0u << 3);
                     if (player_collider_flags->flags
                         & is_groud_collision_mask) {
@@ -12670,7 +12572,7 @@ void CMovementSystem::update() {
         rigid_body_contained_archetypes_number
     );
 
-    for (uint32_t i0 = 0; i0 < rigid_body_contained_archetypes_number; ++i0) {
+    for (u32 i0 = 0; i0 < rigid_body_contained_archetypes_number; ++i0) {
         Archetype* current_arch =
             arch_view.rigid_body_contained_archetypes_cache[i0];
         components_view.transforms =
@@ -12684,8 +12586,8 @@ void CMovementSystem::update() {
         components_view.items =
             (Item*)current_arch->components[ComponentsIndices::ItemComponent];
 
-        for (uint32_t i1 = 0; i1 < current_arch->entity_count; ++i1) {
-            const uint64_t entity = current_arch->entities[i1];
+        for (u32 i1 = 0; i1 < current_arch->entity_count; ++i1) {
+            const auto entity = current_arch->entities[i1];
             EntityLocation& entity_location =
                 WORLD.entity_locations[get_id(entity)];
             entity_location.is_dirty = true;
@@ -12699,10 +12601,10 @@ void CMovementSystem::update() {
                 &components_view.rigid_bodies[i1];
             Move* move_component = &components_view.moves[i1];
             r_transform_component->gravity_accumulator += delta_frame_time;
-            float gravity = 9.8f * r_transform_component->gravity_accumulator
+            f32 gravity = 9.8f * r_transform_component->gravity_accumulator
                 * rigid_body_componennt->f_mass * 0.0005;
             if (gravity > 0.2f) {
-                gravity = 0.2;
+                gravity = 0.2f;
             }
 
             move_component->gravity[1] -= gravity;
@@ -12710,26 +12612,26 @@ void CMovementSystem::update() {
     }
 }
 
-Vector<float, 3> CMovementSystem::calculate_vector_rl(Beholder& beholder) {
-    Vector<float, 3> normalized_vector =
-        normalize(cross(beholder.forward, Vector<float, 3> {0.0f, -1.0f, 0.0}));
+Vector<f32, 3> CMovementSystem::calculate_vector_rl(Beholder& beholder) {
+    Vector<f32, 3> normalized_vector =
+        normalize(cross(beholder.forward, Vector<f32, 3> {0.0f, -1.0f, 0.0f}));
     return normalized_vector;
 }
 
-Vector<float, 3> CMovementSystem::calculate_vector_fb(
+Vector<f32, 3> CMovementSystem::calculate_vector_fb(
     Beholder& beholder,
     CEvent& event
 ) {
-    Vector<float, 3> forward(0.0f);
-    current_x = (float)G_E_EVENT.mouse_pointer_position.offset_x;
-    float delta_x = current_x - prev_x;
-    const Vector<float, 3> rotate_axis = {0.0, -1.0, 0.0};
-    float rotation_angle = delta_x;
-    constexpr float ANGLE_SCALE = 0.1f;
+    Vector<f32, 3> forward(0.0f);
+    current_x = (f32)G_E_EVENT.mouse_pointer_position.offset_x;
+    f32 delta_x = current_x - prev_x;
+    const Vector<f32, 3> rotate_axis = {0.0f, -1.0f, 0.0f};
+    f32 rotation_angle = delta_x;
+    constexpr auto ANGLE_SCALE = 0.1f;
     rotation_angle = radians(rotation_angle * ANGLE_SCALE);
     // Quaternions need division by 2.
-    constexpr float QUAT_ANGLE_CORRECTION = 0.5f;
-    const float sin_rotation_angle =
+    constexpr auto QUAT_ANGLE_CORRECTION = 0.5f;
+    const auto sin_rotation_angle =
         sinf(rotation_angle * QUAT_ANGLE_CORRECTION);
     Quaternion rotation_quat = Quaternion(
         cosf(rotation_angle * QUAT_ANGLE_CORRECTION),
@@ -12749,7 +12651,7 @@ Vector<float, 3> CMovementSystem::calculate_vector_fb(
     forward[0] = applied_rotation_quat.x;
     forward[1] = 0.0f;
     forward[2] = applied_rotation_quat.z;
-    prev_x = (float)G_E_EVENT.mouse_pointer_position.offset_x;
+    prev_x = (f32)G_E_EVENT.mouse_pointer_position.offset_x;
     forward = normalize(forward);
     return forward;
 }
@@ -12758,12 +12660,12 @@ Vector<float, 3> CMovementSystem::calculate_vector_fb(
 namespace glvm {
 namespace {
 bool aabb_overlap(
-    const Vector<float, 3>& a_position,
+    const Vector<f32, 3>& a_position,
     const MeshAxisMaxAbsoluteValues& a_bounds,
-    float a_scale,
-    const Vector<float, 3>& b_position,
+    f32 a_scale,
+    const Vector<f32, 3>& b_position,
     const MeshAxisMaxAbsoluteValues& b_bounds,
-    float b_scale
+    f32 b_scale
 ) {
     return a_position[0] + a_bounds.origin_offset_x * a_scale
             + a_bounds.absolute_x * a_scale
@@ -12792,14 +12694,14 @@ bool aabb_overlap(
 }
 
 bool is_above(
-    const Vector<float, 3>& a_position,
+    const Vector<f32, 3>& a_position,
     const MeshAxisMaxAbsoluteValues& a_bounds,
-    float a_scale,
-    const Vector<float, 3>& b_position,
+    f32 a_scale,
+    const Vector<f32, 3>& b_position,
     const MeshAxisMaxAbsoluteValues& b_bounds,
-    float b_scale
+    f32 b_scale
 ) {
-    constexpr float EPSILON = 0.15f;
+    constexpr auto EPSILON = 0.15f;
     return a_position[1] + a_bounds.origin_offset_y * a_scale
         - a_bounds.absolute_y * a_scale + EPSILON
         > b_position[1] + b_bounds.origin_offset_y * b_scale
@@ -12818,7 +12720,7 @@ void CPhysicsSystem::update() {
         cached_archetypes_number
     );
 
-    for (uint32_t x = 0; x < cached_archetypes_number; ++x) {
+    for (u32 x = 0; x < cached_archetypes_number; ++x) {
         Archetype* arch = arch_view.cached_archetypes[x];
 
         components_view.transforms_view =
@@ -12840,8 +12742,8 @@ void CPhysicsSystem::update() {
             (Mesh*)arch_view.cached_archetypes[x]
                 ->components[ComponentsIndices::MeshComponent];
 
-        float delta_time = 5.5f * f_delta_time;
-        for (unsigned int i = 0; i < arch->entity_count; ++i) {
+        f32 delta_time = 5.5f * f_delta_time;
+        for (u32 i = 0; i < arch->entity_count; ++i) {
             if (components_view.transforms_view
                 && components_view.collider_flags_view
                 && components_view.moves_view
@@ -12851,13 +12753,13 @@ void CPhysicsSystem::update() {
                 Move& move = components_view.moves_view[i];
                 ColliderFlags& collider_flags =
                     components_view.collider_flags_view[i];
-                uint8_t is_groud_collision_mask =
+                u8 is_groud_collision_mask =
                     (0u << 0) | (1u << 1) | (0u << 2) | (0u << 3);
                 if (collider_flags.flags & is_groud_collision_mask) {
                     move.gravity = 0;
                     transform_component.gravity_accumulator = 0.0f;
                 }
-                uint8_t is_wall_collision_mask =
+                u8 is_wall_collision_mask =
                     (1u << 0) | (0u << 1) | (0u << 2) | (0u << 3);
                 if (collider_flags.flags & is_wall_collision_mask) {
                     // Wall-slide: zero only the frameMovement axis blocked by
@@ -12869,11 +12771,11 @@ void CPhysicsSystem::update() {
                         && colliders[i].colliders.size() > 0) {
                         const MeshAxisMaxAbsoluteValues player_bounds =
                             ALL_MESH_MAX_ABSOLUTE_VALUES[meshes[i].handle.id];
-                        const Vector<float, 3> player_position =
+                        const Vector<f32, 3> player_position =
                             transform_component.position;
-                        for (uint32_t c = 0; c < colliders[i].colliders.size();
+                        for (u32 c = 0; c < colliders[i].colliders.size();
                              ++c) {
-                            const uint32_t collided_entity =
+                            const auto collided_entity =
                                 colliders[i].colliders[c];
                             EntityLocation& collided_location =
                                 WORLD.entity_locations[get_id(collided_entity)];
@@ -12883,8 +12785,7 @@ void CPhysicsSystem::update() {
                                 // DamageSystem) after collision detection.
                                 continue;
                             }
-                            const uint32_t collided_index =
-                                collided_location.index;
+                            const auto collided_index = collided_location.index;
                             Transform* collided_transform =
                                 (Transform*)collided_arch->components
                                     [ComponentsIndices::TransformComponent];
@@ -12899,7 +12800,7 @@ void CPhysicsSystem::update() {
                             const MeshAxisMaxAbsoluteValues collided_bounds =
                                 ALL_MESH_MAX_ABSOLUTE_VALUES[collided_mesh
                                                                  ->handle.id];
-                            const Vector<float, 3> collided_position =
+                            const Vector<f32, 3> collided_position =
                                 collided_transform->position;
                             // Ground (player standing above) is handled by
                             // gravity, only resolve wall-like colliders.
@@ -12913,8 +12814,8 @@ void CPhysicsSystem::update() {
                                 )) {
                                 continue;
                             }
-                            for (int axis = 0; axis < 3; ++axis) {
-                                Vector<float, 3> candidate = player_position;
+                            for (i32 axis = 0; axis < 3; ++axis) {
+                                Vector<f32, 3> candidate = player_position;
                                 candidate[axis] += move.frame_movement[axis];
                                 bool hit = aabb_overlap(
                                     candidate,
@@ -12932,7 +12833,7 @@ void CPhysicsSystem::update() {
                     } else {
                         move.frame_movement = 0;
                     }
-                    uint8_t wall_collision_turn_off_mask =
+                    u8 wall_collision_turn_off_mask =
                         (0u << 0) | (1u << 1) | (1u << 2) | (1u << 3);
                     collider_flags.flags &= wall_collision_turn_off_mask;
                 }
@@ -12943,8 +12844,8 @@ void CPhysicsSystem::update() {
                 RigidBody& rigid_body = components_view.rigid_bodies_view[i];
                 if (rigid_body.jump_accumulator > 0.0f) {
                     rigid_body.jump_accumulator -= delta_time;
-                    Vector<float, 3> jump =
-                        Vector<float, 3> {0.0f, 5.0f, 0.0f} * delta_time;
+                    Vector<f32, 3> jump =
+                        Vector<f32, 3> {0.0f, 5.0f, 0.0f} * delta_time;
                     transform_component.position += jump;
                 }
             }
@@ -12959,7 +12860,7 @@ CProjectileSystem::CProjectileSystem(CStack& input_stack) :
 }
 
 void CProjectileSystem::update() {
-    float camera_speed = 5.5f * delta_frame_time;
+    f32 camera_speed = 5.5f * delta_frame_time;
 
     player_archetypes_number = 0;
     WORLD.search_cache_archetypes(
@@ -12987,25 +12888,23 @@ void CProjectileSystem::update() {
 
     // Iterate on every player and create projectile if "LMB pressed" event
     // found.
-    for (unsigned int i = 0;
-         i < arch_view.player_cached_archetype->entity_count;
-         ++i) {
+    for (u32 i = 0; i < arch_view.player_cached_archetype->entity_count; ++i) {
         Beholder* player_view = &components_view.player_views[i];
         Transform* player_transform = &components_view.player_transforms[i];
-        const uint32_t max_event_number = 6;
-        for (uint32_t n = 0; n < max_event_number; ++n) {
+        const auto max_event_number = 6;
+        for (u32 n = 0; n < max_event_number; ++n) {
             if (!is_inventory_opened
                 && input_stack.search_element(EEvents::EMouseLeftButton)
                     == EEvents::EMouseLeftButton) {
                 if (projectile_cooldown <= 0) {
                     MeshHandle mesh_handle {};
-                    const uint32_t sphere_mesh_handle_index = 2;
+                    const auto sphere_mesh_handle_index = 2;
                     if (mesh_handlers.size() > 2) {
                         mesh_handle = mesh_handlers[sphere_mesh_handle_index];
                     }
 
                     TextureHandle texture_handle {};
-                    const uint32_t gray_texture_handle = 2;
+                    const auto gray_texture_handle = 2;
                     if (texture_handlers.size() > 2) {
                         texture_handle = texture_handlers[gray_texture_handle];
                     }
@@ -13026,7 +12925,7 @@ void CProjectileSystem::update() {
 
                     ArchetypeEntityManager* arch_entity_manager =
                         ArchetypeEntityManager::get_instance();
-                    uint64_t projectile_entity =
+                    u64 projectile_entity =
                         arch_entity_manager->create_entity();
                     WORLD.add_entity_to_archetype(
                         projectile_entity,
@@ -13050,7 +12949,7 @@ void CProjectileSystem::update() {
                         22050,
                         0.05
                     );
-                    projectile_cooldown = 2.0;
+                    projectile_cooldown = 2.0f;
                 }
             }
         }
@@ -13083,38 +12982,33 @@ void CProjectileSystem::update() {
             ->components[ComponentsIndices::AttackComponent];
 
     // Update position of every projectile.
-    for (unsigned int x = 0; x < arch_view.projectile_archetype->entity_count;
-         ++x) {
+    for (u32 x = 0; x < arch_view.projectile_archetype->entity_count; ++x) {
         Transform* projectile_transform =
             &components_view.projectile_transforms[x];
         projectile_transform->position +=
-            normalize(projectile_transform->forward) * camera_speed * 2.5;
+            normalize(projectile_transform->forward) * camera_speed * 2.5f;
     }
     // Iterate every projectile, check for collisions with another entities and
     // update damage info if collided entity has attack component.
-    for (unsigned int i = 0; i < arch_view.projectile_archetype->entity_count;
-         ++i) {
+    for (u32 i = 0; i < arch_view.projectile_archetype->entity_count; ++i) {
         ColliderFlags* projectile_collider_flags =
             &components_view.projectile_collider_flags[i];
         Health* projectile_health = &components_view.projectile_health[i];
         Attack* projectile_attack = &components_view.projectile_attacks[i];
-        const uint8_t wall_collision_bit = 1;
-        const uint8_t ground_collistion_bit = (1 << 1);
+        const auto wall_collision_bit = 1;
+        const auto ground_collistion_bit = (1 << 1);
         if ((projectile_collider_flags->flags & wall_collision_bit)
             || (projectile_collider_flags->flags & ground_collistion_bit)) {
             Damage* projectile_damage =
                 &components_view.projectile_bundles[i].damage;
             Collider* projectile_collider =
                 &components_view.projectile_colliders[i];
-            for (unsigned int j = 0; j < projectile_collider->colliders.size();
-                 ++j) {
-                unsigned int collided_entity =
-                    projectile_collider->colliders[j];
+            for (u32 j = 0; j < projectile_collider->colliders.size(); ++j) {
+                u32 collided_entity = projectile_collider->colliders[j];
 
                 EntityLocation collided_entity_location =
                     WORLD.entity_locations[get_id(collided_entity)];
-                uint64_t required_mask =
-                    (1ul << ComponentsIndices::HealthComponent)
+                u64 required_mask = (1ul << ComponentsIndices::HealthComponent)
                     | (1ul << ComponentsIndices::AttackComponent);
 
                 if ((collided_entity_location.arch != nullptr)
@@ -13140,11 +13034,11 @@ void SpatialGridSystem::update() {
         spatial_grid.width > 0 && spatial_grid.height > 0
         && spatial_grid.depth > 0
     );
-    const float chunk_size = spatial_grid.grid[0][0][0].SIZE;
+    const auto chunk_size = spatial_grid.grid[0][0][0].SIZE;
 
-    const float half_width = spatial_grid.width * chunk_size * 0.5f;
-    const float half_height = spatial_grid.height * chunk_size * 0.5f;
-    const float half_depth = spatial_grid.depth * chunk_size * 0.5f;
+    const auto half_width = spatial_grid.width * chunk_size * 0.5f;
+    const auto half_height = spatial_grid.height * chunk_size * 0.5f;
+    const auto half_depth = spatial_grid.depth * chunk_size * 0.5f;
 
     cached_archetypes_number = 0;
     WORLD.search_cache_archetypes(
@@ -13153,14 +13047,14 @@ void SpatialGridSystem::update() {
         cached_archetypes_number
     );
 
-    for (uint32_t i0 = 0; i0 < cached_archetypes_number; ++i0) {
+    for (u32 i0 = 0; i0 < cached_archetypes_number; ++i0) {
         Archetype* arch = cached_archetypes[i0];
         view.transforms =
             (Transform*)arch->components[ComponentsIndices::TransformComponent];
         view.meshes = (Mesh*)arch->components[ComponentsIndices::MeshComponent];
 
-        for (uint32_t i1 = 0; i1 < arch->entity_count; ++i1) {
-            const uint64_t entity = arch->entities[i1];
+        for (u32 i1 = 0; i1 < arch->entity_count; ++i1) {
+            const auto entity = arch->entities[i1];
             EntityLocation& entity_location =
                 WORLD.entity_locations[get_id(entity)];
             if (!entity_location.is_dirty && is_initialized) {
@@ -13168,16 +13062,15 @@ void SpatialGridSystem::update() {
             }
 
             if (entity_location.grid_cell_counter > 0) {
-                for (uint32_t i2 = 0; i2 < entity_location.grid_cell_counter;
-                     ++i2) {
-                    uint32_t z = entity_location.grid_cell_indicies[i2][0];
-                    uint32_t y = entity_location.grid_cell_indicies[i2][1];
-                    uint32_t x = entity_location.grid_cell_indicies[i2][2];
-                    std::vector<uint32_t>& chunk_entities =
+                for (u32 i2 = 0; i2 < entity_location.grid_cell_counter; ++i2) {
+                    u32 z = entity_location.grid_cell_indicies[i2][0];
+                    u32 y = entity_location.grid_cell_indicies[i2][1];
+                    u32 x = entity_location.grid_cell_indicies[i2][2];
+                    Vec<u32>& chunk_entities =
                         spatial_grid.grid[z][y][x].entities;
                     // Remove by value: the recorded index can be stale after
                     // other removals shifted the cell's vector.
-                    for (uint32_t i3 = 0; i3 < chunk_entities.size(); ++i3) {
+                    for (u32 i3 = 0; i3 < chunk_entities.size(); ++i3) {
                         if (chunk_entities[i3] == entity) {
                             chunk_entities.erase(chunk_entities.begin() + i3);
                             break;
@@ -13193,7 +13086,7 @@ void SpatialGridSystem::update() {
             MeshHandle entity_mesh_handle = mesh.handle;
             MeshAxisMaxAbsoluteValues entity_chunk_bounds =
                 ALL_MESH_MAX_ABSOLUTE_VALUES[entity_mesh_handle.id];
-            std::vector<Vector<float, 3>> entity_box_corner_bound_points =
+            Vec<Vector<f32, 3>> entity_box_corner_bound_points =
                 compute_box_corner_bound_points(
                     entity_chunk_bounds,
                     transform.position,
@@ -13202,28 +13095,28 @@ void SpatialGridSystem::update() {
 
             // Need only left bottom back corner point and right upper front
             // corner point to obtain all box bounds.
-            const Vector<float, 3> min_entity_position =
+            const Vector<f32, 3> min_entity_position =
                 entity_box_corner_bound_points[0];
-            const Vector<float, 3> max_entity_position =
+            const Vector<f32, 3> max_entity_position =
                 entity_box_corner_bound_points[1];
 
-            int index_min_x = static_cast<int>(
+            i32 index_min_x = static_cast<i32>(
                 (min_entity_position[0] + half_width) / chunk_size
             );
-            int index_min_y = static_cast<int>(
+            i32 index_min_y = static_cast<i32>(
                 (min_entity_position[1] + half_height) / chunk_size
             );
-            int index_min_z = static_cast<int>(
+            i32 index_min_z = static_cast<i32>(
                 (min_entity_position[2] + half_depth) / chunk_size
             );
 
-            int index_max_x = static_cast<int>(
+            i32 index_max_x = static_cast<i32>(
                 (max_entity_position[0] + half_width) / chunk_size
             );
-            int index_max_y = static_cast<int>(
+            i32 index_max_y = static_cast<i32>(
                 (max_entity_position[1] + half_height) / chunk_size
             );
-            int index_max_z = static_cast<int>(
+            i32 index_max_z = static_cast<i32>(
                 (max_entity_position[2] + half_depth) / chunk_size
             );
 
@@ -13231,31 +13124,31 @@ void SpatialGridSystem::update() {
             // the world edge, projectile flew away) - clamp to nearest edge
             // cell instead of crashing.
             index_min_x =
-                std::clamp(index_min_x, 0, (int)spatial_grid.width - 1);
+                std::clamp(index_min_x, 0, (i32)spatial_grid.width - 1);
             index_min_y =
-                std::clamp(index_min_y, 0, (int)spatial_grid.height - 1);
+                std::clamp(index_min_y, 0, (i32)spatial_grid.height - 1);
             index_min_z =
-                std::clamp(index_min_z, 0, (int)spatial_grid.depth - 1);
+                std::clamp(index_min_z, 0, (i32)spatial_grid.depth - 1);
             index_max_x =
-                std::clamp(index_max_x, 0, (int)spatial_grid.width - 1);
+                std::clamp(index_max_x, 0, (i32)spatial_grid.width - 1);
             index_max_y =
-                std::clamp(index_max_y, 0, (int)spatial_grid.height - 1);
+                std::clamp(index_max_y, 0, (i32)spatial_grid.height - 1);
             index_max_z =
-                std::clamp(index_max_z, 0, (int)spatial_grid.depth - 1);
+                std::clamp(index_max_z, 0, (i32)spatial_grid.depth - 1);
 
             for (auto i2 = index_min_z; i2 <= index_max_z; ++i2) {
                 for (auto i3 = index_min_y; i3 <= index_max_y; ++i3) {
                     for (auto i4 = index_min_x; i4 <= index_max_x; ++i4) {
-                        std::vector<uint32_t>& chunk_entities =
+                        Vec<u32>& chunk_entities =
                             spatial_grid.grid[i2][i3][i4].entities;
-                        if (!is_exist<uint32_t>(chunk_entities, entity)) {
+                        if (!is_exist<u32>(chunk_entities, entity)) {
                             chunk_entities.push_back(entity);
-                            const uint32_t current_grid_cell =
+                            const auto current_grid_cell =
                                 entity_location.grid_cell_counter;
                             assert(current_grid_cell < 32);
                             entity_location
                                 .grid_cell_indicies[current_grid_cell] =
-                                Vector<float, 3>(i2, i3, i4);
+                                Vector<f32, 3>(i2, i3, i4);
                             entity_location
                                 .cell_entity_indices[current_grid_cell] =
                                 chunk_entities.size() - 1;
@@ -13276,43 +13169,40 @@ void SpatialGridSystem::update() {
 
 namespace glvm {
 TextureManager* TextureManager::p_instance = nullptr;
-std::mutex TextureManager::mutex;
+Mutex TextureManager::mutex;
 
 TextureManager::TextureManager() = default;
 
-void TextureManager::bind_texture(
-    unsigned int entity_id,
-    unsigned int texture_id
-) {
+void TextureManager::bind_texture(u32 entity_id, u32 texture_id) {
     texture_vector[texture_id].entities_owns_this_type_of_texture.push_back(
         entity_id
     );
 }
 
 TextureManager* TextureManager::get_instance() {
-    std::lock_guard<std::mutex> lock(mutex);
+    MutexGuard<Mutex> lock(mutex);
     if (p_instance == nullptr) {
         p_instance = new TextureManager();
     }
     return p_instance;
 }
 
-void TextureManager::set_texture_vector(std::vector<Texture> textures) {
+void TextureManager::set_texture_vector(Vec<Texture> textures) {
     texture_vector = textures;
 }
 
-std::vector<Texture>& TextureManager::get_texture_vector() {
+Vec<Texture>& TextureManager::get_texture_vector() {
     return texture_vector;
 }
 } // namespace glvm
 
-ThreadPool::ThreadPool(size_t num_threads) : stop(false) {
-    for (size_t i = 0; i < num_threads; ++i) {
+ThreadPool::ThreadPool(usize num_threads) : stop(false) {
+    for (usize i = 0; i < num_threads; ++i) {
         workers.emplace_back([this] {
             while (true) {
                 std::function<void()> task;
                 {
-                    std::unique_lock<std::mutex> lock(this->queue_mutex);
+                    std::unique_lock<Mutex> lock(this->queue_mutex);
                     this->condition.wait(lock, [this] {
                         return this->stop || !this->tasks.empty();
                     });
@@ -13332,7 +13222,7 @@ ThreadPool::ThreadPool(size_t num_threads) : stop(false) {
 
 ThreadPool::~ThreadPool() {
     {
-        std::unique_lock<std::mutex> lock(queue_mutex);
+        std::unique_lock<Mutex> lock(queue_mutex);
         stop = true;
     }
     condition.notify_all();
@@ -13349,16 +13239,16 @@ CTimerX::CTimerX() {
     reset();
 }
 
-double CTimerX::init_frequency() {
+f64 CTimerX::init_frequency() {
     return frequency_ = 1e+9;
 }
 
-double CTimerX::reset() {
+f64 CTimerX::reset() {
     clock_gettime(CLOCK_MONOTONIC, &start_);
     return start_.tv_sec + start_.tv_nsec;
 }
 
-double CTimerX::get_elapsed() {
+f64 CTimerX::get_elapsed() {
     clock_gettime(CLOCK_MONOTONIC, &now_);
     seconds_ = now_.tv_sec - start_.tv_sec;
     nanoseconds_ = now_.tv_nsec - start_.tv_nsec;
@@ -13386,19 +13276,19 @@ CTimerWin::CTimerWin() {
     reset();
 }
 
-double CTimerWin::init_frequency() {
+f64 CTimerWin::init_frequency() {
     QueryPerformanceFrequency((PLARGE_INTEGER)&i64_freq);
-    return (double)i64_freq;
+    return (f64)i64_freq;
 }
 
-double CTimerWin::reset() {
+f64 CTimerWin::reset() {
     QueryPerformanceCounter((PLARGE_INTEGER)&i64_start);
-    return (double)i64_start;
+    return (f64)i64_start;
 }
 
-double CTimerWin::get_elapsed() {
+f64 CTimerWin::get_elapsed() {
     QueryPerformanceCounter((PLARGE_INTEGER)&i64_now);
-    return (double)(i64_now - i64_start) / i64_freq;
+    return (f64)(i64_now - i64_start) / i64_freq;
 }
 } // namespace glvm
 #endif // _WIN32
@@ -13407,7 +13297,7 @@ double CTimerWin::get_elapsed() {
 
 namespace glvm {
 void CSoundEngineWaveform::sound_stream() {
-    for (unsigned int i = 0; i < t_sound_container.size(); ++i) {
+    for (u32 i = 0; i < t_sound_container.size(); ++i) {
         playback_sound_sample(*t_sound_container[i]);
         t_sound_container.erase(t_sound_container.begin() + i);
     }
@@ -13426,7 +13316,7 @@ void CSoundEngineWaveform::playback_sound_sample(CSoundSample& sample) {
     format.wBitsPerSample = 16;
     format.cbSize = 0;
     // Open a waveform device for output using window callback.
-    unsigned int rc = 0;
+    u32 rc = 0;
     rc = waveOutOpen(&h_wave_out, WAVE_MAPPER, &format, 0L, 0L, 0L);
     if (rc != MMSYSERR_NOERROR) {
         std::cerr << "waveOutOpen: " << "error code: " << rc << std::endl;
@@ -13468,7 +13358,7 @@ void CSoundEngineWaveform::playback_sound_sample(CSoundSample& sample) {
 void CSoundEngineWaveform::set_master_volume(long /* l_volume */) {
 }
 
-std::vector<CSoundSample*>& CSoundEngineWaveform::get_sound_container() {
+Vec<CSoundSample*>& CSoundEngineWaveform::get_sound_container() {
     return t_sound_container;
 }
 } // namespace glvm
@@ -13490,7 +13380,7 @@ WindowWinVulkan* WindowWinVulkan::instance = nullptr;
 WindowWinVulkan::WindowWinVulkan() {
     instance = this;
     const char* title = "Game";
-    int window_width = width / 2, window_height = height / 2;
+    i32 window_width = width / 2, window_height = height / 2;
     // Register the window class for the main window.
     window_class.style = 0;
     window_class.lpfnWndProc = main_wnd_proc;
@@ -13511,8 +13401,8 @@ WindowWinVulkan::WindowWinVulkan() {
     RECT rect;
     SetRect(&rect, 0, 0, window_width, window_height);
     AdjustWindowRect(&rect, style, FALSE);
-    int window_x = (width - (rect.right - rect.left)) / 2;
-    int window_y = (height - (rect.bottom - rect.top)) / 2;
+    i32 window_x = (width - (rect.right - rect.left)) / 2;
+    i32 window_y = (height - (rect.bottom - rect.top)) / 2;
 
     // Create the main window.
     p_modern_window = CreateWindowA(
@@ -13572,15 +13462,15 @@ HWND WindowWinVulkan::get_modern_window_hwnd() {
 }
 
 void WindowWinVulkan::cursor_lock(
-    int pointer_x,
-    int pointer_y,
-    int* out_offset_x,
-    int* out_offset_y
+    i32 pointer_x,
+    i32 pointer_y,
+    i32* out_offset_x,
+    i32* out_offset_y
 ) {
     RECT client_rect;
     GetClientRect(p_modern_window, &client_rect);
-    const int center_x = client_rect.right / 2;
-    const int center_y = client_rect.bottom / 2;
+    const auto center_x = client_rect.right / 2;
+    const auto center_y = client_rect.bottom / 2;
     POINT point_position {center_x, center_y};
     ClientToScreen(p_modern_window, &point_position);
     // Solve a problem with endlessly growing numbers in the start game run.
@@ -13588,7 +13478,7 @@ void WindowWinVulkan::cursor_lock(
         || pointer_y > client_rect.bottom || pointer_y < 0) {
         return;
     }
-    int i_offset_x = 0, i_offset_y = 0;
+    i32 i_offset_x = 0, i_offset_y = 0;
     i_offset_x = pointer_x - previous_x;
     i_offset_y = pointer_y - previous_y;
     previous_x = pointer_x;
@@ -13655,7 +13545,7 @@ LRESULT CALLBACK WindowWinVulkan::main_wnd_proc(
     if (p_event == nullptr) {
         return DefWindowProcA(hwnd, msg, w_param, l_param);
     }
-    int i_mouse_position_x, i_mouse_position_y;
+    i32 i_mouse_position_x, i_mouse_position_y;
     switch (msg) {
         case WM_CREATE:
             return 0;
@@ -13787,10 +13677,10 @@ LRESULT CALLBACK WindowWinVulkan::main_wnd_proc(
 } // namespace glvm
 #endif // _WIN32
 
-const int K_VERTEX_SIZE = 9;
-constexpr float K_WIDTH_OFFSET = 1.0f / 3;
+const auto K_VERTEX_SIZE = 9;
+constexpr auto K_WIDTH_OFFSET = 1.0f / 3;
 
-float A_VERTICES[K_VERTEX_SIZE] = {
+f32 A_VERTICES[K_VERTEX_SIZE] = {
     -0.5f,
     -0.5f,
     0.5f, // Left vertex.
@@ -13802,7 +13692,7 @@ float A_VERTICES[K_VERTEX_SIZE] = {
     0.0f // Upper vertex.
 };
 
-float A_VERTICES2[K_VERTEX_SIZE] = {
+f32 A_VERTICES2[K_VERTEX_SIZE] = {
     0.5f,
     -0.5f,
     // Left vertex.
@@ -13817,7 +13707,7 @@ float A_VERTICES2[K_VERTEX_SIZE] = {
     -1.0f
 };
 
-float A_VERTICES_STATIC_OBJECT[] = {
+f32 A_VERTICES_STATIC_OBJECT[] = {
     // Coordinates.
     0.5f,  0.5f,  0.0f, 1.0f, 1.0f, // Up right vertex.
     0.5f,  -0.5f, 0.0f, 1.0f, 0.0f, // Bottom right vertex.
@@ -13826,7 +13716,7 @@ float A_VERTICES_STATIC_OBJECT[] = {
     0.5f,  0.5f,  0.0f, 1.0f, 1.0f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f
 };
 
-float VERTICES[] = {
+f32 VERTICES[] = {
     // Coordinates.
     0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 1.0f, // Up right vertex.
     0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET, 0.75f, // Bottom right vertex.
@@ -13835,7 +13725,7 @@ float VERTICES[] = {
     0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 1.0f,  -0.5f, -0.5f, 0.0f, 0.0f, 0.75f
 };
 
-float VERTICES2[] = {
+f32 VERTICES2[] = {
     // Coordinates.
     0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET * 2, 1.0f, // Up right vertex.
     0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET * 2, 0.75f, // Bottom right vertex.
@@ -13845,7 +13735,7 @@ float VERTICES2[] = {
     -0.5f, -0.5f, 0.0f, K_WIDTH_OFFSET,     0.75f
 };
 
-float VERTICES3[] = {
+f32 VERTICES3[] = {
     // Coordinates.
     0.5f,
     0.5f,
@@ -13879,7 +13769,7 @@ float VERTICES3[] = {
     0.75f
 };
 
-float VERTICES4[] = {
+f32 VERTICES4[] = {
     // Coordinates.
     0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 0.75f, // Up right vertex.
     0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET, 0.5f, // Bottom right vertex.
@@ -13888,7 +13778,7 @@ float VERTICES4[] = {
     0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 0.75f, -0.5f, -0.5f, 0.0f, 0.0f, 0.5f
 };
 
-float VERTICES5[] = {
+f32 VERTICES5[] = {
     // Coordinates.
     0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET * 2, 0.75f, // Up right vertex.
     0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET * 2, 0.5f, // Bottom right vertex.
@@ -13898,7 +13788,7 @@ float VERTICES5[] = {
     -0.5f, -0.5f, 0.0f, K_WIDTH_OFFSET,     0.5f
 };
 
-float VERTICES6[] = {
+f32 VERTICES6[] = {
     // Coordinates.
     0.5f,
     0.5f,
@@ -13932,7 +13822,7 @@ float VERTICES6[] = {
     0.5f
 };
 
-float VERTICES7[] = {
+f32 VERTICES7[] = {
     // Coordinates.
     0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 0.5f, // Up right vertex.
     0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET, 0.25f, // Bottom right vertex.
@@ -13941,7 +13831,7 @@ float VERTICES7[] = {
     0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 0.5f,  -0.5f, -0.5f, 0.0f, 0.0f, 0.25f
 };
 
-float VERTICES8[] = {
+f32 VERTICES8[] = {
     // Coordinates.
     0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET * 2, 0.5f, // Up right vertex.
     0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET * 2, 0.25f, // Bottom right vertex.
@@ -13951,7 +13841,7 @@ float VERTICES8[] = {
     -0.5f, -0.5f, 0.0f, K_WIDTH_OFFSET,     0.25f
 };
 
-float VERTICES9[] = {
+f32 VERTICES9[] = {
     // Coordinates.
     0.5f,
     0.5f,
@@ -13985,7 +13875,7 @@ float VERTICES9[] = {
     0.25f
 };
 
-float VERTICES10[] = {
+f32 VERTICES10[] = {
     // Coordinates.
     0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 0.25f, // Up right vertex.
     0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET, 0.0f, // Bottom right vertex.
@@ -13994,7 +13884,7 @@ float VERTICES10[] = {
     0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 0.25f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f
 };
 
-float VERTICES11[] = {
+f32 VERTICES11[] = {
     // Coordinates.
     0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET * 2, 0.25f, // Up right vertex.
     0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET * 2, 0.0f, // Bottom right vertex.
@@ -14004,7 +13894,7 @@ float VERTICES11[] = {
     -0.5f, -0.5f, 0.0f, K_WIDTH_OFFSET,     0.0f
 };
 
-float VERTICES12[] = {
+f32 VERTICES12[] = {
     // Coordinates.
     0.5f,
     0.5f,
@@ -14038,29 +13928,29 @@ float VERTICES12[] = {
     0.0f
 };
 
-int VERTICES_SIZE = sizeof(VERTICES);
+i32 VERTICES_SIZE = sizeof(VERTICES);
 
 namespace glvm {
-static bool equals_c_str(const std::vector<char>& v, const char* s) {
+static bool equals_c_str(const Vec<char>& v, const char* s) {
     return strcmp(v.data(), s) == 0;
 }
 
 CWaveFrontObjParser::CWaveFrontObjParser() {
 }
 
-const std::vector<SVertex>& CWaveFrontObjParser::get_coordinate_vertices() const {
+const Vec<SVertex>& CWaveFrontObjParser::get_coordinate_vertices() const {
     return coordinate_vertices;
 }
 
-const std::vector<SVertex>& CWaveFrontObjParser::get_texture_vertices() const {
+const Vec<SVertex>& CWaveFrontObjParser::get_texture_vertices() const {
     return texture_vertices;
 }
 
-const std::vector<SVertex>& CWaveFrontObjParser::get_normals() const {
+const Vec<SVertex>& CWaveFrontObjParser::get_normals() const {
     return normals;
 }
 
-const std::vector<SFace>& CWaveFrontObjParser::get_faces() const {
+const Vec<SFace>& CWaveFrontObjParser::get_faces() const {
     return faces;
 }
 
@@ -14083,7 +13973,7 @@ void CWaveFrontObjParser::read_file(const char* file_path) {
 
 void CWaveFrontObjParser::parse_file() {
     while (p_wavefront_obj_file_data[ui_counter] != '\0') {
-        std::vector<std::vector<char>> line =
+        Vec<Vec<char>> line =
             split(p_wavefront_obj_file_data, ' ', '\n', ui_counter);
         if (equals_c_str(line[0], "v")) {
             SVertex vertex = parse_vertices(line);
@@ -14104,14 +13994,14 @@ void CWaveFrontObjParser::parse_file() {
     }
 }
 
-std::vector<std::vector<char>> CWaveFrontObjParser::split(
+Vec<Vec<char>> CWaveFrontObjParser::split(
     const char* data,
     const char separator,
     const char exit_symbol,
-    unsigned int& position
+    u32& position
 ) {
-    std::vector<std::vector<char>> words_container;
-    unsigned int outer_index = 0;
+    Vec<Vec<char>> words_container;
+    u32 outer_index = 0;
     words_container.push_back({});
 
     for (;; ++position) {
@@ -14136,35 +14026,33 @@ std::vector<std::vector<char>> CWaveFrontObjParser::split(
     }
 }
 
-SVertex CWaveFrontObjParser::parse_vertices(
-    std::vector<std::vector<char>> words
-) {
+SVertex CWaveFrontObjParser::parse_vertices(Vec<Vec<char>> words) {
     SVertex vertex;
-    unsigned int ui_vertex_index = 0;
+    u32 ui_vertex_index = 0;
 
-    unsigned int ui_words_container_size = words.size();
-    for (unsigned int i = 1; i < ui_words_container_size; ++i) {
-        float float_number = parse_floating(words[i]);
+    u32 ui_words_container_size = words.size();
+    for (u32 i = 1; i < ui_words_container_size; ++i) {
+        f32 float_number = parse_floating(words[i]);
         vertex[ui_vertex_index++] = float_number;
     }
 
     return vertex;
 }
 
-SFace CWaveFrontObjParser::parse_faces(std::vector<std::vector<char>> words) {
+SFace CWaveFrontObjParser::parse_faces(Vec<Vec<char>> words) {
     SFace face;
-    std::vector<std::vector<char>> words_inner_container;
-    std::vector<char> word;
+    Vec<Vec<char>> words_inner_container;
+    Vec<char> word;
 
-    unsigned int ui_words_container_size = words.size();
+    u32 ui_words_container_size = words.size();
 
-    for (unsigned int i = 1; i < ui_words_container_size; ++i) {
-        unsigned int counter = 0;
+    for (u32 i = 1; i < ui_words_container_size; ++i) {
+        u32 counter = 0;
         words_inner_container = split(words[i].data(), '/', '\0', counter);
 
-        for (unsigned int j = 0; j < words_inner_container.size(); ++j) {
+        for (u32 j = 0; j < words_inner_container.size(); ++j) {
             word = words_inner_container[j];
-            int i_value = parse_integer(word);
+            i32 i_value = parse_integer(word);
 
             face[j].push_back(i_value);
         }
@@ -14172,18 +14060,18 @@ SFace CWaveFrontObjParser::parse_faces(std::vector<std::vector<char>> words) {
     return face;
 }
 
-int CWaveFrontObjParser::parse_integer(std::vector<char> digits) {
-    std::vector<int> base_container;
+i32 CWaveFrontObjParser::parse_integer(Vec<char> digits) {
+    Vec<i32> base_container;
 
-    for (unsigned int i = 0; i < digits.size() - 1; ++i) {
+    for (u32 i = 0; i < digits.size() - 1; ++i) {
         base_container.push_back(digits[i] - 48);
     }
 
-    int i_result = 0;
+    i32 i_result = 0;
     bool negate_flag = false;
 
-    unsigned int base_container_size = base_container.size();
-    for (unsigned int i = 0; i < base_container_size; ++i) {
+    u32 base_container_size = base_container.size();
+    for (u32 i = 0; i < base_container_size; ++i) {
         if (negate_flag && i == 0) {
             continue;
         } else if (base_container[i] == -5 && i == 0) {
@@ -14197,26 +14085,26 @@ int CWaveFrontObjParser::parse_integer(std::vector<char> digits) {
     return i_result;
 }
 
-float CWaveFrontObjParser::parse_floating(std::vector<char> digits) {
-    std::vector<int> base_container;
+f32 CWaveFrontObjParser::parse_floating(Vec<char> digits) {
+    Vec<i32> base_container;
 
-    for (unsigned int i = 0; i < digits.size() - 1; ++i) {
+    for (u32 i = 0; i < digits.size() - 1; ++i) {
         base_container.push_back(digits[i] - 48);
     }
 
-    int integer_part = 0;
-    float floating_part = 0;
-    std::vector<int> integer_part_container;
-    std::vector<int> floating_part_container;
+    i32 integer_part = 0;
+    f32 floating_part = 0;
+    Vec<i32> integer_part_container;
+    Vec<i32> floating_part_container;
     bool dot_flag = false;
     bool negate_flag = false;
-    unsigned int base_container_size = base_container.size();
+    u32 base_container_size = base_container.size();
 
     if (base_container[0] == -3) {
         negate_flag = true;
     }
 
-    for (unsigned int i = 0; i < base_container_size; ++i) {
+    for (u32 i = 0; i < base_container_size; ++i) {
         if (negate_flag && i == 0) {
             continue;
         } else if (base_container[i] == -5 && i == 0) {
@@ -14237,19 +14125,19 @@ float CWaveFrontObjParser::parse_floating(std::vector<char> digits) {
         }
     }
 
-    unsigned int integer_part_container_size = integer_part_container.size();
-    for (unsigned int i = 0; i < integer_part_container_size; ++i) {
+    u32 integer_part_container_size = integer_part_container.size();
+    for (u32 i = 0; i < integer_part_container_size; ++i) {
         integer_part += integer_part_container[i]
             * std::pow(10, (integer_part_container_size - 1) - i);
     }
 
-    unsigned int floating_part_container_size = floating_part_container.size();
-    for (unsigned int i = 0; i < floating_part_container_size; ++i) {
+    u32 floating_part_container_size = floating_part_container.size();
+    for (u32 i = 0; i < floating_part_container_size; ++i) {
         floating_part += floating_part_container[i] / std::pow(10, i + 1);
     }
 
-    float result = 0;
-    result = (float)(integer_part + floating_part);
+    f32 result = 0;
+    result = (f32)(integer_part + floating_part);
 
     if (negate_flag) {
         result *= -1.0f;
@@ -14268,7 +14156,7 @@ static WindowWaylandVulkan wayland_window;
 void xdg_surface_configure(
     void* data,
     struct xdg_surface* xdg_surface,
-    uint32_t serial
+    u32 serial
 ) {
     // The compositor sends a configure event before the surface is shown;
     // it must be acknowledged, otherwise the window never appears.
@@ -14283,7 +14171,7 @@ void xdg_surface_configure(
 void new_frame_callback(
     void* data,
     struct wl_callback* frame_call_back,
-    uint32_t callback_data
+    u32 callback_data
 ) {
     wl_callback_destroy(frame_call_back);
     frame_call_back = wl_surface_frame(wayland_window.wl_surface);
@@ -14294,23 +14182,23 @@ void new_frame_callback(
     );
 }
 
-void shell_ping(void* data, struct xdg_wm_base* shell, uint32_t serial) {
+void shell_ping(void* data, struct xdg_wm_base* shell, u32 serial) {
     xdg_wm_base_pong(shell, serial);
 }
 
 void keyboard_keymap(
     void* data,
     struct wl_keyboard* keyboard,
-    uint32_t format,
-    int32_t keymap_file_descriptor,
-    uint32_t size
+    u32 format,
+    i32 keymap_file_descriptor,
+    u32 size
 ) {
 }
 
 void keyboard_enter(
     void* data,
     struct wl_keyboard* keyboard,
-    uint32_t serial,
+    u32 serial,
     struct wl_surface* surface,
     struct wl_array* keys
 ) {
@@ -14321,7 +14209,7 @@ void keyboard_enter(
 void keyboard_leave(
     void* data,
     struct wl_keyboard* keyboard,
-    uint32_t serial,
+    u32 serial,
     struct wl_surface* surface
 ) {
     WindowWaylandVulkan* wayland_window_data = (WindowWaylandVulkan*)data;
@@ -14336,10 +14224,10 @@ void push_event(EEvents event_type) {
 void keyboard_key(
     void* data,
     struct wl_keyboard* keyboard,
-    uint32_t serial,
-    uint32_t time,
-    uint32_t key,
-    uint32_t state
+    u32 serial,
+    u32 time,
+    u32 key,
+    u32 state
 ) {
     if (state == WL_KEYBOARD_KEY_STATE_PRESSED) {
         if (key == 1) {
@@ -14390,26 +14278,26 @@ void keyboard_key(
 void keyboard_modifiers(
     void* data,
     struct wl_keyboard* keyboard,
-    uint32_t serial,
-    uint32_t mods_depressed,
-    uint32_t mods_latched,
-    uint32_t mods_locked,
-    uint32_t group
+    u32 serial,
+    u32 mods_depressed,
+    u32 mods_latched,
+    u32 mods_locked,
+    u32 group
 ) {
 }
 
 void keyboard_repeat_info(
     void* data,
     struct wl_keyboard* keyboard,
-    int32_t rate,
-    int32_t delay
+    i32 rate,
+    i32 delay
 ) {
 }
 
 void pointer_enter(
     void* data,
     struct wl_pointer* pointer,
-    uint32_t serial,
+    u32 serial,
     struct wl_surface* surface,
     wl_fixed_t sx,
     wl_fixed_t sy
@@ -14419,7 +14307,7 @@ void pointer_enter(
 void pointer_leave(
     void* data,
     struct wl_pointer* pointer,
-    uint32_t serial,
+    u32 serial,
     struct wl_surface* surface
 ) {
 }
@@ -14427,7 +14315,7 @@ void pointer_leave(
 void pointer_motion(
     void* data,
     struct wl_pointer* pointer,
-    uint32_t time,
+    u32 time,
     wl_fixed_t sx,
     wl_fixed_t sy
 ) {
@@ -14436,8 +14324,8 @@ void pointer_motion(
 void pointer_axis(
     void* data,
     struct wl_pointer* pointer,
-    uint32_t time,
-    uint32_t axis,
+    u32 time,
+    u32 axis,
     wl_fixed_t value
 ) {
 }
@@ -14445,10 +14333,10 @@ void pointer_axis(
 void pointer_button(
     void* data,
     struct wl_pointer* pointer,
-    uint32_t serial,
-    uint32_t time,
-    uint32_t button,
-    uint32_t state
+    u32 serial,
+    u32 time,
+    u32 button,
+    u32 state
 ) {
     if (state == WL_POINTER_BUTTON_STATE_PRESSED && button == 272) {
         push_event(EEvents::EMouseLeftButton);
@@ -14505,8 +14393,8 @@ void pointer_button(
 void handle_relative_motion(
     void* data,
     struct zwp_relative_pointer_v1* rel_pointer,
-    uint32_t utime_hi,
-    uint32_t utime_lo,
+    u32 utime_hi,
+    u32 utime_lo,
     wl_fixed_t dx,
     wl_fixed_t dy,
     wl_fixed_t dx_unaccel,
@@ -14516,7 +14404,7 @@ void handle_relative_motion(
     Y_POINTER = wl_fixed_to_int(dy);
 }
 
-void seat_capabilities(void* data, struct wl_seat* seat, uint32_t capabilities) {
+void seat_capabilities(void* data, struct wl_seat* seat, u32 capabilities) {
     if ((capabilities & WL_SEAT_CAPABILITY_POINTER)
         && !wayland_window.pointer) {
         wayland_window.pointer = wl_seat_get_pointer(seat);
@@ -14549,24 +14437,24 @@ void seat_name(void* data, struct wl_seat* seat, const char* name) {
 void output_geometry(
     void* data,
     struct wl_output* output,
-    int32_t x,
-    int32_t y,
-    int32_t physical_width,
-    int32_t physical_height,
-    int32_t subpixel,
+    i32 x,
+    i32 y,
+    i32 physical_width,
+    i32 physical_height,
+    i32 subpixel,
     const char* make,
     const char* model,
-    int32_t transform
+    i32 transform
 ) {
 }
 
 void output_mode(
     void* data,
     struct wl_output* output,
-    uint32_t flags,
-    int32_t width,
-    int32_t height,
-    int32_t refresh
+    u32 flags,
+    i32 width,
+    i32 height,
+    i32 refresh
 ) {
     if (flags & WL_OUTPUT_MODE_CURRENT) {
         WindowWaylandVulkan* wayland_window_data = (WindowWaylandVulkan*)data;
@@ -14581,9 +14469,9 @@ void output_done(void* data, struct wl_output* output) {
 void registry_global(
     void* data,
     struct wl_registry* registry,
-    uint32_t name,
+    u32 name,
     const char* interface,
-    uint32_t version
+    u32 version
 ) {
     if (!strcmp(interface, wl_compositor_interface.name)) {
         wayland_window.compositor = (wl_compositor*)
@@ -14635,27 +14523,23 @@ void registry_global(
     }
 }
 
-void registry_global_remove(
-    void* data,
-    struct wl_registry* registry,
-    uint32_t name
-) {
+void registry_global_remove(void* data, struct wl_registry* registry, u32 name) {
 }
 
-int32_t alocate_shared_memory(uint64_t size) {
+i32 alocate_shared_memory(u64 size) {
     char name[8];
     name[0] = '/';
     name[7] = 0;
-    for (int8_t i = 1; i < 6; ++i) {
+    for (i8 i = 1; i < 6; ++i) {
         name[i] = (rand() & 23) + 97;
     }
-    int32_t file_descriptor = shm_open(
+    i32 file_descriptor = shm_open(
         name,
         O_RDWR | O_CREAT | O_EXCL,
         S_IWUSR | S_IRUSR | S_IWOTH | S_IROTH
     );
     shm_unlink(name);
-    int result = ftruncate(file_descriptor, size);
+    i32 result = ftruncate(file_descriptor, size);
 
     return file_descriptor;
 }
@@ -14668,8 +14552,8 @@ void resize(void* data) {
 void xdg_toplevel_configure(
     void* data,
     struct xdg_toplevel* xdg_toplevel,
-    int32_t new_width,
-    int32_t new_height,
+    i32 new_width,
+    i32 new_height,
     struct wl_array* atate
 ) {
     if (!new_width && !new_height) {
@@ -14745,14 +14629,14 @@ bool WindowWaylandVulkan::handle_event(CEvent& event) {
 struct wl_buffer* WindowWaylandVulkan::create_transparent_cursor(
     struct wl_shm* shm
 ) {
-    int size = 4 * 64 * 64; // 64x64 RGBA cursor (common size).
-    int32_t file_descriptor = alocate_shared_memory(size);
+    i32 size = 4 * 64 * 64; // 64x64 RGBA cursor (common size).
+    i32 file_descriptor = alocate_shared_memory(size);
     void* data =
         mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, file_descriptor, 0);
 
     // Fill with transparent pixels.
-    for (int i = 0; i < 64 * 64; ++i) {
-        ((int*)data)[i] = 0x00000000;
+    for (i32 i = 0; i < 64 * 64; ++i) {
+        ((i32*)data)[i] = 0x00000000;
     }
 
     struct wl_shm_pool* pool = wl_shm_create_pool(shm, file_descriptor, size);
@@ -14779,15 +14663,15 @@ void WindowWaylandVulkan::clear_display() {
 }
 
 void WindowWaylandVulkan::cursor_lock(
-    int pointer_x,
-    int pointer_y,
-    int* out_offset_x,
-    int* out_offset_y
+    i32 pointer_x,
+    i32 pointer_y,
+    i32* out_offset_x,
+    i32* out_offset_y
 ) {
-    static int flag = 0;
+    static i32 flag = 0;
     if (flag == 0) {
-        *out_offset_x = -((int)width / 2);
-        *out_offset_y = -((int)height / 2);
+        *out_offset_x = -((i32)width / 2);
+        *out_offset_y = -((i32)height / 2);
         ++flag;
     } else {
         *out_offset_x = pointer_x;
@@ -14877,7 +14761,7 @@ WindowXVulkan::WindowXVulkan() {
         | PointerMotionMask | StructureNotifyMask | ButtonPressMask
         | ButtonReleaseMask | FocusChangeMask;
 
-    const int screen_number = XDefaultScreen(display);
+    const auto screen_number = XDefaultScreen(display);
     width = DisplayWidth(display, screen_number);
     height = DisplayHeight(display, screen_number);
     // Show the window.
@@ -14935,13 +14819,13 @@ Display* WindowXVulkan::get_display() {
 }
 
 void WindowXVulkan::cursor_lock(
-    int pointer_x,
-    int pointer_y,
-    int* out_offset_x,
-    int* out_offset_y
+    i32 pointer_x,
+    i32 pointer_y,
+    i32* out_offset_x,
+    i32* out_offset_y
 ) {
-    *out_offset_x += pointer_x - (int)(width / 2);
-    *out_offset_y -= pointer_y - (int)(height / 2);
+    *out_offset_x += pointer_x - (i32)(width / 2);
+    *out_offset_y -= pointer_y - (i32)(height / 2);
     // Pitch is limited by angle in Engine::SetViewMatrix(), so this offset may
     // accumulate freely; no pixel clamp here (resolution-independent).
     XWarpPointer(
@@ -14952,8 +14836,8 @@ void WindowXVulkan::cursor_lock(
         0,
         0,
         0,
-        (int)(width / 2),
-        (int)(height / 2)
+        (i32)(width / 2),
+        (i32)(height / 2)
     );
     XFlush(display);
 }
@@ -14970,7 +14854,7 @@ bool WindowXVulkan::handle_event(CEvent& event) {
     while (XPending(display)) {
         XNextEvent(display, &x_event);
         KeySym key;
-        unsigned int mouse_button;
+        u32 mouse_button;
         XMotionEvent motion;
 
         switch (x_event.type) {
@@ -15116,7 +15000,7 @@ namespace glvm {
 WindowXCBVulkan::WindowXCBVulkan() {
     // Open the connection to the X server.
     connection = xcb_connect(nullptr, nullptr);
-    int error = xcb_connection_has_error(connection);
+    i32 error = xcb_connection_has_error(connection);
     if (error) {
         fprintf(stderr, "XCB connection error: %d\n", error);
         // Handle error or exit.
@@ -15135,9 +15019,9 @@ WindowXCBVulkan::WindowXCBVulkan() {
     key_symbols = xcb_key_symbols_alloc(connection);
     assert(key_symbols != nullptr);
 
-    uint32_t event_mask = 0;
+    u32 event_mask = 0;
     event_mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
-    uint32_t event_flags[2];
+    u32 event_flags[2];
     event_flags[0] = screen->black_pixel;
     event_flags[1] = XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE
         | XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE
@@ -15180,9 +15064,9 @@ WindowXCBVulkan::WindowXCBVulkan() {
 }
 
 void WindowXCBVulkan::configure_window() {
-    uint16_t mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y
+    u16 mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y
         | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
-    const uint32_t values[] = {
+    const u32 values[] = {
         320, // x.
         180, // y.
         width,
@@ -15200,8 +15084,8 @@ void WindowXCBVulkan::hide_cursor() {
     // Create graphical context.
     xcb_gcontext_t graphical_context = xcb_generate_id(connection);
 
-    uint32_t mask = XCB_GC_FOREGROUND | XCB_GC_BACKGROUND;
-    uint32_t values_list[2];
+    u32 mask = XCB_GC_FOREGROUND | XCB_GC_BACKGROUND;
+    u32 values_list[2];
     values_list[0] = screen->black_pixel;
     values_list[1] = screen->white_pixel;
 
@@ -15213,11 +15097,10 @@ void WindowXCBVulkan::hide_cursor() {
         values_list
     );
 
-    const uint8_t pix_map_data[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                    0x00, 0x00, 0x00, 0x00};
+    const u8 pix_map_data[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
     xcb_put_image(
         connection,
@@ -15251,7 +15134,7 @@ void WindowXCBVulkan::hide_cursor() {
     );
 
     mask = XCB_CW_CURSOR;
-    uint32_t value_list = cursor;
+    u32 value_list = cursor;
     xcb_change_window_attributes(connection, window, mask, &value_list);
 
     xcb_free_cursor(connection, cursor);
@@ -15261,7 +15144,7 @@ xcb_connection_t* WindowXCBVulkan::get_connection() {
     return connection;
 }
 
-uint32_t WindowXCBVulkan::get_window() {
+u32 WindowXCBVulkan::get_window() {
     return window;
 }
 
@@ -15490,13 +15373,13 @@ void WindowXCBVulkan::close() {
 }
 
 void WindowXCBVulkan::cursor_lock(
-    int pointer_x,
-    int pointer_y,
-    int* out_offset_x,
-    int* out_offset_y
+    i32 pointer_x,
+    i32 pointer_y,
+    i32* out_offset_x,
+    i32* out_offset_y
 ) {
-    *out_offset_x += pointer_x - (int)(width / 2);
-    *out_offset_y -= pointer_y - (int)(height / 2);
+    *out_offset_x += pointer_x - (i32)(width / 2);
+    *out_offset_y -= pointer_y - (i32)(height / 2);
     xcb_warp_pointer(
         connection,
         XCB_NONE,
@@ -15505,8 +15388,8 @@ void WindowXCBVulkan::cursor_lock(
         0,
         0,
         0,
-        (int)(width / 2),
-        (int)(height / 2)
+        (i32)(width / 2),
+        (i32)(height / 2)
     );
     xcb_flush(connection);
 }

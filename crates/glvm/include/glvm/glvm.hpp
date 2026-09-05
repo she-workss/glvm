@@ -111,7 +111,7 @@ constexpr auto NUMBER_OF_CREATING_VAO_OBJECT_1 = 1;
 constexpr auto NUMBER_OF_CREATING_VBO_OBJECT_1 = 1;
 constexpr auto NUMBER_OF_DROWING_VERTEXES = 36;
 constexpr auto NUMBER_OF_MATRICES = 1;
-constexpr auto PI = std::numbers::pi;
+constexpr auto PI = std::numbers::pi_v<f32>;
 constexpr auto POINT_LIGHTS_NUMBER = 32;
 constexpr auto SHADOW_MAP_SIZE = 1024;
 constexpr auto SIZE_OF_VERTEX_DATA = 5;
@@ -161,10 +161,10 @@ constexpr auto WGL_TYPE_RGBA_ARB = 0x202B;
 #endif
 
 namespace glvm {
-constexpr uint64_t ENTITY_BITS_MASK = (1ull << ENTITY_ID_BITS) - 1;
+constexpr auto ENTITY_BITS_MASK = (1ull << ENTITY_ID_BITS) - 1;
 
 struct ComponentsIndices {
-    enum Types : uint32_t {
+    enum Types : u32 {
         TransformComponent,
         RigidBodyComponent,
         MeshComponent,
@@ -198,7 +198,7 @@ struct ComponentsIndices {
     };
 };
 
-constexpr uint64_t PLAYER_COMPONENT_MASK =
+constexpr auto PLAYER_COMPONENT_MASK =
     (1ull << ComponentsIndices::TransformComponent)
     | (1ull << ComponentsIndices::ViewComponent)
     | (1ull << ComponentsIndices::ColliderComponent)
@@ -214,7 +214,7 @@ constexpr uint64_t PLAYER_COMPONENT_MASK =
     | (1ull << ComponentsIndices::RotationComponent)
     | (1ull << ComponentsIndices::PlayerTagComponent);
 
-constexpr uint64_t ENEMY_COMPONENT_MASK =
+constexpr auto ENEMY_COMPONENT_MASK =
     (1ull << ComponentsIndices::TransformComponent)
     | (1ull << ComponentsIndices::EnemyComponent)
     | (1ull << ComponentsIndices::StateComponent)
@@ -230,7 +230,7 @@ constexpr uint64_t ENEMY_COMPONENT_MASK =
     | (1ull << ComponentsIndices::RotationComponent)
     | (1ull << ComponentsIndices::MoveComponent);
 
-constexpr uint64_t STATIC_MESH_COMPONENT_MASK =
+constexpr auto STATIC_MESH_COMPONENT_MASK =
     (1ull << ComponentsIndices::TransformComponent)
     | (1ull << ComponentsIndices::ColliderComponent)
     | (1ull << ComponentsIndices::ColliderFlagsComponent)
@@ -240,13 +240,13 @@ constexpr uint64_t STATIC_MESH_COMPONENT_MASK =
     | (1ull << ComponentsIndices::RotationComponent)
     | (1ull << ComponentsIndices::StaticMeshTagComponent);
 
-constexpr uint64_t CROSSHAIR_COMPONENT_MASK =
+constexpr auto CROSSHAIR_COMPONENT_MASK =
     (1ull << ComponentsIndices::TransformComponent)
     | (1ull << ComponentsIndices::MeshComponent)
     | (1ull << ComponentsIndices::MaterialComponent)
     | (1ull << ComponentsIndices::CrosshairTagComponent);
 
-constexpr uint64_t ITEM_COMPONENT_MASK =
+constexpr auto ITEM_COMPONENT_MASK =
     (1ull << ComponentsIndices::TransformComponent)
     | (1ull << ComponentsIndices::ColliderComponent)
     | (1ull << ComponentsIndices::ColliderFlagsComponent)
@@ -257,31 +257,31 @@ constexpr uint64_t ITEM_COMPONENT_MASK =
     | (1ull << ComponentsIndices::MoveComponent)
     | (1ull << ComponentsIndices::ItemComponent);
 
-constexpr uint64_t INVENTORY_COMPONENT_MASK =
+constexpr auto INVENTORY_COMPONENT_MASK =
     (1ull << ComponentsIndices::TransformComponent)
     | (1ull << ComponentsIndices::MeshComponent)
     | (1ull << ComponentsIndices::InventoryComponent)
     | (1ull << ComponentsIndices::MaterialComponent);
 
-constexpr uint64_t DIRECTIONAL_LIGHT_COMPONENT_MASK =
+constexpr auto DIRECTIONAL_LIGHT_COMPONENT_MASK =
     (1ull << ComponentsIndices::TransformComponent)
     | (1ull << ComponentsIndices::MeshComponent)
     | (1ull << ComponentsIndices::MaterialComponent)
     | (1ull << ComponentsIndices::DirectionalLightComponent);
 
-constexpr uint64_t SPOT_LIGHT_COMPONENT_MASK =
+constexpr auto SPOT_LIGHT_COMPONENT_MASK =
     (1ull << ComponentsIndices::TransformComponent)
     | (1ull << ComponentsIndices::MeshComponent)
     | (1ull << ComponentsIndices::MaterialComponent)
     | (1ull << ComponentsIndices::SpotLightComponent);
 
-constexpr uint64_t POINT_LIGHT_COMPONENT_MASK =
+constexpr auto POINT_LIGHT_COMPONENT_MASK =
     (1ull << ComponentsIndices::TransformComponent)
     | (1ull << ComponentsIndices::MeshComponent)
     | (1ull << ComponentsIndices::MaterialComponent)
     | (1ull << ComponentsIndices::PointLightComponent);
 
-constexpr uint64_t LEVEL_CHUNK_COMPONENT_MASK =
+constexpr auto LEVEL_CHUNK_COMPONENT_MASK =
     (1ull << ComponentsIndices::TransformComponent)
     | (1ull << ComponentsIndices::MaterialComponent)
     | (1ull << ComponentsIndices::MeshComponent)
@@ -290,7 +290,7 @@ constexpr uint64_t LEVEL_CHUNK_COMPONENT_MASK =
     | (1ull << ComponentsIndices::RotationComponent)
     | (1ull << ComponentsIndices::LevelChunkTagComponent);
 
-constexpr uint64_t PROJECTILE_COMPONENT_MASK =
+constexpr auto PROJECTILE_COMPONENT_MASK =
     (1ull << ComponentsIndices::TransformComponent)
     | (1ull << ComponentsIndices::MeshComponent)
     | (1ull << ComponentsIndices::ColliderComponent)
@@ -306,8 +306,8 @@ struct Actor {};
 
 namespace glvm {
 struct Animation {
-    uint32_t current_animation_frame = 0;
-    float frame_accumulator = 0.0f;
+    u32 current_animation_frame = 0;
+    f32 frame_accumulator = 0.0f;
 };
 } // namespace glvm
 
@@ -315,14 +315,14 @@ namespace glvm {}
 
 namespace glvm {
 struct Attack {
-    float damage;
+    f32 damage;
 };
 } // namespace glvm
 
 namespace glvm {
 class Collider {
 public:
-    std::vector<unsigned int> colliders;
+    Vec<u32> colliders;
 };
 } // namespace glvm
 
@@ -330,7 +330,7 @@ namespace glvm {
 struct ColliderFlags {
     // 0001 = wallCollision; 0010 = groundCollision; 0100 = roofCollision; 1000
     // = itemDrag.
-    int flags : 4;
+    i32 flags : 4;
 };
 }; // namespace glvm
 
@@ -346,31 +346,31 @@ struct Crosshair {};
 
 namespace glvm {
 struct Damage {
-    float maximum_damage;
-    float minimum_damage;
-    float critical_hit_rate;
-    float critical_modifier;
+    f32 maximum_damage;
+    f32 minimum_damage;
+    f32 critical_hit_rate;
+    f32 critical_modifier;
 };
 } // namespace glvm
 
 namespace glvm {
 struct Enemy {
-    float detect_radius;
+    f32 detect_radius;
 };
 } // namespace glvm
 
 namespace glvm {
 struct Font {
-    std::vector<char> font_string;
-    float life_time;
+    Vec<char> font_string;
+    f32 life_time;
     bool removeble;
 };
 } // namespace glvm
 
 namespace glvm {
 struct Health {
-    float max_health;
-    float current_health;
+    f32 max_health;
+    f32 current_health;
 };
 } // namespace glvm
 
@@ -387,19 +387,19 @@ struct InterfaceUi {};
 
 namespace glvm {
 struct InventorySlot {
-    unsigned int item_entity = UINT_MAX;
+    u32 item_entity = UINT_MAX;
 };
 } // namespace glvm
 
 namespace glvm {
 struct ItemSlotType {
-    unsigned int height;
-    unsigned int width;
+    u32 height;
+    u32 width;
 };
 
 struct Item {
     // Array that contain entities with inventorySlotComponent.
-    std::vector<unsigned int> occupied_slots;
+    Vec<u32> occupied_slots;
     ItemSlotType item_slot_type;
     bool is_actor;
 };
@@ -407,38 +407,38 @@ struct Item {
 
 namespace glvm {
 struct Physics {
-    float gravity_accumulator = 0.0f;
+    f32 gravity_accumulator = 0.0f;
 };
 }; // namespace glvm
 
 namespace glvm {
 class Projectile {
 public:
-    unsigned int owner;
+    u32 owner;
     bool b_collision_status = false;
-    float f_damage;
-    float f_speed;
-    float f_flying_range;
-    float damage;
+    f32 f_damage;
+    f32 f_speed;
+    f32 f_flying_range;
+    f32 damage;
 };
 } // namespace glvm
 
 namespace glvm {
 struct Rotation {
-    float yaw = 0.0f;
-    float pitch = 0.0f;
+    f32 yaw = 0.0f;
+    f32 pitch = 0.0f;
 };
 }; // namespace glvm
 
 namespace glvm {
 struct TextureComponent {
-    unsigned int id;
+    u32 id;
 };
 } // namespace glvm
 
 namespace glvm {
 struct MeshHandle {
-    uint32_t id;
+    u32 id;
 };
 
 struct Mesh {
@@ -447,9 +447,9 @@ struct Mesh {
 };
 } // namespace glvm
 
-constexpr unsigned int K_I_UINT_MAX = 4000000000;
-constexpr int K_I_NULL = 0;
-constexpr int BOX_INDICES_FOR_INDEX_BUFFER[36] = {0, 1, 2, 3, 0, 2, 4, 0, 3,
+constexpr auto K_I_UINT_MAX = 4000000000;
+constexpr auto K_I_NULL = 0;
+constexpr i32 BOX_INDICES_FOR_INDEX_BUFFER[36] = {0, 1, 2, 3, 0, 2, 4, 0, 3,
                                                   7, 4, 3, 4, 5, 1, 0, 4, 1,
                                                   1, 5, 6, 2, 1, 6, 5, 4, 7,
                                                   6, 5, 7, 3, 2, 6, 7, 3, 6};
@@ -491,12 +491,12 @@ enum EEvents {
 };
 
 struct SMousePointerPosition {
-    int position_x;
-    int position_y;
-    int offset_x = 0;
-    int offset_y = 0;
-    float pitch;
-    float yaw;
+    i32 position_x;
+    i32 position_y;
+    i32 offset_x = 0;
+    i32 offset_y = 0;
+    f32 pitch;
+    f32 yaw;
 };
 
 class CEvent {
@@ -525,88 +525,88 @@ public:
     virtual ~IChrono() {
     }
 
-    virtual double init_frequency() = 0;
-    virtual double reset() = 0;
-    virtual double get_elapsed() = 0;
+    virtual f64 init_frequency() = 0;
+    virtual f64 reset() = 0;
+    virtual f64 get_elapsed() = 0;
 };
 } // namespace glvm
 
 namespace glvm {
 struct Scalar {
-    float value;
+    f32 value;
 };
 
 // Vector in 3D PGA.
 struct Plane {
     // e1 basis vector.
-    float x;
+    f32 x;
     // e2 basis vector.
-    float y;
+    f32 y;
     // e3 basis vector.
-    float z;
+    f32 z;
     // e0 projective plane in infinity.
-    float w;
+    f32 w;
 };
 
 // Bivector.
 struct Line {
-    float rx;
-    float ry;
-    float rz;
-    float ix;
-    float iy;
-    float iz;
+    f32 rx;
+    f32 ry;
+    f32 rz;
+    f32 ix;
+    f32 iy;
+    f32 iz;
 };
 
 struct Rline {
-    float rx;
-    float ry;
-    float rz;
+    f32 rx;
+    f32 ry;
+    f32 rz;
 };
 
 struct Iline {
-    float ix;
-    float iy;
-    float iz;
+    f32 ix;
+    f32 iy;
+    f32 iz;
 };
 
 // Trivector.
 struct Point {
-    float x;
-    float y;
-    float z;
-    float w;
+    f32 x;
+    f32 y;
+    f32 z;
+    f32 w;
 };
 
 struct PseudoScalar {
-    float w;
+    f32 w;
 };
 
 struct Motor {
-    float rx;
-    float ry;
-    float rz;
+    f32 rx;
+    f32 ry;
+    f32 rz;
     // Scalar.
-    float rw;
-    float ix;
-    float iy;
-    float iz;
+    f32 rw;
+    f32 ix;
+    f32 iy;
+    f32 iz;
     // Pseudoscalar.
-    float iw;
+    f32 iw;
 };
 
 struct Rotor {
-    float rx;
-    float ry;
-    float rz;
-    float rw;
+    f32 rx;
+    f32 ry;
+    f32 rz;
+    f32 rw;
 };
 
 struct Translator {
-    float ix;
-    float iy;
-    float iz;
-    float iw;
+    f32 ix;
+    f32 iy;
+    f32 iz;
+    f32 iw;
 };
 
 inline Line operator-(Line line) {
@@ -654,7 +654,7 @@ inline PseudoScalar operator!(const Scalar& scalar) {
 }
 
 inline Plane normalize(const Plane& plane) {
-    float length =
+    f32 length =
         std::sqrt(plane.x * plane.x + plane.y * plane.y + plane.z * plane.z);
     assert(length != 0);
     return {
@@ -666,7 +666,7 @@ inline Plane normalize(const Plane& plane) {
 }
 
 inline Line normalize(const Line& line) {
-    float length =
+    f32 length =
         std::sqrt(line.ix * line.ix + line.iy * line.iy + line.iz * line.iz);
     assert(length != 0);
     return {
@@ -703,24 +703,24 @@ inline Rline operator~(const Rline& rline) {
 // Inner product.
 
 // Scalar product of the plane normals.
-inline float operator|(const Plane& plane0, const Plane& plane1) {
+inline f32 operator|(const Plane& plane0, const Plane& plane1) {
     return plane0.x * plane1.x + plane0.y * plane1.y + plane0.z * plane1.z;
 }
 
 // This gives the oriented distance from the point to the plane (if normalized).
 inline Line operator|(const Plane& plane, const Point& point) {
     return {
-        // e2 ^ e3.
+        // e2 ^ e3.f
         .rx = plane.x * point.w,
-        // e3 ^ e1.
+        // e3 ^ e1.f
         .ry = plane.y * point.w,
-        // e1 ^ e2.
+        // e1 ^ e2.f
         .rz = plane.z * point.w,
-        // e0 ^ e1.
+        // e0 ^ e1.f
         .ix = plane.z * point.y - plane.y * point.z,
-        // e0 ^ e2.
+        // e0 ^ e2.f
         .iy = plane.x * point.z - plane.z * point.x,
-        // e0 ^ e3.
+        // e0 ^ e3.f
         .iz = plane.y * point.x - plane.x * point.y
     };
 }
@@ -729,20 +729,20 @@ inline Line operator|(const Plane& plane, const Point& point) {
 // infinite point.
 inline Point operator|(const Plane& plane, const Line& line) {
     return {
-        // e1.
+        // e1.f
         .x = -plane.y * line.rz + plane.z * line.ry,
-        // e2.
+        // e2.f
         .y = plane.x * line.rz - plane.z * line.rx,
-        // e3.
+        // e3.f
         .z = -plane.x * line.ry + plane.y * line.rx,
-        // e0.
+        // e0.f
         .w = -plane.x * line.ix - plane.y * line.iy - plane.z * line.iz
     };
 }
 
 // Angular measure between directions. These are dot directions; if the lines
 // are normalized, this is the cos(θ) between them.
-inline float operator|(const Line& line0, const Line& line1) {
+inline f32 operator|(const Line& line0, const Line& line1) {
     return -line0.rx * line1.rx - line0.ry * line1.ry - line0.rz * line1.rz;
 }
 
@@ -768,11 +768,11 @@ inline Scalar operator|(const Point& point0, const Point& point1) {
 // plane ^ plane -> line (those intersection).
 inline Line operator^(const Plane& plane0, const Plane& plane1) {
     return {
-        // Real part (moment): e23, e31, e12.
+        // Real part (moment): e23, e31, e12.f
         .rx = plane0.y * plane1.z - plane0.z * plane1.y,
         .ry = plane0.z * plane1.x - plane0.x * plane1.z,
         .rz = plane0.x * plane1.y - plane0.y * plane1.x,
-        // Ideal part (direction): e01, e02, e03.
+        // Ideal part (direction): e01, e02, e03.f
         .ix = plane0.w * plane1.x - plane0.x * plane1.w,
         .iy = plane0.w * plane1.y - plane0.y * plane1.w,
         .iz = plane0.w * plane1.z - plane0.z * plane1.w
@@ -788,13 +788,13 @@ inline PseudoScalar operator^(const Plane& plane, const Point& point) {
 }
 
 // line ^ point -> plane.
-inline float operator^(const Line& line, const Point& point) {
-    return 0.0;
+inline f32 operator^(const Line& line, const Point& point) {
+    return 0.0f;
 }
 
 // point ∧ point → line (through two points).
-inline float operator^(const Point& point0, const Point& point1) {
-    return 0.0;
+inline f32 operator^(const Point& point0, const Point& point1) {
+    return 0.0f;
 }
 
 // line ∧ line → point (if intersecting). If w == 0, then the lines do not
@@ -812,8 +812,8 @@ inline PseudoScalar operator^(const Line& line0, const Line& line1) {
 // will be at infinity (w = 0). This is the same formula as inner(plane, line) -
 // in PGA 3D the result of plane ∧ line and plane | line have the same component
 // form, but semantically they are different operations:
-// 1. inner - orthogonal projection.
-// 2. outer - geometric "generating" subspace.
+// 1.f inner - orthogonal projection.
+// 2.f outer - geometric "generating" subspace.
 inline Point operator^(const Plane& plane, const Line& line) {
     return {
         .x = plane.y * line.iz - plane.z * line.iy - plane.w * line.rx,
@@ -837,7 +837,7 @@ inline Point operator^(const Line& line, const Plane& plane) {
 // Algebra (PGA), the regressive product, denoted by ∨ (vee), is the dual
 // operation to the exterior product (∧). That is: A ∨ B = (⟦A⟧ ∧ ⟦B⟧)*, where
 // ⟦A⟧ is the dual of object A, and * is the dual of the result
-inline float operator&(Plane plane0, Plane plane1) {
+inline f32 operator&(Plane plane0, Plane plane1) {
     return 0.0f;
 }
 
@@ -885,11 +885,11 @@ inline Line operator&(Point point0, Point point1) {
     // point0 below link with dual plane0 from outer product and point1 below
     // link with dual plane1 from outer product.
     return {
-        // Real part (moment): e23, e31, e12.
+        // Real part (moment): e23, e31, e12.f
         .rx = point0.w * point1.x - point0.x * point1.w,
         .ry = point0.w * point1.y - point0.y * point1.w,
         .rz = point0.w * point1.z - point0.z * point1.w,
-        // Ideal part (direction): e01, e02, e03.
+        // Ideal part (direction): e01, e02, e03.f
         .ix = point0.y * point1.z - point0.z * point1.y,
         .iy = point0.z * point1.x - point0.x * point1.z,
         .iz = point0.x * point1.y - point0.y * point1.x
@@ -903,11 +903,11 @@ inline Scalar operator&(Line line0, Line line1) {
     };
 }
 
-inline float operator&(Plane plane, Line line) {
+inline f32 operator&(Plane plane, Line line) {
     return 0.0f;
 }
 
-inline float operator&(Line line, Plane plane) {
+inline f32 operator&(Line line, Plane plane) {
     return 0.0f;
 }
 
@@ -915,30 +915,30 @@ inline float operator&(Line line, Plane plane) {
 
 inline Motor operator*(Plane plane0, Plane plane1) {
     return {
-        // Real part (moment): e23, e31, e12.
+        // Real part (moment): e23, e31, e12.f
         .rx = plane0.y * plane1.z - plane0.z * plane1.y,
         .ry = plane0.z * plane1.x - plane0.x * plane1.z,
         .rz = plane0.x * plane1.y - plane0.y * plane1.x,
         // Scalar.
         .rw = plane0.x * plane1.x + plane0.y * plane1.y + plane0.z * plane1.z,
-        // Ideal part (direction): e01, e02, e03.
+        // Ideal part (direction): e01, e02, e03.f
         .ix = plane0.w * plane1.x - plane0.x * plane1.w,
         .iy = plane0.w * plane1.y - plane0.y * plane1.w,
         .iz = plane0.w * plane1.z - plane0.z * plane1.w,
         // Pseudoscalar.
-        .iw = 0.0
+        .iw = 0.0f
     };
 }
 
 inline Motor operator*(Line line0, Line line1) {
     return {
-        // Real part (moment): e23, e31, e12.
+        // Real part (moment): e23, e31, e12.f
         .rx = -line0.ry * line1.rz + line0.rz * line1.ry,
         .ry = line0.rx * line1.rz - line0.rz * line1.rx,
         .rz = -line0.rx * line1.ry + line0.ry * line1.rx,
         // Scalar.
         .rw = -line0.rx * line1.rx - line0.ry * line1.ry - line0.rz * line1.rz,
-        // Ideal part (direction): e01, e02, e03.
+        // Ideal part (direction): e01, e02, e03.f
         .ix = -line0.ry * line1.iz + line0.rz * line1.iy - line0.iy * line1.rz
             + line0.iz * line1.ry,
         .iy = line0.rx * line1.iz - line0.rz * line1.ix + line0.ix * line1.rz
@@ -953,7 +953,7 @@ inline Motor operator*(Line line0, Line line1) {
 
 inline Rotor operator*(Rline rline0, Rline rline1) {
     return {
-        // Real part (moment): e23, e31, e12.
+        // Real part (moment): e23, e31, e12.f
         .rx = -rline0.ry * rline1.rz + rline0.rz * rline1.ry,
         .ry = rline0.rx * rline1.rz - rline0.rz * rline1.rx,
         .rz = -rline0.rx * rline1.ry + rline0.ry * rline1.rx,
@@ -972,8 +972,8 @@ inline Translator operator*(Point point0, Point point1) {
     };
 }
 
-inline Rotor exp(float theta, Rline rline) {
-    float sin = std::sin(theta / 2.0f);
+inline Rotor exp(f32 theta, Rline rline) {
+    f32 sin = std::sin(theta / 2.0f);
     return {
         .rx = rline.rx * sin,
         .ry = rline.ry * sin,
@@ -982,8 +982,8 @@ inline Rotor exp(float theta, Rline rline) {
     };
 }
 
-inline Translator exp(float distance, Iline iline) {
-    float half = distance / 2.0f;
+inline Translator exp(f32 distance, Iline iline) {
+    f32 half = distance / 2.0f;
     return {
         .ix = iline.ix * half,
         .iy = iline.iy * half,
@@ -993,11 +993,11 @@ inline Translator exp(float distance, Iline iline) {
 }
 
 inline Point operator>>(const Rotor& rotor, const Point& point) {
-    const float d0 =
+    const auto d0 =
         point.x * rotor.rw + point.y * rotor.rz - point.z * rotor.ry;
-    const float d1 =
+    const auto d1 =
         point.x * rotor.ry - point.y * rotor.rx + point.z * rotor.rw;
-    const float d2 =
+    const auto d2 =
         -point.x * rotor.rz + point.y * rotor.rw + point.z * rotor.rx;
     return {
         .x = point.x + 2.0f * (-rotor.ry * d1 + rotor.rz * d2),
@@ -1008,8 +1008,8 @@ inline Point operator>>(const Rotor& rotor, const Point& point) {
 }
 
 inline Point operator>>(const Translator& translator, const Point& point) {
-    const float pwrw = point.w * translator.iw;
-    const float rww = translator.iw * translator.iw;
+    const auto pwrw = point.w * translator.iw;
+    const auto rww = translator.iw * translator.iw;
     return {
         .x = point.x * rww - 2.0f * pwrw * translator.ix,
         .y = point.y * rww - 2.0f * pwrw * translator.iy,
@@ -1020,7 +1020,7 @@ inline Point operator>>(const Translator& translator, const Point& point) {
 }; // namespace glvm
 
 namespace glvm {
-enum States : uint8_t { IDLE, ATTACK, ROAMING };
+enum States : u8 { IDLE, ATTACK, ROAMING };
 } // namespace glvm
 
 namespace glvm {
@@ -1045,27 +1045,27 @@ struct StaticMeshTagComponent {};
 
 namespace glvm {
 struct TextureHandle {
-    uint32_t id;
+    u32 id;
 };
 
 struct Texture {
     // This field using to choose specific instance of texture image in Vulkan.
-    unsigned int vk_available_inner_id = 0;
-    unsigned int vk_inner_id_limit = 10;
+    u32 vk_available_inner_id = 0;
+    u32 vk_inner_id_limit = 10;
 
     const char* path_to_image = "";
-    std::vector<unsigned int> entities_owns_this_type_of_texture = {};
-    unsigned int id = 0;
-    unsigned int i_width = 0;
-    unsigned int i_height = 0;
-    unsigned int dat_length = 0;
-    unsigned char* u_i_data = 0;
+    Vec<u32> entities_owns_this_type_of_texture = {};
+    u32 id = 0;
+    u32 i_width = 0;
+    u32 i_height = 0;
+    u32 dat_length = 0;
+    u8* u_i_data = 0;
 };
 } // namespace glvm
 
 class ThreadPool {
 public:
-    explicit ThreadPool(size_t num_threads);
+    explicit ThreadPool(usize num_threads);
     ~ThreadPool();
 
     ThreadPool(const ThreadPool&) = delete;
@@ -1076,10 +1076,10 @@ public:
         -> std::future<typename std::invoke_result_t<F, Args...>>;
 
 private:
-    std::vector<std::thread> workers;
+    Vec<std::thread> workers;
     std::queue<std::function<void()>> tasks;
 
-    std::mutex queue_mutex;
+    Mutex queue_mutex;
     std::condition_variable condition;
     bool stop;
 };
@@ -1095,7 +1095,7 @@ auto ThreadPool::enqueue(F&& f, Args&&... args)
     std::future<typename std::invoke_result_t<F, Args...>> res =
         task->get_future();
     {
-        std::unique_lock<std::mutex> lock(queue_mutex);
+        std::unique_lock<Mutex> lock(queue_mutex);
 
         if (stop) {
             throw std::runtime_error("enqueue on stopped ThreadPool");
@@ -1122,9 +1122,9 @@ struct Point2D {
 };
 
 struct Point3D {
-    float x;
-    float y;
-    float z;
+    f32 x;
+    f32 y;
+    f32 z;
 };
 
 template<typename T>
@@ -1137,16 +1137,16 @@ T clamp(T lower_threshold, T target_value, T upper_threshold) {
     return target_value;
 }
 
-template<class T2, int Var2>
+template<class T2, i32 Var2>
 class Vector;
 
-template<class T, int Var>
+template<class T, i32 Var>
 class Matrix {
     T m_matrix[Var][Var] {};
 
 public:
     Matrix(T arg = 0) {
-        for (int i = 0; i < Var; ++i) {
+        for (i32 i = 0; i < Var; ++i) {
             m_matrix[i][i] = arg;
         }
     }
@@ -1180,21 +1180,21 @@ public:
 
     void self_tensor_transpose() {
         T temp_matrix[Var][Var];
-        for (int p = 0; p < Var; ++p) {
-            for (int u = 0; u < Var; ++u) {
+        for (i32 p = 0; p < Var; ++p) {
+            for (i32 u = 0; u < Var; ++u) {
                 temp_matrix[p][u] = m_matrix[u][p];
             }
         }
-        for (int j = 0; j < Var; ++j) {
-            for (int z = 0; z < Var; ++z) {
+        for (i32 j = 0; j < Var; ++j) {
+            for (i32 z = 0; z < Var; ++z) {
                 this->m_matrix[j][z] = temp_matrix[j][z];
             }
         }
     }
 
     void self_identity() {
-        for (int i = 0; i < Var; ++i) {
-            for (int j = 0; j < Var; ++j) {
+        for (i32 i = 0; i < Var; ++i) {
+            for (i32 j = 0; j < Var; ++j) {
                 if (i == j) {
                     this->m_matrix[i][j] = 1.0f;
                 } else {
@@ -1207,17 +1207,17 @@ public:
     Matrix<T, Var> operator+(const Matrix& matrix);
     Matrix<T, Var> operator*(const T scalar);
     Matrix<T, Var> operator*(const Matrix& matrix);
-    T* operator[](const int index);
-    const T* operator[](const int index) const;
-    template<class T2, int Var2>
+    T* operator[](const i32 index);
+    const T* operator[](const i32 index) const;
+    template<class T2, i32 Var2>
     Vector<T2, Var2> operator*(const Vector<T2, Var2>& vector);
 };
 
-template<class T, int Var>
+template<class T, i32 Var>
 Matrix<T, Var> Matrix<T, Var>::operator+(const Matrix& matrix) {
     Matrix<T, Var> temp_matrix;
-    for (int i = 0; i < Var; ++i) {
-        for (int j = 0; j < Var; ++j) {
+    for (i32 i = 0; i < Var; ++i) {
+        for (i32 j = 0; j < Var; ++j) {
             temp_matrix[i][j] = this->m_matrix[i][j] + matrix.m_matrix[i][j];
         }
     }
@@ -1225,11 +1225,11 @@ Matrix<T, Var> Matrix<T, Var>::operator+(const Matrix& matrix) {
     return temp_matrix;
 }
 
-template<class T, int Var>
+template<class T, i32 Var>
 Matrix<T, Var> Matrix<T, Var>::operator*(const T scalar) {
     Matrix<T, Var> temp_matrix;
-    for (int i = 0; i < Var; ++i) {
-        for (int j = 0; j < Var; ++j) {
+    for (i32 i = 0; i < Var; ++i) {
+        for (i32 j = 0; j < Var; ++j) {
             temp_matrix[i][j] = this->m_matrix[i][j] * scalar;
         }
     }
@@ -1237,12 +1237,12 @@ Matrix<T, Var> Matrix<T, Var>::operator*(const T scalar) {
     return temp_matrix;
 }
 
-template<class T, int Var>
+template<class T, i32 Var>
 Matrix<T, Var> Matrix<T, Var>::operator*(const Matrix& matrix) {
     Matrix<T, Var> temp_matrix;
-    for (int i = 0; i < Var; ++i) {
-        for (int j = 0; j < Var; ++j) {
-            for (int n = 0; n < Var; ++n) {
+    for (i32 i = 0; i < Var; ++i) {
+        for (i32 j = 0; j < Var; ++j) {
+            for (i32 n = 0; n < Var; ++n) {
                 temp_matrix.m_matrix[i][j] +=
                     m_matrix[i][n] * matrix.m_matrix[n][j];
             }
@@ -1251,30 +1251,30 @@ Matrix<T, Var> Matrix<T, Var>::operator*(const Matrix& matrix) {
     return temp_matrix;
 }
 
-template<class T, int Var>
-T* Matrix<T, Var>::operator[](const int index) {
+template<class T, i32 Var>
+T* Matrix<T, Var>::operator[](const i32 index) {
     return m_matrix[index];
 }
 
-template<class T, int Var>
-const T* Matrix<T, Var>::operator[](const int index) const {
+template<class T, i32 Var>
+const T* Matrix<T, Var>::operator[](const i32 index) const {
     return m_matrix[index];
 }
 
-template<class T, int Var>
-template<class T2, int Var2>
+template<class T, i32 Var>
+template<class T2, i32 Var2>
 Vector<T2, Var2> Matrix<T, Var>::operator*(const Vector<T2, Var2>& vector) {
     static_assert(Var == Var2, "Size error");
     Vector<T2, Var2> temp_vector;
-    for (int i = 0; i < Var2; ++i) {
-        for (int j = 0; j < Var; ++j) {
+    for (i32 i = 0; i < Var2; ++i) {
+        for (i32 j = 0; j < Var; ++j) {
             temp_vector[i] += m_matrix[i][j] * vector[j];
         }
     }
     return temp_vector;
 }
 
-template<class T2, int Dim>
+template<class T2, i32 Dim>
 class Vector {
 public:
     T2 m_vector[Dim] {};
@@ -1282,14 +1282,14 @@ public:
 public:
     Vector(T2 x = 0, T2 y = 0, T2 z = 0, T2 w = 0) {
         T2 array[4] = {x, y, z, w};
-        for (int i = 0; i < Dim; ++i) {
+        for (i32 i = 0; i < Dim; ++i) {
             m_vector[i] = array[i];
         }
     }
 
-    T2& operator[](const int index);
-    const T2& operator[](const int index) const;
-    template<class T, int Dim2>
+    T2& operator[](const i32 index);
+    const T2& operator[](const i32 index) const;
+    template<class T, i32 Dim2>
     Vector<T2, Dim> operator*(const Matrix<T, Dim2>& matrix);
     Vector<T2, Dim> operator*(const Vector<T2, Dim>& other);
     Vector<T2, Dim> operator*=(const Vector<T2, Dim>& other);
@@ -1302,7 +1302,7 @@ public:
     T2 length() const;
 };
 
-template<class T2, int Var2>
+template<class T2, i32 Var2>
 T2 Vector<T2, Var2>::length() const {
     return std::sqrt(
         m_vector[0] * m_vector[0] + m_vector[1] * m_vector[1]
@@ -1310,60 +1310,60 @@ T2 Vector<T2, Var2>::length() const {
     );
 }
 
-template<class T2, int Var2>
+template<class T2, i32 Var2>
 Vector<T2, Var2> Vector<T2, Var2>::operator-() {
     Vector<T2, Var2> temp_vector;
-    for (int i = 0; i < Var2; ++i) {
+    for (i32 i = 0; i < Var2; ++i) {
         temp_vector[i] = -m_vector[i];
     }
 
     return temp_vector;
 }
 
-template<class T2, int Var2>
-T2& Vector<T2, Var2>::operator[](const int index) {
+template<class T2, i32 Var2>
+T2& Vector<T2, Var2>::operator[](const i32 index) {
     return m_vector[index];
 }
 
-template<class T2, int Var2>
-const T2& Vector<T2, Var2>::operator[](const int index) const {
+template<class T2, i32 Var2>
+const T2& Vector<T2, Var2>::operator[](const i32 index) const {
     return m_vector[index];
 }
 
-template<class T2, int Var2>
-template<class T, int Var>
+template<class T2, i32 Var2>
+template<class T, i32 Var>
 Vector<T2, Var2> Vector<T2, Var2>::operator*(const Matrix<T, Var>& matrix) {
     static_assert(Var == Var2, "Size error");
     Vector<T2, Var2> temp_vector;
-    for (int i = 0; i < Var2; ++i) {
-        for (int j = 0; j < Var; ++j) {
+    for (i32 i = 0; i < Var2; ++i) {
+        for (i32 j = 0; j < Var; ++j) {
             temp_vector[i] += m_vector[j] * matrix[j][i];
         }
     }
     return temp_vector;
 }
 
-template<typename T2, int Var2>
+template<typename T2, i32 Var2>
 Vector<T2, Var2> Vector<T2, Var2>::operator*(const Vector<T2, Var2>& other) {
     Vector<T2, Var2> temp_vector;
-    for (int i = 0; i < 3; ++i) {
+    for (i32 i = 0; i < 3; ++i) {
         temp_vector[i] = m_vector[i] * other[i];
     }
 
     return temp_vector;
 }
 
-template<typename T2, int Var2>
+template<typename T2, i32 Var2>
 Vector<T2, Var2> Vector<T2, Var2>::operator*=(const Vector<T2, Var2>& other) {
     Vector<T2, Var2> temp_vector;
-    for (int i = 0; i < 3; ++i) {
+    for (i32 i = 0; i < 3; ++i) {
         temp_vector[i] = m_vector[i] * other[i];
     }
 
     return temp_vector;
 }
 
-template<typename T2, int Var2>
+template<typename T2, i32 Var2>
 Vector<T2, Var2> Vector<T2, Var2>::operator-(
     const Vector<T2, Var2>& other
 ) const {
@@ -1376,7 +1376,7 @@ Vector<T2, Var2> Vector<T2, Var2>::operator-(
     return temp_vector;
 }
 
-template<typename T2, int Var2>
+template<typename T2, i32 Var2>
 Vector<T2, Var2> Vector<T2, Var2>::operator+(
     const Vector<T2, Var2>& other
 ) const {
@@ -1389,35 +1389,35 @@ Vector<T2, Var2> Vector<T2, Var2>::operator+(
     return temp_vector;
 }
 
-template<typename T2, int Var2>
+template<typename T2, i32 Var2>
 void Vector<T2, Var2>::operator-=(const Vector<T2, Var2>& other) {
     m_vector[0] = m_vector[0] - other[0];
     m_vector[1] = m_vector[1] - other[1];
     m_vector[2] = m_vector[2] - other[2];
 }
 
-template<typename T2, int Var2>
+template<typename T2, i32 Var2>
 void Vector<T2, Var2>::operator+=(const Vector<T2, Var2>& other) {
     m_vector[0] = m_vector[0] + other[0];
     m_vector[1] = m_vector[1] + other[1];
     m_vector[2] = m_vector[2] + other[2];
 }
 
-template<typename T2, int Var2>
+template<typename T2, i32 Var2>
 Vector<T2, Var2> Vector<T2, Var2>::operator*(const T2& multiplier) {
     Vector<T2, Var2> temp_vec(1.0f);
 
-    for (int i = 0; i < Var2; ++i) {
+    for (i32 i = 0; i < Var2; ++i) {
         temp_vec[i] = m_vector[i] * multiplier;
     }
 
     return temp_vec;
 }
 
-template<typename T2, int Var2>
+template<typename T2, i32 Var2>
 Vector<T2, Var2> operator*(const Vector<T2, Var2>& vector, const T2 multiplier) {
     Vector<T2, Var2> temp;
-    for (int i = 0; i < Var2; ++i) {
+    for (i32 i = 0; i < Var2; ++i) {
         temp[i] = vector[i] * multiplier;
     }
     return temp;
@@ -1493,10 +1493,10 @@ T determinant_4x4(Matrix<T, 4> matrix) {
     remove_1row_4col[2][0] = matrix[3][0];
     remove_1row_4col[2][1] = matrix[3][1];
     remove_1row_4col[2][2] = matrix[3][2];
-    T determinant = matrix[0][0] * determinant_3x3<float>(remove_1row_1col)
-        - matrix[0][1] * determinant_3x3<float>(remove_1row_2col)
-        + matrix[0][2] * determinant_3x3<float>(remove_1row_3col)
-        - matrix[0][3] * determinant_3x3<float>(remove_1row_4col);
+    T determinant = matrix[0][0] * determinant_3x3<f32>(remove_1row_1col)
+        - matrix[0][1] * determinant_3x3<f32>(remove_1row_2col)
+        + matrix[0][2] * determinant_3x3<f32>(remove_1row_3col)
+        - matrix[0][3] * determinant_3x3<f32>(remove_1row_4col);
     return determinant;
 }
 
@@ -1681,8 +1681,8 @@ Matrix<T, 4> inverse_matrix_4x4(Matrix<T, 4> matrix) {
     matrix_of_minors[3][3] = determinant_3x3<T>(remove_4row_4col);
     // Compute matrix of cofactors.
     Matrix<T, 4> matrix_of_cofactors(0.0f);
-    for (unsigned int i = 0; i < 4; ++i) {
-        for (unsigned int j = 0; j < 4; ++j) {
+    for (u32 i = 0; i < 4; ++i) {
+        for (u32 j = 0; j < 4; ++j) {
             if ((i + j) % 2 == 0) {
                 matrix_of_cofactors[i][j] = matrix_of_minors[i][j];
             } else {
@@ -1700,43 +1700,43 @@ Matrix<T, 4> inverse_matrix_4x4(Matrix<T, 4> matrix) {
     return inverse_matrix;
 }
 
-template<class T, class T2, int Var, int Var2>
+template<class T, class T2, i32 Var, i32 Var2>
 Matrix<T, Var> look_at(Matrix<T, Var> matrix, Vector<T2, Var2> vector) {
     Matrix<T, Var> temp_matrix(1.0f);
     temp_matrix = matrix;
 
-    const unsigned int variable = 3;
-    for (int i = 0; i < Var2; ++i) {
+    const auto variable = 3;
+    for (i32 i = 0; i < Var2; ++i) {
         temp_matrix[i][variable] = -vector[i];
     }
 
     return temp_matrix;
 }
 
-template<class T, class T2, int Var, int Var2>
+template<class T, class T2, i32 Var, i32 Var2>
 Matrix<T, Var> translate(Matrix<T, Var> matrix, Vector<T2, Var2> vector) {
     Matrix<T, Var> temp_matrix(1.0f);
     temp_matrix = matrix;
-    for (int i = 0; i < Var; ++i) {
+    for (i32 i = 0; i < Var; ++i) {
         temp_matrix[Var - 1][i] += vector[i];
     }
     return temp_matrix;
 }
 
-template<class T, class T2, int Var, int Var2>
+template<class T, class T2, i32 Var, i32 Var2>
 Matrix<T, Var> scale(Matrix<T, Var> matrix, Vector<T2, Var2> vector) {
     Matrix<T, Var> temp_matrix;
     temp_matrix = matrix;
-    for (int i = 0; i < Var; ++i) {
-        for (int j = 0; j < Var; ++j) {
+    for (i32 i = 0; i < Var; ++i) {
+        for (i32 j = 0; j < Var; ++j) {
             temp_matrix[j][i] *= vector[i];
         }
     }
     return temp_matrix;
 }
 
-template<class T, int Var>
-Matrix<T, Var> rotate_z(Matrix<T, Var> matrix, float angle) {
+template<class T, i32 Var>
+Matrix<T, Var> rotate_z(Matrix<T, Var> matrix, f32 angle) {
     Matrix<T, Var> temp_matrix(1.0f);
     temp_matrix[0][0] = std::cos(angle * PI / 180);
     temp_matrix[0][1] = -std::sin(angle * PI / 180);
@@ -1779,12 +1779,12 @@ T vec_length(const Vector<T, 3>& vector) {
 template<typename T>
 Vector<T, 3> normalize(Vector<T, 3> other) {
     if (other[0] == 0 && other[1] == 0 && other[2] == 0) {
-        return Vector<float, 3> {0.0f, 0.0f, 0.0f};
+        return Vector<f32, 3> {0.0f, 0.0f, 0.0f};
     }
-    float range = std::sqrt(
+    f32 range = std::sqrt(
         other[0] * other[0] + other[1] * other[1] + other[2] * other[2]
     );
-    for (int l = 0; l < 3; ++l) {
+    for (i32 l = 0; l < 3; ++l) {
         other[l] = other[l] / range;
     }
     return other;
@@ -1793,7 +1793,7 @@ Vector<T, 3> normalize(Vector<T, 3> other) {
 template<typename T>
 Matrix<T, 4> glvm_perspective_rh_no(T fov, T aspect, T near_plane, T far_plane) {
     const T tan_half_fov = std::tan(fov / static_cast<T>(2));
-    Matrix<float, 4> result(static_cast<T>(0));
+    Matrix<f32, 4> result(static_cast<T>(0));
     result[0][0] = static_cast<T>(1) / (aspect * tan_half_fov);
     result[1][1] = static_cast<T>(1) / (tan_half_fov);
     result[2][2] = -(far_plane - near_plane) / (far_plane - near_plane);
@@ -1866,13 +1866,13 @@ T3 radians(T3 degrees) {
 }
 
 template<typename T>
-Matrix<T, 4> fps_view_rh(Vector<T, 3> eye, float pitch_deg, float yaw_deg) {
+Matrix<T, 4> fps_view_rh(Vector<T, 3> eye, f32 pitch_deg, f32 yaw_deg) {
     pitch_deg *= PI / 180;
     yaw_deg *= PI / 180;
-    float f_cos_pitch = std::cos(pitch_deg);
-    float f_sin_pitch = std::sin(pitch_deg);
-    float f_cos_yaw = std::cos(yaw_deg);
-    float f_sin_yaw = std::sin(yaw_deg);
+    f32 f_cos_pitch = std::cos(pitch_deg);
+    f32 f_sin_pitch = std::sin(pitch_deg);
+    f32 f_cos_yaw = std::cos(yaw_deg);
+    f32 f_sin_yaw = std::sin(yaw_deg);
     Vector<T, 3> x_axis(f_cos_yaw, 0, -f_sin_yaw);
     Vector<T, 3> y_axis(
         f_sin_yaw * f_sin_pitch,
@@ -1893,8 +1893,8 @@ Matrix<T, 4> fps_view_rh(Vector<T, 3> eye, float pitch_deg, float yaw_deg) {
     return t_view;
 }
 
-template<class T, int Var, int VecSize>
-Matrix<T, Var> rotate(Vector<T, VecSize> vector, float angle) {
+template<class T, i32 Var, i32 VecSize>
+Matrix<T, Var> rotate(Vector<T, VecSize> vector, f32 angle) {
     vector = (normalize(vector));
     Matrix<T, Var> temp_matrix(1.0f);
     // Transposed rotate matrix.
@@ -1932,8 +1932,8 @@ Matrix<T, Var> rotate(Vector<T, VecSize> vector, float angle) {
     return temp_matrix;
 }
 
-template<class T, int Var>
-Matrix<T, Var> ortho(float w, float h, float zn, float zf) {
+template<class T, i32 Var>
+Matrix<T, Var> ortho(f32 w, f32 h, f32 zn, f32 zf) {
     Matrix<T, Var> temp_matrix(1.0f);
     temp_matrix[0][0] = 2 / w;
     temp_matrix[1][1] = 2 / h;
@@ -1950,7 +1950,7 @@ Matrix<T, 4> ortho_rh_zo(
     T near_plane,
     T far_plane
 ) {
-    Matrix<float, 4> temp_matrix(1);
+    Matrix<f32, 4> temp_matrix(1);
     temp_matrix[0][0] = static_cast<T>(2) / (right - left);
     temp_matrix[1][1] = static_cast<T>(2) / (top - bottom);
     temp_matrix[2][2] = -static_cast<T>(1) / (far_plane - near_plane);
@@ -1966,10 +1966,10 @@ Matrix<T, 4> ortho(T left, T right, T bottom, T top, T near_plane, T far_plane) 
     return ortho_rh_zo<T>(left, right, bottom, top, near_plane, far_plane);
 }
 
-template<class T, int Var>
+template<class T, i32 Var>
 Matrix<T, Var> perspective_rh_zo(T fov, T aspect, T near_plane, T far_plane) {
-    const float tan_half_fov = std::tan((fov * 0.5) * (PI / 360));
-    Matrix<float, Var> temp_matrix(static_cast<T>(0));
+    const auto tan_half_fov = std::tan((fov * 0.5f) * (PI / 360));
+    Matrix<f32, Var> temp_matrix(static_cast<T>(0));
     temp_matrix[0][0] = static_cast<T>(1) / (aspect * tan_half_fov);
     temp_matrix[1][1] = static_cast<T>(1) / tan_half_fov;
     temp_matrix[2][2] = far_plane / (near_plane - far_plane);
@@ -1978,7 +1978,7 @@ Matrix<T, Var> perspective_rh_zo(T fov, T aspect, T near_plane, T far_plane) {
     return temp_matrix;
 }
 
-template<class T, int Var>
+template<class T, i32 Var>
 Matrix<T, Var> perspective(
     const T fov,
     const T aspect,
@@ -1988,26 +1988,22 @@ Matrix<T, Var> perspective(
     return perspective_rh_zo(fov, aspect, near_plane, far_plane);
 }
 
-constexpr float max(float var1, float var2) {
+constexpr f32 max(f32 var1, f32 var2) {
     return var1 > var2 ? var1 : var2;
 }
 
-constexpr float min(float var1, float var2) {
+constexpr f32 min(f32 var1, f32 var2) {
     return var1 < var2 ? var1 : var2;
 }
 
 struct Quaternion {
-    float w, x, y, z;
+    f32 w, x, y, z;
     Quaternion() = default;
 
-    Quaternion(float qw, float qx, float qy, float qz) :
-        w(qw),
-        x(qx),
-        y(qy),
-        z(qz) {
+    Quaternion(f32 qw, f32 qx, f32 qy, f32 qz) : w(qw), x(qx), y(qy), z(qz) {
     }
 
-    Quaternion(float real, Vector<float, 3> imaginary) :
+    Quaternion(f32 real, Vector<f32, 3> imaginary) :
         w(real),
         x(imaginary[0]),
         y(imaginary[1]),
@@ -2041,7 +2037,7 @@ inline Quaternion operator*(const Quaternion& a, const Quaternion& b) {
     return result;
 }
 
-inline float norm_quaternion(const Quaternion& quaternion) {
+inline f32 norm_quaternion(const Quaternion& quaternion) {
     return sqrt(
         quaternion.w * quaternion.w + quaternion.x * quaternion.x
         + quaternion.y * quaternion.y + quaternion.z * quaternion.z
@@ -2049,8 +2045,8 @@ inline float norm_quaternion(const Quaternion& quaternion) {
 }
 
 inline Quaternion normalize_quaternion(Quaternion quaternion) {
-    float norm = norm_quaternion(quaternion);
-    float inverse_norm = 1.0f / norm;
+    f32 norm = norm_quaternion(quaternion);
+    f32 inverse_norm = 1.0f / norm;
     quaternion.w *= inverse_norm;
     quaternion.x *= inverse_norm;
     quaternion.y *= inverse_norm;
@@ -2060,8 +2056,8 @@ inline Quaternion normalize_quaternion(Quaternion quaternion) {
 
 inline Quaternion inverse_quaternion(Quaternion quaternion) {
     Quaternion linked_value = conjugate(quaternion);
-    float norm = norm_quaternion(quaternion);
-    float inverse_norm = 1.0f / norm;
+    f32 norm = norm_quaternion(quaternion);
+    f32 inverse_norm = 1.0f / norm;
     quaternion.w = linked_value.w * inverse_norm;
     quaternion.x = linked_value.x * inverse_norm;
     quaternion.y = linked_value.y * inverse_norm;
@@ -2070,16 +2066,16 @@ inline Quaternion inverse_quaternion(Quaternion quaternion) {
 }
 
 inline Quaternion euler_to_quaternion(
-    const float roll,
-    const float pitch,
-    const float yaw
+    const f32 roll,
+    const f32 pitch,
+    const f32 yaw
 ) {
-    const float cr = cos(roll * 0.5);
-    const float sr = sin(roll * 0.5);
-    const float cp = cos(pitch * 0.5);
-    const float sp = sin(pitch * 0.5);
-    const float cy = cos(yaw * 0.5);
-    const float sy = sin(yaw * 0.5);
+    const auto cr = cos(roll * 0.5f);
+    const auto sr = sin(roll * 0.5f);
+    const auto cp = cos(pitch * 0.5f);
+    const auto sp = sin(pitch * 0.5f);
+    const auto cy = cos(yaw * 0.5f);
+    const auto sy = sin(yaw * 0.5f);
     Quaternion q;
     q.w = cr * cp * cy + sr * sp * sy;
     q.x = sr * cp * cy - cr * sp * sy;
@@ -2088,9 +2084,9 @@ inline Quaternion euler_to_quaternion(
     return q;
 }
 
-template<class T, int Var>
+template<class T, i32 Var>
 Matrix<T, Var> rotate_quaternion(Quaternion quaternion) {
-    Matrix<float, 4> result(0.0f);
+    Matrix<f32, 4> result(0.0f);
 
     quaternion = normalize_quaternion(quaternion);
 
@@ -2129,12 +2125,12 @@ Matrix<T, Var> rotate_quaternion(Quaternion quaternion) {
 
 namespace glvm {
 class SVertex {
-    float x;
-    float y;
-    float z;
+    f32 x;
+    f32 y;
+    f32 z;
 
 public:
-    float& operator[](const unsigned int index) {
+    f32& operator[](const u32 index) {
         assert(index < 3 && index >= 0 && "Wrong index");
         switch (index) {
             default:
@@ -2149,12 +2145,12 @@ public:
 };
 
 class SFace {
-    std::vector<int> vertex_index;
-    std::vector<int> texture_index;
-    std::vector<int> normal_index;
+    Vec<i32> vertex_index;
+    Vec<i32> texture_index;
+    Vec<i32> normal_index;
 
 public:
-    std::vector<int>& operator[](const unsigned int index) {
+    Vec<i32>& operator[](const u32 index) {
         assert(index < 3 && index >= 0 && "Wrong index");
         switch (index) {
             default:
@@ -2167,7 +2163,7 @@ public:
         }
     }
 
-    const std::vector<int>& operator[](const unsigned int index) const {
+    const Vec<i32>& operator[](const u32 index) const {
         assert(index < 3 && index >= 0 && "Wrong index");
         switch (index) {
             default:
@@ -2182,35 +2178,35 @@ public:
 };
 
 class CWaveFrontObjParser {
-    std::vector<SVertex> coordinate_vertices;
-    std::vector<SVertex> texture_vertices;
-    std::vector<SVertex> normals;
-    std::vector<SFace> faces;
+    Vec<SVertex> coordinate_vertices;
+    Vec<SVertex> texture_vertices;
+    Vec<SVertex> normals;
+    Vec<SFace> faces;
 
-    std::string s_wavefront_obj_file_data;
+    String s_wavefront_obj_file_data;
     const char* p_wavefront_obj_file_data;
-    unsigned int ui_counter = 0;
+    u32 ui_counter = 0;
 
 public:
     CWaveFrontObjParser();
 
-    [[nodiscard]] const std::vector<SVertex>& get_coordinate_vertices() const;
-    [[nodiscard]] const std::vector<SVertex>& get_texture_vertices() const;
-    [[nodiscard]] const std::vector<SVertex>& get_normals() const;
-    [[nodiscard]] const std::vector<SFace>& get_faces() const;
+    [[nodiscard]] const Vec<SVertex>& get_coordinate_vertices() const;
+    [[nodiscard]] const Vec<SVertex>& get_texture_vertices() const;
+    [[nodiscard]] const Vec<SVertex>& get_normals() const;
+    [[nodiscard]] const Vec<SFace>& get_faces() const;
 
     void read_file(const char* file_path);
     void parse_file();
-    std::vector<std::vector<char>> split(
+    Vec<Vec<char>> split(
         const char* data,
         const char separator,
         const char exit_symbol,
-        unsigned int& position
+        u32& position
     );
-    SVertex parse_vertices(std::vector<std::vector<char>> words);
-    SFace parse_faces(std::vector<std::vector<char>> words);
-    int parse_integer(std::vector<char> digits);
-    float parse_floating(std::vector<char> digits);
+    SVertex parse_vertices(Vec<Vec<char>> words);
+    SFace parse_faces(Vec<Vec<char>> words);
+    i32 parse_integer(Vec<char> digits);
+    f32 parse_floating(Vec<char> digits);
 };
 } // namespace glvm
 
@@ -2218,24 +2214,24 @@ namespace glvm {
 class Inventory {
 public:
     Inventory() {
-        for (unsigned int i = 0; i < row; ++i) {
-            slots[i] = new unsigned int[col];
+        for (u32 i = 0; i < row; ++i) {
+            slots[i] = new u32[col];
         }
 
-        for (unsigned int i = 0; i < row; ++i) {
-            for (unsigned int j = 0; j < col; ++j) {
+        for (u32 i = 0; i < row; ++i) {
+            for (u32 j = 0; j < col; ++j) {
                 slots[i][j] = -1;
             }
         }
     }
 
     Inventory(const Inventory& inv) {
-        for (unsigned int i = 0; i < row; ++i) {
-            this->slots[i] = new unsigned int[col];
+        for (u32 i = 0; i < row; ++i) {
+            this->slots[i] = new u32[col];
         }
 
-        for (unsigned int i = 0; i < row; ++i) {
-            for (unsigned int j = 0; j < col; ++j) {
+        for (u32 i = 0; i < row; ++i) {
+            for (u32 j = 0; j < col; ++j) {
                 this->slots[i][j] = inv.slots[i][j];
             }
         }
@@ -2247,36 +2243,36 @@ public:
     }
 
     ~Inventory() {
-        for (unsigned int i = 0; i < row; ++i) {
+        for (u32 i = 0; i < row; ++i) {
             delete[] slots[i];
         }
 
         delete[] slots;
     }
 
-    unsigned int row = 8;
-    unsigned int col = 8;
+    u32 row = 8;
+    u32 col = 8;
     // Array with entities contained inventorySlotComponents.
-    unsigned int** slots = new unsigned int*[row];
-    unsigned int entity_owner = UINT_MAX;
-    std::vector<unsigned int> highlighted_slots;
+    u32** slots = new u32*[row];
+    u32 entity_owner = UINT_MAX;
+    Vec<u32> highlighted_slots;
     bool is_available_highlighted_slots = false;
     MeshHandle slot_mesh_id;
-    float slot_scale;
+    f32 slot_scale;
 };
 }; // namespace glvm
 
 namespace glvm {
 class MeshManager {
     static MeshManager* p_instance;
-    static std::mutex mutex;
+    static Mutex mutex;
 
     MeshManager();
     ~MeshManager();
 
 public:
-    std::vector<const char*> paths_array;
-    std::vector<const char*> paths_gltf;
+    Vec<const char*> paths_array;
+    Vec<const char*> paths_gltf;
 
     // It possibly to get only one instance of this class with this method.
     static MeshManager* get_instance();
@@ -2287,13 +2283,13 @@ public:
 
 namespace glvm {
 class CStack {
-    int i_head = 0;
-    static const int i_stack_range = 6;
+    i32 i_head = 0;
+    static const auto i_stack_range = 6;
     EEvents a_stack[i_stack_range] = {};
 
 public:
     void push(const EEvents& event) {
-        for (int i = 0; i < i_head; ++i) {
+        for (i32 i = 0; i < i_head; ++i) {
             if (a_stack[i] == event) {
                 return;
             }
@@ -2318,13 +2314,13 @@ public:
     void remove(const EEvents& event) {
         EEvents a_temp_stack[i_stack_range] = {};
         bool remove_flag = false;
-        int n = 0;
+        i32 n = 0;
 
-        for (int j = 0; j < i_stack_range; ++j) {
+        for (i32 j = 0; j < i_stack_range; ++j) {
             a_temp_stack[j] = a_stack[j];
         }
 
-        for (int i = 0; i < i_head; ++i) {
+        for (i32 i = 0; i < i_head; ++i) {
             if (event == a_temp_stack[i]) {
                 remove_flag = true;
                 continue;
@@ -2399,7 +2395,7 @@ public:
     }
 
     EEvents search_element(EEvents element) {
-        for (int i = 0; i < i_head; ++i) {
+        for (i32 i = 0; i < i_head; ++i) {
             if (a_stack[i] == element) {
                 return element;
             }
@@ -2408,12 +2404,12 @@ public:
         return EEmpty;
     }
 
-    EEvents& operator[](int index) {
+    EEvents& operator[](i32 index) {
         return a_stack[index];
     }
 
     void clear() {
-        for (int i = 0; i < i_head; ++i) {
+        for (i32 i = 0; i < i_head; ++i) {
             a_stack[i] = EEvents::EDefault;
         }
     }
@@ -2434,10 +2430,10 @@ public:
     virtual bool handle_event(CEvent& event) = 0;
     virtual void close() = 0;
     virtual void cursor_lock(
-        int pointer_x,
-        int pointer_y,
-        int* out_offset_x,
-        int* out_offset_y
+        i32 pointer_x,
+        i32 pointer_y,
+        i32* out_offset_x,
+        i32* out_offset_y
     ) = 0;
 };
 
@@ -2459,16 +2455,16 @@ namespace glvm {
 class CTimerX: public IChrono {
     timespec start_;
     timespec now_;
-    double frequency_;
-    double seconds_;
-    double nanoseconds_;
+    f64 frequency_;
+    f64 seconds_;
+    f64 nanoseconds_;
 
 public:
     CTimerX();
 
-    double init_frequency();
-    double reset();
-    double get_elapsed();
+    f64 init_frequency();
+    f64 reset();
+    f64 get_elapsed();
 };
 } // namespace glvm
 #endif // __linux__
@@ -2484,9 +2480,9 @@ class CTimerWin: public IChrono {
 public:
     CTimerWin();
 
-    double init_frequency();
-    double reset();
-    double get_elapsed();
+    f64 init_frequency();
+    f64 reset();
+    f64 get_elapsed();
 };
 } // namespace glvm
 #endif // _WIN32
@@ -2500,9 +2496,9 @@ struct State {
 namespace glvm {
 struct CSoundSample {
     const char* k_path_to_file;
-    unsigned int ui_duration;
-    unsigned int ui_rate;
-    float volume;
+    u32 ui_duration;
+    u32 ui_rate;
+    f32 volume;
 };
 
 class ISoundEngine {
@@ -2512,15 +2508,15 @@ public:
 
     virtual void open_device(const char* device) = 0;
     virtual void close_device() = 0;
-    virtual std::vector<CSoundSample*>& get_sound_container() = 0;
+    virtual Vec<CSoundSample*>& get_sound_container() = 0;
     virtual void playback_sound_sample(CSoundSample& sample) = 0;
     virtual void set_master_volume(long volume) = 0;
     virtual void sound_stream() = 0;
     virtual void create_sound_sample(
         const char* file_path,
-        uint32_t duration,
-        uint32_t rate,
-        float volume
+        u32 duration,
+        u32 rate,
+        f32 volume
     ) = 0;
 };
 } // namespace glvm
@@ -2529,26 +2525,26 @@ namespace glvm {
 struct Archetype {
     virtual ~Archetype() = default;
 
-    static constexpr uint32_t CAPACITY = 1024;
+    static constexpr auto CAPACITY = 1024;
 
-    uint64_t entities[CAPACITY];
-    uint32_t entity_count = 0;
-    uint32_t component_ids[ComponentsIndices::ComponentsCount] = {};
-    uint32_t component_count = 0;
+    u64 entities[CAPACITY];
+    u32 entity_count = 0;
+    u32 component_ids[ComponentsIndices::ComponentsCount] = {};
+    u32 component_count = 0;
     void* components[ComponentsIndices::ComponentsCount] = {};
-    uint64_t mask = 0;
+    u64 mask = 0;
 
-    uint32_t add_entity(uint64_t entity);
-    uint64_t remove_entity(uint32_t index);
+    u32 add_entity(u64 entity);
+    u64 remove_entity(u32 index);
 };
 
 struct EntityLocation {
     Archetype* arch;
-    uint32_t index;
-    static const uint8_t max_grid_cell_number = 32;
-    uint8_t grid_cell_counter = 0;
-    Vector<float, 3> grid_cell_indicies[max_grid_cell_number];
-    uint32_t cell_entity_indices[max_grid_cell_number];
+    u32 index;
+    static const auto max_grid_cell_number = 32;
+    u8 grid_cell_counter = 0;
+    Vector<f32, 3> grid_cell_indicies[max_grid_cell_number];
+    u32 cell_entity_indices[max_grid_cell_number];
     // Is entity has been moved or removed.
     bool is_dirty = false;
 };
@@ -2556,12 +2552,12 @@ struct EntityLocation {
 
 namespace glvm {
 struct DirectionalLightComponent {
-    Vector<float, 3> position;
-    Vector<float, 3> direction;
+    Vector<f32, 3> position;
+    Vector<f32, 3> direction;
 
-    Vector<float, 3> ambient;
-    Vector<float, 3> diffuse;
-    Vector<float, 3> specular;
+    Vector<f32, 3> ambient;
+    Vector<f32, 3> diffuse;
+    Vector<f32, 3> specular;
 };
 } // namespace glvm
 
@@ -2569,71 +2565,71 @@ namespace glvm {
 struct Material {
     TextureHandle diffuse_texture_id = {};
     TextureHandle specular_texture_id = {};
-    Vector<float, 3> ambient = {0.0f, 0.0f, 0.0f};
-    float shininess = 0.0f;
+    Vector<f32, 3> ambient = {0.0f, 0.0f, 0.0f};
+    f32 shininess = 0.0f;
 };
 } // namespace glvm
 
 namespace glvm {
 struct Move {
     EEvents e_event = EEvents::EDefault;
-    Vector<float, 3> frame_movement {0.0f, 0.0f, 0.0f};
-    Vector<float, 3> gravity {0.0f, 0.0f, 0.0f};
+    Vector<f32, 3> frame_movement {0.0f, 0.0f, 0.0f};
+    Vector<f32, 3> gravity {0.0f, 0.0f, 0.0f};
 };
 } // namespace glvm
 
 namespace glvm {
 struct PointLightComponent {
-    Vector<float, 3> position;
+    Vector<f32, 3> position;
 
-    Vector<float, 3> ambient;
-    Vector<float, 3> diffuse;
-    Vector<float, 3> specular;
+    Vector<f32, 3> ambient;
+    Vector<f32, 3> diffuse;
+    Vector<f32, 3> specular;
 
-    float constant;
-    float linear;
-    float quadratic;
+    f32 constant;
+    f32 linear;
+    f32 quadratic;
 };
 } // namespace glvm
 
 namespace glvm {
 class RigidBody {
 public:
-    float f_mass = 0.0f;
-    float jump_accumulator = 0.0f;
+    f32 f_mass = 0.0f;
+    f32 jump_accumulator = 0.0f;
 };
 } // namespace glvm
 
 namespace glvm {
 struct SpotLightComponent {
-    Vector<float, 3> position;
-    Vector<float, 3> direction;
-    float cut_off;
-    float outer_cut_off;
+    Vector<f32, 3> position;
+    Vector<f32, 3> direction;
+    f32 cut_off;
+    f32 outer_cut_off;
 
-    Vector<float, 3> ambient;
-    Vector<float, 3> diffuse;
-    Vector<float, 3> specular;
+    Vector<f32, 3> ambient;
+    Vector<f32, 3> diffuse;
+    Vector<f32, 3> specular;
 
-    float constant;
-    float linear;
-    float quadratic;
+    f32 constant;
+    f32 linear;
+    f32 quadratic;
 };
 } // namespace glvm
 
 namespace glvm {
 struct Transform {
-    Vector<float, 3> position {0.0f, 0.0f, 0.0f};
-    Vector<float, 3> forward {0.0f, 0.0f, 0.0f};
-    float scale = 1.0f;
-    float gravity_accumulator = 0.0f;
+    Vector<f32, 3> position {0.0f, 0.0f, 0.0f};
+    Vector<f32, 3> forward {0.0f, 0.0f, 0.0f};
+    f32 scale = 1.0f;
+    f32 gravity_accumulator = 0.0f;
 };
 } // namespace glvm
 
 namespace glvm {
 struct Beholder {
-    Vector<float, 3> position {0.0f, 0.0f, 0.0f};
-    Vector<float, 3> forward {0.0f, 0.0, 0.0f};
+    Vector<f32, 3> position {0.0f, 0.0f, 0.0f};
+    Vector<f32, 3> forward {0.0f, 0.0f, 0.0f};
 };
 } // namespace glvm
 
@@ -2652,13 +2648,13 @@ enum JsonType {
 struct JsonValue;
 
 union JsonVariant {
-    std::string* string;
-    double f_number;
-    int i_number;
+    String* string;
+    f64 f_number;
+    i32 i_number;
     bool boolean;
     void* null;
-    std::vector<JsonValue>* array;
-    HashMap<std::string, JsonValue>* object;
+    Vec<JsonValue>* array;
+    HashMap<String, JsonValue>* object;
 
     JsonVariant() {
     }
@@ -2679,17 +2675,17 @@ struct JsonValue {
         type = JsonInvalidValue;
     }
 
-    JsonValue(std::string str) {
+    JsonValue(String str) {
         type = JsonString;
-        value.string = new std::string(str);
+        value.string = new String(str);
     }
 
-    JsonValue(double number) {
+    JsonValue(f64 number) {
         type = JsonFloatNumber;
         value.f_number = number;
     }
 
-    JsonValue(int number) {
+    JsonValue(i32 number) {
         type = JsonIntegerNumber;
         value.i_number = number;
     }
@@ -2705,7 +2701,7 @@ struct JsonValue {
         switch (other.type) {
             case JsonObject:
                 value.object =
-                    new HashMap<std::string, JsonValue>(*other.value.object);
+                    new HashMap<String, JsonValue>(*other.value.object);
                 break;
             case JsonIntegerNumber:
                 value.i_number = other.value.i_number;
@@ -2714,7 +2710,7 @@ struct JsonValue {
                 value.f_number = other.value.f_number;
                 break;
             case JsonString:
-                value.string = new std::string(*other.value.string);
+                value.string = new String(*other.value.string);
                 break;
             case JsonBoolean:
                 value.boolean = other.value.boolean;
@@ -2723,7 +2719,7 @@ struct JsonValue {
                 value.null = other.value.null;
                 break;
             case JsonArray:
-                value.array = new std::vector<JsonValue>(*other.value.array);
+                value.array = new Vec<JsonValue>(*other.value.array);
                 break;
             default:
                 break;
@@ -2781,7 +2777,7 @@ struct JsonValue {
         switch (other.type) {
             case JsonObject:
                 value.object =
-                    new HashMap<std::string, JsonValue>(*other.value.object);
+                    new HashMap<String, JsonValue>(*other.value.object);
                 break;
             case JsonIntegerNumber:
                 value.i_number = other.value.i_number;
@@ -2790,7 +2786,7 @@ struct JsonValue {
                 value.f_number = other.value.f_number;
                 break;
             case JsonString:
-                value.string = new std::string(*other.value.string);
+                value.string = new String(*other.value.string);
                 break;
             case JsonBoolean:
                 value.boolean = other.value.boolean;
@@ -2799,7 +2795,7 @@ struct JsonValue {
                 value.null = other.value.null;
                 break;
             case JsonArray:
-                value.array = new std::vector<JsonValue>(*other.value.array);
+                value.array = new Vec<JsonValue>(*other.value.array);
                 break;
             default:
                 break;
@@ -2807,7 +2803,7 @@ struct JsonValue {
         type = other.type;
     }
 
-    JsonValue& operator[](std::string lookup_key) {
+    JsonValue& operator[](String lookup_key) {
         switch (type) {
             case JsonObject:
                 return (*value.object)[lookup_key];
@@ -2818,7 +2814,7 @@ struct JsonValue {
         }
     }
 
-    JsonValue& operator[](const unsigned int index) {
+    JsonValue& operator[](const u32 index) {
         switch (type) {
             case JsonArray:
                 return (*value.array)[index];
@@ -2863,28 +2859,28 @@ struct JsonValue {
 };
 
 class CJsonParser {
-    std::string s_json_file_data;
+    String s_json_file_data;
     const char* p_json_file_data;
     char current_char;
-    unsigned int global_file_counter = 0;
+    u32 global_file_counter = 0;
 
-    std::vector<JsonValue*> stack_of_json_values;
+    Vec<JsonValue*> stack_of_json_values;
     JsonValue* root;
     bool key_flag = true;
-    std::string last_key = "";
-    std::string buffer_string = "";
+    String last_key = "";
+    String buffer_string = "";
 
     void search_in_json_array(
-        std::vector<JsonValue>* array_value,
+        Vec<JsonValue>* array_value,
         const char* key,
-        std::vector<JsonValue>& result_vector
+        Vec<JsonValue>& result_vector
     ) const;
 
 public:
     void search_in_json_object(
-        HashMap<std::string, JsonValue>* map_value,
+        HashMap<String, JsonValue>* map_value,
         const char* key,
-        std::vector<JsonValue>& result_vector
+        Vec<JsonValue>& result_vector
     ) const;
 
     ~CJsonParser();
@@ -2897,193 +2893,188 @@ public:
     void parse();
     JsonValue create_json_hash_map();
     JsonValue create_json_array();
-    std::string bool_or_null_parse();
-    bool is_contain_char(std::string text, char character);
-    std::string number_as_string_parse();
-    std::string string_parse();
-    std::vector<char> string_to_vector_of_chars(std::string text);
-    int parse_integer(std::vector<char> digits);
-    double parse_floating(std::vector<char> digits);
-    std::vector<JsonValue> search(const char* key) const;
+    String bool_or_null_parse();
+    bool is_contain_char(String text, char character);
+    String number_as_string_parse();
+    String string_parse();
+    Vec<char> string_to_vector_of_chars(String text);
+    i32 parse_integer(Vec<char> digits);
+    f64 parse_floating(Vec<char> digits);
+    Vec<JsonValue> search(const char* key) const;
     void load_gltf(
         const char* paths_gltf,
-        std::vector<float>& a_vertexes,
-        std::vector<uint32_t>& a_indices,
-        std::vector<std::vector<Matrix<float, 4>>>& joint_matrices_per_mesh,
-        std::vector<float>& frames,
+        Vec<f32>& a_vertexes,
+        Vec<u32>& a_indices,
+        Vec<Vec<Matrix<f32, 4>>>& joint_matrices_per_mesh,
+        Vec<f32>& frames,
         bool& no_animations,
-        float& top_y
+        f32& top_y
     );
     void traversal_bones(
-        std::vector<std::vector<int>> children,
+        Vec<Vec<i32>> children,
         JsonValue joints,
-        std::vector<uint32_t> node_stack,
-        std::vector<uint32_t> deepness_stack,
-        std::vector<std::vector<uint32_t>>& result
+        Vec<u32> node_stack,
+        Vec<u32> deepness_stack,
+        Vec<Vec<u32>>& result
     );
-    std::vector<std::vector<unsigned int>> make_render_joints_indices(
-        std::vector<std::vector<unsigned int>>& input
-    );
-    bool contains_element(
-        std::vector<std::vector<unsigned int>> container,
-        unsigned int element
-    );
-    unsigned int get_joint_index(JsonValue joints, int searching_index);
+    Vec<Vec<u32>> make_render_joints_indices(Vec<Vec<u32>>& input);
+    bool contains_element(Vec<Vec<u32>> container, u32 element);
+    u32 get_joint_index(JsonValue joints, i32 searching_index);
 };
 } // namespace glvm
 
 namespace glvm {
 struct LightSpaceMatrixUBO {
-    alignas(16) Matrix<float, 4> spot_space_matrix[SPOT_LIGHTS_NUMBER];
-    alignas(16) uint32_t spot_lights_number;
+    alignas(16) Matrix<f32, 4> spot_space_matrix[SPOT_LIGHTS_NUMBER];
+    alignas(16) u32 spot_lights_number;
 
-    alignas(16) Matrix<float, 4> dir_space_matrix[DIRECTIONAL_LIGHTS_NUMBER];
-    alignas(16) uint32_t directional_lights_number;
+    alignas(16) Matrix<f32, 4> dir_space_matrix[DIRECTIONAL_LIGHTS_NUMBER];
+    alignas(16) u32 directional_lights_number;
 };
 
 struct alignas(64) ModelMatrixUBO {
-    Matrix<float, 4> model;
-    Matrix<float, 4> view;
-    Matrix<float, 4> proj;
-    Matrix<float, 4> joint_matrices[MAX_JOINTS_NUMBER];
+    Matrix<f32, 4> model;
+    Matrix<f32, 4> view;
+    Matrix<f32, 4> proj;
+    Matrix<f32, 4> joint_matrices[MAX_JOINTS_NUMBER];
 
-    Vector<float, 3> ambient;
-    float shininess;
+    Vector<f32, 3> ambient;
+    f32 shininess;
 
-    alignas(16) Matrix<float, 4> spot_space_matrix[SPOT_LIGHTS_NUMBER];
-    alignas(16) uint32_t spot_lights_number;
+    alignas(16) Matrix<f32, 4> spot_space_matrix[SPOT_LIGHTS_NUMBER];
+    alignas(16) u32 spot_lights_number;
 
-    alignas(16) Matrix<float, 4> dir_space_matrix[DIRECTIONAL_LIGHTS_NUMBER];
-    alignas(16) uint32_t directional_lights_number;
+    alignas(16) Matrix<f32, 4> dir_space_matrix[DIRECTIONAL_LIGHTS_NUMBER];
+    alignas(16) u32 directional_lights_number;
 };
 
 struct alignas(16) ShadowMapMatrixUBO {
-    Matrix<float, 4> model;
-    Matrix<float, 4> light_space_matrix;
-    Matrix<float, 4> joint_matrices[MAX_JOINTS_NUMBER];
+    Matrix<f32, 4> model;
+    Matrix<f32, 4> light_space_matrix;
+    Matrix<f32, 4> joint_matrices[MAX_JOINTS_NUMBER];
 };
 
 struct alignas(16) SpotLightShadowMapMatrixUBO {
-    Matrix<float, 4> model;
-    Matrix<float, 4> light_space_matrix;
+    Matrix<f32, 4> model;
+    Matrix<f32, 4> light_space_matrix;
 };
 
 struct alignas(64) PointLightShadowMapMatrixUBO {
-    Matrix<float, 4> model;
-    Matrix<float, 4> light_space_matrix;
-    Vector<float, 3> light_position;
-    float far_plane;
-    Matrix<float, 4> joint_matrices[MAX_JOINTS_NUMBER];
+    Matrix<f32, 4> model;
+    Matrix<f32, 4> light_space_matrix;
+    Vector<f32, 3> light_position;
+    f32 far_plane;
+    Matrix<f32, 4> joint_matrices[MAX_JOINTS_NUMBER];
 };
 
 struct alignas(16) UniformBufferObjectLightUBO {
-    Vector<float, 3> light_position;
-    float far_plane;
+    Vector<f32, 3> light_position;
+    f32 far_plane;
 };
 
 struct alignas(16) DirectionalLight {
-    Vector<float, 4> position;
-    Vector<float, 4> direction;
+    Vector<f32, 4> position;
+    Vector<f32, 4> direction;
 
-    Vector<float, 4> ambient;
-    Vector<float, 4> diffuse;
-    Vector<float, 4> specular;
+    Vector<f32, 4> ambient;
+    Vector<f32, 4> diffuse;
+    Vector<f32, 4> specular;
 };
 
 struct alignas(16) PointLight {
-    Vector<float, 3> position;
-    float padding0;
+    Vector<f32, 3> position;
+    f32 padding0;
 
-    Vector<float, 3> ambient;
-    float padding1;
-    Vector<float, 3> diffuse;
-    float padding2;
+    Vector<f32, 3> ambient;
+    f32 padding1;
+    Vector<f32, 3> diffuse;
+    f32 padding2;
 
-    Vector<float, 3> specular;
-    float constant;
-    float linear;
-    float quadratic;
+    Vector<f32, 3> specular;
+    f32 constant;
+    f32 linear;
+    f32 quadratic;
 };
 
 struct alignas(16) SpotLight {
-    alignas(16) Vector<float, 3> position;
-    alignas(16) Vector<float, 3> direction;
-    float cut_off;
-    float outer_cut_off;
+    alignas(16) Vector<f32, 3> position;
+    alignas(16) Vector<f32, 3> direction;
+    f32 cut_off;
+    f32 outer_cut_off;
 
-    alignas(16) Vector<float, 3> ambient;
-    alignas(16) Vector<float, 3> diffuse;
-    alignas(16) Vector<float, 3> specular;
+    alignas(16) Vector<f32, 3> ambient;
+    alignas(16) Vector<f32, 3> diffuse;
+    alignas(16) Vector<f32, 3> specular;
 
-    float constant;
-    float linear;
-    float quadratic;
+    f32 constant;
+    f32 linear;
+    f32 quadratic;
 };
 
 struct alignas(64) LightData {
-    Vector<float, 2> tileset_tiles_count;
-    int tiles_raw;
-    int tiles_column;
+    Vector<f32, 2> tileset_tiles_count;
+    i32 tiles_raw;
+    i32 tiles_column;
 
-    alignas(16) Vector<float, 3> view_position;
+    alignas(16) Vector<f32, 3> view_position;
 
     PointLight point_lights[POINT_LIGHTS_NUMBER];
-    int point_lights_array_size;
-    float far_plane;
-    int padding0;
-    int padding1;
+    i32 point_lights_array_size;
+    f32 far_plane;
+    i32 padding0;
+    i32 padding1;
 
     DirectionalLight directional_lights[DIRECTIONAL_LIGHTS_NUMBER];
-    alignas(16) int directional_lights_array_size;
+    alignas(16) i32 directional_lights_array_size;
 
     SpotLight spot_lights[SPOT_LIGHTS_NUMBER];
-    int spot_light_array_size;
-    int padding2;
-    int padding3;
-    int padding4;
+    i32 spot_light_array_size;
+    i32 padding2;
+    i32 padding3;
+    i32 padding4;
 
-    Vector<int, 4> indirect_texture
+    Vector<i32, 4> indirect_texture
         [INDIRECT_TEXTURE_WIDTH * INDIRECT_TEXTURE_HEIGHT / 4 + 1];
 
     // Debug: 0 = off, 1 = directional, 2 = spot. When set, the main shader
     // renders the shadow map depth projected onto the scene instead of
     // lighting (visualized from the normal moving camera).
-    int debug_shadow_mode;
-    int debug_shadow_light;
-    int shadows_enabled;
+    i32 debug_shadow_mode;
+    i32 debug_shadow_light;
+    i32 shadows_enabled;
 };
 
 struct alignas(64) HudUbo {
-    Matrix<float, 4> view;
-    Matrix<float, 4> proj;
-    Vector<float, 3> entity_position;
-    int is_hud_exists;
-    float max_hp;
-    float current_hp;
-    float highest_y;
+    Matrix<f32, 4> view;
+    Matrix<f32, 4> proj;
+    Vector<f32, 3> entity_position;
+    i32 is_hud_exists;
+    f32 max_hp;
+    f32 current_hp;
+    f32 highest_y;
 };
 
 struct alignas(64) HudScreenUbo {
-    Matrix<float, 4> model;
+    Matrix<f32, 4> model;
 };
 
 struct alignas(64) FontUbo {
-    Matrix<float, 4> view;
-    Matrix<float, 4> proj;
-    Vector<float, 3> position;
-    float scale;
+    Matrix<f32, 4> view;
+    Matrix<f32, 4> proj;
+    Vector<f32, 3> position;
+    f32 scale;
 };
 
 struct alignas(64) UiUbo {
-    Matrix<float, 4> model;
-    Vector<float, 3> color;
+    Matrix<f32, 4> model;
+    Vector<f32, 3> color;
 };
 
 struct alignas(64) VirtualTextureUbo {};
 
 struct alignas(64) SdfUbo {
-    Matrix<float, 4> model;
-    float i_time;
+    Matrix<f32, 4> model;
+    f32 i_time;
 };
 
 } // namespace glvm
@@ -3104,14 +3095,14 @@ class WindowWinVulkan: public IWindow {
 
     // Cursor-lock baseline: the cursor's actual position after the last warp
     // (not the computed center).
-    int previous_x = 0;
-    int previous_y = 0;
+    i32 previous_x = 0;
+    i32 previous_y = 0;
 
 public:
     static WindowWinVulkan* instance;
     CStack* input_stack;
-    uint32_t width = GetSystemMetrics(SM_CXSCREEN);
-    uint32_t height = GetSystemMetrics(SM_CYSCREEN);
+    u32 width = GetSystemMetrics(SM_CXSCREEN);
+    u32 height = GetSystemMetrics(SM_CYSCREEN);
     WindowWinVulkan();
 
     void swap_buffers() override;
@@ -3121,10 +3112,10 @@ public:
     HWND get_modern_window_hwnd();
     void close() override;
     virtual void cursor_lock(
-        int pointer_x,
-        int pointer_y,
-        int* out_offset_x,
-        int* out_offset_y
+        i32 pointer_x,
+        i32 pointer_y,
+        i32* out_offset_x,
+        i32* out_offset_y
     ) override;
     // Callback method for events handling.
     static LRESULT main_wnd_proc(
@@ -3142,7 +3133,7 @@ public:
 namespace glvm {
 class CSoundEngineAlsa: public ISoundEngine {
     snd_pcm_t* pcm_;
-    std::vector<CSoundSample*> sound_container;
+    Vec<CSoundSample*> sound_container;
 
 public:
     void open_device(const char* device) override;
@@ -3150,12 +3141,12 @@ public:
     void sound_stream() override;
     void playback_sound_sample(CSoundSample& sample) override;
     void set_master_volume(long volume) override;
-    std::vector<CSoundSample*>& get_sound_container() override;
+    Vec<CSoundSample*>& get_sound_container() override;
     void create_sound_sample(
         const char* file_path,
-        uint32_t duration,
-        uint32_t rate,
-        float volume
+        u32 duration,
+        u32 rate,
+        f32 volume
     ) override;
 
     ~CSoundEngineAlsa();
@@ -3177,7 +3168,7 @@ class CSoundEngineWaveform: public ISoundEngine {
     HANDLE h_data = NULL;
     HPSTR lp_data = NULL;
 
-    std::vector<CSoundSample*> t_sound_container;
+    Vec<CSoundSample*> t_sound_container;
 
 public:
     void open_device(const char* device) override;
@@ -3187,11 +3178,11 @@ public:
     void set_master_volume(long volume) override;
     void create_sound_sample(
         const char* file_path,
-        uint32_t duration,
-        uint32_t rate,
-        float volume
+        u32 duration,
+        u32 rate,
+        f32 volume
     ) override;
-    std::vector<CSoundSample*>& get_sound_container() override;
+    Vec<CSoundSample*>& get_sound_container() override;
 };
 } // namespace glvm
 #endif // _WIN32
@@ -3207,35 +3198,35 @@ struct ProjectileBundle {
 namespace glvm {
 class TextureManager {
     static TextureManager* p_instance;
-    static std::mutex mutex;
+    static Mutex mutex;
 
-    std::vector<Texture> texture_vector;
+    Vec<Texture> texture_vector;
 
 public:
     TextureManager();
 
-    void set_texture_vector(std::vector<Texture> textures);
+    void set_texture_vector(Vec<Texture> textures);
     // It possibly to get only one instance of this class with this method.
     static TextureManager* get_instance();
     static TextureManager* get_hud_instance();
-    void bind_texture(unsigned int entity_id, unsigned int texture_id);
+    void bind_texture(u32 entity_id, u32 texture_id);
     void load_texture_data(glvm::Texture& asset);
-    std::vector<Texture>& get_texture_vector();
-    void unbind_texture(Material component, unsigned int entity);
+    Vec<Texture>& get_texture_vector();
+    void unbind_texture(Material component, u32 entity);
 };
 } // namespace glvm
 
 namespace glvm {
 class ComponentManager {
     static ComponentManager* p_instance;
-    static std::mutex mutex;
-    unsigned int number_of_base_components;
+    static Mutex mutex;
+    u32 number_of_base_components;
 
     ComponentManager();
 
     template<typename ComponentType>
-    unsigned int create_component_container() {
-        static unsigned int LOCAL_CONTAINER_ID = 0;
+    u32 create_component_container() {
+        static u32 LOCAL_CONTAINER_ID = 0;
         static bool EXIST_COMPONENT_CONTAINER_FLAG = false;
         if (EXIST_COMPONENT_CONTAINER_FLAG) {
             return LOCAL_CONTAINER_ID;
@@ -3246,17 +3237,15 @@ class ComponentManager {
         EXIST_COMPONENT_CONTAINER_FLAG = true;
         // Create component container of current type.
         world_components_container.push_back(
-            std::make_shared<std::vector<ComponentType>>()
+            std::make_shared<Vec<ComponentType>>()
         );
         // Create ID's component container.
-        std::vector<unsigned int>* sparse_entities_map_to_components =
-            new std::vector<unsigned int>;
+        Vec<u32>* sparse_entities_map_to_components = new Vec<u32>;
         world_sparse_entities_map_to_components.push_back(
             sparse_entities_map_to_components
         );
         // Create ID's component container.
-        std::vector<unsigned int>* dense_entities_map_to_components =
-            new std::vector<unsigned int>;
+        Vec<u32>* dense_entities_map_to_components = new Vec<u32>;
         world_dense_components_map_to_entities.push_back(
             dense_entities_map_to_components
         );
@@ -3266,16 +3255,14 @@ class ComponentManager {
     }
 
 public:
-    inline static unsigned int components_container_id = 0;
+    inline static u32 components_container_id = 0;
     // Contains all local containers for different types of components.
-    std::vector<std::shared_ptr<void>> world_components_container;
+    Vec<Rc<void>> world_components_container;
     // Contains all local container with IDs for different types of components.
-    std::vector<std::vector<unsigned int>*>
-        world_sparse_entities_map_to_components;
-    std::vector<std::vector<unsigned int>*>
-        world_dense_components_map_to_entities;
+    Vec<Vec<u32>*> world_sparse_entities_map_to_components;
+    Vec<Vec<u32>*> world_dense_components_map_to_entities;
 
-    std::vector<const char*> components_types;
+    Vec<const char*> components_types;
     bool is_components_collection_changed = true;
 
     ~ComponentManager();
@@ -3287,22 +3274,20 @@ public:
     static ComponentManager* get_instance();
 
     template<typename ComponentType>
-    void create_component(const unsigned int& entity) {
+    void create_component(const u32& entity) {
         // Index for world components and world ID's containers.
-        unsigned int local_container_id = 0;
+        u32 local_container_id = 0;
         ComponentType component;
         local_container_id = create_component_container<ComponentType>();
 
-        std::vector<unsigned int>& sparse =
-            *static_cast<std::vector<unsigned int>*>(
-                world_sparse_entities_map_to_components[local_container_id]
-            );
-        std::vector<unsigned int>& dense =
-            *static_cast<std::vector<unsigned int>*>(
-                world_dense_components_map_to_entities[local_container_id]
-            );
-        std::vector<ComponentType>& components =
-            *std::static_pointer_cast<std::vector<ComponentType>>(
+        Vec<u32>& sparse = *static_cast<Vec<u32>*>(
+            world_sparse_entities_map_to_components[local_container_id]
+        );
+        Vec<u32>& dense = *static_cast<Vec<u32>*>(
+            world_dense_components_map_to_entities[local_container_id]
+        );
+        Vec<ComponentType>& components =
+            *std::static_pointer_cast<Vec<ComponentType>>(
                 world_components_container[local_container_id]
             );
         if (check_availability(sparse, dense, entity)) {
@@ -3321,26 +3306,21 @@ public:
         is_components_collection_changed = true;
     }
 
-    bool check_availability(
-        std::vector<unsigned int>& sparse,
-        std::vector<unsigned int>& dense,
-        unsigned int entity
-    );
+    bool check_availability(Vec<u32>& sparse, Vec<u32>& dense, u32 entity);
 
     // Allow to give a various components to chosen entity.
     template<typename ComponentType1, typename ComponentType2, typename... Args>
-    void create_component(unsigned int& entity) {
+    void create_component(u32& entity) {
         CreateComponent<ComponentType2, Args...>(entity);
         CreateComponent<ComponentType1>(entity);
     }
 
     template<typename ComponentType, typename... Args>
-    std::vector<unsigned int> collect_linked_entities() {
+    Vec<u32> collect_linked_entities() {
         number_of_base_components = 0;
-        unsigned int first_component_array_index =
+        u32 first_component_array_index =
             create_component_container<ComponentType>();
-        std::vector<unsigned int>& dense = *static_cast<
-            std::vector<unsigned int>*>(
+        Vec<u32>& dense = *static_cast<Vec<u32>*>(
             world_dense_components_map_to_entities[first_component_array_index]
         );
 
@@ -3348,8 +3328,8 @@ public:
             ++number_of_base_components;
             number_of_base_components += sizeof...(Args);
         }
-        std::vector<unsigned int> return_vector;
-        for (unsigned int i = 0; i < dense.size(); ++i) {
+        Vec<u32> return_vector;
+        for (u32 i = 0; i < dense.size(); ++i) {
             if (multiCheckAvailability<Args...>(dense[i])) {
                 return_vector.push_back(dense[i]);
             }
@@ -3358,24 +3338,21 @@ public:
     }
 
     template<typename ComponentType, typename... Args>
-    std::vector<unsigned int> collect_unique_linked_entities() {
-        std::vector<unsigned int> base_sub_set_entities;
+    Vec<u32> collect_unique_linked_entities() {
+        Vec<u32> base_sub_set_entities;
         base_sub_set_entities =
             collect_linked_entities<ComponentType, Args...>();
-        unsigned int number_of_component_arrays = 0;
-        for (unsigned int j = 0; j < base_sub_set_entities.size(); ++j) {
+        u32 number_of_component_arrays = 0;
+        for (u32 j = 0; j < base_sub_set_entities.size(); ++j) {
             number_of_component_arrays = 0;
-            for (unsigned int i = 0;
-                 i < world_dense_components_map_to_entities.size();
+            for (u32 i = 0; i < world_dense_components_map_to_entities.size();
                  ++i) {
-                std::vector<unsigned int>& sparse =
-                    *static_cast<std::vector<unsigned int>*>(
-                        world_sparse_entities_map_to_components[i]
-                    );
-                std::vector<unsigned int>& dense =
-                    *static_cast<std::vector<unsigned int>*>(
-                        world_dense_components_map_to_entities[i]
-                    );
+                Vec<u32>& sparse = *static_cast<Vec<u32>*>(
+                    world_sparse_entities_map_to_components[i]
+                );
+                Vec<u32>& dense = *static_cast<Vec<u32>*>(
+                    world_dense_components_map_to_entities[i]
+                );
 
                 if (check_availability(sparse, dense, base_sub_set_entities[j])) {
                     ++number_of_component_arrays;
@@ -3392,58 +3369,51 @@ public:
     }
 
     template<typename... Args>
-    bool multi_check_availability(unsigned int entity) {
+    bool multi_check_availability(u32 entity) {
         return (multiCheckAvailabilityBase<Args>(entity) && ...);
     }
 
     template<typename ComponentType>
-    bool multi_check_availability_base(unsigned int entity) {
-        unsigned int component_array_index =
-            create_component_container<ComponentType>();
-        std::vector<unsigned int>& sparse =
-            *static_cast<std::vector<unsigned int>*>(
-                world_sparse_entities_map_to_components[component_array_index]
-            );
-        std::vector<unsigned int>& dense =
-            *static_cast<std::vector<unsigned int>*>(
-                world_dense_components_map_to_entities[component_array_index]
-            );
+    bool multi_check_availability_base(u32 entity) {
+        u32 component_array_index = create_component_container<ComponentType>();
+        Vec<u32>& sparse = *static_cast<Vec<u32>*>(
+            world_sparse_entities_map_to_components[component_array_index]
+        );
+        Vec<u32>& dense = *static_cast<Vec<u32>*>(
+            world_dense_components_map_to_entities[component_array_index]
+        );
         return check_availability(sparse, dense, entity);
     }
 
     template<typename ComponentType>
-    bool is_component_exists(const unsigned int& entity) {
-        unsigned int local_container_id;
+    bool is_component_exists(const u32& entity) {
+        u32 local_container_id;
         local_container_id = create_component_container<ComponentType>();
-        std::vector<unsigned int>& sparse =
-            *static_cast<std::vector<unsigned int>*>(
-                world_sparse_entities_map_to_components[local_container_id]
-            );
-        std::vector<unsigned int>& dense =
-            *static_cast<std::vector<unsigned int>*>(
-                world_dense_components_map_to_entities[local_container_id]
-            );
+        Vec<u32>& sparse = *static_cast<Vec<u32>*>(
+            world_sparse_entities_map_to_components[local_container_id]
+        );
+        Vec<u32>& dense = *static_cast<Vec<u32>*>(
+            world_dense_components_map_to_entities[local_container_id]
+        );
         return check_availability(sparse, dense, entity);
     }
 
     template<typename ComponentType>
-    ComponentType* get_component(const unsigned int& entity) {
-        unsigned int local_container_id;
+    ComponentType* get_component(const u32& entity) {
+        u32 local_container_id;
         local_container_id = create_component_container<ComponentType>();
-        std::vector<unsigned int>& sparse =
-            *static_cast<std::vector<unsigned int>*>(
-                world_sparse_entities_map_to_components[local_container_id]
-            );
-        std::vector<unsigned int>& dense =
-            *static_cast<std::vector<unsigned int>*>(
-                world_dense_components_map_to_entities[local_container_id]
-            );
-        std::vector<ComponentType>& components =
-            *std::static_pointer_cast<std::vector<ComponentType>>(
+        Vec<u32>& sparse = *static_cast<Vec<u32>*>(
+            world_sparse_entities_map_to_components[local_container_id]
+        );
+        Vec<u32>& dense = *static_cast<Vec<u32>*>(
+            world_dense_components_map_to_entities[local_container_id]
+        );
+        Vec<ComponentType>& components =
+            *std::static_pointer_cast<Vec<ComponentType>>(
                 world_components_container[local_container_id]
             );
         if (check_availability(sparse, dense, entity)) {
-            unsigned int component_index = sparse[entity];
+            u32 component_index = sparse[entity];
             return &components[component_index];
         } else {
             return nullptr;
@@ -3454,25 +3424,23 @@ public:
     // work with component without indices for that component in ordered
     // container.
     template<typename ComponentType>
-    void remove_component(unsigned int& entity) {
-        unsigned int local_container_id;
+    void remove_component(u32& entity) {
+        u32 local_container_id;
         local_container_id = create_component_container<ComponentType>();
-        std::vector<unsigned int>& sparse =
-            *static_cast<std::vector<unsigned int>*>(
-                world_sparse_entities_map_to_components[local_container_id]
-            );
-        std::vector<unsigned int>& dense =
-            *static_cast<std::vector<unsigned int>*>(
-                world_dense_components_map_to_entities[local_container_id]
-            );
-        std::vector<ComponentType>& components =
-            *std::static_pointer_cast<std::vector<ComponentType>>(
+        Vec<u32>& sparse = *static_cast<Vec<u32>*>(
+            world_sparse_entities_map_to_components[local_container_id]
+        );
+        Vec<u32>& dense = *static_cast<Vec<u32>*>(
+            world_dense_components_map_to_entities[local_container_id]
+        );
+        Vec<ComponentType>& components =
+            *std::static_pointer_cast<Vec<ComponentType>>(
                 world_components_container[local_container_id]
             );
         if (check_availability(sparse, dense, entity)) {
             assert(dense.size() == components.size());
-            unsigned int index_in_dense_of_removable_entity = sparse[entity];
-            unsigned int index_in_sparse_of_swapable_entity = dense.back();
+            u32 index_in_dense_of_removable_entity = sparse[entity];
+            u32 index_in_sparse_of_swapable_entity = dense.back();
             const ComponentType& component_from_last_index = components.back();
             dense[index_in_dense_of_removable_entity] =
                 index_in_sparse_of_swapable_entity;
@@ -3486,8 +3454,8 @@ public:
         }
     }
 
-    void remove_all_components(unsigned int& entity) {
-        for (unsigned int i = 0; i < world_components_container.size(); ++i) {
+    void remove_all_components(u32& entity) {
+        for (u32 i = 0; i < world_components_container.size(); ++i) {
             if (components_types[i] == typeid(Transform).name()) {
                 remove_component<Transform>(entity);
             } else if (components_types[i] == typeid(Beholder).name()) {
@@ -3530,11 +3498,11 @@ public:
         }
     }
 
-    unsigned int get_container_id();
+    u32 get_container_id();
 
     template<typename ComponentType>
-    std::vector<ComponentType>* get_component_container() {
-        return std::static_pointer_cast<std::vector<ComponentType>>(
+    Vec<ComponentType>* get_component_container() {
+        return std::static_pointer_cast<Vec<ComponentType>>(
                    world_components_container
                        [create_component_container<ComponentType>()]
         )
@@ -3542,8 +3510,8 @@ public:
     }
 
     template<typename ComponentType>
-    std::vector<unsigned int>* get_entity_container() {
-        return static_cast<std::vector<unsigned int>*>(
+    Vec<u32>* get_entity_container() {
+        return static_cast<Vec<u32>*>(
             world_dense_components_map_to_entities
                 [create_component_container<ComponentType>()]
         );
@@ -3554,22 +3522,22 @@ public:
 
 namespace glvm {
 struct MeshAxisMaxAbsoluteValues {
-    float absolute_x = 0.0f;
-    float absolute_y = 0.0f;
-    float absolute_z = 0.0f;
+    f32 absolute_x = 0.0f;
+    f32 absolute_y = 0.0f;
+    f32 absolute_z = 0.0f;
 
-    float origin_offset_x = 0.0f;
-    float origin_offset_y = 0.0f;
-    float origin_offset_z = 0.0f;
+    f32 origin_offset_x = 0.0f;
+    f32 origin_offset_y = 0.0f;
+    f32 origin_offset_z = 0.0f;
 };
 
 struct MeshAxisLimitingValues {
-    float lowest_x = FLT_MAX;
-    float highest_x = -FLT_MAX;
-    float lowest_y = FLT_MAX;
-    float highest_y = -FLT_MAX;
-    float lowest_z = FLT_MAX;
-    float highest_z = -FLT_MAX;
+    f32 lowest_x = FLT_MAX;
+    f32 highest_x = -FLT_MAX;
+    f32 lowest_y = FLT_MAX;
+    f32 highest_y = -FLT_MAX;
+    f32 lowest_z = FLT_MAX;
+    f32 highest_z = -FLT_MAX;
 
     void set_to_default_values() {
         highest_x = -FLT_MAX;
@@ -3603,10 +3571,10 @@ struct MeshAxisLimitingValues {
     }
 
     void compare_per_direction_and_set_to_maximum_value_by_module(
-        Vector<float, 3> position,
-        float half_x,
-        float half_y,
-        float half_z
+        Vector<f32, 3> position,
+        f32 half_x,
+        f32 half_y,
+        f32 half_z
     ) {
         if (position[0] + half_x > highest_x) {
             highest_x = position[0] + half_x;
@@ -3670,18 +3638,18 @@ enum SpecificPipeline {
 };
 
 struct RenderPass {
-    unsigned int actual_attachment_description_number;
+    u32 actual_attachment_description_number;
     VkAttachmentDescription attachment_descriptions[16];
-    unsigned int actual_attachment_reference_number;
+    u32 actual_attachment_reference_number;
     VkAttachmentReference attachment_references[16];
-    unsigned int actual_subpass_dependency_number;
+    u32 actual_subpass_dependency_number;
     VkSubpassDependency subpass_dependencies[8];
 };
 
 struct GpuImage {
     VkImage image;
     VkDeviceMemory device_memory = {};
-    std::vector<VkImageView> views = {};
+    Vec<VkImageView> views = {};
     VkImageViewType view_type = {};
     VkImageCreateFlags create_flags = {};
     VkMemoryPropertyFlags memory_property_flags = {};
@@ -3694,30 +3662,29 @@ struct GpuImage {
     VkComponentSwizzle green = {};
     VkComponentSwizzle blue = {};
     VkComponentSwizzle alpha = {};
-    uint32_t array_layers = 0;
-    uint32_t width = 0;
-    uint32_t height = 0;
+    u32 array_layers = 0;
+    u32 width = 0;
+    u32 height = 0;
 };
 
 // Metadata for descriptor bindings.
 struct DescriptorBinding {
     VkDescriptorType vk_type;
     VkShaderStageFlags shader_stage_flag;
-    unsigned int binding;
-    unsigned int shader_descriptors_number;
-    unsigned int global_descriptor_offset;
+    u32 binding;
+    u32 shader_descriptors_number;
+    u32 global_descriptor_offset;
     VkDeviceSize ubo_chunk_size;
 };
 
 // Metadata for descriptor sets.
 struct DescriptorSet {
-    unsigned int actual_linked_descriptor_bindings_number;
-    unsigned int host_descriptor_number;
+    u32 actual_linked_descriptor_bindings_number;
+    u32 host_descriptor_number;
     VkDescriptorSetLayout set_layout;
-    static constexpr unsigned int MAXIMUM_LINKED_DESCRIPTOR_BINDINGS_DS = 32;
-    unsigned int
-        descriptors_bindings_i_ds[MAXIMUM_LINKED_DESCRIPTOR_BINDINGS_DS];
-    unsigned int descriptor_set_offset;
+    static constexpr auto MAXIMUM_LINKED_DESCRIPTOR_BINDINGS_DS = 32;
+    u32 descriptors_bindings_i_ds[MAXIMUM_LINKED_DESCRIPTOR_BINDINGS_DS];
+    u32 descriptor_set_offset;
     bool is_texture;
 };
 
@@ -3727,10 +3694,10 @@ struct Pipeline {
     const char* vert_shader = nullptr;
     const char* frag_shader = nullptr;
     VkVertexInputBindingDescription binding_description;
-    std::array<VkVertexInputAttributeDescription, 5> attribute_descriptions;
-    unsigned int actual_linked_descriptor_sets_number;
-    static constexpr unsigned int MAXIMUM_LINKED_DESCRIPTOR_SET_DS = 32;
-    unsigned int linked_descriptor_set_i_ds[MAXIMUM_LINKED_DESCRIPTOR_SET_DS];
+    Array<VkVertexInputAttributeDescription, 5> attribute_descriptions;
+    u32 actual_linked_descriptor_sets_number;
+    static constexpr auto MAXIMUM_LINKED_DESCRIPTOR_SET_DS = 32;
+    u32 linked_descriptor_set_i_ds[MAXIMUM_LINKED_DESCRIPTOR_SET_DS];
 };
 
 struct GPUBuffer {
@@ -3747,11 +3714,11 @@ union Descriptor {
 };
 
 struct Vertex {
-    Vector<float, 3> pos;
-    Vector<float, 3> color;
-    Vector<float, 2> tex_coord;
-    Vector<float, 4> join_indices;
-    Vector<float, 4> weights;
+    Vector<f32, 3> pos;
+    Vector<f32, 3> color;
+    Vector<f32, 2> tex_coord;
+    Vector<f32, 4> join_indices;
+    Vector<f32, 4> weights;
 
     static VkVertexInputBindingDescription get_binding_description() {
         VkVertexInputBindingDescription binding_description {};
@@ -3762,10 +3729,9 @@ struct Vertex {
         return binding_description;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 5>
+    static Array<VkVertexInputAttributeDescription, 5>
     get_attribute_descriptions() {
-        std::array<VkVertexInputAttributeDescription, 5>
-            attribute_descriptions {};
+        Array<VkVertexInputAttributeDescription, 5> attribute_descriptions {};
 
         attribute_descriptions[0].binding = 0;
         attribute_descriptions[0].location = 0;
@@ -3799,105 +3765,105 @@ struct Vertex {
 
 // Render objects.
 struct RenderPlayer {
-    Vector<float, 3> position;
-    Vector<float, 3> forward;
+    Vector<f32, 3> position;
+    Vector<f32, 3> forward;
 };
 
 struct RenderActor {
-    Matrix<float, 4> model_matrix;
-    std::vector<Matrix<float, 4>> joint_matrices;
-    unsigned int mesh_id;
-    unsigned int diffuse_texture_index;
-    unsigned int specular_texture_index;
-    Vector<float, 3> ambient;
-    float shininess;
+    Matrix<f32, 4> model_matrix;
+    Vec<Matrix<f32, 4>> joint_matrices;
+    u32 mesh_id;
+    u32 diffuse_texture_index;
+    u32 specular_texture_index;
+    Vector<f32, 3> ambient;
+    f32 shininess;
 };
 
 struct RenderDirectionalLight {
-    Matrix<float, 4> directional_light_space_matrix;
-    Vector<float, 4> position;
-    Vector<float, 4> direction;
+    Matrix<f32, 4> directional_light_space_matrix;
+    Vector<f32, 4> position;
+    Vector<f32, 4> direction;
 
-    Vector<float, 4> ambient;
-    Vector<float, 4> diffuse;
-    Vector<float, 4> specular;
+    Vector<f32, 4> ambient;
+    Vector<f32, 4> diffuse;
+    Vector<f32, 4> specular;
 };
 
 struct RenderSpotLight {
-    Matrix<float, 4> spot_ligth_space_matrix;
-    Vector<float, 3> position;
-    Vector<float, 3> direction;
-    float cut_off;
-    float outer_cut_off;
+    Matrix<f32, 4> spot_ligth_space_matrix;
+    Vector<f32, 3> position;
+    Vector<f32, 3> direction;
+    f32 cut_off;
+    f32 outer_cut_off;
 
-    Vector<float, 3> ambient;
-    Vector<float, 3> diffuse;
-    Vector<float, 3> specular;
+    Vector<f32, 3> ambient;
+    Vector<f32, 3> diffuse;
+    Vector<f32, 3> specular;
 
-    float constant;
-    float linear;
-    float quadratic;
+    f32 constant;
+    f32 linear;
+    f32 quadratic;
 };
 
 struct RenderPointLight {
-    Matrix<float, 4> point_light_space_matrix[CUBE_MAP_LAYER_NUMBER];
-    Vector<float, 3> position;
+    Matrix<f32, 4> point_light_space_matrix[CUBE_MAP_LAYER_NUMBER];
+    Vector<f32, 3> position;
 
-    Vector<float, 3> ambient;
-    Vector<float, 3> diffuse;
-    Vector<float, 3> specular;
+    Vector<f32, 3> ambient;
+    Vector<f32, 3> diffuse;
+    Vector<f32, 3> specular;
 
-    float constant;
-    float linear;
-    float quadratic;
+    f32 constant;
+    f32 linear;
+    f32 quadratic;
 };
 
 struct RenderHealth {
-    Vector<float, 3> position;
-    float max_health;
-    float current_health;
-    unsigned int mesh_id;
+    Vector<f32, 3> position;
+    f32 max_health;
+    f32 current_health;
+    u32 mesh_id;
 };
 
 struct RenderFont {
-    Vector<float, 3> position;
-    std::vector<char> font_string;
-    float life_time;
+    Vector<f32, 3> position;
+    Vec<char> font_string;
+    f32 life_time;
 };
 
 struct SlotData {
-    Matrix<float, 4> model;
-    Vector<float, 3> color;
+    Matrix<f32, 4> model;
+    Vector<f32, 3> color;
 };
 
 struct RenderInventory {
-    std::vector<SlotData> slot_data;
-    unsigned int inventory_texture_id;
-    unsigned int mesh_id;
-    unsigned int row;
-    unsigned int col;
+    Vec<SlotData> slot_data;
+    u32 inventory_texture_id;
+    u32 mesh_id;
+    u32 row;
+    u32 col;
 };
 
 struct RenderItem {
-    Matrix<float, 4> model;
-    unsigned int mesh_id;
-    unsigned int diffuse_texture_id;
+    Matrix<f32, 4> model;
+    u32 mesh_id;
+    u32 diffuse_texture_id;
 };
 
 struct RenderCrosshair {
-    Matrix<float, 4> model;
-    unsigned int mesh_id;
+    Matrix<f32, 4> model;
+    u32 mesh_id;
 };
 
 namespace glvm {
 struct EntityManager {
 private:
     static EntityManager* instance;
-    static std::mutex mutex;
+    static Mutex mutex;
 
-    inline static unsigned int id = 0;
-    std::vector<unsigned int> removed_entity_registry;
-    std::vector<unsigned int> active_entity_registry;
+    inline static u32 id = 0;
+    Vec<u32> removed_entity_registry;
+    Vec<u32> active_entity_registry;
 
     EntityManager();
 
@@ -3909,11 +3875,8 @@ public: // TODO: Delete this.
     void operator=(const EntityManager& entity_manager) = delete;
     // It possibly to get only one instance of this class with this method.
     static EntityManager* get_instance();
-    [[nodiscard]] unsigned int create_entity();
-    void remove_entity(
-        unsigned int& entity_id,
-        ComponentManager* component_manager
-    );
+    [[nodiscard]] u32 create_entity();
+    void remove_entity(u32& entity_id, ComponentManager* component_manager);
     bool is_entities_collection_changed = true;
 };
 } // namespace glvm
@@ -3930,18 +3893,18 @@ struct ISystem {
 extern glvm::CEvent G_E_EVENT;
 
 // Contains all maximum absolute axis values.
-extern std::vector<glvm::MeshAxisMaxAbsoluteValues> ALL_MESH_MAX_ABSOLUTE_VALUES;
+extern Vec<glvm::MeshAxisMaxAbsoluteValues> ALL_MESH_MAX_ABSOLUTE_VALUES;
 
 extern glvm::CStack INPUT_STACK;
 
-extern int X_POINTER;
-extern int Y_POINTER;
-extern int KEYS_PRESSED[6];
+extern i32 X_POINTER;
+extern i32 Y_POINTER;
+extern i32 KEYS_PRESSED[6];
 
 namespace glvm {
-extern std::vector<VkDescriptorSet> DESCRIPTOR_SETS_CHUNKS;
-extern std::vector<VkRenderPass> RENDER_PASSES;
-extern std::vector<Descriptor> GPU_DESCRIPTORS;
+extern Vec<VkDescriptorSet> DESCRIPTOR_SETS_CHUNKS;
+extern Vec<VkRenderPass> RENDER_PASSES;
+extern Vec<Descriptor> GPU_DESCRIPTORS;
 } // namespace glvm
 
 namespace glvm {
@@ -3949,8 +3912,8 @@ enum DeactivatedSystems { DeactivatedMovementSystem };
 
 class CSystemManager: public ISystem {
     static CSystemManager* p_instance;
-    static std::mutex mutex;
-    std::vector<DeactivatedSystems> deactivated_systems;
+    static Mutex mutex;
+    Vec<DeactivatedSystems> deactivated_systems;
 
     CSystemManager();
 
@@ -3963,8 +3926,8 @@ public:
     // It possibly to get only one instance of this class whith this method.
     static CSystemManager* get_instance();
 
-    inline static unsigned int s_i_system_id = 0;
-    std::vector<ISystem*> t_system_container;
+    inline static u32 s_i_system_id = 0;
+    Vec<ISystem*> t_system_container;
 
     void activate_system(ISystem* system);
     void deactivate_system(DeactivatedSystems system);
@@ -3979,10 +3942,10 @@ class DamageSystem: public ISystem {
 public:
     void update() override;
 
-    float delta_time;
+    f32 delta_time;
 
-    uint32_t cached_attackable_archetypes_number = 0;
-    uint32_t cached_font_archetypes_number = 0;
+    u32 cached_attackable_archetypes_number = 0;
+    u32 cached_font_archetypes_number = 0;
 
     struct ArchView {
         Archetype* cached_attackable_archetypes[32];
@@ -3997,24 +3960,23 @@ public:
         Font* fonts = nullptr;
     } components_view;
 
-    uint64_t attackable_required_mask =
-        (1ul << ComponentsIndices::AttackComponent)
+    u64 attackable_required_mask = (1ul << ComponentsIndices::AttackComponent)
         | (1ul << ComponentsIndices::HealthComponent)
         | (1ul << ComponentsIndices::FontComponent);
 
-    uint64_t font_required_mask = (1ull << ComponentsIndices::FontComponent);
+    u64 font_required_mask = (1ull << ComponentsIndices::FontComponent);
 };
 } // namespace glvm
 
 namespace glvm {
 class CPhysicsSystem: public ISystem {
 public:
-    float f_acceleration_of_gravity;
-    float f_delta_time;
-    float& gravity;
+    f32 f_acceleration_of_gravity;
+    f32 f_delta_time;
+    f32& gravity;
     CStack& input_stack;
 
-    uint32_t cached_archetypes_number = 0;
+    u32 cached_archetypes_number = 0;
 
     struct ArchView {
         Archetype* cached_archetypes[32];
@@ -4029,13 +3991,13 @@ public:
         Mesh* meshes_view = nullptr;
     } components_view;
 
-    uint64_t required_mask = (1ul << ComponentsIndices::TransformComponent)
+    u64 required_mask = (1ul << ComponentsIndices::TransformComponent)
         | (1ul << ComponentsIndices::MoveComponent)
         | (1ul << ComponentsIndices::RigidBodyComponent)
         | (1ul << ComponentsIndices::ColliderComponent)
         | (1ul << ComponentsIndices::MeshComponent);
 
-    CPhysicsSystem(float& initial_gravity, CStack& stack) :
+    CPhysicsSystem(f32& initial_gravity, CStack& stack) :
         gravity(initial_gravity),
         input_stack(stack) {
     }
@@ -4049,7 +4011,7 @@ public:
     void update() override;
     void repel(
         Transform& transform_component,
-        float& delta_time,
+        f32& delta_time,
         Beholder& view,
         CEvent& event
     );
@@ -4057,7 +4019,7 @@ public:
 } // namespace glvm
 
 namespace glvm {
-constexpr uint32_t CROSSHAIR_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
+constexpr auto CROSSHAIR_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(Transform) + sizeof(Mesh) + sizeof(Material)
        + sizeof(CrossHairTagComponent));
 
@@ -4089,7 +4051,7 @@ struct CrosshairArchetype: Archetype {
 }; // namespace glvm
 
 namespace glvm {
-constexpr uint32_t DIRECTIONAL_LIGHT_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
+constexpr auto DIRECTIONAL_LIGHT_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(Transform) + sizeof(Mesh) + sizeof(Material)
        + sizeof(DirectionalLightComponent));
 
@@ -4122,7 +4084,7 @@ struct DirectionalLightArchetype: Archetype {
 }; // namespace glvm
 
 namespace glvm {
-constexpr uint32_t ENEMY_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
+constexpr auto ENEMY_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(Transform) + sizeof(Enemy) + sizeof(State) + sizeof(Font)
        + sizeof(Animation) + sizeof(Material) + sizeof(Mesh) + sizeof(Collider)
        + sizeof(ColliderFlags) + sizeof(Health) + sizeof(RigidBody)
@@ -4195,7 +4157,7 @@ struct EnemyArchetype: Archetype {
 }; // namespace glvm
 
 namespace glvm {
-constexpr uint32_t INVENTORY_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
+constexpr auto INVENTORY_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(Transform) + sizeof(Mesh) + sizeof(Inventory) + sizeof(Material));
 
 struct InventoryArchetype: Archetype {
@@ -4225,7 +4187,7 @@ struct InventoryArchetype: Archetype {
 }; // namespace glvm
 
 namespace glvm {
-constexpr uint32_t ITEM_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
+constexpr auto ITEM_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(Transform) + sizeof(Collider) + sizeof(ColliderFlags)
        + sizeof(Mesh) + sizeof(RigidBody) + sizeof(Material) + sizeof(Rotation)
        + sizeof(Move) + sizeof(Item));
@@ -4277,7 +4239,7 @@ struct ItemArchetype: Archetype {
 }; // namespace glvm
 
 namespace glvm {
-constexpr uint32_t LEVEL_CHUNK_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
+constexpr auto LEVEL_CHUNK_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(Transform) + sizeof(Material) + sizeof(Mesh) + sizeof(Collider)
        + sizeof(ColliderFlags) + sizeof(Rotation)
        + sizeof(LevelChunkTagComponent));
@@ -4323,7 +4285,7 @@ struct LevelChunkArchetype: Archetype {
 }; // namespace glvm
 
 namespace glvm {
-constexpr uint32_t PLAYER_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
+constexpr auto PLAYER_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(Transform) + sizeof(Beholder) + sizeof(Collider)
        + sizeof(ColliderFlags) + sizeof(Mesh) + sizeof(RigidBody)
        + sizeof(Health) + sizeof(Material) + sizeof(Move) + sizeof(Attack)
@@ -4398,7 +4360,7 @@ struct PlayerArchetype: Archetype {
 }; // namespace glvm
 
 namespace glvm {
-constexpr uint32_t POINT_LIGHT_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
+constexpr auto POINT_LIGHT_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(Transform) + sizeof(Mesh) + sizeof(Material)
        + sizeof(PointLightComponent));
 
@@ -4429,7 +4391,7 @@ struct PointLightArchetype: Archetype {
 }; // namespace glvm
 
 namespace glvm {
-constexpr uint32_t PROJECTILE_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
+constexpr auto PROJECTILE_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(Transform) + sizeof(Mesh) + sizeof(Collider)
        + sizeof(ColliderFlags) + sizeof(Rotation) + sizeof(ProjectileBundle)
        + sizeof(Health) + sizeof(Attack) + sizeof(Font)
@@ -4488,7 +4450,7 @@ struct ProjectileArchetype: Archetype {
 }; // namespace glvm
 
 namespace glvm {
-constexpr uint32_t RIGID_BODY_ARCH_CHUNK_SIZE =
+constexpr auto RIGID_BODY_ARCH_CHUNK_SIZE =
     ARCHETYPE_CHUNK_SIZE / (sizeof(glvm::Transform) + sizeof(glvm::RigidBody));
 
 struct RigidBodyArch {
@@ -4498,7 +4460,7 @@ struct RigidBodyArch {
 }; // namespace glvm
 
 namespace glvm {
-constexpr uint32_t SPOT_LIGHT_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
+constexpr auto SPOT_LIGHT_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(Transform) + sizeof(Mesh) + sizeof(Material)
        + sizeof(SpotLightComponent));
 
@@ -4529,7 +4491,7 @@ struct SpotLightArchetype: Archetype {
 }; // namespace glvm
 
 namespace glvm {
-constexpr uint32_t STATIC_MESH_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
+constexpr auto STATIC_MESH_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(Transform) + sizeof(Collider) + sizeof(ColliderFlags)
        + sizeof(Mesh) + sizeof(Material) + sizeof(Font) + sizeof(Rotation)
        + sizeof(StaticMeshTagComponent));
@@ -4579,7 +4541,7 @@ struct StaticMeshArchetype: Archetype {
 }; // namespace glvm
 
 namespace glvm {
-constexpr uint32_t COLLIDER_ARCH_CHUNK_SIZE =
+constexpr auto COLLIDER_ARCH_CHUNK_SIZE =
     ARCHETYPE_CHUNK_SIZE / (sizeof(Collider) + sizeof(ColliderFlags));
 
 struct ColliderArchetype: Archetype {
@@ -4601,7 +4563,7 @@ struct ColliderArchetype: Archetype {
 }; // namespace glvm
 
 namespace glvm {
-constexpr uint32_t DAMAGE_ARCH_CHUNK_SIZE =
+constexpr auto DAMAGE_ARCH_CHUNK_SIZE =
     ARCHETYPE_CHUNK_SIZE / (sizeof(Attack) + sizeof(Health) + sizeof(Font));
 
 struct DamageArchetype: Archetype {
@@ -4627,7 +4589,7 @@ struct DamageArchetype: Archetype {
 }; // namespace glvm
 
 namespace glvm {
-constexpr uint32_t PHYSICS_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
+constexpr auto PHYSICS_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(Transform) + sizeof(Collider) + sizeof(ColliderFlags)
        + sizeof(Move) + sizeof(RigidBody));
 
@@ -4670,15 +4632,15 @@ struct WindowWaylandVulkan: IWindow {
     void init();
     void close() override;
     bool handle_event(CEvent& event) override;
-    static int create_anonymous_file(off_t size);
+    static i32 create_anonymous_file(off_t size);
     struct wl_buffer* create_transparent_cursor(struct wl_shm* shm);
     void swap_buffers() override;
     void clear_display() override;
     void cursor_lock(
-        int pointer_x,
-        int pointer_y,
-        int* out_offset_x,
-        int* out_offset_y
+        i32 pointer_x,
+        i32 pointer_y,
+        i32* out_offset_x,
+        i32* out_offset_y
     ) override;
     bool hideAndLockPointer = false;
     struct xdg_toplevel_listener xdg_toplevel_listener;
@@ -4708,10 +4670,10 @@ struct WindowWaylandVulkan: IWindow {
     struct zwp_relative_pointer_v1* relative_pointer;
     void* pixels;
     // Compositor may never report a size (WSLg sends 0,0); pick a default.
-    uint16_t width = 1280;
-    uint16_t height = 720;
-    uint8_t constant_byte = 0;
-    uint8_t close_xdg_toplevel;
+    u16 width = 1280;
+    u16 height = 720;
+    u8 constant_byte = 0;
+    u8 close_xdg_toplevel;
     struct wl_display* display;
     struct wl_registry* registry;
     struct wl_callback* frame_callback;
@@ -4721,72 +4683,72 @@ struct WindowWaylandVulkan: IWindow {
 void xdg_toplevel_configure(
     void* data,
     struct xdg_toplevel* xdg_toplevel,
-    int32_t new_width,
-    int32_t new_height,
+    i32 new_width,
+    i32 new_height,
     struct wl_array* atate
 );
 void xdg_toplevel_close(void* data, struct xdg_toplevel* xdg_toplevel);
-int32_t alocate_shared_memory(uint64_t size);
+i32 alocate_shared_memory(u64 size);
 void resize(void* data);
 void draw(void* data);
 void xdg_surface_configure(
     void* data,
     struct xdg_surface* xdg_surface,
-    uint32_t serial
+    u32 serial
 );
 void new_frame(
     void* data,
     struct wl_callback* frame_call_back,
-    uint32_t callback_data
+    u32 callback_data
 );
-void shell_ping(void* data, struct xdg_wm_base* shell, uint32_t serial);
+void shell_ping(void* data, struct xdg_wm_base* shell, u32 serial);
 void keyboard_keymap(
     void* data,
     struct wl_keyboard* keyboard,
-    uint32_t format,
-    int32_t keymap_file_descriptor,
-    uint32_t size
+    u32 format,
+    i32 keymap_file_descriptor,
+    u32 size
 );
 void keyboard_enter(
     void* data,
     struct wl_keyboard* keyboard,
-    uint32_t serial,
+    u32 serial,
     struct wl_surface* surface,
     struct wl_array* keys
 );
 void keyboard_leave(
     void* data,
     struct wl_keyboard* keyboard,
-    uint32_t serial,
+    u32 serial,
     struct wl_surface* surface
 );
 void keyboard_key(
     void* data,
     struct wl_keyboard* keyboard,
-    uint32_t serial,
-    uint32_t time,
-    uint32_t key,
-    uint32_t state
+    u32 serial,
+    u32 time,
+    u32 key,
+    u32 state
 );
 void keyboard_modifiers(
     void* data,
     struct wl_keyboard* keyboard,
-    uint32_t serial,
-    uint32_t mods_depressed,
-    uint32_t mods_latched,
-    uint32_t mods_locked,
-    uint32_t group
+    u32 serial,
+    u32 mods_depressed,
+    u32 mods_latched,
+    u32 mods_locked,
+    u32 group
 );
 void keyboard_repeat_info(
     void* data,
     struct wl_keyboard* keyboard,
-    int32_t rate,
-    int32_t delay
+    i32 rate,
+    i32 delay
 );
 void pointer_enter(
     void* data,
     struct wl_pointer* pointer,
-    uint32_t serial,
+    u32 serial,
     struct wl_surface* surface,
     wl_fixed_t sx,
     wl_fixed_t sy
@@ -4794,55 +4756,51 @@ void pointer_enter(
 void pointer_leave(
     void* data,
     struct wl_pointer* pointer,
-    uint32_t serial,
+    u32 serial,
     struct wl_surface* surface
 );
 void pointer_motion(
     void* data,
     struct wl_pointer* pointer,
-    uint32_t time,
+    u32 time,
     wl_fixed_t sx,
     wl_fixed_t sy
 );
 void pointer_axis(
     void* data,
     struct wl_pointer* pointer,
-    uint32_t time,
-    uint32_t axis,
+    u32 time,
+    u32 axis,
     wl_fixed_t value
 );
 void pointer_button(
     void* data,
     struct wl_pointer* pointer,
-    uint32_t serial,
-    uint32_t time,
-    uint32_t button,
-    uint32_t state
+    u32 serial,
+    u32 time,
+    u32 button,
+    u32 state
 );
 void handle_relative_motion(
     void* data,
     struct zwp_relative_pointer_v1* rel_pointer,
-    uint32_t utime_hi,
-    uint32_t utime_lo,
+    u32 utime_hi,
+    u32 utime_lo,
     wl_fixed_t dx,
     wl_fixed_t dy,
     wl_fixed_t dx_unaccel,
     wl_fixed_t dy_unaccel
 );
-void seat_capabilities(void* data, struct wl_seat* seat, uint32_t capabilities);
+void seat_capabilities(void* data, struct wl_seat* seat, u32 capabilities);
 void seat_name(void* data, struct wl_seat* seat, const char* name);
 void registry_global(
     void* data,
     struct wl_registry* registry,
-    uint32_t name,
+    u32 name,
     const char* interface,
-    uint32_t version
+    u32 version
 );
-void registry_global_remove(
-    void* data,
-    struct wl_registry* registry,
-    uint32_t name
-);
+void registry_global_remove(void* data, struct wl_registry* registry, u32 name);
 
 [[nodiscard]] WindowWaylandVulkan* initialize_wayland_window();
 }; // namespace glvm
@@ -4859,8 +4817,8 @@ class WindowXVulkan: public IWindow {
 public:
     Display* display;
     Window win;
-    uint32_t width;
-    uint32_t height;
+    u32 width;
+    u32 height;
 
     WindowXVulkan();
     ~WindowXVulkan();
@@ -4868,10 +4826,10 @@ public:
     Window get_window();
     Display* get_display();
     void cursor_lock(
-        int pointer_x,
-        int pointer_y,
-        int* out_offset_x,
-        int* out_offset_y
+        i32 pointer_x,
+        i32 pointer_y,
+        i32* out_offset_x,
+        i32* out_offset_y
     ) override;
     void swap_buffers() override;
     void clear_display() override;
@@ -4887,13 +4845,13 @@ namespace glvm {
 class WindowXCBVulkan: public IWindow {
     xcb_connection_t* connection;
     xcb_screen_t* screen;
-    uint32_t window;
+    u32 window;
     xcb_key_symbols_t* key_symbols;
     xcb_generic_event_t* next_generic_event = nullptr;
 
 public:
-    uint32_t width;
-    uint32_t height;
+    u32 width;
+    u32 height;
     bool is_window_resize_read = false;
 
     WindowXCBVulkan();
@@ -4901,7 +4859,7 @@ public:
     void configure_window();
     void hide_cursor();
     xcb_connection_t* get_connection();
-    uint32_t get_window();
+    u32 get_window();
     void disconnect();
 
     void swap_buffers() override;
@@ -4909,10 +4867,10 @@ public:
     bool handle_event(CEvent& event) override;
     void close() override;
     void cursor_lock(
-        int pointer_x,
-        int pointer_y,
-        int* out_offset_x,
-        int* out_offset_y
+        i32 pointer_x,
+        i32 pointer_y,
+        i32* out_offset_x,
+        i32* out_offset_y
     ) override;
 };
 } // namespace glvm
@@ -4922,8 +4880,8 @@ namespace glvm {
 class CVulkanRenderer;
 
 struct DebugVertex {
-    float x, y, z;
-    float r, g, b;
+    f32 x, y, z;
+    f32 r, g, b;
 };
 
 class ImGuiOverlay {
@@ -4936,14 +4894,11 @@ public:
     void destroy_swap_chain_resources();
 
     void new_frame();
-    void record_command_buffer(
-        VkCommandBuffer command_buffer,
-        uint32_t image_index
-    );
+    void record_command_buffer(VkCommandBuffer command_buffer, u32 image_index);
 
-    bool wants_mouse() const;
+    [[nodiscard]] bool wants_mouse() const;
 
-    bool is_enabled() const {
+    [[nodiscard]] bool is_enabled() const {
         return initialized;
     }
 
@@ -4953,15 +4908,15 @@ public:
     bool show_shadow_maps = false;
     bool show_spatial_grid = false;
     bool shadows_enabled = true;
-    int shadow_map_mode = 0; // 0 = directional, 1 = spot.
-    int shadow_map_light = 0;
+    i32 shadow_map_mode = 0; // 0 = directional, 1 = spot.
+    i32 shadow_map_light = 0;
 
 private:
     CVulkanRenderer& renderer;
     bool initialized = false;
 
     VkRenderPass render_pass = VK_NULL_HANDLE;
-    std::vector<VkFramebuffer> framebuffers;
+    Vec<VkFramebuffer> framebuffers;
 
     VkPipelineLayout line_layout = VK_NULL_HANDLE;
     VkPipeline line_pipeline = VK_NULL_HANDLE;
@@ -4969,21 +4924,15 @@ private:
     VkBuffer vertex_buffer = VK_NULL_HANDLE;
     VkDeviceMemory vertex_buffer_memory = VK_NULL_HANDLE;
     void* vertex_buffer_mapped = nullptr;
-    uint32_t line_vertex_count = 0;
+    u32 line_vertex_count = 0;
 
     void create_render_pass();
     void create_line_pipeline();
     void create_vertex_buffer();
     void build_panel();
     void build_debug_vertices();
-    void record_debug_draws(
-        VkCommandBuffer command_buffer,
-        uint32_t image_index
-    );
-    void record_im_gui_draws(
-        VkCommandBuffer command_buffer,
-        uint32_t image_index
-    );
+    void record_debug_draws(VkCommandBuffer command_buffer, u32 image_index);
+    void record_im_gui_draws(VkCommandBuffer command_buffer, u32 image_index);
 };
 
 } // namespace glvm
@@ -4993,7 +4942,7 @@ inline DescriptorSet DESCRIPTOR_SETS_CONFIG[32];
 inline DescriptorBinding DESCRIPTOR_BINDINGS_CONFIG[32];
 inline Pipeline PIPELINE_CONFIGS[32];
 inline RenderPass RENDER_PASS_CONFIGS[32];
-constexpr uint32_t MAX_TEXTURES = 18;
+constexpr auto MAX_TEXTURES = 18;
 
 inline void vk_config_initializer() {
     // Pipelines and its render passes. Put all meta data related to pipeline
@@ -6157,16 +6106,14 @@ void render_passes_builder();
 }; // namespace glvm
 
 namespace glvm {
-uint64_t make_entity(uint32_t id, uint32_t generation);
-uint32_t get_id(uint64_t entity);
-uint32_t get_gen(uint64_t entity);
-auto matches_required_mask(
-    const uint64_t archetype_mask,
-    const uint64_t& system_mask
-) -> bool;
+u64 make_entity(u32 id, u32 generation);
+u32 get_id(u64 entity);
+u32 get_gen(u64 entity);
+auto matches_required_mask(const u64 archetype_mask, const u64& system_mask)
+    -> bool;
 
 template<typename T>
-void unwrap_archetype(Archetype* arch, uint64_t mask, void (*func)(T*)) {
+void unwrap_archetype(Archetype* arch, u64 mask, void (*func)(T*)) {
     switch (mask) {
         case PLAYER_COMPONENT_MASK:
             func(static_cast<PlayerArchetype*>(arch));
@@ -6206,41 +6153,41 @@ VkResult set_debug_object_name(
 void set_image_debug_object_name(
     VkDevice device,
     GpuImage image,
-    std::string image_name
+    String image_name
 );
 void set_pipeline_debug_object_name(
     VkDevice device,
     VkPipeline pipeline,
-    std::string pipeline_name
+    String pipeline_name
 );
 void set_descriptor_set_object_name(
     VkDevice device,
     VkDescriptorSet descriptor_set,
-    std::string descriptor_set_name,
-    unsigned int index
+    String descriptor_set_name,
+    u32 index
 );
 void set_debug_object_names(
     VkDevice device,
-    const std::vector<VkBuffer>& vertex_buffer_container,
-    const std::vector<VkBuffer>& index_buffer_container,
-    const std::vector<Descriptor>& gpu_descriptors,
-    const std::vector<unsigned int>& font_indices_container,
-    const std::vector<VkBuffer>& font_vertex_buffer_container,
-    const std::vector<VkBuffer>& font_index_buffer_container
+    const Vec<VkBuffer>& vertex_buffer_container,
+    const Vec<VkBuffer>& index_buffer_container,
+    const Vec<Descriptor>& gpu_descriptors,
+    const Vec<u32>& font_indices_container,
+    const Vec<VkBuffer>& font_vertex_buffer_container,
+    const Vec<VkBuffer>& font_index_buffer_container
 );
 }; // namespace glvm
 
 namespace glvm {
 struct GridChunk {
-    Vector<float, 3> position;
-    static constexpr float SIZE = 32;
-    std::vector<uint32_t> entities;
+    Vector<f32, 3> position;
+    static constexpr auto SIZE = 32;
+    Vec<u32> entities;
 };
 
 struct SpatialGrid {
-    static const uint32_t width = 8;
-    static const uint32_t height = 8;
-    static const uint32_t depth = 8;
+    static const auto width = 8;
+    static const auto height = 8;
+    static const auto depth = 8;
     GridChunk grid[width][height][depth];
 };
 
@@ -6249,15 +6196,15 @@ struct World {
     ~World();
 
     SpatialGrid spatial_grid;
-    std::vector<Archetype*> archetypes;
-    std::vector<EntityLocation> entity_locations;
+    Vec<Archetype*> archetypes;
+    Vec<EntityLocation> entity_locations;
 
-    void add_entity_to_archetype(uint64_t entity, Archetype* arch);
-    void remove_entity(uint64_t entity);
+    void add_entity_to_archetype(u64 entity, Archetype* arch);
+    void remove_entity(u64 entity);
     void search_cache_archetypes(
-        uint64_t required_mask,
+        u64 required_mask,
         Archetype* cached_archetypes[],
-        uint32_t& cached_archetypes_number
+        u32& cached_archetypes_number
     );
 };
 
@@ -6267,20 +6214,20 @@ extern World WORLD;
 namespace glvm {
 
 struct ArchetypeEntityManager {
-    inline static uint32_t next_id = 0;
-    std::vector<uint32_t> generations;
-    std::vector<uint32_t> free_list;
+    inline static u32 next_id = 0;
+    Vec<u32> generations;
+    Vec<u32> free_list;
 
     ArchetypeEntityManager();
     static ArchetypeEntityManager* get_instance();
 
-    uint64_t create_entity();
-    void remove_entity(uint64_t entity);
-    bool is_alive(uint64_t entity) const;
+    u64 create_entity();
+    void remove_entity(u64 entity);
+    bool is_alive(u64 entity) const;
 
 private:
     static ArchetypeEntityManager* p_instance;
-    static std::mutex mutex;
+    static Mutex mutex;
 
     ~ArchetypeEntityManager();
 };
@@ -6289,8 +6236,8 @@ private:
 namespace glvm {
 class InventorySystem: public ISystem {
 public:
-    uint32_t crosshair_archetypes_number = 0;
-    uint32_t inventory_archetypes_number = 0;
+    u32 crosshair_archetypes_number = 0;
+    u32 inventory_archetypes_number = 0;
 
     struct ArchView {
         Archetype* crosshair_cached_archetype = nullptr;
@@ -6305,70 +6252,70 @@ public:
         Mesh* inventory_meshes_view = nullptr;
     } components_view;
 
-    uint64_t crosshair_required_mask =
+    u64 crosshair_required_mask =
         (1ull << ComponentsIndices::TransformComponent)
         | (1ull << ComponentsIndices::CrosshairTagComponent);
 
-    uint64_t inventory_required_mask =
+    u64 inventory_required_mask =
         (1ull << ComponentsIndices::TransformComponent)
         | (1ull << ComponentsIndices::InventoryComponent)
         | (1ull << ComponentsIndices::MeshComponent);
 
     void update() override;
-    int determine_swappable_status_and_slots(
+    i32 determine_swappable_status_and_slots(
         Item* item_component,
         Transform* inventory_transform_component,
-        std::vector<unsigned int>& potential_occupied_slots,
+        Vec<u32>& potential_occupied_slots,
         Transform* crosshair_transform_component,
-        Point2D<int> intersection_slot,
+        Point2D<i32> intersection_slot,
         Inventory* inventory_component,
-        const float inventory_slot_scale
+        const f32 inventory_slot_scale
     );
     void fill_inventory_slots(
         Item* item_component,
-        const int item_width,
-        const int item_height,
+        const i32 item_width,
+        const i32 item_height,
         Inventory* inventory_component,
-        const int fill_value
+        const i32 fill_value
     );
-    int determine_swappable_field(
+    i32 determine_swappable_field(
         Item* item_component,
-        const int item_width,
-        const int item_height,
-        int pivot_row,
-        int pivot_column,
+        const i32 item_width,
+        const i32 item_height,
+        i32 pivot_row,
+        i32 pivot_column,
         Inventory* inventory_component,
-        std::vector<unsigned int>& potential_occupied_slots
+        Vec<u32>& potential_occupied_slots
     );
-    int calculate_basic_offset(
-        const int item_axis_size,
-        const float axis_value,
-        const float crosshair_axis_position,
-        const int axis_slot_index,
-        const float inventory_slot_scale
+    i32 calculate_basic_offset(
+        const i32 item_axis_size,
+        const f32 axis_value,
+        const f32 crosshair_axis_position,
+        const i32 axis_slot_index,
+        const f32 inventory_slot_scale
     );
     bool check_crosshair_inventory_intersection(
         Transform* crosshair_transform_component,
         Transform* inventory_transform_component,
         Inventory* inventory_component,
-        const float inventory_slot_scale,
-        const float inventory_slot_half_scale
+        const f32 inventory_slot_scale,
+        const f32 inventory_slot_half_scale
     );
-    Point2D<int> determine_actual_intersection_slot(
+    Point2D<i32> determine_actual_intersection_slot(
         Transform* crosshair_transform_component,
         Transform* inventory_transform_component,
-        const float inventory_slot_scale,
-        const float inventory_slot_half_scale
+        const f32 inventory_slot_scale,
+        const f32 inventory_slot_half_scale
     );
 
     bool is_inventory_opened;
-    int* is_item_draged;
+    i32* is_item_draged;
     bool* is_left_mouse_button_released;
     bool is_left_mouse_button_pressed;
-    float mouse_offset_x = 0;
-    float mouse_offset_y = 0;
+    f32 mouse_offset_x = 0;
+    f32 mouse_offset_y = 0;
     // Window aspect ratio, set by engine each frame.
-    float aspect_rate = 0.0f;
+    f32 aspect_rate = 0.0f;
     Archetype* cached_crosshair_archetype;
     Archetype* cached_inventory_archetype;
 };
@@ -6410,12 +6357,10 @@ public:
 #endif
 
 namespace glvm {
-const int MAX_FRAMES_IN_FLIGHT = 2;
-const std::vector<const char*> VALIDATION_LAYERS = {
-    "VK_LAYER_KHRONOS_validation"
-};
+const auto MAX_FRAMES_IN_FLIGHT = 2;
+const Vec<const char*> VALIDATION_LAYERS = {"VK_LAYER_KHRONOS_validation"};
 
-const std::vector<const char*> DEVICE_EXTENSIONS = {
+const Vec<const char*> DEVICE_EXTENSIONS = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     "VK_KHR_shader_non_semantic_info"
 };
@@ -6427,8 +6372,8 @@ const bool ENABLE_VALIDATION_LAYERS = true;
 #endif
 
 struct QueueFamilyIndices {
-    std::optional<uint32_t> graphics_family;
-    std::optional<uint32_t> present_family;
+    Option<u32> graphics_family;
+    Option<u32> present_family;
 
     bool is_complete() {
         return graphics_family.has_value() && present_family.has_value();
@@ -6437,17 +6382,17 @@ struct QueueFamilyIndices {
 
 struct SwapChainSupportDetails {
     VkSurfaceCapabilitiesKHR capabilities;
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> present_modes;
+    Vec<VkSurfaceFormatKHR> formats;
+    Vec<VkPresentModeKHR> present_modes;
 };
 
 class CVulkanRenderer {
 public:
     bool print = true;
-    Vector<int, 4> indirect_texture
+    Vector<i32, 4> indirect_texture
         [INDIRECT_TEXTURE_WIDTH * INDIRECT_TEXTURE_HEIGHT / 4 + 1];
-    std::vector<unsigned int> entities_collection_linked_trn_mat_mes_act;
-    std::vector<unsigned int> entities_collection_linked_trn_po_l_mes_act;
+    Vec<u32> entities_collection_linked_trn_mat_mes_act;
+    Vec<u32> entities_collection_linked_trn_po_l_mes_act;
 
     char glyphs[128] = {'A',  'B',  'C', 'D', 'E', 'F', 'G',  'H',  'I', 'J',
                         'K',  'L',  'M', 'N', 'O', 'P', 'Q',  'R',  'S', 'T',
@@ -6459,57 +6404,56 @@ public:
                         '\'', '\'', '?', '!', '_', '$', '(',  ')',  '+', '-',
                         '/',  ':',  ';', '<', '>', '=', '[',  ']',  '\\'};
     // FIXME: Some garbage here that needs maybe for align.
-    const std::vector<Vertex> padding[128];
-    const std::vector<uint32_t> symbol_g_indices = {0, 1, 2, 2, 1, 3};
+    const Vec<Vertex> padding[128];
+    const Vec<u32> symbol_g_indices = {0, 1, 2, 2, 1, 3};
     std::chrono::steady_clock::time_point start_time;
 
-    std::vector<Texture> initialize_texture_data;
-    std::vector<const char*> paths_array;
-    std::vector<const char*> paths_gltf;
-    std::vector<std::vector<Vertex>> level_generated_vertices;
-    std::vector<std::vector<uint32_t>> level_generated_indices;
+    Vec<Texture> initialize_texture_data;
+    Vec<const char*> paths_array;
+    Vec<const char*> paths_gltf;
+    Vec<Vec<Vertex>> level_generated_vertices;
+    Vec<Vec<u32>> level_generated_indices;
 
-    std::vector<std::vector<Vertex>> a_vertices;
+    Vec<Vec<Vertex>> a_vertices;
     // Wavefront .obj indices.
-    std::vector<std::vector<uint32_t>> a_indices;
+    Vec<Vec<u32>> a_indices;
     // GLTF indices.
-    std::vector<std::vector<float>> a_vertexes_temp;
+    Vec<Vec<f32>> a_vertexes_temp;
     // highest GLTF y.
-    std::vector<float> highest_gltf_y;
+    Vec<f32> highest_gltf_y;
     // Keep axis limiting values for every axis per mesh in current iteration
     // while initializing Wavefront .obj and GLTF.
     MeshAxisLimitingValues mesh_axis_limiting_values;
-    std::vector<std::vector<std::vector<Matrix<float, 4>>>>
-        joint_matrices_per_mesh;
-    std::vector<std::vector<float>> frames;
+    Vec<Vec<Vec<Matrix<f32, 4>>>> joint_matrices_per_mesh;
+    Vec<Vec<f32>> frames;
     bool is_inventory_opened = false;
     bool is_cursor_released = false;
-    Vector<float, 3> forward = {0.0f, 0.0f, -1.0f};
-    float hud_screen_x = 0.0f;
-    float hud_screen_y;
+    Vector<f32, 3> forward = {0.0f, 0.0f, -1.0f};
+    f32 hud_screen_x = 0.0f;
+    f32 hud_screen_y;
 
-    unsigned int entities[32];
-    std::vector<RenderActor> actors;
-    std::vector<RenderDirectionalLight> directional_lights;
-    std::vector<RenderSpotLight> spot_lights;
-    std::vector<RenderPointLight> point_lights;
-    std::vector<RenderHealth> health_bars;
-    std::vector<RenderFont> fonts;
-    std::vector<RenderInventory> inventories;
-    std::vector<RenderItem> items;
-    std::vector<RenderCrosshair> crosshairs;
-    std::vector<RenderPlayer> players;
+    u32 entities[32];
+    Vec<RenderActor> actors;
+    Vec<RenderDirectionalLight> directional_lights;
+    Vec<RenderSpotLight> spot_lights;
+    Vec<RenderPointLight> point_lights;
+    Vec<RenderHealth> health_bars;
+    Vec<RenderFont> fonts;
+    Vec<RenderInventory> inventories;
+    Vec<RenderItem> items;
+    Vec<RenderCrosshair> crosshairs;
+    Vec<RenderPlayer> players;
     RenderPlayer player;
 
-    float f_yaw = -90.0f;
-    float f_pitch = 0.0f;
-    float prev_y = 0.0f;
-    float current_y = 0.0f;
-    float prev_x = 0.0f;
-    float current_x = 0.0f;
+    f32 f_yaw = -90.0f;
+    f32 f_pitch = 0.0f;
+    f32 prev_y = 0.0f;
+    f32 current_y = 0.0f;
+    f32 prev_x = 0.0f;
+    f32 current_x = 0.0f;
     // Window aspect ratio, updated on resize.
-    float aspect_rate = 0.0f;
-    int dragged_item_entity;
+    f32 aspect_rate = 0.0f;
+    i32 dragged_item_entity;
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
     glvm::WindowWaylandVulkan* window;
@@ -6535,20 +6479,17 @@ public:
     void create_texture_image();
     void recreate_swap_chain();
     void draw();
-    void set_mesh_data(
-        std::vector<const char*> paths,
-        std::vector<const char*> paths_gltf
-    );
-    void set_projection_matrix(Matrix<float, 4> new_projection_matrix);
-    void set_view_matrix(Matrix<float, 4> new_view_matrix);
+    void set_mesh_data(Vec<const char*> paths, Vec<const char*> paths_gltf);
+    void set_projection_matrix(Matrix<f32, 4> new_projection_matrix);
+    void set_view_matrix(Matrix<f32, 4> new_view_matrix);
     void initialize_game_level_vertices();
     void run();
 
 public:
     VkInstance instance;
     VkDebugUtilsMessengerEXT debug_messenger;
-    Matrix<float, 4> view_matrix;
-    Matrix<float, 4> projection_matrix;
+    Matrix<f32, 4> view_matrix;
+    Matrix<f32, 4> projection_matrix;
     ThreadPool* render_thread_pool;
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
@@ -6576,11 +6517,11 @@ public:
     VkQueue present_queue;
 
     VkSwapchainKHR swap_chain;
-    std::vector<VkImage> swap_chain_images;
+    Vec<VkImage> swap_chain_images;
     VkFormat swap_chain_image_format;
     VkExtent2D swap_chain_extent;
-    std::vector<VkImageView> swap_chain_image_views;
-    std::vector<VkFramebuffer> swap_chain_framebuffers;
+    Vec<VkImageView> swap_chain_image_views;
+    Vec<VkFramebuffer> swap_chain_framebuffers;
 
     VkBuffer hud_uniform_buffer;
     VkDeviceMemory hud_uniform_buffers_memory;
@@ -6592,8 +6533,8 @@ public:
     VkDeviceMemory ui_uniform_buffers_memory;
     VkBuffer ui_icons_uniform_buffer;
     VkDeviceMemory ui_icons_uniform_buffers_memory;
-    std::vector<VkDescriptorSet> virtual_textures_ubo_desctiptor_sets;
-    std::vector<VkDescriptorSet> virtual_textures_samplers_desctiptor_sets;
+    Vec<VkDescriptorSet> virtual_textures_ubo_desctiptor_sets;
+    Vec<VkDescriptorSet> virtual_textures_samplers_desctiptor_sets;
     VkBuffer virtual_textures_uniform_buffer;
     VkDeviceMemory virtual_textures_uniform_buffer_memory;
 
@@ -6606,7 +6547,7 @@ public:
     VkCommandPool ui_command_pool;
     VkCommandPool ui_icons_command_pool;
     VkCommandPool main_render_command_pool;
-    std::vector<VkCommandPool> secondary_buffers_command_pools;
+    Vec<VkCommandPool> secondary_buffers_command_pools;
     VkCommandPool virtual_textures_command_pool;
 
     // Main pipeline depth.
@@ -6616,46 +6557,46 @@ public:
 
     // Depth variables for shadow map.
 public:
-    unsigned int directional_light_number = 0;
-    std::vector<VkFramebuffer> directional_light_shadow_map_frame_buffers;
+    u32 directional_light_number = 0;
+    Vec<VkFramebuffer> directional_light_shadow_map_frame_buffers;
     VkBuffer shadow_map_directional_light_model_matrix_uniform_buffer;
     VkDeviceMemory
         shadow_map_directional_light_model_matrix_uniform_buffers_memory;
-    std::vector<GpuImage> directional_light_texture_images;
+    Vec<GpuImage> directional_light_texture_images;
 
-    Matrix<float, 4> dir_light_space_matrix[DIRECTIONAL_LIGHTS_NUMBER];
-    Matrix<float, 4> spot_light_space_matrix[SPOT_LIGHTS_NUMBER];
+    Matrix<f32, 4> dir_light_space_matrix[DIRECTIONAL_LIGHTS_NUMBER];
+    Matrix<f32, 4> spot_light_space_matrix[SPOT_LIGHTS_NUMBER];
 
-    unsigned int point_light_number = 0;
-    std::vector<std::vector<VkFramebuffer>> point_light_shadow_map_frame_buffers;
+    u32 point_light_number = 0;
+    Vec<Vec<VkFramebuffer>> point_light_shadow_map_frame_buffers;
     VkBuffer shadow_map_point_light_model_matrix_uniform_buffer;
     VkDeviceMemory shadow_map_point_light_model_matrix_uniform_buffers_memory;
-    std::vector<GpuImage> point_light_texture_images;
+    Vec<GpuImage> point_light_texture_images;
 
-    unsigned int spot_light_number = 0;
-    std::vector<VkFramebuffer> spot_light_shadow_map_frame_buffers;
+    u32 spot_light_number = 0;
+    Vec<VkFramebuffer> spot_light_shadow_map_frame_buffers;
     VkBuffer shadow_map_spot_light_model_matrix_uniform_buffer;
     VkDeviceMemory shadow_map_spot_light_model_matrix_uniform_buffers_memory;
-    std::vector<GpuImage> spot_light_texture_images;
+    Vec<GpuImage> spot_light_texture_images;
 
-    std::vector<GpuImage> texture_images;
+    Vec<GpuImage> texture_images;
     VkSampler texture_sampler;
     VkSampler shadow_map_sampler;
-    uint32_t frame_counter = 0;
+    u32 frame_counter = 0;
 
-    std::vector<VkBuffer> vertex_buffer_container;
-    std::vector<VkDeviceMemory> vertex_buffer_memory_container;
-    std::vector<VkBuffer> index_buffer_container;
-    std::vector<VkDeviceMemory> index_buffer_memory_contaner;
-    uint32_t wavefront_obj_counter = 0;
-    uint32_t gltf_counter = 0;
+    Vec<VkBuffer> vertex_buffer_container;
+    Vec<VkDeviceMemory> vertex_buffer_memory_container;
+    Vec<VkBuffer> index_buffer_container;
+    Vec<VkDeviceMemory> index_buffer_memory_contaner;
+    u32 wavefront_obj_counter = 0;
+    u32 gltf_counter = 0;
 
-    std::vector<std::vector<Vertex>> symbol_g_vertices_container;
-    std::vector<unsigned int> font_indices_container;
-    std::vector<VkBuffer> font_vertex_buffer_container;
-    std::vector<VkDeviceMemory> font_vertex_buffer_memory_container;
-    std::vector<VkBuffer> font_index_buffer_container;
-    std::vector<VkDeviceMemory> font_index_buffer_memory_contaner;
+    Vec<Vec<Vertex>> symbol_g_vertices_container;
+    Vec<u32> font_indices_container;
+    Vec<VkBuffer> font_vertex_buffer_container;
+    Vec<VkDeviceMemory> font_vertex_buffer_memory_container;
+    Vec<VkBuffer> font_index_buffer_container;
+    Vec<VkDeviceMemory> font_index_buffer_memory_contaner;
 
     VkBuffer model_matrix_uniform_buffer;
     VkDeviceMemory model_matrix_uniform_buffers_memory;
@@ -6663,69 +6604,67 @@ public:
     VkDeviceMemory light_data_uniform_buffers_memory;
 
     VkDescriptorPool descriptor_pool;
-    const unsigned int matrix_ubo_descriptors_number = 500;
-    const unsigned int hud_ubo_descriptor_number = 500;
-    const unsigned int font_ubo_descriptor_number = 128;
-    const unsigned int hud_screen_ubo_descriptor_number = 32;
-    const unsigned int ui_ubo_descriptors_number = 64;
-    const unsigned int virtual_textures_descriptors_number = 64;
-    std::vector<VkCommandBuffer> directional_light_command_buffers;
-    std::vector<VkCommandBuffer> spot_light_command_buffers;
-    std::vector<VkCommandBuffer> point_light_command_buffers;
-    std::vector<VkCommandBuffer> font_command_buffers;
-    std::vector<VkCommandBuffer> hud_command_buffers;
-    std::vector<VkCommandBuffer> main_render_command_buffers;
-    std::vector<VkCommandBuffer> directional_light_secondary_command_buffers;
-    std::vector<VkCommandBuffer> spot_light_secondary_command_buffers;
-    std::vector<VkCommandBuffer> point_light_secondary_command_buffers;
-    std::vector<VkCommandBuffer> virtual_textures_command_buffers;
+    const u32 matrix_ubo_descriptors_number = 500;
+    const u32 hud_ubo_descriptor_number = 500;
+    const u32 font_ubo_descriptor_number = 128;
+    const u32 hud_screen_ubo_descriptor_number = 32;
+    const u32 ui_ubo_descriptors_number = 64;
+    const u32 virtual_textures_descriptors_number = 64;
+    Vec<VkCommandBuffer> directional_light_command_buffers;
+    Vec<VkCommandBuffer> spot_light_command_buffers;
+    Vec<VkCommandBuffer> point_light_command_buffers;
+    Vec<VkCommandBuffer> font_command_buffers;
+    Vec<VkCommandBuffer> hud_command_buffers;
+    Vec<VkCommandBuffer> main_render_command_buffers;
+    Vec<VkCommandBuffer> directional_light_secondary_command_buffers;
+    Vec<VkCommandBuffer> spot_light_secondary_command_buffers;
+    Vec<VkCommandBuffer> point_light_secondary_command_buffers;
+    Vec<VkCommandBuffer> virtual_textures_command_buffers;
 
     // Main render pipeline sync objects.
-    std::vector<VkSemaphore> image_available_semaphores;
-    std::vector<VkSemaphore> render_finished_semaphores;
-    std::vector<VkFence> in_flight_fences;
+    Vec<VkSemaphore> image_available_semaphores;
+    Vec<VkSemaphore> render_finished_semaphores;
+    Vec<VkFence> in_flight_fences;
 
     // Hud render pipeline sync objects.
-    std::vector<VkSemaphore> hud_image_available_semaphores;
-    std::vector<VkSemaphore> hud_render_finished_semaphores;
-    std::vector<VkFence> hud_in_flight_fences;
+    Vec<VkSemaphore> hud_image_available_semaphores;
+    Vec<VkSemaphore> hud_render_finished_semaphores;
+    Vec<VkFence> hud_in_flight_fences;
 
     // Font render pipeline sync objects.
-    std::vector<VkSemaphore> font_image_available_semaphores;
-    std::vector<VkSemaphore> font_render_finished_semaphores;
-    std::vector<VkFence> font_in_flight_fences;
+    Vec<VkSemaphore> font_image_available_semaphores;
+    Vec<VkSemaphore> font_render_finished_semaphores;
+    Vec<VkFence> font_in_flight_fences;
 
     // Directional light shadow map sync objects.
-    std::vector<VkSemaphore>
-        directional_light_shadow_map_image_available_semaphores;
-    std::vector<VkSemaphore>
-        directional_light_shadow_map_render_finished_semaphores;
-    std::vector<VkFence> directional_light_shadow_map_in_flight_fences;
+    Vec<VkSemaphore> directional_light_shadow_map_image_available_semaphores;
+    Vec<VkSemaphore> directional_light_shadow_map_render_finished_semaphores;
+    Vec<VkFence> directional_light_shadow_map_in_flight_fences;
 
     // Spotlight shadow map sync objects.
-    std::vector<VkSemaphore> spot_light_shadow_map_image_available_semaphores;
-    std::vector<VkSemaphore> spot_light_shadow_map_render_finished_semaphores;
-    std::vector<VkFence> spot_light_shadow_map_in_flight_fences;
+    Vec<VkSemaphore> spot_light_shadow_map_image_available_semaphores;
+    Vec<VkSemaphore> spot_light_shadow_map_render_finished_semaphores;
+    Vec<VkFence> spot_light_shadow_map_in_flight_fences;
 
     // Point light shadow map sync objects.
-    std::vector<VkSemaphore> point_light_shadow_map_image_available_semaphores;
-    std::vector<VkSemaphore> point_light_shadow_map_render_finished_semaphores;
-    std::vector<VkFence> point_light_shadow_map_in_flight_fences;
+    Vec<VkSemaphore> point_light_shadow_map_image_available_semaphores;
+    Vec<VkSemaphore> point_light_shadow_map_render_finished_semaphores;
+    Vec<VkFence> point_light_shadow_map_in_flight_fences;
 
     // Virtual textures pipeline sync objects.
-    std::vector<VkSemaphore> virtual_textures_image_available_semaphores;
-    std::vector<VkSemaphore> virtual_textures_render_finished_semaphores;
-    std::vector<VkFence> virtual_textures_in_flight_fences;
+    Vec<VkSemaphore> virtual_textures_image_available_semaphores;
+    Vec<VkSemaphore> virtual_textures_render_finished_semaphores;
+    Vec<VkFence> virtual_textures_in_flight_fences;
 
-    uint32_t current_frame = 0;
-    uint32_t directional_light_current_frame = 0;
-    uint32_t spot_light_current_frame = 0;
-    uint32_t point_light_current_frame = 0;
+    u32 current_frame = 0;
+    u32 directional_light_current_frame = 0;
+    u32 spot_light_current_frame = 0;
+    u32 point_light_current_frame = 0;
 
-    std::mutex mutex0;
-    std::mutex mutex1;
-    std::mutex mutex2;
-    std::mutex shadow_map_passes_mutex;
+    Mutex mutex0;
+    Mutex mutex1;
+    Mutex mutex2;
+    Mutex shadow_map_passes_mutex;
 
     bool framebuffer_resized = false;
 
@@ -6750,11 +6689,11 @@ public:
     void create_descriptor_set_layout();
     void create_graphics_pipeline();
     void create_render_pass_framebuffers(
-        std::vector<VkImageView>& attachments,
+        Vec<VkImageView>& attachments,
         VkRenderPass& render_pass,
         VkFramebuffer& swap_chain_framebuffer,
-        uint32_t width,
-        uint32_t height
+        u32 width,
+        u32 height
     );
     void create_framebuffers();
     void create_command_pool(VkCommandPool& command_pool);
@@ -6763,7 +6702,7 @@ public:
     void create_spot_light_shadow_map_depth_resources();
     void create_point_light_shadow_map_depth_resources();
     VkFormat find_supported_format(
-        const std::vector<VkFormat>& candidates,
+        const Vec<VkFormat>& candidates,
         VkImageTiling tiling,
         VkFormatFeatureFlags features
     );
@@ -6774,8 +6713,8 @@ public:
     void create_shadow_map_sampler();
     VkImageView create_image_view(
         GpuImage image,
-        uint32_t base_array_layers,
-        uint32_t layer_count
+        u32 base_array_layers,
+        u32 layer_count
     );
     void create_image(GpuImage& image);
     void transition_image_layout(
@@ -6791,34 +6730,34 @@ public:
     void copy_buffer_to_image(
         VkBuffer& buffer,
         VkImage image,
-        uint32_t width,
-        uint32_t height
+        u32 width,
+        u32 height
     );
     void create_vertex_buffer(
         VkBuffer& dst_vertex_buffer,
         VkDeviceMemory& dst_vertex_buffer_memory,
-        std::vector<Vertex>& vertex_data
+        Vec<Vertex>& vertex_data
     );
     void create_index_buffer(
         VkBuffer& dst_index_buffer,
         VkDeviceMemory& dst_index_buffer_memory,
-        const std::vector<uint32_t>& index_data
+        const Vec<u32>& index_data
     );
     void create_main_render_uniform_buffers();
     void create_main_render_descriptor_pool();
     void allocate_descriptor_sets(
-        std::vector<VkDescriptorSet>& descriptor_sets,
+        Vec<VkDescriptorSet>& descriptor_sets,
         VkDescriptorSetLayout set_layout,
-        const unsigned int descriptor_sets_number,
-        const unsigned int descriptor_offset
+        const u32 descriptor_sets_number,
+        const u32 descriptor_offset
     );
     void update_descriptor_sets_ubo(
         VkBuffer ubo,
         const VkDeviceSize& ubo_struct_size,
-        const unsigned int& ubo_descriptors_number,
-        int ubo_binding,
-        std::vector<VkDescriptorSet>& ubo_descriptor_sets,
-        const unsigned int offset
+        const u32& ubo_descriptors_number,
+        i32 ubo_binding,
+        Vec<VkDescriptorSet>& ubo_descriptor_sets,
+        const u32 offset
     );
     void update_light_data_descriptor_sets(
         const DescriptorSet& current_descriptor_set1
@@ -6827,16 +6766,16 @@ public:
         const DescriptorSet& descriptor_set
     );
     void create_descriptor_image_info(
-        const unsigned int descriptor_number,
+        const u32 descriptor_number,
         VkImageLayout image_layout,
-        std::vector<GpuImage>& texture_images,
-        const unsigned int image_view_index,
+        Vec<GpuImage>& texture_images,
+        const u32 image_view_index,
         VkDescriptorImageInfo descriptor_image_infos[]
     );
     VkDescriptorBufferInfo create_descriptor_buffer_info(
         VkBuffer ubo,
-        uint32_t offset,
-        uint32_t range
+        u32 offset,
+        u32 range
     );
     void create_main_render_descriptor_sets();
     void create_buffer(
@@ -6856,14 +6795,11 @@ public:
         VkBuffer& dst_buffer,
         VkDeviceSize size
     );
-    uint32_t find_memory_type(
-        uint32_t type_filter,
-        VkMemoryPropertyFlags properties
-    );
+    u32 find_memory_type(u32 type_filter, VkMemoryPropertyFlags properties);
     void create_command_buffers(
         VkCommandPool& command_pool,
-        std::vector<VkCommandBuffer>& command_buffers,
-        uint32_t command_buffers_number,
+        Vec<VkCommandBuffer>& command_buffers,
+        u32 command_buffers_number,
         VkCommandBufferLevel command_buffer_level_flag
     );
     void execute_secondary_command_buffer(
@@ -6874,103 +6810,97 @@ public:
         VkCommandBuffer secondary_command_buffer
     );
     void update_hud_ubo(
-        uint32_t offset,
+        u32 offset,
         bool is_hud_exists,
-        float highest_y,
-        uint32_t health_counter
+        f32 highest_y,
+        u32 health_counter
     );
-    void update_hud_screen_ubo(uint32_t offset, uint32_t crosshair);
-    void update_sdf_ubo(uint32_t offset, uint32_t crosshair);
+    void update_hud_screen_ubo(u32 offset, u32 crosshair);
+    void update_sdf_ubo(u32 offset, u32 crosshair);
     void update_ubo_ui(
-        const unsigned int current_inventory_row,
-        const unsigned int current_inventory_column,
-        const unsigned int inventory,
-        uint32_t offset
+        const u32 current_inventory_row,
+        const u32 current_inventory_column,
+        const u32 inventory,
+        u32 offset
     );
-    void update_ubo_icons_ui(uint32_t offset, uint32_t item);
+    void update_ubo_icons_ui(u32 offset, u32 item);
     void hud_record_command_buffer(
         VkCommandBuffer& command_buffer,
-        uint32_t image_index
+        u32 image_index
     );
     void ui_record_command_buffer(
         VkCommandBuffer& command_buffer,
-        uint32_t image_index
+        u32 image_index
     );
     void ui_icons_record_command_buffer(
         VkCommandBuffer& command_buffer,
-        uint32_t image_index
+        u32 image_index
     );
     void hud_screen_record_command_buffer(
         VkCommandBuffer& command_buffer,
-        uint32_t image_index
+        u32 image_index
     );
     void sdf_record_command_buffer(
         VkCommandBuffer& command_buffer,
-        uint32_t image_index
+        u32 image_index
     );
     void font_record_command_buffer(
         VkCommandBuffer& command_buffer,
-        uint32_t image_index
+        u32 image_index
     );
-    void record_command_buffer(
-        VkCommandBuffer& command_buffer,
-        uint32_t image_index
-    );
+    void record_command_buffer(VkCommandBuffer& command_buffer, u32 image_index);
     void create_sync_objects(
-        std::vector<VkSemaphore>& image_available_semaphores,
-        std::vector<VkSemaphore>& render_finished_semaphores,
-        std::vector<VkFence>& in_flight_fences
+        Vec<VkSemaphore>& image_available_semaphores,
+        Vec<VkSemaphore>& render_finished_semaphores,
+        Vec<VkFence>& in_flight_fences
     );
     void update_directional_light_shadow_map_matrix_ubo(
-        uint32_t current_image,
-        uint32_t current_light,
-        unsigned int actor
+        u32 current_image,
+        u32 current_light,
+        u32 actor
     );
     void update_spot_light_shadow_map_matrix_ubo(
-        uint32_t current_image,
-        uint32_t current_light,
-        unsigned int actor
+        u32 current_image,
+        u32 current_light,
+        u32 actor
     );
     void update_point_light_shadow_map_matrix_ubo(
-        uint32_t current_image,
-        uint32_t current_light,
-        uint32_t layer,
-        unsigned int actor
+        u32 current_image,
+        u32 current_light,
+        u32 layer,
+        u32 actor
     );
-    void update_matrix_uniform_buffer(uint32_t offset, unsigned int actor);
-    void update_view_position_uniform_buffer(
-        uint32_t current_image,
-        uint32_t player
-    );
+    void update_matrix_uniform_buffer(u32 offset, u32 actor);
+    void update_view_position_uniform_buffer(u32 current_image, u32 player);
     void main_render_draw_frame();
     void directional_light_shadow_map_draw_frame();
     void spot_light_shadow_map_draw_frame();
     void point_light_shadow_map_draw_frame();
     void directional_light_record_coomand_buffer(
-        std::vector<VkCommandBuffer>& command_buffer,
-        uint32_t current_frame
+        Vec<VkCommandBuffer>& command_buffer,
+        u32 current_frame
     );
     void spot_light_record_command_buffer(
-        std::vector<VkCommandBuffer>& command_buffer,
-        uint32_t current_frame
+        Vec<VkCommandBuffer>& command_buffer,
+        u32 current_frame
     );
     void point_light_record_command_buffer(
-        std::vector<VkCommandBuffer>& command_buffers,
-        uint32_t current_frame
+        Vec<VkCommandBuffer>& command_buffers,
+        u32 current_frame
     );
-    VkShaderModule create_shader_module(const std::vector<char>& code);
+    VkShaderModule create_shader_module(const Vec<char>& code);
     VkSurfaceFormatKHR choose_swap_surface_format(
-        const std::vector<VkSurfaceFormatKHR>& available_formats
+        const Vec<VkSurfaceFormatKHR>& available_formats
     );
     VkPresentModeKHR choose_swap_present_mode(
-        const std::vector<VkPresentModeKHR>& available_present_modes
+        const Vec<VkPresentModeKHR>& available_present_modes
     );
     VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities);
     SwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice device);
     bool is_device_suitable(VkPhysicalDevice device);
     bool check_device_extension_support(VkPhysicalDevice device);
     QueueFamilyIndices find_queue_families(VkPhysicalDevice device);
-    std::vector<const char*> get_required_extensions();
+    Vec<const char*> get_required_extensions();
     bool check_validation_layer_support();
     VkDescriptorBufferInfo create_descriptor_buffer_info(
         VkBuffer ubo,
@@ -6980,17 +6910,17 @@ public:
     VkDescriptorImageInfo create_descriptor_image_info(
         const GpuImage& texture_image,
         VkImageLayout layout,
-        unsigned int texture_index,
+        u32 texture_index,
         VkSampler texture_sampler
     );
-    static std::vector<char> read_file(const std::string& filename);
+    static Vec<char> read_file(const String& filename);
     static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
         VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
         VkDebugUtilsMessageTypeFlagsEXT message_type,
         const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data,
         void* p_user_data
     );
-    Matrix<float, 4> compute_model_matrix(Transform* transform);
+    Matrix<f32, 4> compute_model_matrix(Transform* transform);
     void clear_vk_image(GpuImage* texture_images);
 };
 
@@ -6998,9 +6928,9 @@ public:
 
 namespace glvm {
 struct ItemSystem: public ISystem {
-    uint32_t inventory_archetypes_number = 0;
-    uint32_t item_archetypes_number = 0;
-    uint32_t crosshair_archetypes_number = 0;
+    u32 inventory_archetypes_number = 0;
+    u32 item_archetypes_number = 0;
+    u32 crosshair_archetypes_number = 0;
 
     struct ArchView {
         Archetype* inventory_cached_archetype = nullptr;
@@ -7018,52 +6948,51 @@ struct ItemSystem: public ISystem {
         Transform* crosshair_transforms = nullptr;
     } components_view;
 
-    uint64_t inventory_required_mask =
+    u64 inventory_required_mask =
         (1ull << ComponentsIndices::InventoryComponent);
 
-    uint64_t item_required_mask = (1ul << ComponentsIndices::TransformComponent)
+    u64 item_required_mask = (1ul << ComponentsIndices::TransformComponent)
         | (1ul << ComponentsIndices::ItemComponent)
         | (1ul << ComponentsIndices::MeshComponent)
         | (1ul << ComponentsIndices::MaterialComponent)
         | (1ul << ComponentsIndices::ColliderComponent)
         | (1ul << ComponentsIndices::ColliderFlagsComponent);
 
-    uint64_t crosshair_required_mask =
-        (1ul << ComponentsIndices::TransformComponent)
+    u64 crosshair_required_mask = (1ul << ComponentsIndices::TransformComponent)
         | (1ul << ComponentsIndices::CrosshairTagComponent);
 
     void update();
-    bool put_item2x2(Inventory* inventory_component, unsigned int item_entity);
+    bool put_item2x2(Inventory* inventory_component, u32 item_entity);
 
     CStack* input_stack;
     bool is_inventory_opened;
-    int* dragged_item_entity;
+    i32* dragged_item_entity;
     bool* is_left_mouse_button_released;
     bool is_left_mouse_button_pressed;
-    float mouse_offset_x = 0;
-    float mouse_offset_y = 0;
+    f32 mouse_offset_x = 0;
+    f32 mouse_offset_y = 0;
 };
 } // namespace glvm
 
 namespace glvm {
 bool box_collider(
-    const Vector<float, 3> backtracking_position,
-    const Vector<float, 3> compared_position,
-    const float backtracking_scale,
-    const float compared_scale,
+    const Vector<f32, 3> backtracking_position,
+    const Vector<f32, 3> compared_position,
+    const f32 backtracking_scale,
+    const f32 compared_scale,
     const MeshAxisMaxAbsoluteValues& backtracking_mesh_axis_max_absolute_values,
     const MeshAxisMaxAbsoluteValues& compared_mesh_axis_max_absolute_values
 );
 
-std::vector<Vector<float, 3>> compute_box_corner_bound_points(
+Vec<Vector<f32, 3>> compute_box_corner_bound_points(
     const MeshAxisMaxAbsoluteValues entity_chunk_bounds,
-    Vector<float, 3> entity_position,
-    const float scale
+    Vector<f32, 3> entity_position,
+    const f32 scale
 );
 
 template<typename T>
-bool is_exist(const std::vector<T>& array, const T& element) {
-    for (uint32_t i0 = 0; i0 < array.size(); ++i0) {
+bool is_exist(const Vec<T>& array, const T& element) {
+    for (u32 i0 = 0; i0 < array.size(); ++i0) {
         if (element == array[i0]) {
             return true;
         }
@@ -7074,8 +7003,8 @@ bool is_exist(const std::vector<T>& array, const T& element) {
 
 void set_mesh_bounds(MeshAxisLimitingValues mesh_axis_limiting_values);
 void create_projectile(
-    const Vector<float, 3>& projectile_position,
-    const Vector<float, 3>& projectile_forward,
+    const Vector<f32, 3>& projectile_position,
+    const Vector<f32, 3>& projectile_forward,
     const MeshHandle& mesh_handle,
     const Material& material,
     const Damage& damage,
@@ -7086,16 +7015,16 @@ void create_projectile(
 namespace glvm {
 class CMovementSystem: public ISystem {
 public:
-    float delta_frame_time;
-    float gravity;
+    f32 delta_frame_time;
+    f32 gravity;
     CStack& input_stack;
-    float prev_delta_x = 0.0f;
-    float prev_x = 0.0f;
-    float current_x = 0.0f;
-    Vector<float, 3> prev_forward;
+    f32 prev_delta_x = 0.0f;
+    f32 prev_x = 0.0f;
+    f32 current_x = 0.0f;
+    Vector<f32, 3> prev_forward;
 
-    uint32_t player_archetypes_number = 0;
-    uint32_t rigid_body_contained_archetypes_number = 0;
+    u32 player_archetypes_number = 0;
+    u32 rigid_body_contained_archetypes_number = 0;
 
     struct MovementArchView {
         Archetype* player_cached_archetype = nullptr;
@@ -7115,9 +7044,8 @@ public:
         Item* items = nullptr;
     } components_view;
 
-    uint64_t player_required_mask =
-        (1ull << ComponentsIndices::PlayerTagComponent);
-    uint64_t rigid_body_required_mask =
+    u64 player_required_mask = (1ull << ComponentsIndices::PlayerTagComponent);
+    u64 rigid_body_required_mask =
         (1ul << ComponentsIndices::TransformComponent)
         | (1ul << ComponentsIndices::RigidBodyComponent)
         | (1ul << ComponentsIndices::MoveComponent);
@@ -7125,25 +7053,25 @@ public:
     CMovementSystem(CStack& input_stack);
 
     void update();
-    Vector<float, 3> calculate_vector_rl(Beholder& beholder);
-    Vector<float, 3> calculate_vector_fb(Beholder& beholder, CEvent& event);
+    Vector<f32, 3> calculate_vector_rl(Beholder& beholder);
+    Vector<f32, 3> calculate_vector_fb(Beholder& beholder, CEvent& event);
 };
 } // namespace glvm
 
 namespace glvm {
 class ProceduralLevelGeneratingSystem: public ISystem {
 public:
-    unsigned int level_nubmer = 0;
+    u32 level_nubmer = 0;
     bool bredo_flag = false;
-    unsigned int previous_half_x_rand = 0;
-    unsigned int previous_half_z_rand = 0;
-    Vector<float, 3> current_level_position = {5.0f, 0.0f, 15.0f};
-    Vector<float, 3> transition_bridge_position = {0.0f, 0.0f, 0.0f};
-    unsigned int next_level_transition_direction = 0;
-    unsigned int previous_iteration_transition_bridge_direction = 0;
+    u32 previous_half_x_rand = 0;
+    u32 previous_half_z_rand = 0;
+    Vector<f32, 3> current_level_position = {5.0f, 0.0f, 15.0f};
+    Vector<f32, 3> transition_bridge_position = {0.0f, 0.0f, 0.0f};
+    u32 next_level_transition_direction = 0;
+    u32 previous_iteration_transition_bridge_direction = 0;
 
-    uint32_t cached_level_chunk_arch_number = 0;
-    uint32_t cached_player_arch_number = 0;
+    u32 cached_level_chunk_arch_number = 0;
+    u32 cached_player_arch_number = 0;
 
     struct ProceduralLevelArchView {
         Archetype* cached_level_chunk_arch = nullptr;
@@ -7154,22 +7082,21 @@ public:
         Transform* player_transforms = nullptr;
     } components_view;
 
-    uint64_t player_required_mask =
-        (1ull << ComponentsIndices::PlayerTagComponent);
+    u64 player_required_mask = (1ull << ComponentsIndices::PlayerTagComponent);
 
-    uint64_t required_mask = (1ull << ComponentsIndices::TransformComponent)
+    u64 required_mask = (1ull << ComponentsIndices::TransformComponent)
         | (1ull << ComponentsIndices::MaterialComponent)
         | (1ull << ComponentsIndices::MeshComponent)
         | (1ull << ComponentsIndices::ColliderComponent)
         | (1ull << ComponentsIndices::ColliderFlagsComponent)
         | (1ull << ComponentsIndices::LevelChunkTagComponent);
 
-    std::vector<MeshHandle> mesh_handlers;
-    std::vector<TextureHandle> texture_handlers;
+    Vec<MeshHandle> mesh_handlers;
+    Vec<TextureHandle> texture_handlers;
 
-    std::vector<std::vector<Vertex>> level_generated_vertices;
+    Vec<Vec<Vertex>> level_generated_vertices;
     // Wavefront .obj indices.
-    std::vector<std::vector<uint32_t>> level_generated_indices;
+    Vec<Vec<u32>> level_generated_indices;
     // Keep axis limiting values for every axis per mesh in current iteration
     // while initializing Wavefront .obj and GLTF.
     MeshAxisLimitingValues mesh_axis_limiting_values;
@@ -7179,39 +7106,39 @@ public:
 
     void update();
     void set_half_extents_from_direction(
-        float& half_x,
-        float& half_z,
-        const float& transition_bridge_half_width,
-        const float& transition_bridge_half_height,
-        const float& next_level_transition_direction
+        f32& half_x,
+        f32& half_z,
+        const f32& transition_bridge_half_width,
+        const f32& transition_bridge_half_height,
+        const f32& next_level_transition_direction
     );
     void generate_level(
-        const unsigned int level_half_x,
-        const unsigned int level_half_y,
-        const unsigned int level_half_z,
-        const float transition_bridge_half_width,
-        const float transition_bridge_half_height
+        const u32 level_half_x,
+        const u32 level_half_y,
+        const u32 level_half_z,
+        const f32 transition_bridge_half_width,
+        const f32 transition_bridge_half_height
     );
     void generate_transition_bridge(
-        const unsigned int level_half_x,
-        const unsigned int level_half_y,
-        const unsigned int level_half_z,
-        const float transition_bridge_half_width,
-        const float transition_bridge_half_height
+        const u32 level_half_x,
+        const u32 level_half_y,
+        const u32 level_half_z,
+        const f32 transition_bridge_half_width,
+        const f32 transition_bridge_half_height
     );
     void make_cube_object_vertices(
-        Vector<float, 4> join_indices,
-        Vector<float, 4> weights,
-        float half_x,
-        float half_y,
-        float half_z,
-        std::vector<Vertex>& destination_vertices_container
+        Vector<f32, 4> join_indices,
+        Vector<f32, 4> weights,
+        f32 half_x,
+        f32 half_y,
+        f32 half_z,
+        Vec<Vertex>& destination_vertices_container
     );
     bool check_collision_intersection_with_maximum_coordinates(
-        Vector<float, 3> position,
-        float half_x,
-        float half_y,
-        float half_z
+        Vector<f32, 3> position,
+        f32 half_x,
+        f32 half_y,
+        f32 half_z
     );
 };
 } // namespace glvm
@@ -7219,15 +7146,15 @@ public:
 namespace glvm {
 class CCollisionSystem: public ISystem {
 public:
-    float f_delta_time;
-    float gravity;
+    f32 f_delta_time;
+    f32 gravity;
     bool is_inventory_opened;
     bool* is_item_draged;
     bool is_left_mouse_button_pressed;
     bool* is_left_mouse_button_released;
     CStack& input_stack;
     Archetype* cached_archetypes[32];
-    uint32_t cached_archetypes_number = 0;
+    u32 cached_archetypes_number = 0;
 
     struct CollisionComponentsView {
         Transform* backtracking_transforms = nullptr;
@@ -7240,7 +7167,7 @@ public:
         Move* compared_move = nullptr;
     } view;
 
-    uint64_t required_mask = (1ul << ComponentsIndices::ColliderComponent)
+    u64 required_mask = (1ul << ComponentsIndices::ColliderComponent)
         | (1ul << ComponentsIndices::ColliderFlagsComponent)
         | (1ul << ComponentsIndices::TransformComponent)
         | (1ul << ComponentsIndices::MeshComponent);
@@ -7250,10 +7177,10 @@ public:
 
     void update() override;
     bool upper_actor_check(
-        Vector<float, 3> backtracking_position,
-        Vector<float, 3> compared_position,
-        float backtracking_scale,
-        float compared_scale,
+        Vector<f32, 3> backtracking_position,
+        Vector<f32, 3> compared_position,
+        f32 backtracking_scale,
+        f32 compared_scale,
         MeshHandle backtracking_mesh_handle,
         MeshHandle compared_mesh_handle
     );
@@ -7263,9 +7190,9 @@ public:
 namespace glvm {
 class EnemySystem: public ISystem {
 public:
-    uint32_t player_archetypes_number = 0;
-    uint32_t enemy_archetypes_number = 0;
-    uint32_t projectile_archetypes_number = 0;
+    u32 player_archetypes_number = 0;
+    u32 enemy_archetypes_number = 0;
+    u32 projectile_archetypes_number = 0;
 
     struct ArchView {
         Archetype* player_cached_archetype = nullptr;
@@ -7281,23 +7208,21 @@ public:
         Enemy* enemies = nullptr;
     } components_view;
 
-    uint64_t player_required_mask =
-        (1ull << ComponentsIndices::PlayerTagComponent);
+    u64 player_required_mask = (1ull << ComponentsIndices::PlayerTagComponent);
 
-    uint64_t enemy_required_mask =
-        (1ul << ComponentsIndices::TransformComponent)
+    u64 enemy_required_mask = (1ul << ComponentsIndices::TransformComponent)
         | (1ul << ComponentsIndices::StateComponent)
         | (1ul << ComponentsIndices::EnemyComponent);
 
-    uint64_t projectile_required_mask =
+    u64 projectile_required_mask =
         (1ull << ComponentsIndices::ProjectileTagComponent);
 
     void update() override;
     ISoundEngine* sound_engine;
-    std::vector<TextureHandle> texture_handlers;
-    std::vector<MeshHandle> mesh_handlers;
-    float projectile_cooldown = 5.0f;
-    float delta_frame_time;
+    Vec<TextureHandle> texture_handlers;
+    Vec<MeshHandle> mesh_handlers;
+    f32 projectile_cooldown = 5.0f;
+    f32 delta_frame_time;
 };
 } // namespace glvm
 
@@ -7313,19 +7238,19 @@ concept HasAttack = requires(T* t) {
 
 class CProjectileSystem: public ISystem {
 public:
-    float f_yaw = -90.0f;
-    float f_pitch = 0.0f;
+    f32 f_yaw = -90.0f;
+    f32 f_pitch = 0.0f;
     bool b_first_mouse = true;
     CStack& input_stack;
-    std::vector<TextureHandle> texture_handlers;
-    std::vector<MeshHandle> mesh_handlers;
+    Vec<TextureHandle> texture_handlers;
+    Vec<MeshHandle> mesh_handlers;
     ISoundEngine* sound_engine;
-    float projectile_cooldown = 2.0f;
-    float delta_frame_time;
+    f32 projectile_cooldown = 2.0f;
+    f32 delta_frame_time;
     bool is_inventory_opened;
 
-    uint32_t player_archetypes_number = 0;
-    uint32_t projectile_archetypes_number = 0;
+    u32 player_archetypes_number = 0;
+    u32 projectile_archetypes_number = 0;
 
     struct ArchView {
         Archetype* player_cached_archetype = nullptr;
@@ -7344,10 +7269,9 @@ public:
         Attack* projectile_attacks = nullptr;
     } components_view;
 
-    uint64_t player_required_mask =
-        (1ull << ComponentsIndices::PlayerTagComponent);
+    u64 player_required_mask = (1ull << ComponentsIndices::PlayerTagComponent);
 
-    uint64_t projectile_required_mask =
+    u64 projectile_required_mask =
         (1ull << ComponentsIndices::ProjectileTagComponent);
 
     CProjectileSystem(CStack& input_stack);
@@ -7357,7 +7281,7 @@ public:
     static void mark_as_attacked(
         T* arch,
         Damage* projectile_damage,
-        uint32_t entity_index
+        u32 entity_index
     );
 };
 
@@ -7366,7 +7290,7 @@ template<typename T>
 void CProjectileSystem::mark_as_attacked(
     T* arch,
     Damage* projectile_damage,
-    uint32_t enitity_index
+    u32 enitity_index
 ) {
     arch->attacks[enitity_index].damage = projectile_damage->maximum_damage;
 }
@@ -7377,7 +7301,7 @@ namespace glvm {
 
 class SpatialGridSystem: public ISystem {
     Archetype* cached_archetypes[32];
-    uint32_t cached_archetypes_number = 0;
+    u32 cached_archetypes_number = 0;
     bool is_initialized = false;
 
     struct SpatialGridComponentsView {
@@ -7385,7 +7309,7 @@ class SpatialGridSystem: public ISystem {
         Mesh* meshes = nullptr;
     } view;
 
-    uint64_t required_mask = (1ul << ComponentsIndices::ColliderComponent)
+    u64 required_mask = (1ul << ComponentsIndices::ColliderComponent)
         | (1ul << ComponentsIndices::ColliderFlagsComponent)
         | (1ul << ComponentsIndices::TransformComponent)
         | (1ul << ComponentsIndices::MeshComponent);
@@ -7400,31 +7324,31 @@ enum RendererType { VulkanRenderer };
 
 class Engine {
     static Engine* p_instance;
-    static std::mutex mutex;
+    static Mutex mutex;
 
     IChrono* chrono;
     ISoundEngine* sound_engine;
     std::thread sound_thread;
-    std::atomic<bool> running_sound {false};
-    float delta_frame_time;
-    float gravity;
+    AtomicBool running_sound {false};
+    f32 delta_frame_time;
+    f32 gravity;
     bool is_left_mouse_button_pressed;
-    std::vector<Texture> texture_vector;
-    std::vector<const char*> paths_array;
-    std::vector<const char*> paths_gltf;
-    uint32_t mesh_id = 0;
+    Vec<Texture> texture_vector;
+    Vec<const char*> paths_array;
+    Vec<const char*> paths_gltf;
+    u32 mesh_id = 0;
     bool is_already_cached;
     bool is_inventory_key_held = false;
     bool was_inventory_opened = false;
     bool is_cursor_hidden = false;
-    float hud_screen_x = 0.0f;
-    float hud_screen_y;
-    // If don't have any dragged item then this variable have value of -1.
-    int dragged_item_entity = -1;
-    float f_yaw = -90.0f;
-    float f_pitch = 0.0f;
-    float previous_mouse_offset_x = 0.0f;
-    float previous_mouse_offset_y = 0.0f;
+    f32 hud_screen_x = 0.0f;
+    f32 hud_screen_y;
+    // If don't have any dragged item then this variable have value of -1.f
+    i32 dragged_item_entity = -1;
+    f32 f_yaw = -90.0f;
+    f32 f_pitch = 0.0f;
+    f32 previous_mouse_offset_x = 0.0f;
+    f32 previous_mouse_offset_y = 0.0f;
     CVulkanRenderer* vulkan_renderer;
     SpatialGridSystem* spatial_grid_system;
     CCollisionSystem* collision_system;
@@ -7437,78 +7361,75 @@ class Engine {
     ProceduralLevelGeneratingSystem* procudural_level_generating_system;
     InventorySystem* inventory_system;
     Archetype* cached_directional_ligth_archetypes[32];
-    uint32_t directional_light_archetypes_number = 0;
-    uint64_t directional_light_required_mask =
+    u32 directional_light_archetypes_number = 0;
+    u64 directional_light_required_mask =
         (1ul << ComponentsIndices::DirectionalLightComponent)
         | (1ul << ComponentsIndices::MeshComponent)
         | (1ul << ComponentsIndices::TransformComponent);
     Archetype* cached_spot_ligth_archetypes[32];
-    uint32_t spot_light_archetypes_number = 0;
-    uint64_t spot_light_required_mask =
+    u32 spot_light_archetypes_number = 0;
+    u64 spot_light_required_mask =
         (1ul << ComponentsIndices::SpotLightComponent)
         | (1ul << ComponentsIndices::MeshComponent)
         | (1ul << ComponentsIndices::TransformComponent);
     Archetype* cached_point_ligth_archetypes[32];
-    uint32_t point_light_archetypes_number = 0;
-    uint64_t point_light_required_mask =
+    u32 point_light_archetypes_number = 0;
+    u64 point_light_required_mask =
         (1ul << ComponentsIndices::PointLightComponent)
         | (1ul << ComponentsIndices::MeshComponent)
         | (1ul << ComponentsIndices::TransformComponent);
     Archetype* cached_animation_actors_archetypes[32];
-    uint32_t animation_actors_archetypes_number = 0;
-    uint64_t animated_actors_required_mask =
+    u32 animation_actors_archetypes_number = 0;
+    u64 animated_actors_required_mask =
         (1ul << ComponentsIndices::MaterialComponent)
         | (1ul << ComponentsIndices::AnimationComponent)
         | (1ul << ComponentsIndices::RotationComponent)
         | (1ul << ComponentsIndices::TransformComponent)
         | (1ul << ComponentsIndices::MeshComponent);
     Archetype* cached_static_actors_archetypes[32];
-    uint32_t static_actors_archetypes_number = 0;
-    uint64_t static_actors_required_mask =
+    u32 static_actors_archetypes_number = 0;
+    u64 static_actors_required_mask =
         (1ul << ComponentsIndices::MaterialComponent)
         | (1ul << ComponentsIndices::StaticMeshTagComponent)
         | (1ul << ComponentsIndices::TransformComponent)
         | (1ul << ComponentsIndices::RotationComponent)
         | (1ul << ComponentsIndices::MeshComponent);
     Archetype* cached_player_archetypes[32];
-    uint32_t player_archetypes_number = 0;
-    uint64_t player_required_mask =
-        (1ul << ComponentsIndices::PlayerTagComponent)
+    u32 player_archetypes_number = 0;
+    u64 player_required_mask = (1ul << ComponentsIndices::PlayerTagComponent)
         | (1ul << ComponentsIndices::TransformComponent)
         | (1ul << ComponentsIndices::ViewComponent);
     Archetype* cached_animation_archetypes[32];
-    uint32_t animation_archetypes_number = 0;
-    uint64_t animation_required_mask =
-        (1ul << ComponentsIndices::MaterialComponent)
+    u32 animation_archetypes_number = 0;
+    u64 animation_required_mask = (1ul << ComponentsIndices::MaterialComponent)
         | (1ul << ComponentsIndices::AnimationComponent)
         | (1ul << ComponentsIndices::RotationComponent)
         | (1ul << ComponentsIndices::TransformComponent)
         | (1ul << ComponentsIndices::MeshComponent);
     Archetype* cached_crosshair_actors_archetypes[32];
-    uint32_t crosshair_actors_archetypes_number = 0;
-    uint64_t crosshair_required_mask =
+    u32 crosshair_actors_archetypes_number = 0;
+    u64 crosshair_required_mask =
         (1ul << ComponentsIndices::CrosshairTagComponent)
         | (1ul << ComponentsIndices::MeshComponent)
         | (1ul << ComponentsIndices::TransformComponent);
     Archetype* cached_level_chunk_actors_archetypes[32];
-    uint32_t level_chunk_actors_archetypes_number = 0;
-    uint64_t level_chunk_required_mask =
+    u32 level_chunk_actors_archetypes_number = 0;
+    u64 level_chunk_required_mask =
         (1ul << ComponentsIndices::MaterialComponent)
         | (1ul << ComponentsIndices::LevelChunkTagComponent)
         | (1ul << ComponentsIndices::TransformComponent)
         | (1ul << ComponentsIndices::RotationComponent)
         | (1ul << ComponentsIndices::MeshComponent);
     Archetype* cached_projectile_actors_archetypes[32];
-    uint32_t projectile_actors_archetypes_number = 0;
-    uint64_t projectile_required_mask =
+    u32 projectile_actors_archetypes_number = 0;
+    u64 projectile_required_mask =
         (1ul << ComponentsIndices::ProjectileBundleComponent)
         | (1ul << ComponentsIndices::TransformComponent)
         | (1ul << ComponentsIndices::RotationComponent)
         | (1ul << ComponentsIndices::MeshComponent);
     Archetype* cached_item_actors_archetypes[32];
-    uint32_t item_actors_archetypes_number = 0;
-    uint64_t rotation_item_required_mask =
-        (1ul << ComponentsIndices::ItemComponent)
+    u32 item_actors_archetypes_number = 0;
+    u64 rotation_item_required_mask = (1ul << ComponentsIndices::ItemComponent)
         | (1ul << ComponentsIndices::MeshComponent)
         | (1ul << ComponentsIndices::TransformComponent)
         | (1ul << ComponentsIndices::ColliderComponent)
@@ -7516,37 +7437,35 @@ class Engine {
         | (1ul << ComponentsIndices::RotationComponent)
         | (1ul << ComponentsIndices::MaterialComponent);
     Archetype* cached_inventory_archetypes[32];
-    uint32_t inventory_archetypes_number = 0;
-    uint64_t inventory_required_mask =
-        (1ul << ComponentsIndices::InventoryComponent)
+    u32 inventory_archetypes_number = 0;
+    u64 inventory_required_mask = (1ul << ComponentsIndices::InventoryComponent)
         | (1ul << ComponentsIndices::MeshComponent)
         | (1ul << ComponentsIndices::TransformComponent)
         | (1ul << ComponentsIndices::MaterialComponent);
     Archetype* cached_item_archetypes[32];
-    uint32_t item_archetypes_number = 0;
-    uint64_t item_required_mask = (1ul << ComponentsIndices::ItemComponent)
+    u32 item_archetypes_number = 0;
+    u64 item_required_mask = (1ul << ComponentsIndices::ItemComponent)
         | (1ul << ComponentsIndices::MeshComponent)
         | (1ul << ComponentsIndices::TransformComponent)
         | (1ul << ComponentsIndices::ColliderComponent)
         | (1ul << ComponentsIndices::ColliderFlagsComponent)
         | (1ul << ComponentsIndices::MaterialComponent);
     Archetype* cached_health_bars_archetypes[32];
-    uint32_t health_bars_archetypes_number = 0;
-    uint64_t health_bars_required_mask =
-        (1ul << ComponentsIndices::HealthComponent)
+    u32 health_bars_archetypes_number = 0;
+    u64 health_bars_required_mask = (1ul << ComponentsIndices::HealthComponent)
         | (1ul << ComponentsIndices::MeshComponent)
         | (1ul << ComponentsIndices::TransformComponent);
     Archetype* cached_fonts_archetypes[32];
-    uint32_t fonts_archetypes_number = 0;
-    uint64_t font_required_mask = (1ul << ComponentsIndices::FontComponent)
+    u32 fonts_archetypes_number = 0;
+    u64 font_required_mask = (1ul << ComponentsIndices::FontComponent)
         | (1ul << ComponentsIndices::TransformComponent);
-    double fps_accumulator = 0;
+    f64 fps_accumulator = 0;
     Engine();
 
 public:
-    std::vector<MeshHandle> mesh_handlers;
-    std::vector<TextureHandle> texture_handlers;
-    uint32_t wavefront_obj_counter = 0;
+    Vec<MeshHandle> mesh_handlers;
+    Vec<TextureHandle> texture_handlers;
+    u32 wavefront_obj_counter = 0;
 
     ~Engine();
 
@@ -7559,59 +7478,59 @@ public:
     void game_loop();
     void event_queue_flush();
     void render_vulkan();
-    void enlarge_frame_accumulator(float value);
+    void enlarge_frame_accumulator(f32 value);
     void set_view_matrix();
     void set_projection_matrix();
-    [[nodiscard]] std::vector<Matrix<float, 4>> update_animation_frames(
+    [[nodiscard]] Vec<Matrix<f32, 4>> update_animation_frames(
         Animation* animation_component,
-        unsigned int mesh_id
+        u32 mesh_id
     );
-    Matrix<float, 4> update_directional_light_space_matrix_shadow_map_ubo(
+    Matrix<f32, 4> update_directional_light_space_matrix_shadow_map_ubo(
         DirectionalLightComponent* light
     );
-    Matrix<float, 4> update_spot_light_space_matrix_shadow_map_ubo(
+    Matrix<f32, 4> update_spot_light_space_matrix_shadow_map_ubo(
         SpotLightComponent* light
     );
-    Matrix<float, 4> update_point_light_space_matrix_shadow_map_ubo(
+    Matrix<f32, 4> update_point_light_space_matrix_shadow_map_ubo(
         PointLightComponent* light,
-        uint32_t layer
+        u32 layer
     );
     SlotData update_data_ubo_ui(
-        const unsigned int current_inventory_row,
-        const unsigned int current_inventory_column,
+        const u32 current_inventory_row,
+        const u32 current_inventory_column,
         Inventory* inventory_component,
         Transform* slot_transfrom_component,
         Mesh* mesh_component
     );
-    Matrix<float, 4> update_data_ubo_icons_ui(
+    Matrix<f32, 4> update_data_ubo_icons_ui(
         Transform* item_transfrom_component,
         Collider* item_collider_component,
         Item* item_component,
-        const unsigned int row_inventory,
-        const unsigned int column_inventory,
+        const u32 row_inventory,
+        const u32 column_inventory,
         Transform* inventory_transform_component,
         Mesh* item_mesh,
-        int item_entity
+        i32 item_entity
     );
-    Matrix<float, 4> update_data_hud_screen_ubo(Transform* cursor_transform);
+    Matrix<f32, 4> update_data_hud_screen_ubo(Transform* cursor_transform);
     void set_frame_data();
     void load_wavefront_obj();
-    void calculate_mesh_bounds(const Vector<float, 4>& animated_vertex);
-    bool is_model_cache_exists(const std::string& model_file_path);
-    void write_models_cache(const std::string& model_file_path);
+    void calculate_mesh_bounds(const Vector<f32, 4>& animated_vertex);
+    bool is_model_cache_exists(const String& model_file_path);
+    void write_models_cache(const String& model_file_path);
     void initialize_gltf();
     void initialize_font_data();
-    Matrix<float, 4> compute_model_matrix(
+    Matrix<f32, 4> compute_model_matrix(
         Transform* transform,
         Rotation* rotation
     );
     void compute_hud_screeen_coordinates();
     TextureHandle load_texture_from_file(const char* path_to_texture_component);
     auto load_texture_from_address(
-        unsigned int i_width,
-        unsigned int i_height,
-        unsigned int dat_length,
-        unsigned char* u_i_data
+        u32 i_width,
+        u32 i_height,
+        u32 dat_length,
+        u8* u_i_data
     ) -> TextureHandle;
     MeshHandle load_mesh_from_obj(const char* mesh_path);
     MeshHandle load_mesh_from_gltf(const char* path_to_mesh);

@@ -7,7 +7,7 @@ void ReadFile(const char* _filePath) {
     const char* _pWavefrontObjFile = _filePath;
     std::ifstream WavefrontObjFileInputStream;
     std::stringstream WavefrontObjFileOutputStream;
-    std::string sWavefrontObjFileData;
+    String sWavefrontObjFileData;
     const char* pWavefrontObjFileData;
 
     WavefrontObjFileInputStream.open(_pWavefrontObjFile);
@@ -29,12 +29,12 @@ void readFile(const char* _filePath) {
     ptr = fopen("cube.bin", "rb");
     fread(buffer, 840, 1, ptr);
 
-    for (unsigned int i = 0; i < 840; i += 2) {
+    for (u32 i = 0; i < 840; i += 2) {
         printf("%hu ", buffer[i]);
     }
 }
 
-int main(int argc, char* argv[]) {
+i32 main(i32 argc, char* argv[]) {
     readFile("cube.bin");
 
     return 0;

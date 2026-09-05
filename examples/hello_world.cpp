@@ -15,7 +15,7 @@
 
 using namespace glvm;
 
-auto main() -> int {
+auto main() -> i32 {
     auto* entity_manager = EntityManager::get_instance();
     auto* component_manager = ComponentManager::get_instance();
     auto* arch_entity_manager = ArchetypeEntityManager::get_instance();
@@ -132,9 +132,9 @@ auto main() -> int {
         .shininess = 128.0f * 0.078125f
     };
     std::random_device rd;
-    std::map<int, int> hist;
+    BTreeMap<i32, i32> hist;
     std::mt19937 mersenne(rd());
-    std::uniform_int_distribution<int> dist(0, 3);
+    std::uniform_int_distribution<i32> dist(0, 3);
     for (auto i = 0; i < 5; ++i) {
         auto enemy = arch_entity_manager->create_entity();
         WORLD.add_entity_to_archetype(enemy, WORLD.archetypes[2]);
@@ -142,26 +142,26 @@ auto main() -> int {
         auto* enemy_arch = dynamic_cast<EnemyArchetype*>(enemy_location.arch);
         const auto enemy_index = enemy_location.index;
         auto random = dist(mersenne);
-        Vector<float, 3> random_direction = {};
+        Vector<f32, 3> random_direction = {};
         switch (random) {
             case 0:
-                random_direction = Vector<float, 3>(3.0f, 0.0f, 0.0f, 0.0);
+                random_direction = Vector<f32, 3>(3.0f, 0.0f, 0.0f, 0.0f);
                 break;
             case 1:
-                random_direction = Vector<float, 3>(-3.0f, 0.0f, 0.0f, 0.0);
+                random_direction = Vector<f32, 3>(-3.0f, 0.0f, 0.0f, 0.0f);
                 break;
             case 2:
-                random_direction = Vector<float, 3>(0.0f, 0.0f, 3.0f, 0.0);
+                random_direction = Vector<f32, 3>(0.0f, 0.0f, 3.0f, 0.0f);
                 break;
             case 3:
-                random_direction = Vector<float, 3>(0.0f, 0.0f, -3.0f, 0.0);
+                random_direction = Vector<f32, 3>(0.0f, 0.0f, -3.0f, 0.0f);
                 break;
             default:
                 break;
         }
         enemy_arch->transforms[enemy_index] = {
             .position =
-                {Vector<float, 3>(static_cast<float>(i) * 5, 3.0f, -3.0f)
+                {Vector<f32, 3>(static_cast<f32>(i) * 5, 3.0f, -3.0f)
                  + random_direction},
             .scale = 0.02f
         };
@@ -207,7 +207,7 @@ auto main() -> int {
             dynamic_cast<StaticMeshArchetype*>(cube_location.arch);
         const auto cube_index = cube_location.index;
         cube_arch->transforms[cube_index] = {
-            .position = {7.0f, 2.0f, 10.0f + (static_cast<float>(i) * 2.0f)},
+            .position = {7.0f, 2.0f, 10.0f + (static_cast<f32>(i) * 2.0f)},
             .scale = 1.0f
         };
         cube_arch->meshes[cube_index] = {.handle = hyper_cube2, .gltf = true};
@@ -242,7 +242,7 @@ auto main() -> int {
     auto* inventory_component = &inventory_arch->invetories[inventory_index];
     inventory_component->entity_owner = player;
     inventory_component->slot_mesh_id = inventory_handle;
-    inventory_component->slot_scale = 0.05;
+    inventory_component->slot_scale = 0.05f;
     auto* inventory_mesh = &inventory_arch->meshes[inventory_index];
     inventory_mesh->gltf = true;
     inventory_arch->transforms[inventory_index] = {
@@ -256,7 +256,7 @@ auto main() -> int {
         .shininess = 128.0f * 0.078125f
     };
     for (auto i = 0; i < 5; ++i) {
-        uint64_t item = arch_entity_manager->create_entity();
+        u64 item = arch_entity_manager->create_entity();
         WORLD.add_entity_to_archetype(item, WORLD.archetypes[7]);
         EntityLocation item_location = WORLD.entity_locations[get_id(item)];
         auto* item_arch = dynamic_cast<ItemArchetype*>(item_location.arch);
@@ -264,11 +264,11 @@ auto main() -> int {
         auto row = i + 1;
         item_arch->items[item_index].item_slot_type = {
             .height = 2,
-            .width = static_cast<unsigned int>(row)
+            .width = static_cast<u32>(row)
         };
         item_arch->items[item_index].is_actor = true;
         item_arch->transforms[item_index] = {
-            .position = {3.0f, 5.0f, 10.0f + (static_cast<float>(i) * 2.0f)},
+            .position = {3.0f, 5.0f, 10.0f + (static_cast<f32>(i) * 2.0f)},
             .scale = 0.05f
         };
         item_arch->rigid_bodies[item_index] = {.f_mass = 0.0f};

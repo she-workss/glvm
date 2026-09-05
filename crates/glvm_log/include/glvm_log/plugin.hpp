@@ -16,7 +16,7 @@ namespace glvm_log {
 
 struct LogPlugin {
     LogLevel level = LogLevel::Info;
-    std::string filter = "";
+    String filter = "";
     LogFormat format = LogFormat::full();
 
     auto build() const -> void {

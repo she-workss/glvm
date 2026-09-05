@@ -9,7 +9,7 @@ namespace glvm_log {
 template<typename... Args>
 inline auto emit(
     LogLevel lvl,
-    std::string_view cat,
+    str cat,
     std::format_string<Args...> fmt,
     Args&&... args
 ) -> void {
@@ -21,7 +21,7 @@ inline auto emit(
 
 template<typename... Args>
 inline auto trace(
-    std::string_view cat,
+    str cat,
     std::format_string<Args...> fmt,
     Args&&... args
 ) -> void {
@@ -30,7 +30,7 @@ inline auto trace(
 
 template<typename... Args>
 inline auto debug(
-    std::string_view cat,
+    str cat,
     std::format_string<Args...> fmt,
     Args&&... args
 ) -> void {
@@ -39,7 +39,7 @@ inline auto debug(
 
 template<typename... Args>
 inline auto info(
-    std::string_view cat,
+    str cat,
     std::format_string<Args...> fmt,
     Args&&... args
 ) -> void {
@@ -48,7 +48,7 @@ inline auto info(
 
 template<typename... Args>
 inline auto warn(
-    std::string_view cat,
+    str cat,
     std::format_string<Args...> fmt,
     Args&&... args
 ) -> void {
@@ -57,7 +57,7 @@ inline auto warn(
 
 template<typename... Args>
 inline auto error(
-    std::string_view cat,
+    str cat,
     std::format_string<Args...> fmt,
     Args&&... args
 ) -> void {
