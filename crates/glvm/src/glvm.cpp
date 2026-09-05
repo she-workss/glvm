@@ -2,6 +2,7 @@
 
 #include "imgui.h"
 #include "imgui_impl_vulkan.h"
+#include "rusty/prelude.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -49,6 +50,8 @@
 #ifdef __linux__
 #include <wayland-client-core.h>
 #endif // __linux__
+
+using namespace rusty::prelude;
 
 #ifdef _WIN32
 constexpr auto VK_W = 0x57;
@@ -3965,10 +3968,10 @@ void ImGuiOverlay::create_line_pipeline() {
     };
 
     VkShaderModule vert = create_shader_module(
-        "../../../crates/glvm2/assets/shaders/debug/debug_vert.spv"
+        "../../../crates/glvm/assets/shaders/debug/debug_vert.spv"
     );
     VkShaderModule frag = create_shader_module(
-        "../../../crates/glvm2/assets/shaders/debug/debug_frag.spv"
+        "../../../crates/glvm/assets/shaders/debug/debug_frag.spv"
     );
 
     VkPipelineShaderStageCreateInfo shader_stages[2] {};
@@ -4336,8 +4339,8 @@ void CVulkanRenderer::init_window() {
 
 #ifdef VK_USE_PLATFORM_XLIB_KHR
     window = new glvm::WindowXVulkan();
-    createXlibSurfaceInfo.dpy = window->GetDisplay();
-    createXlibSurfaceInfo.window = window->GetWindow();
+    createXlibSurfaceInfo.dpy = window->get_display();
+    createXlibSurfaceInfo.window = window->get_window();
     aspect_rate = (float)window->width / (float)window->height;
 
     createXlibSurfaceInfo.sType =
@@ -4348,8 +4351,8 @@ void CVulkanRenderer::init_window() {
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
     window = new glvm::WindowXCBVulkan();
-    createXcbSurfaceInfo.window = window->GetWindow();
-    createXcbSurfaceInfo.connection = window->GetConnection();
+    createXcbSurfaceInfo.window = window->get_window();
+    createXcbSurfaceInfo.connection = window->get_connection();
     aspect_rate = (float)window->width / (float)window->height;
 
     createXcbSurfaceInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
@@ -9169,7 +9172,7 @@ void CJsonParser::parse() {
 
             if (key_flag) {
                 JsonValue json_string(buffer_string);
-                (*stack_of_json_values.back()->value.object)[last_key.c_str()] =
+                (*stack_of_json_values.back()->value.object)[last_key] =
                     json_string;
             } else {
                 JsonValue json_string(buffer_string);
@@ -9188,8 +9191,8 @@ void CJsonParser::parse() {
 
                 if (key_flag) {
                     JsonValue json_float(f_number);
-                    (*stack_of_json_values.back()
-                          ->value.object)[last_key.c_str()] = json_float;
+                    (*stack_of_json_values.back()->value.object)[last_key] =
+                        json_float;
                 } else {
                     JsonValue json_float(f_number);
                     stack_of_json_values.back()->value.array->push_back(
@@ -9201,8 +9204,8 @@ void CJsonParser::parse() {
 
                 if (key_flag) {
                     JsonValue json_int(i_number);
-                    (*stack_of_json_values.back()
-                          ->value.object)[last_key.c_str()] = json_int;
+                    (*stack_of_json_values.back()->value.object)[last_key] =
+                        json_int;
                 } else {
                     JsonValue json_int(i_number);
                     stack_of_json_values.back()->value.array->push_back(
@@ -9219,8 +9222,8 @@ void CJsonParser::parse() {
             if (bool_or_null_string == "true") {
                 if (key_flag) {
                     JsonValue json_true(true);
-                    (*stack_of_json_values.back()
-                          ->value.object)[last_key.c_str()] = json_true;
+                    (*stack_of_json_values.back()->value.object)[last_key] =
+                        json_true;
                 } else {
                     JsonValue json_true(true);
                     stack_of_json_values.back()->value.array->push_back(
@@ -9230,8 +9233,8 @@ void CJsonParser::parse() {
             } else if (bool_or_null_string == "false") {
                 if (key_flag) {
                     JsonValue json_false(false);
-                    (*stack_of_json_values.back()
-                          ->value.object)[last_key.c_str()] = json_false;
+                    (*stack_of_json_values.back()->value.object)[last_key] =
+                        json_false;
                 } else {
                     JsonValue json_false(false);
                     stack_of_json_values.back()->value.array->push_back(
@@ -9243,8 +9246,8 @@ void CJsonParser::parse() {
                     JsonValue json_null;
                     json_null.type = JsonNull;
                     json_null.value.null = NULL;
-                    (*stack_of_json_values.back()
-                          ->value.object)[last_key.c_str()] = json_null;
+                    (*stack_of_json_values.back()->value.object)[last_key] =
+                        json_null;
                 } else {
                     JsonValue json_null;
                     json_null.type = JsonNull;
@@ -9261,11 +9264,11 @@ void CJsonParser::parse() {
                 stack_of_json_values.push_back(root);
             } else if (key_flag) {
                 JsonValue json_object = create_json_hash_map();
-                (*stack_of_json_values.back()->value.object)[last_key.c_str()] =
+                (*stack_of_json_values.back()->value.object)[last_key] =
                     json_object;
-                stack_of_json_values.push_back(&(
-                    *stack_of_json_values.back()->value.object
-                )[last_key.c_str()]);
+                stack_of_json_values.push_back(
+                    &(*stack_of_json_values.back()->value.object)[last_key]
+                );
             } else if (!key_flag) {
                 JsonValue json_object = create_json_hash_map();
                 stack_of_json_values.back()->value.array->push_back(json_object);
@@ -9282,11 +9285,11 @@ void CJsonParser::parse() {
                 stack_of_json_values.push_back(root);
             } else if (key_flag) {
                 JsonValue json_array = create_json_array();
-                (*stack_of_json_values.back()->value.object)[last_key.c_str()] =
+                (*stack_of_json_values.back()->value.object)[last_key] =
                     json_array;
-                stack_of_json_values.push_back(&(
-                    *stack_of_json_values.back()->value.object
-                )[last_key.c_str()]);
+                stack_of_json_values.push_back(
+                    &(*stack_of_json_values.back()->value.object)[last_key]
+                );
             } else if (!key_flag) {
                 JsonValue json_array = create_json_array();
                 stack_of_json_values.back()->value.array->push_back(json_array);
@@ -9322,7 +9325,7 @@ void CJsonParser::parse() {
 JsonValue CJsonParser::create_json_hash_map() {
     JsonValue json_object;
     json_object.type = JsonObject;
-    json_object.value.object = new HashMap<JsonValue>;
+    json_object.value.object = new HashMap<std::string, JsonValue>;
     return json_object;
 }
 
@@ -9548,38 +9551,25 @@ void CJsonParser::search_in_json_array(
 }
 
 void CJsonParser::search_in_json_object(
-    HashMap<JsonValue>* map_value,
+    HashMap<std::string, JsonValue>* map_value,
     const char* key,
     std::vector<JsonValue>& result_vector
 ) const {
-    for (unsigned int i = 0; i < map_value->get_capacity(); ++i) {
-        if (map_value->hash_map[i] != nullptr) {
-            Node<JsonValue>* current = map_value->hash_map[i];
-            while (current != nullptr) {
-                std::string search_key = key;
-                std::string current_key = current->key;
-                if (current_key == search_key) {
-                    result_vector.push_back(current->value);
-                }
+    for (auto& [current_key, current_value] : *map_value) {
+        if (current_key == key) {
+            result_vector.push_back(current_value);
+        }
 
-                if (current->value.type == JsonObject) {
-                    search_in_json_object(
-                        current->value.value.object,
-                        key,
-                        result_vector
-                    );
-                }
+        if (current_value.type == JsonObject) {
+            search_in_json_object(
+                current_value.value.object,
+                key,
+                result_vector
+            );
+        }
 
-                if (current->value.type == JsonArray) {
-                    search_in_json_array(
-                        current->value.value.array,
-                        key,
-                        result_vector
-                    );
-                }
-
-                current = current->next;
-            }
+        if (current_value.type == JsonArray) {
+            search_in_json_array(current_value.value.array, key, result_vector);
         }
     }
 }
@@ -9713,9 +9703,9 @@ struct BufferViewMetaData {
 
     buffer_meta_data.byte_offset = 0;
     if ((*gltf)["accessors"][accessor_index].is_object() == JsonObject) {
-        HashMap<JsonValue>* ptr =
+        HashMap<std::string, JsonValue>* ptr =
             (*gltf)["accessors"][accessor_index].value.object;
-        if (ptr->contain("byteOffset")) {
+        if (ptr->contains("byteOffset")) {
             buffer_meta_data.byte_offset =
                 (*gltf)["accessors"][accessor_index]["byteOffset"]
                     .value.i_number;
@@ -9734,9 +9724,9 @@ struct BufferViewMetaData {
         (*gltf)["bufferViews"][buffer_view_index]["byteLength"].value.i_number;
     buffer_view_meta_data.byte_offset = 0;
     if ((*gltf)["bufferViews"][buffer_view_index].is_object() == JsonObject) {
-        HashMap<JsonValue>* ptr =
+        HashMap<std::string, JsonValue>* ptr =
             (*gltf)["bufferViews"][buffer_view_index].value.object;
-        if (ptr->contain("byteOffset")) {
+        if (ptr->contains("byteOffset")) {
             buffer_view_meta_data.byte_offset =
                 (*gltf)["bufferViews"][buffer_view_index]["byteOffset"]
                     .value.i_number;
@@ -9901,7 +9891,7 @@ void CJsonParser::load_gltf(
             Matrix<float, 4> rotation(1.0f);
             Matrix<float, 4> scale(1.0f);
             Matrix<float, 4> translation(1.0f);
-            if (node.value.object->contain("rotation")) {
+            if (node.value.object->contains("rotation")) {
                 JsonValue array = (*node.value.object)["rotation"];
                 for (unsigned int i = 0; i < array.value.array->size(); ++i) {
                     switch (i) {
@@ -9940,7 +9930,7 @@ void CJsonParser::load_gltf(
             }
             std::vector<int> local_children;
             // Collect children indices.
-            if (node.value.object->contain("children")) {
+            if (node.value.object->contains("children")) {
                 JsonValue array = (*node.value.object)["children"];
                 for (unsigned int i = 0; i < array.value.array->size(); ++i) {
                     local_children.push_back(array[i].value.i_number);
@@ -9952,7 +9942,7 @@ void CJsonParser::load_gltf(
                 // Put empty pack of children if can find a one.
                 children.push_back(empty_children);
             }
-            if (node.value.object->contain("scale")) {
+            if (node.value.object->contains("scale")) {
                 JsonValue array = (*node.value.object)["scale"];
                 for (unsigned int i = 0; i < array.value.array->size(); ++i) {
                     if (array[i].is_interger()) {
@@ -9962,7 +9952,7 @@ void CJsonParser::load_gltf(
                     }
                 }
             }
-            if (node.value.object->contain("translation")) {
+            if (node.value.object->contains("translation")) {
                 JsonValue array = (*node.value.object)["translation"];
                 for (unsigned int i = 0; i < array.value.array->size(); ++i) {
                     if (array[i].is_interger()) {
@@ -10357,7 +10347,7 @@ void CJsonParser::load_gltf(
             float s_sx = 1.f, s_sy = 1.f, s_sz = 1.f;
             if ((*gltf)["nodes"][node_idx].is_object() == JsonObject) {
                 auto* nd = (*gltf)["nodes"][node_idx].value.object;
-                if (nd->contain("translation")) {
+                if (nd->contains("translation")) {
                     s_tx = (*gltf)["nodes"][node_idx]["translation"][0]
                                .value.f_number;
                     s_ty = (*gltf)["nodes"][node_idx]["translation"][1]
@@ -10365,7 +10355,7 @@ void CJsonParser::load_gltf(
                     s_tz = (*gltf)["nodes"][node_idx]["translation"][2]
                                .value.f_number;
                 }
-                if (nd->contain("rotation")) {
+                if (nd->contains("rotation")) {
                     s_rx =
                         (*gltf)["nodes"][node_idx]["rotation"][0].value.f_number;
                     s_ry =
@@ -10375,7 +10365,7 @@ void CJsonParser::load_gltf(
                     s_rw =
                         (*gltf)["nodes"][node_idx]["rotation"][3].value.f_number;
                 }
-                if (nd->contain("scale")) {
+                if (nd->contains("scale")) {
                     s_sx =
                         (*gltf)["nodes"][node_idx]["scale"][0].value.f_number;
                     s_sy =
@@ -14871,6 +14861,654 @@ WindowWaylandVulkan* initialize_wayland_window() {
 
     wayland_window.init();
     return &wayland_window;
+}
+} // namespace glvm
+#endif // __linux__
+
+#ifdef __linux__
+
+#include <X11/Xlib.h>
+
+namespace glvm {
+WindowXVulkan::WindowXVulkan() {
+    display = XOpenDisplay(nullptr);
+    root_window = DefaultRootWindow(display);
+    set_window_attributes.event_mask = KeyPressMask | KeyReleaseMask
+        | PointerMotionMask | StructureNotifyMask | ButtonPressMask
+        | ButtonReleaseMask | FocusChangeMask;
+
+    const int screen_number = XDefaultScreen(display);
+    width = DisplayWidth(display, screen_number);
+    height = DisplayHeight(display, screen_number);
+    // Show the window.
+    win = XCreateWindow(
+        display,
+        root_window,
+        0,
+        0,
+        width,
+        height,
+        0,
+        CopyFromParent,
+        InputOutput,
+        CopyFromParent,
+        CWEventMask,
+        &set_window_attributes
+    );
+
+    XMapWindow(display, win);
+
+    XWarpPointer(display, None, win, 0, 0, 0, 0, 0, 0);
+
+    Cursor invisible_cursor;
+    Pixmap bitmap_no_data;
+    XColor black;
+    static char no_data[] = {0, 0, 0, 0, 0, 0, 0, 0};
+    black.red = black.green = black.blue = 0;
+
+    bitmap_no_data = XCreateBitmapFromData(display, win, no_data, 8, 8);
+    invisible_cursor = XCreatePixmapCursor(
+        display,
+        bitmap_no_data,
+        bitmap_no_data,
+        &black,
+        &black,
+        0,
+        0
+    );
+    XDefineCursor(display, win, invisible_cursor);
+
+    XFreeCursor(display, invisible_cursor);
+    XFreePixmap(display, bitmap_no_data);
+
+    XGetWindowAttributes(display, win, &x_window_attributes);
+}
+
+WindowXVulkan::~WindowXVulkan() = default;
+
+Window WindowXVulkan::get_window() {
+    return win;
+}
+
+Display* WindowXVulkan::get_display() {
+    return display;
+}
+
+void WindowXVulkan::cursor_lock(
+    int pointer_x,
+    int pointer_y,
+    int* out_offset_x,
+    int* out_offset_y
+) {
+    *out_offset_x += pointer_x - (int)(width / 2);
+    *out_offset_y -= pointer_y - (int)(height / 2);
+    // Pitch is limited by angle in Engine::SetViewMatrix(), so this offset may
+    // accumulate freely; no pixel clamp here (resolution-independent).
+    XWarpPointer(
+        display,
+        None,
+        win,
+        0,
+        0,
+        0,
+        0,
+        (int)(width / 2),
+        (int)(height / 2)
+    );
+    XFlush(display);
+}
+
+void WindowXVulkan::swap_buffers() {
+}
+
+void WindowXVulkan::clear_display() {
+}
+
+bool WindowXVulkan::handle_event(CEvent& event) {
+    XEvent x_event;
+
+    while (XPending(display)) {
+        XNextEvent(display, &x_event);
+        KeySym key;
+        unsigned int mouse_button;
+        XMotionEvent motion;
+
+        switch (x_event.type) {
+            case MotionNotify:
+                motion = x_event.xmotion;
+
+                event.set_event(EEvents::EMousePointerPosition);
+                event.mouse_pointer_position.position_x = motion.x;
+                event.mouse_pointer_position.position_y = motion.y;
+                [[fallthrough]];
+            case MapNotify:
+                XGrabPointer(
+                    display,
+                    win,
+                    True,
+                    PointerMotionMask,
+                    GrabModeAsync,
+                    GrabModeAsync,
+                    win,
+                    None,
+                    CurrentTime
+                );
+                break;
+            case FocusIn:
+                is_focused = true;
+                XGrabPointer(
+                    display,
+                    win,
+                    True,
+                    PointerMotionMask,
+                    GrabModeAsync,
+                    GrabModeAsync,
+                    win,
+                    None,
+                    CurrentTime
+                );
+                break;
+            case FocusOut:
+                is_focused = false;
+                XUngrabPointer(display, CurrentTime);
+                break;
+            case ButtonPress:
+                mouse_button = x_event.xbutton.button;
+                switch (mouse_button) {
+                    case 1:
+                        event.set_event(EEvents::EMouseLeftButton);
+                        break;
+                }
+                break;
+
+            case ButtonRelease:
+                mouse_button = x_event.xbutton.button;
+                switch (mouse_button) {
+                    case 1:
+                        event.set_event(EEvents::EMouseLeftButtonRelease);
+                        event.is_left_mouse_button_released = true;
+                        break;
+                }
+                break;
+
+            case KeyPress:
+                key = XLookupKeysym(&x_event.xkey, 0);
+                switch (key) {
+                    case XKEY_I:
+                        event.set_event(EEvents::EInventory);
+                        break;
+                    case XKEY_ESCAPE:
+                        event.set_event(EEvents::EGameLoopKill);
+                        break;
+                    case XKEY_A:
+                        event.set_event(EEvents::EMoveLeft);
+                        break;
+                    case XKEY_D:
+                        event.set_event(EEvents::EMoveRight);
+                        break;
+                    case XKEY_S:
+                        event.set_event(EEvents::EMoveBackward);
+                        break;
+                    case XKEY_W:
+                        event.set_event(EEvents::EMoveForward);
+                        break;
+                    case XKEY_SPACE:
+                        event.set_event(EEvents::EJump);
+                        break;
+                }
+                break;
+
+            case KeyRelease:
+                if (XEventsQueued(display, QueuedAfterReading)) {
+                    XEvent x_next_event;
+                    XPeekEvent(display, &x_next_event);
+
+                    if (x_next_event.type == KeyPress
+                        && x_next_event.xkey.time == x_event.xkey.time
+                        && x_next_event.xkey.keycode == x_event.xkey.keycode) {
+                        // Key wasn't actually released.
+                        XNextEvent(display, &x_next_event);
+                        continue;
+                    }
+                }
+                key = XLookupKeysym(&x_event.xkey, 0);
+                switch (key) {
+                    case XKEY_I:
+                        event.set_event(EEvents::EInventoryRelease);
+                        break;
+                    case XKEY_A:
+                        event.set_event(EEvents::EKeyreleaseA);
+                        break;
+                    case XKEY_D:
+                        event.set_event(EEvents::EKeyreleaseD);
+                        break;
+                    case XKEY_S:
+                        event.set_event(EEvents::EKeyreleaseS);
+                        break;
+                    case XKEY_W:
+                        event.set_event(EEvents::EKeyreleaseW);
+                        break;
+                    case XKEY_SPACE:
+                        event.set_event(EEvents::EKeyreleaseJump);
+                        break;
+                }
+                break;
+        }
+
+        INPUT_STACK.control_input(event);
+    }
+    return false;
+}
+
+void WindowXVulkan::close() {
+    XDestroyWindow(display, win);
+    XCloseDisplay(display);
+}
+} // namespace glvm
+
+#include <X11/X.h>
+#include <X11/XKBlib.h>
+#include <xcb/xcb_cursor.h>
+#include <xcb/xcb_keysyms.h>
+#include <xcb/xfixes.h>
+
+namespace glvm {
+WindowXCBVulkan::WindowXCBVulkan() {
+    // Open the connection to the X server.
+    connection = xcb_connect(nullptr, nullptr);
+    int error = xcb_connection_has_error(connection);
+    if (error) {
+        fprintf(stderr, "XCB connection error: %d\n", error);
+        // Handle error or exit.
+    }
+
+    // Get the first screen.
+    const xcb_setup_t* setup = xcb_get_setup(connection);
+    assert(connection != nullptr);
+
+    xcb_screen_iterator_t iterator = xcb_setup_roots_iterator(setup);
+    screen = iterator.data;
+
+    width = screen->width_in_pixels;
+    height = screen->height_in_pixels;
+
+    key_symbols = xcb_key_symbols_alloc(connection);
+    assert(key_symbols != nullptr);
+
+    uint32_t event_mask = 0;
+    event_mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
+    uint32_t event_flags[2];
+    event_flags[0] = screen->black_pixel;
+    event_flags[1] = XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE
+        | XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE
+        | XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_POINTER_MOTION
+        | XCB_EVENT_MASK_ENTER_WINDOW | XCB_EVENT_MASK_LEAVE_WINDOW
+        | XCB_EVENT_MASK_FOCUS_CHANGE;
+    window = xcb_generate_id(connection);
+    xcb_create_window(
+        connection,
+        XCB_COPY_FROM_PARENT,
+        window,
+        screen->root,
+        0,
+        0,
+        width,
+        height,
+        10,
+        XCB_WINDOW_CLASS_INPUT_OUTPUT,
+        screen->root_visual,
+        event_mask,
+        event_flags
+    );
+
+    // Verify the window was created (optional).
+    xcb_get_window_attributes_cookie_t attr_cookie =
+        xcb_get_window_attributes(connection, window);
+    xcb_get_window_attributes_reply_t* attr_reply =
+        xcb_get_window_attributes_reply(connection, attr_cookie, nullptr);
+
+    if (!attr_reply) {
+        fprintf(stderr, "Failed to query window - maybe it wasn't created.\n");
+    } else {
+        free(attr_reply);
+    }
+    // Map the window on the screen.
+    xcb_map_window(connection, window);
+    // Make sure commands are sent before we pause so that the window gets shown.
+    xcb_flush(connection);
+    hide_cursor();
+}
+
+void WindowXCBVulkan::configure_window() {
+    uint16_t mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y
+        | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
+    const uint32_t values[] = {
+        320, // x.
+        180, // y.
+        width,
+        height
+    };
+
+    xcb_configure_window(connection, window, mask, values);
+    xcb_flush(connection);
+}
+
+void WindowXCBVulkan::hide_cursor() {
+    xcb_pixmap_t foreground_pixmap_id = xcb_generate_id(connection);
+    xcb_create_pixmap(connection, 1, foreground_pixmap_id, window, 8, 8);
+
+    // Create graphical context.
+    xcb_gcontext_t graphical_context = xcb_generate_id(connection);
+
+    uint32_t mask = XCB_GC_FOREGROUND | XCB_GC_BACKGROUND;
+    uint32_t values_list[2];
+    values_list[0] = screen->black_pixel;
+    values_list[1] = screen->white_pixel;
+
+    xcb_create_gc(
+        connection,
+        graphical_context,
+        window,
+        XCB_GC_FOREGROUND | XCB_GC_BACKGROUND,
+        values_list
+    );
+
+    const uint8_t pix_map_data[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                    0x00, 0x00, 0x00, 0x00};
+
+    xcb_put_image(
+        connection,
+        XCB_IMAGE_FORMAT_XY_PIXMAP,
+        foreground_pixmap_id,
+        graphical_context,
+        0,
+        0,
+        100,
+        100,
+        0,
+        8,
+        32,
+        pix_map_data
+    );
+
+    xcb_cursor_t cursor = xcb_generate_id(connection);
+    xcb_create_cursor(
+        connection,
+        cursor,
+        foreground_pixmap_id,
+        foreground_pixmap_id,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        8,
+        8
+    );
+
+    mask = XCB_CW_CURSOR;
+    uint32_t value_list = cursor;
+    xcb_change_window_attributes(connection, window, mask, &value_list);
+
+    xcb_free_cursor(connection, cursor);
+}
+
+xcb_connection_t* WindowXCBVulkan::get_connection() {
+    return connection;
+}
+
+uint32_t WindowXCBVulkan::get_window() {
+    return window;
+}
+
+void WindowXCBVulkan::disconnect() {
+    xcb_disconnect(connection);
+}
+
+void WindowXCBVulkan::swap_buffers() {
+}
+
+void WindowXCBVulkan::clear_display() {
+}
+
+bool WindowXCBVulkan::handle_event([[maybe_unused]] CEvent& event) {
+    xcb_generic_event_t* generic_event;
+    bool next_generic_event_flag = false;
+    while (next_generic_event_flag
+           || (generic_event = xcb_poll_for_event(connection))) {
+        next_generic_event_flag = false;
+        switch (generic_event->response_type & ~0x80) {
+            case XCB_EXPOSE: {
+                [[maybe_unused]] xcb_expose_event_t* expose_event =
+                    (xcb_expose_event_t*)generic_event;
+
+                if (!is_window_resize_read) {
+                    width = expose_event->width;
+                    height = expose_event->height;
+                    is_window_resize_read = true;
+                }
+                break;
+            }
+            case XCB_BUTTON_PRESS: {
+                xcb_button_press_event_t* expose_event =
+                    (xcb_button_press_event_t*)generic_event;
+                switch (expose_event->detail) {
+                    case 1:
+                        event.set_event(EEvents::EMouseLeftButton);
+                        break;
+                    case 3:
+                        event.set_event(EEvents::EMouseRightButton);
+                        break;
+                    case 4:
+                        break;
+                    case 5:
+                        break;
+                }
+
+                break;
+            }
+            case XCB_BUTTON_RELEASE: {
+                xcb_button_release_event_t* expose_event =
+                    (xcb_button_release_event_t*)generic_event;
+                switch (expose_event->detail) {
+                    case 1:
+                        event.set_event(EEvents::EMouseLeftButtonRelease);
+                        event.is_left_mouse_button_released = true;
+                        break;
+                    case 3:
+                        event.set_event(EEvents::EMouseRightButtonRelease);
+                        break;
+                }
+
+                break;
+            }
+            case XCB_MOTION_NOTIFY: {
+                xcb_motion_notify_event_t* expose_event =
+                    (xcb_motion_notify_event_t*)generic_event;
+
+                event.set_event(EEvents::EMousePointerPosition);
+                event.mouse_pointer_position.position_x = expose_event->event_x;
+                event.mouse_pointer_position.position_y = expose_event->event_y;
+                [[fallthrough]];
+            }
+            case XCB_MAP_WINDOW: {
+                // Make sure commands are sent before we pause so that the
+                // window gets shown.
+                xcb_flush(connection);
+
+                xcb_grab_pointer_cookie_t cookie = xcb_grab_pointer(
+                    connection,
+                    1,
+                    window,
+                    XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_BUTTON_PRESS,
+                    XCB_GRAB_MODE_ASYNC,
+                    XCB_GRAB_MODE_ASYNC,
+                    window,
+                    XCB_NONE,
+                    XCB_CURRENT_TIME
+                );
+                xcb_grab_pointer_reply_t* grab_pointer_reply =
+                    xcb_grab_pointer_reply(connection, cookie, nullptr);
+                free(grab_pointer_reply);
+                break;
+            }
+            case XCB_ENTER_NOTIFY: {
+                [[maybe_unused]] xcb_enter_notify_event_t* expose_event =
+                    (xcb_enter_notify_event_t*)generic_event;
+                break;
+            }
+            case XCB_FOCUS_IN:
+                is_focused = true;
+                xcb_grab_pointer(
+                    connection,
+                    1,
+                    window,
+                    XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_BUTTON_PRESS,
+                    XCB_GRAB_MODE_ASYNC,
+                    XCB_GRAB_MODE_ASYNC,
+                    window,
+                    XCB_NONE,
+                    XCB_CURRENT_TIME
+                );
+                break;
+            case XCB_FOCUS_OUT:
+                is_focused = false;
+                xcb_ungrab_pointer(connection, XCB_CURRENT_TIME);
+                xcb_flush(connection);
+                break;
+            case XCB_KEY_PRESS: {
+                xcb_key_press_event_t* expose_event =
+                    (xcb_key_press_event_t*)generic_event;
+                xcb_keysym_t keysym =
+                    xcb_key_press_lookup_keysym(key_symbols, expose_event, 0);
+                switch (keysym) {
+                    case 65307:
+                        event.set_event(EEvents::EGameLoopKill);
+                        break;
+                    case 105:
+                        event.set_event(EEvents::EInventory);
+                        break;
+                    case 97:
+                        event.set_event(EEvents::EMoveLeft);
+                        break;
+                    case 100:
+                        event.set_event(EEvents::EMoveRight);
+                        break;
+                    case 115:
+                        event.set_event(EEvents::EMoveBackward);
+                        break;
+                    case 119:
+                        event.set_event(EEvents::EMoveForward);
+                        break;
+                    case 32:
+                        event.set_event(EEvents::EJump);
+                        break;
+                }
+
+                break;
+            }
+            case XCB_KEY_RELEASE: {
+                xcb_key_release_event_t* key_release_event =
+                    (xcb_key_release_event_t*)generic_event;
+                next_generic_event = xcb_poll_for_event(connection);
+                if (next_generic_event != nullptr) {
+                    xcb_key_press_event_t* key_press_event =
+                        (xcb_key_press_event_t*)next_generic_event;
+                    xcb_keysym_t press_keysym = xcb_key_press_lookup_keysym(
+                        key_symbols,
+                        key_press_event,
+                        0
+                    );
+                    xcb_keysym_t release_keysym = xcb_key_press_lookup_keysym(
+                        key_symbols,
+                        key_release_event,
+                        0
+                    );
+
+                    if (next_generic_event->response_type == XCB_KEY_PRESS
+                        && key_press_event->time == key_release_event->time
+                        && press_keysym == release_keysym) {
+                        free(generic_event);
+                        generic_event = nullptr;
+                        free(next_generic_event);
+                        next_generic_event = nullptr;
+                        continue;
+                    } else {
+                        next_generic_event_flag = true;
+                    }
+                }
+
+                xcb_keysym_t release_keysym = xcb_key_press_lookup_keysym(
+                    key_symbols,
+                    key_release_event,
+                    0
+                );
+                switch (release_keysym) {
+                    case 105:
+                        event.set_event(EEvents::EInventoryRelease);
+                        break;
+                    case 97:
+                        event.set_event(EEvents::EKeyreleaseA);
+                        break;
+                    case 100:
+                        event.set_event(EEvents::EKeyreleaseD);
+                        break;
+                    case 115:
+                        event.set_event(EEvents::EKeyreleaseS);
+                        break;
+                    case 119:
+                        event.set_event(EEvents::EKeyreleaseW);
+                        break;
+                    case 32:
+                        event.set_event(EEvents::EKeyreleaseJump);
+                        break;
+                }
+
+                break;
+            }
+        }
+        if (next_generic_event != nullptr) {
+            *generic_event = *next_generic_event;
+            free(next_generic_event);
+            next_generic_event = nullptr;
+        } else {
+            free(generic_event);
+        }
+        INPUT_STACK.control_input(event);
+    }
+    is_window_resize_read = false;
+    return false;
+}
+
+void WindowXCBVulkan::close() {
+    xcb_key_symbols_free(key_symbols);
+    xcb_disconnect(connection);
+}
+
+void WindowXCBVulkan::cursor_lock(
+    int pointer_x,
+    int pointer_y,
+    int* out_offset_x,
+    int* out_offset_y
+) {
+    *out_offset_x += pointer_x - (int)(width / 2);
+    *out_offset_y -= pointer_y - (int)(height / 2);
+    xcb_warp_pointer(
+        connection,
+        XCB_NONE,
+        window,
+        0,
+        0,
+        0,
+        0,
+        (int)(width / 2),
+        (int)(height / 2)
+    );
+    xcb_flush(connection);
 }
 } // namespace glvm
 #endif // __linux__

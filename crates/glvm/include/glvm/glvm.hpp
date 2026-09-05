@@ -1,5 +1,7 @@
 #pragma once
 
+#include "rusty/prelude.hpp"
+
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -85,6 +87,8 @@
 #include <xcb/xcb_keysyms.h>
 #include <xcb/xproto.h>
 #endif // __linux__
+
+using namespace rusty::prelude;
 
 constexpr auto ARCHETYPE_CHUNK_SIZE = 16384;
 constexpr auto BASE_ARRAY_COUNTER_VALUE = 0;
@@ -332,6 +336,8 @@ struct ColliderFlags {
 
 namespace glvm {
 struct Controller {};
+
+struct CameraComponent {};
 } // namespace glvm
 
 namespace glvm {
@@ -512,166 +518,6 @@ public:
 };
 
 } // namespace glvm
-
-template<typename T>
-struct Node {
-    std::string key;
-    T value;
-    Node* next = nullptr;
-
-    Node(const char* node_key) : key(node_key) {
-    }
-};
-
-template<typename S>
-class HashMap {
-    unsigned int capacity = 10;
-
-public:
-    Node<S>** hash_map = nullptr;
-
-    HashMap() {
-        hash_map = new Node<S>*[capacity];
-
-        for (unsigned int i = 0; i < capacity; ++i) {
-            hash_map[i] = nullptr;
-        }
-    }
-
-    HashMap(const HashMap<S>& other) {
-        capacity = other.capacity;
-        hash_map = new Node<S>*[capacity];
-
-        for (unsigned int i = 0; i < capacity; ++i) {
-            hash_map[i] = nullptr;
-        }
-
-        for (unsigned int i = 0; i < capacity; ++i) {
-            Node<S>* current_node = other.hash_map[i];
-
-            while (current_node != nullptr) {
-                unsigned int hash = hash_function(current_node->key.c_str());
-                link(hash_map[hash], current_node->key.c_str()) =
-                    current_node->value;
-
-                current_node = current_node->next;
-            }
-        }
-    }
-
-    void operator=(const HashMap<S>& other) {
-        capacity = other.capacity;
-        hash_map = new Node<S>*[capacity];
-
-        for (int i = 0; i < capacity; ++i) {
-            hash_map[i] = nullptr;
-        }
-
-        for (int i = 0; i < capacity; ++i) {
-            Node<S>* current_node = other.hash_map[i];
-            while (current_node != nullptr) {
-                unsigned int hash = hash_function(current_node->key_.c_str());
-                link(hash_map[hash], current_node->key_.c_str()) =
-                    current_node->value_;
-
-                current_node = current_node->next_;
-            }
-        }
-    }
-
-    S& operator[](const char* lookup_key) {
-        unsigned int hash = hash_function(lookup_key);
-
-        if (hash >= capacity) {
-            rehash(hash);
-        }
-
-        return link(hash_map[hash], lookup_key);
-    }
-
-    bool contain(const char* lookup_key) {
-        unsigned int hash = hash_function(lookup_key);
-        Node<S>* node = hash_map[hash];
-
-        while (node != nullptr) {
-            if (node->key == lookup_key) {
-                return true;
-            } else {
-                node = node->next;
-            }
-        }
-
-        return false;
-    }
-
-    ~HashMap() {
-        for (unsigned int i = 0; i < capacity; ++i) {
-            Node<S>* node = hash_map[i];
-            while (node != nullptr) {
-                Node<S>* node_temp = node;
-                node = node->next;
-                delete node_temp;
-            }
-        }
-        delete[] hash_map;
-        hash_map = nullptr;
-    }
-
-    bool search_key(const char* key) {
-        for (int i = 0; i < capacity; ++i) {
-            if (hash_map[i] != nullptr && hash_map[i]->key_ == key) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    unsigned int get_capacity() {
-        return capacity;
-    }
-
-private:
-    S& link(Node<S>*& link_node, const char* lookup_key) {
-        if (link_node == nullptr) {
-            link_node = new Node<S>(lookup_key);
-            return link_node->value;
-        } else {
-            if (link_node->key == lookup_key) {
-                return link_node->value;
-            }
-
-            return link(link_node->next, lookup_key);
-        }
-    }
-
-    unsigned int hash_function(const char* lookup_key) {
-        unsigned int sum = 0;
-        unsigned int counter = 0;
-        while (lookup_key[counter] != '\0') {
-            sum += lookup_key[counter];
-            ++counter;
-        }
-
-        unsigned int reminder = sum % capacity;
-        return reminder;
-    }
-
-    void rehash(unsigned int required_capacity) {
-        unsigned int reminder = required_capacity % 10;
-        capacity = required_capacity + (10 - reminder);
-
-        Node<S>** temp = new Node<S>*[capacity];
-
-        for (unsigned int i = 0; i < capacity; ++i) {
-            temp[i] = hash_map[i];
-        }
-
-        delete[] hash_map;
-        hash_map = nullptr;
-        hash_map = temp;
-    }
-};
 
 namespace glvm {
 class IChrono {
@@ -2812,7 +2658,7 @@ union JsonVariant {
     bool boolean;
     void* null;
     std::vector<JsonValue>* array;
-    HashMap<JsonValue>* object;
+    HashMap<std::string, JsonValue>* object;
 
     JsonVariant() {
     }
@@ -2858,7 +2704,8 @@ struct JsonValue {
 
         switch (other.type) {
             case JsonObject:
-                value.object = new HashMap<JsonValue>(*other.value.object);
+                value.object =
+                    new HashMap<std::string, JsonValue>(*other.value.object);
                 break;
             case JsonIntegerNumber:
                 value.i_number = other.value.i_number;
@@ -2933,7 +2780,8 @@ struct JsonValue {
 
         switch (other.type) {
             case JsonObject:
-                value.object = new HashMap<JsonValue>(*other.value.object);
+                value.object =
+                    new HashMap<std::string, JsonValue>(*other.value.object);
                 break;
             case JsonIntegerNumber:
                 value.i_number = other.value.i_number;
@@ -2962,7 +2810,7 @@ struct JsonValue {
     JsonValue& operator[](std::string lookup_key) {
         switch (type) {
             case JsonObject:
-                return (*value.object)[lookup_key.c_str()];
+                return (*value.object)[lookup_key];
                 break;
             default:
                 throw std::out_of_range("Type is not a json object");
@@ -3034,7 +2882,7 @@ class CJsonParser {
 
 public:
     void search_in_json_object(
-        HashMap<JsonValue>* map_value,
+        HashMap<std::string, JsonValue>* map_value,
         const char* key,
         std::vector<JsonValue>& result_vector
     ) const;
@@ -4730,6 +4578,89 @@ struct StaticMeshArchetype: Archetype {
 };
 }; // namespace glvm
 
+namespace glvm {
+constexpr uint32_t COLLIDER_ARCH_CHUNK_SIZE =
+    ARCHETYPE_CHUNK_SIZE / (sizeof(Collider) + sizeof(ColliderFlags));
+
+struct ColliderArchetype: Archetype {
+    Collider colliders[COLLIDER_ARCH_CHUNK_SIZE];
+    ColliderFlags collider_flags[COLLIDER_ARCH_CHUNK_SIZE];
+
+    ColliderArchetype() {
+        components[ComponentsIndices::ColliderComponent] = colliders;
+        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags;
+
+        mask = (1ull << ComponentsIndices::ColliderComponent)
+            | (1ull << ComponentsIndices::ColliderFlagsComponent);
+
+        component_ids[0] = ComponentsIndices::ColliderComponent;
+        component_ids[1] = ComponentsIndices::ColliderFlagsComponent;
+        component_count = 2;
+    }
+};
+}; // namespace glvm
+
+namespace glvm {
+constexpr uint32_t DAMAGE_ARCH_CHUNK_SIZE =
+    ARCHETYPE_CHUNK_SIZE / (sizeof(Attack) + sizeof(Health) + sizeof(Font));
+
+struct DamageArchetype: Archetype {
+    Attack attacks[DAMAGE_ARCH_CHUNK_SIZE];
+    Health health[DAMAGE_ARCH_CHUNK_SIZE];
+    Font fonts[DAMAGE_ARCH_CHUNK_SIZE];
+
+    DamageArchetype() {
+        components[ComponentsIndices::AttackComponent] = attacks;
+        components[ComponentsIndices::HealthComponent] = health;
+        components[ComponentsIndices::FontComponent] = fonts;
+
+        mask = (1ull << ComponentsIndices::AttackComponent)
+            | (1ull << ComponentsIndices::HealthComponent)
+            | (1ull << ComponentsIndices::FontComponent);
+
+        component_ids[0] = ComponentsIndices::AttackComponent;
+        component_ids[1] = ComponentsIndices::HealthComponent;
+        component_ids[2] = ComponentsIndices::FontComponent;
+        component_count = 3;
+    }
+};
+}; // namespace glvm
+
+namespace glvm {
+constexpr uint32_t PHYSICS_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
+    / (sizeof(Transform) + sizeof(Collider) + sizeof(ColliderFlags)
+       + sizeof(Move) + sizeof(RigidBody));
+
+struct PhysicsArchetype: Archetype {
+    Transform transforms[PHYSICS_ARCH_CHUNK_SIZE];
+    Collider colliders[PHYSICS_ARCH_CHUNK_SIZE];
+    ColliderFlags collider_flags[PHYSICS_ARCH_CHUNK_SIZE];
+    Move moves[PHYSICS_ARCH_CHUNK_SIZE];
+    RigidBody rigid_bodies[PHYSICS_ARCH_CHUNK_SIZE];
+
+    PhysicsArchetype() {
+        components[ComponentsIndices::TransformComponent] = transforms;
+        components[ComponentsIndices::ColliderComponent] = colliders;
+        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags;
+        components[ComponentsIndices::MoveComponent] = moves;
+        components[ComponentsIndices::RigidBodyComponent] = rigid_bodies;
+
+        mask = (1ull << ComponentsIndices::TransformComponent)
+            | (1ull << ComponentsIndices::ColliderComponent)
+            | (1ull << ComponentsIndices::ColliderFlagsComponent)
+            | (1ull << ComponentsIndices::MoveComponent)
+            | (1ull << ComponentsIndices::RigidBodyComponent);
+
+        component_ids[0] = ComponentsIndices::TransformComponent;
+        component_ids[1] = ComponentsIndices::ColliderComponent;
+        component_ids[2] = ComponentsIndices::ColliderFlagsComponent;
+        component_ids[3] = ComponentsIndices::MoveComponent;
+        component_ids[4] = ComponentsIndices::RigidBodyComponent;
+        component_count = 5;
+    }
+};
+}; // namespace glvm
+
 #ifdef __linux__
 
 namespace glvm {
@@ -4921,21 +4852,21 @@ void registry_global_remove(
 
 namespace glvm {
 class WindowXVulkan: public IWindow {
-    XWindowAttributes GWindow_Attributes_;
-    Window Root_Window_;
-    XSetWindowAttributes Set_Window_Attributes_;
+    XWindowAttributes x_window_attributes;
+    Window root_window;
+    XSetWindowAttributes set_window_attributes;
 
 public:
-    Display* pDisp_;
-    Window Win_;
+    Display* display;
+    Window win;
     uint32_t width;
     uint32_t height;
 
     WindowXVulkan();
     ~WindowXVulkan();
 
-    Window GetWindow();
-    Display* GetDisplay();
+    Window get_window();
+    Display* get_display();
     void cursor_lock(
         int pointer_x,
         int pointer_y,
@@ -4958,22 +4889,20 @@ class WindowXCBVulkan: public IWindow {
     xcb_screen_t* screen;
     uint32_t window;
     xcb_key_symbols_t* key_symbols;
-    xcb_generic_event_t* next_generic_event = NULL;
-
-    static void print_modifiers(uint32_t mask);
+    xcb_generic_event_t* next_generic_event = nullptr;
 
 public:
     uint32_t width;
     uint32_t height;
-    bool isWindowResizeRead = false;
+    bool is_window_resize_read = false;
 
     WindowXCBVulkan();
 
-    void configureWindow();
-    void HideCursor();
-    xcb_connection_t* GetConnection();
-    uint32_t GetWindow();
-    void Disconnect();
+    void configure_window();
+    void hide_cursor();
+    xcb_connection_t* get_connection();
+    uint32_t get_window();
+    void disconnect();
 
     void swap_buffers() override;
     void clear_display() override;
@@ -5085,7 +5014,7 @@ inline void vk_config_initializer() {
     DESCRIPTOR_BINDINGS_CONFIG[0].ubo_chunk_size = sizeof(ShadowMapMatrixUBO);
 
     PIPELINE_CONFIGS[DirectionalLightPipeline].vert_shader =
-        "../../../crates/glvm2/assets/shaders/flat_shadow_map/vertFlatShadowMap.spv";
+        "../../../crates/glvm/assets/shaders/flat_shadow_map/vertFlatShadowMap.spv";
     PIPELINE_CONFIGS[DirectionalLightPipeline].binding_description =
         Vertex::get_binding_description();
     PIPELINE_CONFIGS[DirectionalLightPipeline].attribute_descriptions =
@@ -5188,7 +5117,7 @@ inline void vk_config_initializer() {
     DESCRIPTOR_BINDINGS_CONFIG[1].ubo_chunk_size = sizeof(ShadowMapMatrixUBO);
 
     PIPELINE_CONFIGS[SpotLightPipeline].vert_shader =
-        "../../../crates/glvm2/assets/shaders/flat_shadow_map/vertFlatShadowMap.spv";
+        "../../../crates/glvm/assets/shaders/flat_shadow_map/vertFlatShadowMap.spv";
     PIPELINE_CONFIGS[SpotLightPipeline].binding_description =
         Vertex::get_binding_description();
     PIPELINE_CONFIGS[SpotLightPipeline].attribute_descriptions =
@@ -5272,9 +5201,9 @@ inline void vk_config_initializer() {
         sizeof(PointLightShadowMapMatrixUBO);
 
     PIPELINE_CONFIGS[PointLightPipeline].vert_shader =
-        "../../../crates/glvm2/assets/shaders/cube_shadow_map/vertCubeShadowMap.spv";
+        "../../../crates/glvm/assets/shaders/cube_shadow_map/vertCubeShadowMap.spv";
     PIPELINE_CONFIGS[PointLightPipeline].frag_shader =
-        "../../../crates/glvm2/assets/shaders/cube_shadow_map/fragCubeShadowMap.spv";
+        "../../../crates/glvm/assets/shaders/cube_shadow_map/fragCubeShadowMap.spv";
     PIPELINE_CONFIGS[PointLightPipeline].binding_description =
         Vertex::get_binding_description();
     PIPELINE_CONFIGS[PointLightPipeline].attribute_descriptions =
@@ -5362,9 +5291,9 @@ inline void vk_config_initializer() {
     DESCRIPTOR_BINDINGS_CONFIG[3].ubo_chunk_size = sizeof(HudUbo);
 
     PIPELINE_CONFIGS[HudPipeline].vert_shader =
-        "../../../crates/glvm2/assets/shaders/hud/hud_vert.spv";
+        "../../../crates/glvm/assets/shaders/hud/hud_vert.spv";
     PIPELINE_CONFIGS[HudPipeline].frag_shader =
-        "../../../crates/glvm2/assets/shaders/hud/hud_frag.spv";
+        "../../../crates/glvm/assets/shaders/hud/hud_frag.spv";
     PIPELINE_CONFIGS[HudPipeline].binding_description =
         Vertex::get_binding_description();
     PIPELINE_CONFIGS[HudPipeline].attribute_descriptions =
@@ -5458,9 +5387,9 @@ inline void vk_config_initializer() {
     DESCRIPTOR_BINDINGS_CONFIG[5].shader_descriptors_number = 1;
 
     PIPELINE_CONFIGS[FontPipeline].vert_shader =
-        "../../../crates/glvm2/assets/shaders/font/font_vert.spv";
+        "../../../crates/glvm/assets/shaders/font/font_vert.spv";
     PIPELINE_CONFIGS[FontPipeline].frag_shader =
-        "../../../crates/glvm2/assets/shaders/font/font_frag.spv";
+        "../../../crates/glvm/assets/shaders/font/font_frag.spv";
     PIPELINE_CONFIGS[FontPipeline].binding_description =
         Vertex::get_binding_description();
     PIPELINE_CONFIGS[FontPipeline].attribute_descriptions =
@@ -5541,9 +5470,9 @@ inline void vk_config_initializer() {
     DESCRIPTOR_BINDINGS_CONFIG[6].ubo_chunk_size = sizeof(HudScreenUbo);
 
     PIPELINE_CONFIGS[HudScreenPipeline].vert_shader =
-        "../../../crates/glvm2/assets/shaders/hud_screen/vert_hud_screen.spv";
+        "../../../crates/glvm/assets/shaders/hud_screen/vert_hud_screen.spv";
     PIPELINE_CONFIGS[HudScreenPipeline].frag_shader =
-        "../../../crates/glvm2/assets/shaders/hud_screen/frag_hud_screen.spv";
+        "../../../crates/glvm/assets/shaders/hud_screen/frag_hud_screen.spv";
     PIPELINE_CONFIGS[HudScreenPipeline].binding_description =
         Vertex::get_binding_description();
     PIPELINE_CONFIGS[HudScreenPipeline].attribute_descriptions =
@@ -5652,9 +5581,9 @@ inline void vk_config_initializer() {
     DESCRIPTOR_BINDINGS_CONFIG[8].shader_descriptors_number = 1;
 
     PIPELINE_CONFIGS[UiPipeline].vert_shader =
-        "../../../crates/glvm2/assets/shaders/ui/vert_ui.spv";
+        "../../../crates/glvm/assets/shaders/ui/vert_ui.spv";
     PIPELINE_CONFIGS[UiPipeline].frag_shader =
-        "../../../crates/glvm2/assets/shaders/ui/frag_ui.spv";
+        "../../../crates/glvm/assets/shaders/ui/frag_ui.spv";
     PIPELINE_CONFIGS[UiPipeline].binding_description =
         Vertex::get_binding_description();
     PIPELINE_CONFIGS[UiPipeline].attribute_descriptions =
@@ -5747,9 +5676,9 @@ inline void vk_config_initializer() {
     DESCRIPTOR_BINDINGS_CONFIG[10].shader_descriptors_number = 1;
 
     PIPELINE_CONFIGS[UiIconsPipeline].vert_shader =
-        "../../../crates/glvm2/assets/shaders/ui_icons/vert_ui_icons.spv";
+        "../../../crates/glvm/assets/shaders/ui_icons/vert_ui_icons.spv";
     PIPELINE_CONFIGS[UiIconsPipeline].frag_shader =
-        "../../../crates/glvm2/assets/shaders/ui_icons/frag_ui_icons.spv";
+        "../../../crates/glvm/assets/shaders/ui_icons/frag_ui_icons.spv";
     PIPELINE_CONFIGS[UiIconsPipeline].binding_description =
         Vertex::get_binding_description();
     PIPELINE_CONFIGS[UiIconsPipeline].attribute_descriptions =
@@ -5854,9 +5783,9 @@ inline void vk_config_initializer() {
     DESCRIPTOR_BINDINGS_CONFIG[12].shader_descriptors_number = 1;
 
     PIPELINE_CONFIGS[VirtualTexturesPipeline].vert_shader =
-        "../../../crates/glvm2/assets/shaders/virtual_textures/virtualTexturesVert.spv";
+        "../../../crates/glvm/assets/shaders/virtual_textures/virtualTexturesVert.spv";
     PIPELINE_CONFIGS[VirtualTexturesPipeline].frag_shader =
-        "../../../crates/glvm2/assets/shaders/virtual_textures/virtualTexturesFrag.spv";
+        "../../../crates/glvm/assets/shaders/virtual_textures/virtualTexturesFrag.spv";
     PIPELINE_CONFIGS[VirtualTexturesPipeline].binding_description =
         Vertex::get_binding_description();
     PIPELINE_CONFIGS[VirtualTexturesPipeline].attribute_descriptions =
@@ -6031,9 +5960,9 @@ inline void vk_config_initializer() {
     DESCRIPTOR_BINDINGS_CONFIG[19].shader_descriptors_number = 1;
 
     PIPELINE_CONFIGS[MainRenderPipeline].vert_shader =
-        "../../../crates/glvm2/assets/shaders/main_renderer/vert.spv";
+        "../../../crates/glvm/assets/shaders/main_renderer/vert.spv";
     PIPELINE_CONFIGS[MainRenderPipeline].frag_shader =
-        "../../../crates/glvm2/assets/shaders/main_renderer/frag.spv";
+        "../../../crates/glvm/assets/shaders/main_renderer/frag.spv";
     PIPELINE_CONFIGS[MainRenderPipeline].binding_description =
         Vertex::get_binding_description();
     PIPELINE_CONFIGS[MainRenderPipeline].attribute_descriptions =
@@ -6135,9 +6064,9 @@ inline void vk_config_initializer() {
     DESCRIPTOR_BINDINGS_CONFIG[20].ubo_chunk_size = sizeof(SdfUbo);
 
     PIPELINE_CONFIGS[SdfPipeline].vert_shader =
-        "../../../crates/glvm2/assets/shaders/sdf/sdf_vert.spv";
+        "../../../crates/glvm/assets/shaders/sdf/sdf_vert.spv";
     PIPELINE_CONFIGS[SdfPipeline].frag_shader =
-        "../../../crates/glvm2/assets/shaders/sdf/sdf_frag.spv";
+        "../../../crates/glvm/assets/shaders/sdf/sdf_frag.spv";
     PIPELINE_CONFIGS[SdfPipeline].binding_description =
         Vertex::get_binding_description();
     PIPELINE_CONFIGS[SdfPipeline].attribute_descriptions =

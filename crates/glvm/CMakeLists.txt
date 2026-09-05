@@ -1,4 +1,4 @@
-project(glvm VERSION 0.1.0 LANGUAGES CXX)
+project(glvm VERSION 0.1.0 LANGUAGES C;CXX)
 
 include(cmake/dependencies.cmake)
 
@@ -34,7 +34,14 @@ if(TARGET glvm-wayland-protocols)
 endif()
 
 if(UNIX AND NOT APPLE)
-  target_link_libraries(glvm PUBLIC PkgConfig::ALSA)
+  target_link_libraries(glvm
+    PUBLIC
+      PkgConfig::ALSA
+      PkgConfig::X11
+      PkgConfig::XCB
+      PkgConfig::XCB_CURSOR
+      PkgConfig::XCB_KEYSYMS
+  )
 endif()
 
 # [tests]

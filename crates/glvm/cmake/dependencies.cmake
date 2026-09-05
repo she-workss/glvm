@@ -33,6 +33,10 @@ if(UNIX AND NOT APPLE)
   find_package(PkgConfig REQUIRED)
   pkg_check_modules(WAYLAND_CLIENT REQUIRED IMPORTED_TARGET wayland-client)
   pkg_check_modules(ALSA REQUIRED IMPORTED_TARGET alsa)
+  pkg_check_modules(X11 REQUIRED IMPORTED_TARGET x11)
+  pkg_check_modules(XCB REQUIRED IMPORTED_TARGET xcb)
+  pkg_check_modules(XCB_CURSOR REQUIRED IMPORTED_TARGET xcb-cursor)
+  pkg_check_modules(XCB_KEYSYMS REQUIRED IMPORTED_TARGET xcb-keysyms)
 
   find_program(WAYLAND_SCANNER NAMES wayland-scanner REQUIRED)
 
