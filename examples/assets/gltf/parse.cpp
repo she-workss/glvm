@@ -34,7 +34,7 @@ void readFile(const char* _filePath) {
     }
 }
 
-i32 main(i32 argc, char* argv[]) {
+auto main(i32 argc, char* argv[]) -> i32 {
     readFile("cube.bin");
 
     return 0;

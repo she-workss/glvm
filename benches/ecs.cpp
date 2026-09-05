@@ -1,6 +1,6 @@
 #include <benchmark/benchmark.h>
 
-static void ecs(benchmark::State& state) {
+static auto ecs(benchmark::State& state) -> void {
     for (auto _ : state) {}
 }
 
