@@ -2038,7 +2038,7 @@ inline Quaternion operator*(const Quaternion& a, const Quaternion& b) {
 }
 
 inline f32 norm_quaternion(const Quaternion& quaternion) {
-    return sqrt(
+    return std::sqrt(
         quaternion.w * quaternion.w + quaternion.x * quaternion.x
         + quaternion.y * quaternion.y + quaternion.z * quaternion.z
     );
@@ -2070,12 +2070,12 @@ inline Quaternion euler_to_quaternion(
     const f32 pitch,
     const f32 yaw
 ) {
-    const auto cr = cos(roll * 0.5f);
-    const auto sr = sin(roll * 0.5f);
-    const auto cp = cos(pitch * 0.5f);
-    const auto sp = sin(pitch * 0.5f);
-    const auto cy = cos(yaw * 0.5f);
-    const auto sy = sin(yaw * 0.5f);
+    const auto cr = std::cos(roll * 0.5f);
+    const auto sr = std::sin(roll * 0.5f);
+    const auto cp = std::cos(pitch * 0.5f);
+    const auto sp = std::sin(pitch * 0.5f);
+    const auto cy = std::cos(yaw * 0.5f);
+    const auto sy = std::sin(yaw * 0.5f);
     Quaternion q;
     q.w = cr * cp * cy + sr * sp * sy;
     q.x = sr * cp * cy - cr * sp * sy;

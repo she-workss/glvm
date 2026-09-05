@@ -759,7 +759,7 @@ void Engine::render_vulkan() {
 #endif
 
     while (b_game_loop_active) {
-        delta_frame_time = chrono->get_elapsed();
+        delta_frame_time = as<f32>(chrono->get_elapsed());
         chrono->reset();
         gravity += delta_frame_time;
 
@@ -1041,7 +1041,7 @@ void Engine::set_view_matrix() {
                 // direction in which the mouse moved, but expressed in world
                 // (or 3D) space.
                 f32 rotation_angle =
-                    sqrt(delta_y * delta_y + delta_x * delta_x);
+                    std::sqrt(delta_y * delta_y + delta_x * delta_x);
                 constexpr auto ANGLE_SCALE = 0.05f;
                 rotation_angle = radians(rotation_angle * ANGLE_SCALE);
                 // Quaternions need devision by 2.f
@@ -1446,12 +1446,12 @@ void Engine::set_frame_data() {
     u32 directional_light_counter = 0;
     for (u32 x = 0; x < directional_light_archetypes_number; ++x) {
         Archetype* arch = cached_directional_ligth_archetypes[x];
-        DirectionalLightComponent* directional_lights =
-            (DirectionalLightComponent*)
-                arch->components[ComponentsIndices::DirectionalLightComponent];
+        auto* directional_lights = static_cast<DirectionalLightComponent*>(
+            arch->components[ComponentsIndices::DirectionalLightComponent]
+        );
 
         for (u32 x1 = 0; x1 < arch->entity_count; ++x1) {
-            if (directional_lights) {
+            if (directional_lights != nullptr) {
                 vulkan_renderer->directional_lights.push_back({});
                 DirectionalLightComponent* light = &directional_lights[x1];
                 vulkan_renderer->directional_lights[directional_light_counter]
@@ -1508,12 +1508,12 @@ void Engine::set_frame_data() {
     u32 spot_light_counter = 0;
     for (u32 x = 0; x < spot_light_archetypes_number; ++x) {
         Archetype* arch = cached_spot_ligth_archetypes[x];
-        SpotLightComponent* spot_lights =
-            (SpotLightComponent*)
-                arch->components[ComponentsIndices::SpotLightComponent];
+        auto* spot_lights = static_cast<SpotLightComponent*>(
+            arch->components[ComponentsIndices::SpotLightComponent]
+        );
 
         for (u32 x1 = 0; x1 < arch->entity_count; ++x1) {
-            if (spot_lights) {
+            if (spot_lights != nullptr) {
                 vulkan_renderer->spot_lights.push_back({});
                 SpotLightComponent* light = &spot_lights[x1];
                 vulkan_renderer->spot_lights[spot_light_counter]
@@ -1555,12 +1555,12 @@ void Engine::set_frame_data() {
     u32 point_light_counter = 0;
     for (u32 x = 0; x < point_light_archetypes_number; ++x) {
         Archetype* arch = cached_point_ligth_archetypes[x];
-        PointLightComponent* point_lights =
-            (PointLightComponent*)
-                arch->components[ComponentsIndices::PointLightComponent];
+        auto* point_lights = static_cast<PointLightComponent*>(
+            arch->components[ComponentsIndices::PointLightComponent]
+        );
 
         for (u32 x1 = 0; x1 < arch->entity_count; ++x1) {
-            if (point_lights) {
+            if (point_lights != nullptr) {
                 vulkan_renderer->point_lights.push_back({});
                 PointLightComponent* light = &point_lights[x1];
                 u32 max_cube_map_layers = 6;
@@ -1605,12 +1605,15 @@ void Engine::set_frame_data() {
     u32 health_bar_counter = 0;
     for (u32 x = 0; x < health_bars_archetypes_number; ++x) {
         Archetype* arch = cached_health_bars_archetypes[x];
-        Transform* health_bar_transforms =
-            (Transform*)arch->components[ComponentsIndices::TransformComponent];
-        Mesh* health_bar_meshes =
-            (Mesh*)arch->components[ComponentsIndices::MeshComponent];
-        Health* health_bars =
-            (Health*)arch->components[ComponentsIndices::HealthComponent];
+        auto* health_bar_transforms = static_cast<Transform*>(
+            arch->components[ComponentsIndices::TransformComponent]
+        );
+        auto* health_bar_meshes = static_cast<Mesh*>(
+            arch->components[ComponentsIndices::MeshComponent]
+        );
+        auto* health_bars = static_cast<Health*>(
+            arch->components[ComponentsIndices::HealthComponent]
+        );
 
         u32 ui_vertex_id = 0;
         if (matches_required_mask(arch->mask, PLAYER_COMPONENT_MASK)) {
@@ -2237,11 +2240,12 @@ void Engine::load_wavefront_obj() {
                 weights[2] = 1.0f;
 
                 vulkan_renderer->a_vertices[m].push_back(
-                    {{vertex[0], vertex[1], vertex[2]},
-                     {normal[0], normal[1], normal[2]},
-                     {texture[0], texture[1]},
-                     {joint_indices[0], joint_indices[1], joint_indices[2]},
-                     {weights[0], weights[1], weights[2]}}
+                    {.pos = {vertex[0], vertex[1], vertex[2]},
+                     .color = {normal[0], normal[1], normal[2]},
+                     .tex_coord = {texture[0], texture[1]},
+                     .join_indices =
+                         {joint_indices[0], joint_indices[1], joint_indices[2]},
+                     .weights = {weights[0], weights[1], weights[2]}}
                 );
             }
         }
@@ -2331,13 +2335,10 @@ void Engine::write_models_cache(const String& model_file_path) {
         std::ios::app
     );
     if (!models_cache.is_open()) {
-        std::cerr << "Error opening the models cache file" << std::endl;
+        std::cerr << "Error opening the models cache file" << '\n';
         throw std::runtime_error("Failed to load mesh cache");
     }
     usize pos = model_file_path.find(' ');
-    String first_part = (pos == String::npos) ? model_file_path
-                                              : model_file_path.substr(0, pos);
-
     models_cache << model_file_path;
     models_cache << " " << vulkan_renderer->mesh_axis_limiting_values.highest_x
                  << " " << vulkan_renderer->mesh_axis_limiting_values.lowest_x
@@ -2345,7 +2346,7 @@ void Engine::write_models_cache(const String& model_file_path) {
                  << " " << vulkan_renderer->mesh_axis_limiting_values.lowest_y
                  << " " << vulkan_renderer->mesh_axis_limiting_values.highest_z
                  << " " << vulkan_renderer->mesh_axis_limiting_values.lowest_z
-                 << std::endl;
+                 << '\n';
 
     models_cache.close();
 }
@@ -2356,8 +2357,8 @@ void Engine::initialize_gltf() {
         CJsonParser json_parser;
         vulkan_renderer->a_vertexes_temp.emplace_back();
         vulkan_renderer->a_indices.emplace_back();
-        vulkan_renderer->frames.push_back({});
-        vulkan_renderer->joint_matrices_per_mesh.push_back({});
+        vulkan_renderer->frames.emplace_back();
+        vulkan_renderer->joint_matrices_per_mesh.emplace_back();
         animation_flags.push_back({});
         vulkan_renderer->highest_gltf_y.emplace_back();
         u32 next_index_gltf = wavefront_obj_counter + m;
@@ -2373,21 +2374,17 @@ void Engine::initialize_gltf() {
         );
         animation_flags[m] = animation_flag;
     }
-
     for (u32 m = 0; m < paths_gltf.size(); ++m) {
         vulkan_renderer->a_vertices.emplace_back();
         vulkan_renderer->mesh_axis_limiting_values.set_to_default_values();
-
         is_already_cached = false;
         is_model_cache_exists(paths_gltf[m]);
-
         i32 step_offset = 0;
         if (animation_flags[m]) {
             step_offset = 8;
         } else {
             step_offset = 16;
         }
-
         for (u32 n = 0; n < vulkan_renderer->a_vertexes_temp[m].size();
              n += step_offset) {
             SVertex vertex;
@@ -2401,7 +2398,6 @@ void Engine::initialize_gltf() {
             SVertex texture;
             texture[0] = vulkan_renderer->a_vertexes_temp[m][n + 6];
             texture[1] = vulkan_renderer->a_vertexes_temp[m][n + 7];
-
             Vector<f32, 4> join_indices;
             Vector<f32, 4> weights;
             if (animation_flags[m]) {
@@ -2409,12 +2405,10 @@ void Engine::initialize_gltf() {
                 join_indices[1] = -1;
                 join_indices[2] = -1;
                 join_indices[3] = -1;
-
                 weights[0] = 1;
                 weights[1] = 1;
                 weights[2] = 1;
                 weights[3] = 1;
-
             } else {
                 join_indices[0] = vulkan_renderer->a_vertexes_temp[m][n + 8];
                 join_indices[1] = vulkan_renderer->a_vertexes_temp[m][n + 9];
@@ -2426,23 +2420,21 @@ void Engine::initialize_gltf() {
                 weights[2] = vulkan_renderer->a_vertexes_temp[m][n + 14];
                 weights[3] = vulkan_renderer->a_vertexes_temp[m][n + 15];
             }
-
             u32 next_index_gltf = wavefront_obj_counter + m;
             vulkan_renderer->a_vertices[next_index_gltf].push_back(
-                {{vertex[0], vertex[1], vertex[2]},
-                 {normal[0], normal[1], normal[2]},
-                 {texture[0], texture[1]},
-                 {join_indices[0],
-                  join_indices[1],
-                  join_indices[2],
-                  join_indices[3]},
-                 {weights[0], weights[1], weights[2], weights[3]}}
+                {.pos = {vertex[0], vertex[1], vertex[2]},
+                 .color = {normal[0], normal[1], normal[2]},
+                 .tex_coord = {texture[0], texture[1]},
+                 .join_indices =
+                     {join_indices[0],
+                      join_indices[1],
+                      join_indices[2],
+                      join_indices[3]},
+                 .weights = {weights[0], weights[1], weights[2], weights[3]}}
             );
-
             if (is_already_cached) {
                 continue;
             }
-
             Vector<f32, 4> animated_vertex =
                 Vector<f32, 4>(vertex[0], vertex[1], vertex[2], 1.0f);
             if (!animation_flags[m]
@@ -2477,7 +2469,6 @@ void Engine::initialize_gltf() {
                 calculate_mesh_bounds(animated_vertex);
             }
         }
-
         if (!is_already_cached) {
             write_models_cache(paths_gltf[m]);
         }
@@ -2489,13 +2480,10 @@ void Engine::initialize_font_data() {
     constexpr auto FONT_STEP = 1.0f / 12;
     constexpr auto GLYPH_ROW = 7;
     constexpr auto GLYPH_COLUMN = 12;
-
     vulkan_renderer->font_vertex_buffer_container.resize(128);
     vulkan_renderer->font_vertex_buffer_memory_container.resize(128);
-
     vulkan_renderer->font_index_buffer_container.resize(128);
     vulkan_renderer->font_index_buffer_memory_contaner.resize(128);
-
     for (u32 i = 0; i < GLYPH_ROW; ++i) {
         for (u32 j = 0; j < GLYPH_COLUMN; ++j) {
             Vec<Vertex> symbol_g_vertices;
@@ -2528,7 +2516,6 @@ void Engine::initialize_font_data() {
                  {1.0f, 0.0f, 0.0f, 0.0f}}
             );
             u32 current_buffer_index = i * GLYPH_COLUMN + j;
-
             bool exit_flag = false;
             const auto next_buffer_index = static_cast<const u32>(
                 vulkan_renderer->glyphs[current_buffer_index]
@@ -2541,11 +2528,9 @@ void Engine::initialize_font_data() {
                     exit_flag = true;
                 }
             }
-
             if (exit_flag) {
                 continue;
             }
-
             vulkan_renderer->symbol_g_vertices_container.push_back(
                 symbol_g_vertices
             );
@@ -2561,28 +2546,23 @@ Matrix<f32, 4> Engine::compute_model_matrix(
     Matrix<f32, 4> rotation_matrix(1.0f);
     Matrix<f32, 4> scaling_matrix(1.0f);
     Matrix<f32, 4> translation_matrix(1.0f);
-
     scaling_matrix[0][0] = transform->scale;
     scaling_matrix[1][1] = transform->scale;
     scaling_matrix[2][2] = transform->scale;
-
     translation_matrix[3][0] = transform->position[0];
     translation_matrix[3][1] = transform->position[1];
     translation_matrix[3][2] = transform->position[2];
     translation_matrix[3][3] = 1.0f;
-
     f32 sin_pitch = std::sin(radians(-rotation->pitch / 2));
     f32 cos_pitch = std::cos(radians(-rotation->pitch / 2));
     f32 sin_yaw = std::sin(radians((rotation->yaw) / 2));
     f32 cos_yaw = std::cos(radians((rotation->yaw) / 2));
-
     Quaternion pitch_quat;
     Quaternion yaw_quat;
     pitch_quat.w = cos_pitch;
     pitch_quat.x = sin_pitch;
     pitch_quat.y = 0.0f;
     pitch_quat.z = 0.0f;
-
     yaw_quat.w = cos_yaw;
     yaw_quat.x = 0.0f;
     yaw_quat.y = sin_yaw;
@@ -9836,28 +9816,32 @@ void CJsonParser::load_gltf(
                             if (array[i].is_interger()) {
                                 rotation_quaternion.x = array[i].value.i_number;
                             } else if (array[i].is_float()) {
-                                rotation_quaternion.x = array[i].value.f_number;
+                                rotation_quaternion.x =
+                                    as<f32>(array[i].value.f_number);
                             }
                             break;
                         case 1:
                             if (array[i].is_interger()) {
                                 rotation_quaternion.y = array[i].value.i_number;
                             } else if (array[i].is_float()) {
-                                rotation_quaternion.y = array[i].value.f_number;
+                                rotation_quaternion.y =
+                                    as<f32>(array[i].value.f_number);
                             }
                             break;
                         case 2:
                             if (array[i].is_interger()) {
                                 rotation_quaternion.z = array[i].value.i_number;
                             } else if (array[i].is_float()) {
-                                rotation_quaternion.z = array[i].value.f_number;
+                                rotation_quaternion.z =
+                                    as<f32>(array[i].value.f_number);
                             }
                             break;
                         case 3:
                             if (array[i].is_interger()) {
                                 rotation_quaternion.w = array[i].value.i_number;
                             } else if (array[i].is_float()) {
-                                rotation_quaternion.w = array[i].value.f_number;
+                                rotation_quaternion.w =
+                                    as<f32>(array[i].value.f_number);
                             }
                             break;
                     }
@@ -9885,7 +9869,7 @@ void CJsonParser::load_gltf(
                     if (array[i].is_interger()) {
                         scale[i][i] = array[i].value.i_number;
                     } else if (array[i].is_float()) {
-                        scale[i][i] = array[i].value.f_number;
+                        scale[i][i] = as<f32>(array[i].value.f_number);
                     }
                 }
             }
@@ -9895,7 +9879,7 @@ void CJsonParser::load_gltf(
                     if (array[i].is_interger()) {
                         translation[3][i] = array[i].value.i_number;
                     } else if (array[i].is_float()) {
-                        translation[3][i] = array[i].value.f_number;
+                        translation[3][i] = as<f32>(array[i].value.f_number);
                     }
                 }
             }
@@ -10280,30 +10264,37 @@ void CJsonParser::load_gltf(
             if ((*gltf)["nodes"][node_idx].is_object() == JsonObject) {
                 auto* nd = (*gltf)["nodes"][node_idx].value.object;
                 if (nd->contains("translation")) {
-                    s_tx = (*gltf)["nodes"][node_idx]["translation"][0]
-                               .value.f_number;
-                    s_ty = (*gltf)["nodes"][node_idx]["translation"][1]
-                               .value.f_number;
-                    s_tz = (*gltf)["nodes"][node_idx]["translation"][2]
-                               .value.f_number;
+                    s_tx = as<f32>((*gltf)["nodes"][node_idx]["translation"][0]
+                                       .value.f_number);
+                    s_ty = as<f32>((*gltf)["nodes"][node_idx]["translation"][1]
+                                       .value.f_number);
+                    s_tz = as<f32>((*gltf)["nodes"][node_idx]["translation"][2]
+                                       .value.f_number);
                 }
                 if (nd->contains("rotation")) {
-                    s_rx =
-                        (*gltf)["nodes"][node_idx]["rotation"][0].value.f_number;
-                    s_ry =
-                        (*gltf)["nodes"][node_idx]["rotation"][1].value.f_number;
-                    s_rz =
-                        (*gltf)["nodes"][node_idx]["rotation"][2].value.f_number;
-                    s_rw =
-                        (*gltf)["nodes"][node_idx]["rotation"][3].value.f_number;
+                    s_rx = as<f32>(
+                        (*gltf)["nodes"][node_idx]["rotation"][0].value.f_number
+                    );
+                    s_ry = as<f32>(
+                        (*gltf)["nodes"][node_idx]["rotation"][1].value.f_number
+                    );
+                    s_rz = as<f32>(
+                        (*gltf)["nodes"][node_idx]["rotation"][2].value.f_number
+                    );
+                    s_rw = as<f32>(
+                        (*gltf)["nodes"][node_idx]["rotation"][3].value.f_number
+                    );
                 }
                 if (nd->contains("scale")) {
-                    s_sx =
-                        (*gltf)["nodes"][node_idx]["scale"][0].value.f_number;
-                    s_sy =
-                        (*gltf)["nodes"][node_idx]["scale"][1].value.f_number;
-                    s_sz =
-                        (*gltf)["nodes"][node_idx]["scale"][2].value.f_number;
+                    s_sx = as<f32>(
+                        (*gltf)["nodes"][node_idx]["scale"][0].value.f_number
+                    );
+                    s_sy = as<f32>(
+                        (*gltf)["nodes"][node_idx]["scale"][1].value.f_number
+                    );
+                    s_sz = as<f32>(
+                        (*gltf)["nodes"][node_idx]["scale"][2].value.f_number
+                    );
                 }
             }
             if (t_idx < 0) {
@@ -11869,7 +11860,7 @@ void EnemySystem::update() {
                         "../../../examples/assets/sounds/pistol.wav",
                         5,
                         22050,
-                        0.05
+                        0.05f
                     );
                     projectile_cooldown = 5.0f;
                 }
@@ -12602,7 +12593,7 @@ void CMovementSystem::update() {
             Move* move_component = &components_view.moves[i1];
             r_transform_component->gravity_accumulator += delta_frame_time;
             f32 gravity = 9.8f * r_transform_component->gravity_accumulator
-                * rigid_body_componennt->f_mass * 0.0005;
+                * rigid_body_componennt->f_mass * 0.0005f;
             if (gravity > 0.2f) {
                 gravity = 0.2f;
             }
@@ -12947,7 +12938,7 @@ void CProjectileSystem::update() {
                         "../../../examples/assets/sounds/pistol.wav",
                         5,
                         22050,
-                        0.05
+                        0.05f
                     );
                     projectile_cooldown = 2.0f;
                 }
@@ -14133,7 +14124,8 @@ f32 CWaveFrontObjParser::parse_floating(Vec<char> digits) {
 
     u32 floating_part_container_size = floating_part_container.size();
     for (u32 i = 0; i < floating_part_container_size; ++i) {
-        floating_part += floating_part_container[i] / std::pow(10, i + 1);
+        floating_part +=
+            as<f32>(floating_part_container[i] / std::pow(10, i + 1));
     }
 
     f32 result = 0;

@@ -24,16 +24,20 @@ private:
     std::expected<T, E> inner;
 
 public:
-    explicit Result(OkProxy<T> proxy) : inner(std::move(proxy.val)) {}
+    explicit Result(OkProxy<T> proxy) : inner(std::move(proxy.val)) {
+    }
 
-    explicit Result(T val) : inner(std::move(val)) {}
+    explicit Result(T val) : inner(std::move(val)) {
+    }
 
-    explicit Result(std::unexpected<E> err) : inner(std::move(err)) {}
+    explicit Result(std::unexpected<E> err) : inner(std::move(err)) {
+    }
 
     template<typename E2>
         requires(!std::same_as<E2, E>) && std::convertible_to<E2, E>
     explicit Result(std::unexpected<E2> err) :
-        inner(std::unexpected<E>(static_cast<E>(std::move(err.error())))) {}
+        inner(std::unexpected<E>(static_cast<E>(std::move(err.error())))) {
+    }
 
     [[nodiscard]] auto is_ok() const noexcept -> bool {
         return this->inner.has_value();

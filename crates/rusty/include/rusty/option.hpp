@@ -26,12 +26,15 @@ private:
     std::optional<T> inner;
 
 public:
-    Option() noexcept : inner(std::nullopt) {}
+    Option() noexcept : inner(std::nullopt) {
+    }
 
-    explicit Option(std::nullopt_t /*unused*/) noexcept : inner(std::nullopt) {}
+    explicit Option(std::nullopt_t /*unused*/) noexcept : inner(std::nullopt) {
+    }
 
     explicit Option(T val) noexcept(std::is_nothrow_move_constructible_v<T>) :
-        inner(std::move(val)) {}
+        inner(std::move(val)) {
+    }
 
     [[nodiscard]] auto is_some() const noexcept -> bool {
         return this->inner.has_value();
