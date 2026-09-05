@@ -3,3 +3,15 @@ build/
 
 # User presets are local files that don't need to live in repo
 CMakeUserPresets.json
+
+# ImGui creates config files when running examples from `examples/` folder
+imgui.ini
+
+# Claude Code
+.claude/settings.local.json
+
+# Deprecated agents dir (use .claude + CLAUDE.md)
+.agents/
+
+# RAD Debugger files
+*.rad
