@@ -519,7 +519,8 @@ struct Node {
     T value;
     Node* next = nullptr;
 
-    Node(const char* node_key) : key(node_key) {}
+    Node(const char* node_key) : key(node_key) {
+    }
 };
 
 template<typename S>
@@ -675,7 +676,8 @@ private:
 namespace glvm {
 class IChrono {
 public:
-    virtual ~IChrono() {}
+    virtual ~IChrono() {
+    }
 
     virtual double init_frequency() = 0;
     virtual double reset() = 0;
@@ -760,62 +762,6 @@ struct Translator {
     float iz;
     float iw;
 };
-
-inline std::ostream& operator<<(std::ostream& os, const Line& line) {
-    os << "rx: " << line.rx << " ry: " << line.ry << " rz: " << line.rz
-       << " ix: " << line.ix << " iy: " << line.iy << " iz: " << line.iz;
-    return os;
-}
-
-inline std::ostream& operator<<(std::ostream& os, const Point& point) {
-    os << "x: " << point.x << " y: " << point.y << " z: " << point.z
-       << " w: " << point.w;
-    return os;
-}
-
-inline std::ostream& operator<<(std::ostream& os, const Plane& plane) {
-    os << "x: " << plane.x << " y: " << plane.y << " z: " << plane.z
-       << " w: " << plane.w;
-    return os;
-}
-
-inline std::ostream& operator<<(std::ostream& os, const Scalar& scalar) {
-    os << "value: " << scalar.value;
-    return os;
-}
-
-inline std::ostream& operator<<(std::ostream& os, const Motor& motor) {
-    os << "rx: " << motor.rx << " ry: " << motor.ry << " rz: " << motor.rz
-       << " rw: " << motor.rw << " ix: " << motor.ix << " iy: " << motor.iy
-       << " iz: " << motor.iz << " iw: " << motor.iw;
-    return os;
-}
-
-inline std::ostream& operator<<(
-    std::ostream& os,
-    const PseudoScalar& pseudo_scalar
-) {
-    os << "w: " << pseudo_scalar.w;
-    return os;
-}
-
-inline std::ostream& operator<<(std::ostream& os, const Rline& rline) {
-    std::cout << "rx: " << rline.rx << " ry: " << rline.ry
-              << " rz: " << rline.rz;
-    return os;
-}
-
-inline std::ostream& operator<<(std::ostream& os, const Rotor& rotor) {
-    std::cout << "rx: " << rotor.rx << " ry: " << rotor.ry
-              << " rz: " << rotor.rz << " rw: " << rotor.rw;
-    return os;
-}
-
-inline std::ostream& operator<<(std::ostream& os, const Translator& translator) {
-    std::cout << "ix: " << translator.ix << " iy: " << translator.iy
-              << " iz: " << translator.iz << " iw: " << translator.iw;
-    return os;
-}
 
 inline Line operator-(Line line) {
     return {
@@ -967,10 +913,7 @@ inline Plane operator|(const Line& line, const Point& point) {
 
 // Points do not have an inner product: it is always zero (if strictly by
 // definition).
-inline Scalar operator|(
-    [[maybe_unused]] const Point& point0,
-    [[maybe_unused]] const Point& point1
-) {
+inline Scalar operator|(const Point& point0, const Point& point1) {
     return {.value = -point0.w * point1.w};
 }
 
@@ -999,18 +942,12 @@ inline PseudoScalar operator^(const Plane& plane, const Point& point) {
 }
 
 // line ^ point -> plane.
-inline float operator^(
-    [[maybe_unused]] const Line& line,
-    [[maybe_unused]] const Point& point
-) {
+inline float operator^(const Line& line, const Point& point) {
     return 0.0;
 }
 
 // point ∧ point → line (through two points).
-inline float operator^(
-    [[maybe_unused]] const Point& point0,
-    [[maybe_unused]] const Point& point1
-) {
+inline float operator^(const Point& point0, const Point& point1) {
     return 0.0;
 }
 
@@ -1054,10 +991,7 @@ inline Point operator^(const Line& line, const Plane& plane) {
 // Algebra (PGA), the regressive product, denoted by ∨ (vee), is the dual
 // operation to the exterior product (∧). That is: A ∨ B = (⟦A⟧ ∧ ⟦B⟧)*, where
 // ⟦A⟧ is the dual of object A, and * is the dual of the result
-inline float operator&(
-    [[maybe_unused]] Plane plane0,
-    [[maybe_unused]] Plane plane1
-) {
+inline float operator&(Plane plane0, Plane plane1) {
     return 0.0f;
 }
 
@@ -1079,7 +1013,7 @@ inline Scalar operator&(Point point, Plane plane) {
     };
 }
 
-inline Plane operator&([[maybe_unused]] Point point, [[maybe_unused]] Line line) {
+inline Plane operator&(Point point, Line line) {
     // Point below link with dual plane from outer product and line below link
     // with dual line from outer product.
     return {
@@ -1090,7 +1024,7 @@ inline Plane operator&([[maybe_unused]] Point point, [[maybe_unused]] Line line)
     };
 }
 
-inline Plane operator&([[maybe_unused]] Line line, [[maybe_unused]] Point point) {
+inline Plane operator&(Line line, Point point) {
     // Point below link with dual plane from outer product and line below link
     // with dual line from outer product.
     return {
@@ -1101,10 +1035,7 @@ inline Plane operator&([[maybe_unused]] Line line, [[maybe_unused]] Point point)
     };
 }
 
-inline Line operator&(
-    [[maybe_unused]] Point point0,
-    [[maybe_unused]] Point point1
-) {
+inline Line operator&(Point point0, Point point1) {
     // point0 below link with dual plane0 from outer product and point1 below
     // link with dual plane1 from outer product.
     return {
@@ -1126,11 +1057,11 @@ inline Scalar operator&(Line line0, Line line1) {
     };
 }
 
-inline float operator&([[maybe_unused]] Plane plane, [[maybe_unused]] Line line) {
+inline float operator&(Plane plane, Line line) {
     return 0.0f;
 }
 
-inline float operator&([[maybe_unused]] Line line, [[maybe_unused]] Plane plane) {
+inline float operator&(Line line, Plane plane) {
     return 0.0f;
 }
 
@@ -1324,7 +1255,9 @@ auto ThreadPool::enqueue(F&& f, Args&&... args)
             throw std::runtime_error("enqueue on stopped ThreadPool");
         }
 
-        tasks.emplace([task]() { (*task)(); });
+        tasks.emplace([task]() {
+            (*task)();
+        });
     }
     condition.notify_one();
     return res;
@@ -1342,12 +1275,6 @@ struct Point2D {
     T y;
 };
 
-template<typename T>
-std::ostream& operator<<(std::ostream& ostream, const Point2D<T>& point) {
-    ostream << "x: " << point.x << " y: " << point.y;
-    return ostream;
-}
-
 struct Point3D {
     float x;
     float y;
@@ -1355,12 +1282,13 @@ struct Point3D {
 };
 
 template<typename T>
-void clamp(T lower_threshold, T& target_value, T upper_threshold) {
+T clamp(T lower_threshold, T target_value, T upper_threshold) {
     if (target_value < lower_threshold) {
         target_value = lower_threshold;
     } else if (target_value > upper_threshold) {
         target_value = upper_threshold;
     }
+    return target_value;
 }
 
 template<class T2, int Var2>
@@ -1487,20 +1415,6 @@ const T* Matrix<T, Var>::operator[](const int index) const {
     return m_matrix[index];
 }
 
-template<int Var2>
-std::ostream& operator<<(
-    std::ostream& ostream,
-    const Matrix<float, Var2>& matrix
-) {
-    for (int i = 0; i < Var2; ++i) {
-        ostream << std::endl;
-        for (int j = 0; j < Var2; ++j) {
-            ostream << matrix[i][j] << " ";
-        }
-    }
-    return ostream;
-}
-
 template<class T, int Var>
 template<class T2, int Var2>
 Vector<T2, Var2> Matrix<T, Var>::operator*(const Vector<T2, Var2>& vector) {
@@ -1548,20 +1462,6 @@ T2 Vector<T2, Var2>::length() const {
         m_vector[0] * m_vector[0] + m_vector[1] * m_vector[1]
         + m_vector[2] * m_vector[2]
     );
-}
-
-template<class T2, int Var2>
-std::ostream& operator<<(std::ostream& ostream, const Vector<T2, Var2>& vector) {
-    if (Var2 == 3) {
-        ostream << "x: " << vector[0] << " y: " << vector[1]
-                << " z: " << vector[2] << " length: " << vector.Length();
-    } else if (Var2 == 4) {
-        ostream << "x: " << vector[0] << " y: " << vector[1]
-                << " z: " << vector[2] << " w: " << vector[3]
-                << " length: " << vector.Length();
-    }
-
-    return ostream;
 }
 
 template<class T2, int Var2>
@@ -2258,23 +2158,16 @@ struct Quaternion {
         w(qw),
         x(qx),
         y(qy),
-        z(qz) {}
+        z(qz) {
+    }
 
     Quaternion(float real, Vector<float, 3> imaginary) :
         w(real),
         x(imaginary[0]),
         y(imaginary[1]),
-        z(imaginary[2]) {}
+        z(imaginary[2]) {
+    }
 };
-
-inline std::ostream& operator<<(
-    std::ostream& ostream,
-    const Quaternion& quaternion
-) {
-    ostream << "w: " << quaternion.w << " x: " << quaternion.x
-            << " y: " << quaternion.y << " z: " << quaternion.z;
-    return ostream;
-}
 
 inline Quaternion conjugate(Quaternion quaternion) {
     quaternion.w = quaternion.w;
@@ -2707,7 +2600,8 @@ public:
 namespace glvm {
 class CTimerCreator {
 public:
-    ~CTimerCreator() {}
+    ~CTimerCreator() {
+    }
 
     IChrono* create();
 };
@@ -2767,7 +2661,8 @@ struct CSoundSample {
 
 class ISoundEngine {
 public:
-    virtual ~ISoundEngine() {}
+    virtual ~ISoundEngine() {
+    }
 
     virtual void open_device(const char* device) = 0;
     virtual void close_device() = 0;
@@ -2804,7 +2699,7 @@ struct Archetype {
 struct EntityLocation {
     Archetype* arch;
     uint32_t index;
-    static const uint8_t max_grid_cell_number = 8;
+    static const uint8_t max_grid_cell_number = 32;
     uint8_t grid_cell_counter = 0;
     Vector<float, 3> grid_cell_indicies[max_grid_cell_number];
     uint32_t cell_entity_indices[max_grid_cell_number];
@@ -2919,13 +2814,15 @@ union JsonVariant {
     std::vector<JsonValue>* array;
     HashMap<JsonValue>* object;
 
-    JsonVariant() {}
+    JsonVariant() {
+    }
 
     JsonVariant(const JsonVariant& object) {
         memcpy((void*)this, &object, sizeof(JsonVariant));
     }
 
-    ~JsonVariant() {}
+    ~JsonVariant() {
+    }
 };
 
 struct JsonValue {
@@ -4175,7 +4072,8 @@ public: // TODO: Delete this.
 
 namespace glvm {
 struct ISystem {
-    virtual ~ISystem() {}
+    virtual ~ISystem() {
+    }
 
     virtual void update() = 0;
 };
@@ -4291,7 +4189,8 @@ public:
 
     CPhysicsSystem(float& initial_gravity, CStack& stack) :
         gravity(initial_gravity),
-        input_stack(stack) {}
+        input_stack(stack) {
+    }
 
     // Set Y-axis of transform component of backtracking entity to upper Y-axis
     // of ground entity.
@@ -6358,13 +6257,13 @@ VkResult create_debug_utils_messenger_ext(
     VkDebugUtilsMessengerEXT* p_debug_messenger
 );
 void create_begin_debug_utils_label_ext(
-    [[maybe_unused]] VkInstance instance,
-    [[maybe_unused]] VkCommandBuffer command_buffer,
-    [[maybe_unused]] const VkDebugUtilsLabelEXT* label_info
+    VkInstance instance,
+    VkCommandBuffer command_buffer,
+    const VkDebugUtilsLabelEXT* label_info
 );
 void create_end_debug_utils_label_ext(
-    [[maybe_unused]] VkInstance instance,
-    [[maybe_unused]] VkCommandBuffer command_buffer
+    VkInstance instance,
+    VkCommandBuffer command_buffer
 );
 void destroy_debug_utils_messenger_ext(
     VkInstance instance,
@@ -6410,9 +6309,9 @@ struct GridChunk {
 };
 
 struct SpatialGrid {
-    static const uint32_t width = 64;
-    static const uint32_t height = 64;
-    static const uint32_t depth = 64;
+    static const uint32_t width = 8;
+    static const uint32_t height = 8;
+    static const uint32_t depth = 8;
     GridChunk grid[width][height][depth];
 };
 
@@ -6840,8 +6739,7 @@ public:
     const unsigned int font_ubo_descriptor_number = 128;
     const unsigned int hud_screen_ubo_descriptor_number = 32;
     const unsigned int ui_ubo_descriptors_number = 64;
-    [[maybe_unused]] const unsigned int virtual_textures_descriptors_number =
-        64;
+    const unsigned int virtual_textures_descriptors_number = 64;
     std::vector<VkCommandBuffer> directional_light_command_buffers;
     std::vector<VkCommandBuffer> spot_light_command_buffers;
     std::vector<VkCommandBuffer> point_light_command_buffers;
@@ -7418,7 +7316,8 @@ public:
         | (1ul << ComponentsIndices::TransformComponent)
         | (1ul << ComponentsIndices::MeshComponent);
 
-    CCollisionSystem(CStack& stack) : input_stack(stack) {}
+    CCollisionSystem(CStack& stack) : input_stack(stack) {
+    }
 
     void update() override;
     bool upper_actor_check(
@@ -7757,7 +7656,7 @@ public:
     );
     Matrix<float, 4> update_data_ubo_icons_ui(
         Transform* item_transfrom_component,
-        [[maybe_unused]] Collider* item_collider_component,
+        Collider* item_collider_component,
         Item* item_component,
         const unsigned int row_inventory,
         const unsigned int column_inventory,

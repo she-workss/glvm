@@ -20,6 +20,9 @@ CompileFlags:
         - -MT*
         - -MF*
 
+Documentation:
+  CommentFormat: Doxygen
+
 Index:
     Background: Build
 
@@ -36,4 +39,3 @@ InlayHints:
 
 Hover:
     ShowAKA: true
-

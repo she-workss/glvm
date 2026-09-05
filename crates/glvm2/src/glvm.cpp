@@ -170,7 +170,6 @@ void World::remove_entity(uint64_t entity) {
         entity_locations[moved_id].index = index;
         entity_locations[moved_id].arch = arch;
     }
-    std::cout << "remove entity with id: " << id << std::endl;
     location.arch = nullptr;
 }
 
@@ -194,9 +193,11 @@ namespace glvm {
 ArchetypeEntityManager* ArchetypeEntityManager::p_instance = nullptr;
 std::mutex ArchetypeEntityManager::mutex;
 
-ArchetypeEntityManager::ArchetypeEntityManager() {}
+ArchetypeEntityManager::ArchetypeEntityManager() {
+}
 
-ArchetypeEntityManager::~ArchetypeEntityManager() {}
+ArchetypeEntityManager::~ArchetypeEntityManager() {
+}
 
 ArchetypeEntityManager* ArchetypeEntityManager::get_instance() {
     std::lock_guard<std::mutex> lock(mutex);
@@ -662,7 +663,8 @@ Engine::Engine() {
     sound_engine->open_device("default");
 }
 
-Engine::~Engine() {}
+Engine::~Engine() {
+}
 
 Engine* Engine::get_instance() {
     std::lock_guard<std::mutex> lock(mutex);
@@ -676,7 +678,8 @@ void Engine::game_loop() {
     render_vulkan();
 }
 
-void Engine::event_queue_flush() {}
+void Engine::event_queue_flush() {
+}
 
 void Engine::render_vulkan() {
     CSystemManager* p_system_manager = CSystemManager::get_instance();
@@ -747,7 +750,6 @@ void Engine::render_vulkan() {
     initialize_gltf();
     initialize_font_data();
     vulkan_renderer->run();
-    std::cout << "[probe] after_run" << std::flush;
     vulkan_renderer->window->input_stack = &INPUT_STACK;
 
 #ifdef _WIN32
@@ -769,7 +771,6 @@ void Engine::render_vulkan() {
         vulkan_renderer->window->handle_event(G_E_EVENT);
         if ((INPUT_STACK.search_element(EEvents::EGameLoopKill))
             == EEvents::EGameLoopKill) {
-            std::cout << "[probe] kill event received" << std::flush;
             b_game_loop_active = false;
         }
 
@@ -923,12 +924,8 @@ void Engine::render_vulkan() {
             set_projection_matrix();
         }
         vulkan_renderer->draw();
-        static int probe_frames = 0;
-        if (++probe_frames < 4 || probe_frames % 300 == 0) {
-            std::cout << "[probe] frame " << probe_frames << std::flush;
-        }        vulkan_renderer->window->swap_buffers();
+        vulkan_renderer->window->swap_buffers();
     }
-    std::cout << "[probe] loop_exit" << std::endl;
     delete vulkan_renderer;
 }
 
@@ -1053,7 +1050,7 @@ void Engine::set_view_matrix() {
                 rotation_angle = radians(rotation_angle * ANGLE_SCALE);
                 // Quaternions need devision by 2.
                 constexpr float QUAT_ANGLE_CORRECTION = 0.5f;
-                [[maybe_unused]] const float sin_rotation_angle =
+                const float sin_rotation_angle =
                     sinf(rotation_angle * QUAT_ANGLE_CORRECTION);
                 Point applied_rotation_point =
                     exp(rotation_angle,
@@ -1115,8 +1112,8 @@ void Engine::set_projection_matrix() {
 }
 
 [[nodiscard]] std::vector<Matrix<float, 4>> Engine::update_animation_frames(
-    [[maybe_unused]] Animation* animation_component,
-    [[maybe_unused]] unsigned int mesh_id
+    Animation* animation_component,
+    unsigned int mesh_id
 ) {
     if (vulkan_renderer->joint_matrices_per_mesh.size() > 0
         && vulkan_renderer->joint_matrices_per_mesh[mesh_id].size() > 0
@@ -1151,29 +1148,15 @@ void Engine::set_projection_matrix() {
         joint_matrices.resize(MAX_JOINTS_NUMBER);
         for (unsigned int i = 0; i < join_matrices_data_size; ++i) {
             if (mesh_id >= vulkan_renderer->joint_matrices_per_mesh.size()) {
-                std::cout << "OUTER ARRAY OVERFLOW" << std::endl;
                 throw("sdfsdf");
             } else if (
                 i >= vulkan_renderer->joint_matrices_per_mesh[mesh_id].size()
             ) {
-                std::cout << "MIDDLE ARRAY OVERFLOW" << std::endl;
                 throw("sdfsdf");
             } else if (
                 animation_component->current_animation_frame
                 >= vulkan_renderer->joint_matrices_per_mesh[mesh_id][i].size()
             ) {
-                std::cout << "frame: "
-                          << animation_component->current_animation_frame
-                          << std::endl;
-                std::cout << "array size: "
-                          << vulkan_renderer
-                                 ->joint_matrices_per_mesh[mesh_id][i]
-                                 .size()
-                          << std::endl;
-                std::cout << "frames number: "
-                          << vulkan_renderer->frames[mesh_id].size()
-                          << std::endl;
-                std::cout << "INNER ARRAY OVERFLOW" << std::endl;
                 throw("sdfsdf");
             }
 
@@ -1359,7 +1342,7 @@ Matrix<float, 4> Engine::update_point_light_space_matrix_shadow_map_ubo(
 
 Matrix<float, 4> Engine::update_data_ubo_icons_ui(
     Transform* item_transfrom_component,
-    [[maybe_unused]] Collider* item_collider_component,
+    Collider* item_collider_component,
     Item* item_component,
     const unsigned int row_inventory,
     const unsigned int column_inventory,
@@ -1453,7 +1436,6 @@ Matrix<float, 4> Engine::update_data_hud_screen_ubo(
         model[2][2] = cursor_transform->scale;
         model[3][3] = 1.0f;
     }
-
     return model;
 }
 
@@ -1802,11 +1784,6 @@ void Engine::set_frame_data() {
                                     Collider* item_collider_component =
                                         &item_colliders[a];
 
-                                    if (item_transform_component == nullptr) {
-                                        std::cout << "NULL POINTER"
-                                                  << std::endl;
-                                    }
-
                                     uint32_t item_entity = arch->entities[a];
                                     vulkan_renderer->items[item_counter].model =
                                         update_data_ubo_icons_ui(
@@ -1941,8 +1918,7 @@ void Engine::set_frame_data() {
             vulkan_renderer->actors.push_back({});
             Transform* transform_component = &actor_transforms[n];
             Material* material_component = &actor_materials[n];
-            [[maybe_unused]] Animation* animation_component =
-                &actor_animations[n];
+            Animation* animation_component = &actor_animations[n];
             Rotation* rotation_component = &actor_rotations[n];
             if (actor_transforms && actor_materials && actor_animations
                 && actor_rotations) {
@@ -2327,20 +2303,14 @@ bool Engine::is_model_cache_exists(const std::string& model_file_path) {
         "../../../examples/assets/cache/models/cache",
         std::ios::app
     );
-
     if (!models_cache.is_open()) {
         std::cerr << "Error opening the models cache file" << std::endl;
         throw std::runtime_error("Failed to load mesh cache");
     }
-
     std::ifstream file("../../../examples/assets/cache/models/cache");
-
     std::string line;
     while (std::getline(file, line)) {
         if (line.find(model_file_path) != std::string::npos) {
-            std::cout << "Model with pafile path: " << model_file_path
-                      << " is already exists in cache" << std::endl;
-
             std::istringstream iss(line);
 
             std::string keyword;
@@ -2361,7 +2331,6 @@ bool Engine::is_model_cache_exists(const std::string& model_file_path) {
             return true;
         }
     }
-
     models_cache.close();
     return false;
 }
@@ -2371,12 +2340,10 @@ void Engine::write_models_cache(const std::string& model_file_path) {
         "../../../examples/assets/cache/models/cache",
         std::ios::app
     );
-
     if (!models_cache.is_open()) {
         std::cerr << "Error opening the models cache file" << std::endl;
         throw std::runtime_error("Failed to load mesh cache");
     }
-
     std::size_t pos = model_file_path.find(' ');
     std::string first_part = (pos == std::string::npos)
         ? model_file_path
@@ -2665,7 +2632,6 @@ void Engine::compute_hud_screeen_coordinates() {
     previous_mouse_offset_x = G_E_EVENT.mouse_pointer_position.offset_x;
     previous_mouse_offset_y = G_E_EVENT.mouse_pointer_position.offset_y;
 #endif
-
     if (hud_screen_x > 1.0f) {
         hud_screen_x = 1.0f;
     } else if (hud_screen_x < -1.0f) {
@@ -2772,9 +2738,11 @@ namespace glvm {
 EntityManager* EntityManager::instance = nullptr;
 std::mutex EntityManager::mutex;
 
-EntityManager::EntityManager() {}
+EntityManager::EntityManager() {
+}
 
-EntityManager::~EntityManager() {}
+EntityManager::~EntityManager() {
+}
 
 EntityManager* EntityManager::get_instance() {
     std::lock_guard<std::mutex> lock(mutex);
@@ -2814,7 +2782,8 @@ void EntityManager::remove_entity(
 } // namespace glvm
 
 namespace glvm {
-CEvent::CEvent() {}
+CEvent::CEvent() {
+}
 
 EEvents& CEvent::get_event() {
     return e_event;
@@ -2968,9 +2937,9 @@ VkResult create_debug_utils_messenger_ext(
 }
 
 void create_begin_debug_utils_label_ext(
-    [[maybe_unused]] VkInstance instance,
-    [[maybe_unused]] VkCommandBuffer command_buffer,
-    [[maybe_unused]] const VkDebugUtilsLabelEXT* label_info
+    VkInstance instance,
+    VkCommandBuffer command_buffer,
+    const VkDebugUtilsLabelEXT* label_info
 ) {
 #ifndef NDEBUG
     static auto FUNC = (PFN_vkCmdBeginDebugUtilsLabelEXT)
@@ -2980,8 +2949,8 @@ void create_begin_debug_utils_label_ext(
 }
 
 void create_end_debug_utils_label_ext(
-    [[maybe_unused]] VkInstance instance,
-    [[maybe_unused]] VkCommandBuffer command_buffer
+    VkInstance instance,
+    VkCommandBuffer command_buffer
 ) {
 #ifndef NDEBUG
     static auto FUNC = (PFN_vkCmdEndDebugUtilsLabelEXT)
@@ -3497,7 +3466,8 @@ Vector<float, 3> from_vec4(const Vector<float, 4>& v) {
 }
 } // namespace
 
-ImGuiOverlay::ImGuiOverlay(CVulkanRenderer& renderer) : renderer(renderer) {}
+ImGuiOverlay::ImGuiOverlay(CVulkanRenderer& renderer) : renderer(renderer) {
+}
 
 bool ImGuiOverlay::wants_mouse() const {
     if (!initialized) {
@@ -4210,7 +4180,7 @@ void CVulkanRenderer::set_projection_matrix(
 
 void CVulkanRenderer::create_texture_image() {
     uint32_t tex_width, tex_height;
-    [[maybe_unused]] uint32_t tex_channels;
+    uint32_t tex_channels;
 
     unsigned int readable_texture_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::RidableTextures]
@@ -4218,7 +4188,7 @@ void CVulkanRenderer::create_texture_image() {
     for (unsigned int i = 0; i < initialize_texture_data.size(); ++i) {
         VkDeviceSize image_size {};
         unsigned char* pixels;
-        [[maybe_unused]] const char* path_to_stb_image = nullptr;
+        const char* path_to_stb_image = nullptr;
 
 #ifndef STB_IMAGE_IMPLEMENTATION
         image_size = initialize_texture_data[i].dat_length;
@@ -4231,12 +4201,12 @@ void CVulkanRenderer::create_texture_image() {
         path_to_stb_image = initializeTextureData_[i].path_to_image;
         pixels = stbi_load(
             path_to_stb_image,
-            reinterpret_cast<int*>(&texWidth),
-            reinterpret_cast<int*>(&texHeight),
-            reinterpret_cast<int*>(&texChannels),
+            reinterpret_cast<int*>(&tex_width),
+            reinterpret_cast<int*>(&tex_height),
+            reinterpret_cast<int*>(&tex_channels),
             STBI_rgb_alpha
         );
-        imageSize = texWidth * texHeight * 4;
+        image_size = tex_width * tex_height * 4;
 #endif
 
         if (!pixels) {
@@ -4314,23 +4284,15 @@ void CVulkanRenderer::recreate_swap_chain() {
     cleanup_swap_chain();
 
     create_swap_chain();
-    std::cout << "[stage] create_swap_chain" << std::flush;
     window->width = swap_chain_extent.width;
     window->height = swap_chain_extent.height;
     aspect_rate = (float)window->width / (float)window->height;
     create_image_views();
-    std::cout << "[stage] create_image_views" << std::flush;
     create_depth_resources();
-    std::cout << "[stage] create_depth_resources()" << std::flush;
-    std::cout << "[stage] create_depth_resources" << std::flush;
     create_directional_light_shadow_map_depth_resources();
-    std::cout << "[stage] create_directional_light_shadow_map_depth_resources()" << std::flush;
     create_spot_light_shadow_map_depth_resources();
-    std::cout << "[stage] create_spot_light_shadow_map_depth_resources()" << std::flush;
     create_point_light_shadow_map_depth_resources();
-    std::cout << "[stage] create_point_light_shadow_map_depth_resources()" << std::flush;
     create_framebuffers();
-    std::cout << "[stage] create_framebuffers" << std::flush;
     create_main_render_descriptor_sets();
     imgui_overlay->create_swap_chain_resources();
 }
@@ -4363,17 +4325,9 @@ void CVulkanRenderer::run() {
 void CVulkanRenderer::init_window() {
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
     window = initialize_wayland_window();
-
     create_wayland_surface_info.display = window->display;
     create_wayland_surface_info.surface = window->wl_surface;
     aspect_rate = (float)window->width / (float)window->height;
-
-    if (create_wayland_surface_info.display == NULL) {
-        std::cout << "DISPLAY NULL" << std::endl;
-    } else if (create_wayland_surface_info.surface == NULL) {
-        std::cout << "SURFACE NULL" << std::endl;
-    }
-
     create_wayland_surface_info.sType =
         VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
     create_wayland_surface_info.pNext = nullptr;
@@ -4461,24 +4415,16 @@ void CVulkanRenderer::initialize_game_level_vertices() {
 
 void CVulkanRenderer::init_vulkan() {
     create_instance();
-    std::cout << "[stage] create_instance" << std::flush;
     setup_debug_messenger();
     create_surface();
-    std::cout << "[stage] create_surface" << std::flush;
     pick_physical_device();
-    std::cout << "[stage] pick_physical_device" << std::flush;
     create_logical_device();
-    std::cout << "[stage] create_logical_device" << std::flush;
     create_swap_chain();
     create_image_views();
     create_main_render_pass();
-    std::cout << "[stage] create_main_render_pass" << std::flush;
     create_descriptor_set_layout();
-    std::cout << "[stage] create_descriptor_set_layout" << std::flush;
     create_graphics_pipeline();
-    std::cout << "[stage] create_graphics_pipeline" << std::flush;
     create_command_pool(main_render_command_pool);
-    std::cout << "[stage2] create_command_pool(main_render_command_pool)" << std::flush;    std::cout << "[stage] create_command_pool(main_render_command_pool)" << std::flush;
     const uint32_t secondary_buffers_command_pools_number = 3;
     secondary_buffers_command_pools.resize(
         secondary_buffers_command_pools_number
@@ -4487,24 +4433,22 @@ void CVulkanRenderer::init_vulkan() {
         create_command_pool(secondary_buffers_command_pools[i]);
     }
     create_depth_resources();
-    std::cout << "[stage2] create_depth_resources()" << std::flush;    create_directional_light_shadow_map_depth_resources();
-    std::cout << "[stage2] create_directional_light_shadow_map_depth_resources()" << std::flush;    create_spot_light_shadow_map_depth_resources();
-    std::cout << "[stage2] create_spot_light_shadow_map_depth_resources()" << std::flush;    create_point_light_shadow_map_depth_resources();
-    std::cout << "[stage2] create_point_light_shadow_map_depth_resources()" << std::flush;    create_framebuffers();
-    std::cout << "[stage2] create_framebuffers()" << std::flush;    create_texture_image();
-    std::cout << "[stage] create_texture_image" << std::flush;
+    create_directional_light_shadow_map_depth_resources();
+    create_spot_light_shadow_map_depth_resources();
+    create_point_light_shadow_map_depth_resources();
+    create_framebuffers();
+    create_texture_image();
     create_texture_image_view();
-    std::cout << "[stage3] create_texture_image_view()" << std::flush;    create_texture_sampler();
-    std::cout << "[stage3] create_texture_sampler()" << std::flush;    create_shadow_map_sampler();
-    std::cout << "[stage3] create_shadow_map_sampler()" << std::flush;    initialize_vertex_buffers_with_wavefront_data();
-    std::cout << "[stage3] initialize_vertex_buffers_with_wavefront_data()" << std::flush;    initialize_vertex_buffers_with_gltf_data();
-    std::cout << "[stage3] initialize_vertex_buffers_with_gltf_data()" << std::flush;    initialize_vertex_buffers_with_font_data();
-    std::cout << "[stage3] initialize_vertex_buffers_with_font_data()" << std::flush;
+    create_texture_sampler();
+    create_shadow_map_sampler();
+    initialize_vertex_buffers_with_wavefront_data();
+    initialize_vertex_buffers_with_gltf_data();
+    initialize_vertex_buffers_with_font_data();
     create_main_render_uniform_buffers();
-    std::cout << "[stage3] create_main_render_uniform_buffers()" << std::flush;    create_main_render_descriptor_pool();
+    create_main_render_descriptor_pool();
     create_main_render_descriptor_sets();
     imgui_overlay->init();
-    std::cout << "[stage3] imgui_overlay->init()" << std::flush;    set_debug_object_names(
+    set_debug_object_names(
         device,
         vertex_buffer_container,
         index_buffer_container,
@@ -5015,6 +4959,7 @@ void CVulkanRenderer::create_logical_device() {
 
     VkPhysicalDeviceFeatures device_features {};
     device_features.samplerAnisotropy = VK_TRUE;
+    device_features.fillModeNonSolid = VK_TRUE;
 
     VkDeviceCreateInfo create_info {};
     create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -5054,39 +4999,30 @@ void CVulkanRenderer::create_logical_device() {
 void CVulkanRenderer::create_swap_chain() {
     SwapChainSupportDetails swap_chain_support =
         query_swap_chain_support(physical_device);
-
     VkSurfaceFormatKHR surface_format =
         choose_swap_surface_format(swap_chain_support.formats);
     VkPresentModeKHR present_mode =
         choose_swap_present_mode(swap_chain_support.present_modes);
     VkExtent2D extent = choose_swap_extent(swap_chain_support.capabilities);
-    std::cout << "[diag] window=" << window->width << "x" << window->height
-              << " swapchain=" << extent.width << "x" << extent.height
-              << " formats=" << swap_chain_support.formats.size() << std::endl;
-
     uint32_t image_count = swap_chain_support.capabilities.minImageCount + 1;
     if (swap_chain_support.capabilities.maxImageCount > 0
         && image_count > swap_chain_support.capabilities.maxImageCount) {
         image_count = swap_chain_support.capabilities.maxImageCount;
     }
-
     VkSwapchainCreateInfoKHR create_info {};
     create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     create_info.surface = surface;
-
     create_info.minImageCount = image_count;
     create_info.imageFormat = surface_format.format;
     create_info.imageColorSpace = surface_format.colorSpace;
     create_info.imageExtent = extent;
     create_info.imageArrayLayers = 1;
     create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
     QueueFamilyIndices indices = find_queue_families(physical_device);
     uint32_t queue_family_indices[] = {
         indices.graphics_family.value(),
         indices.present_family.value()
     };
-
     if (indices.graphics_family != indices.present_family) {
         create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
         create_info.queueFamilyIndexCount = 2;
@@ -5094,17 +5030,14 @@ void CVulkanRenderer::create_swap_chain() {
     } else {
         create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     }
-
     create_info.preTransform = swap_chain_support.capabilities.currentTransform;
     create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     create_info.presentMode = present_mode;
     create_info.clipped = VK_TRUE;
-
     if (vkCreateSwapchainKHR(device, &create_info, nullptr, &swap_chain)
         != VK_SUCCESS) {
         throw std::runtime_error("failed to create swap chain!");
     }
-
     vkGetSwapchainImagesKHR(device, swap_chain, &image_count, nullptr);
     swap_chain_images.resize(image_count);
     vkGetSwapchainImagesKHR(
@@ -5113,7 +5046,6 @@ void CVulkanRenderer::create_swap_chain() {
         &image_count,
         swap_chain_images.data()
     );
-
     swap_chain_image_format = surface_format.format;
     swap_chain_extent = extent;
     window->width = swap_chain_extent.width;
@@ -5122,7 +5054,6 @@ void CVulkanRenderer::create_swap_chain() {
 
 void CVulkanRenderer::create_image_views() {
     swap_chain_image_views.resize(swap_chain_images.size());
-
     for (uint32_t i = 0; i < swap_chain_images.size(); i++) {
         GpuImage swap_chain_image = {
             .image = swap_chain_images[i],
@@ -5137,7 +5068,6 @@ void CVulkanRenderer::create_image_views() {
             .width = swap_chain_extent.width,
             .height = swap_chain_extent.height
         };
-
         swap_chain_image_views[i] = create_image_view(swap_chain_image, 0, 1);
     }
 }
@@ -5158,7 +5088,6 @@ void CVulkanRenderer::create_main_render_pass() {
                     swap_chain_image_format;
             }
         }
-
         VkSubpassDescription subpass {};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         for (unsigned int i = 0;
@@ -5177,7 +5106,6 @@ void CVulkanRenderer::create_main_render_pass() {
                     &RENDER_PASS_CONFIGS[j].attachment_references[i];
             }
         }
-
         VkRenderPassCreateInfo render_pass_info {};
         render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
         render_pass_info.attachmentCount = static_cast<uint32_t>(
@@ -5232,7 +5160,6 @@ void CVulkanRenderer::create_descriptor_set_layout() {
 
             bindings.push_back(model_matrix_ubo_layout);
         }
-
         VkDescriptorSetLayoutCreateInfo layout_info {};
         layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         layout_info.flags = 0;
@@ -5257,43 +5184,36 @@ void CVulkanRenderer::create_graphics_pipeline() {
         Pipeline& pipeline = PIPELINE_CONFIGS[graphics_pipeline_counter];
         VkRenderPass render_pass = RENDER_PASSES[graphics_pipeline_counter];
         std::vector<VkPipelineShaderStageCreateInfo> shader_stages;
-
         VkShaderModule vert_shader_module;
         VkShaderModule frag_shader_module;
         if (pipeline.vert_shader != nullptr) {
             std::vector<char> vert_shader_code =
                 read_file(pipeline.vert_shader);
             vert_shader_module = create_shader_module(vert_shader_code);
-
             VkPipelineShaderStageCreateInfo vert_shader_stage_info {};
             vert_shader_stage_info.sType =
                 VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
             vert_shader_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
             vert_shader_stage_info.module = vert_shader_module;
             vert_shader_stage_info.pName = "main";
-
             shader_stages.push_back(vert_shader_stage_info);
         }
-
         if (pipeline.frag_shader != nullptr) {
             std::vector<char> frag_shader_code =
                 read_file(pipeline.frag_shader);
             frag_shader_module = create_shader_module(frag_shader_code);
-
             VkPipelineShaderStageCreateInfo frag_shader_stage_info {};
             frag_shader_stage_info.sType =
                 VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
             frag_shader_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
             frag_shader_stage_info.module = frag_shader_module;
             frag_shader_stage_info.pName = "main";
-
             shader_stages.push_back(frag_shader_stage_info);
         }
 
         VkPipelineVertexInputStateCreateInfo vertex_input_info {};
         vertex_input_info.sType =
             VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-
         vertex_input_info.vertexBindingDescriptionCount = 1;
         vertex_input_info.vertexAttributeDescriptionCount =
             static_cast<uint32_t>(pipeline.attribute_descriptions.size());
@@ -5301,19 +5221,16 @@ void CVulkanRenderer::create_graphics_pipeline() {
             &pipeline.binding_description;
         vertex_input_info.pVertexAttributeDescriptions =
             pipeline.attribute_descriptions.data();
-
         VkPipelineInputAssemblyStateCreateInfo input_assembly {};
         input_assembly.sType =
             VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
         input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         input_assembly.primitiveRestartEnable = VK_FALSE;
-
         VkPipelineViewportStateCreateInfo viewport_state {};
         viewport_state.sType =
             VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
         viewport_state.viewportCount = 1;
         viewport_state.scissorCount = 1;
-
         VkPipelineRasterizationStateCreateInfo rasterizer {};
         rasterizer.sType =
             VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -5342,13 +5259,11 @@ void CVulkanRenderer::create_graphics_pipeline() {
         }
         rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterizer.depthBiasEnable = VK_FALSE;
-
         VkPipelineMultisampleStateCreateInfo multisampling {};
         multisampling.sType =
             VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
         multisampling.sampleShadingEnable = VK_FALSE;
         multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-
         VkPipelineDepthStencilStateCreateInfo depth_stencil {};
         depth_stencil.sType =
             VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -5357,13 +5272,11 @@ void CVulkanRenderer::create_graphics_pipeline() {
         depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS;
         depth_stencil.depthBoundsTestEnable = VK_FALSE;
         depth_stencil.stencilTestEnable = VK_FALSE;
-
         VkPipelineColorBlendAttachmentState color_blend_attachment {};
         color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT
             | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT
             | VK_COLOR_COMPONENT_A_BIT;
         color_blend_attachment.blendEnable = VK_FALSE;
-
         VkPipelineColorBlendStateCreateInfo color_blending {};
         color_blending.sType =
             VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -5375,7 +5288,6 @@ void CVulkanRenderer::create_graphics_pipeline() {
         color_blending.blendConstants[1] = 0.0f;
         color_blending.blendConstants[2] = 0.0f;
         color_blending.blendConstants[3] = 0.0f;
-
         std::vector<VkDynamicState> dynamic_states = {
             VK_DYNAMIC_STATE_VIEWPORT,
             VK_DYNAMIC_STATE_SCISSOR
@@ -5386,7 +5298,6 @@ void CVulkanRenderer::create_graphics_pipeline() {
         dynamic_state.dynamicStateCount =
             static_cast<uint32_t>(dynamic_states.size());
         dynamic_state.pDynamicStates = dynamic_states.data();
-
         // Need to access inside pipeline and take ID for specific descriptor
         // set, then with that ID we got descriptor set and take it's layout.
         unsigned int descriptor_layouts_number =
@@ -5398,13 +5309,11 @@ void CVulkanRenderer::create_graphics_pipeline() {
                     .set_layout
             );
         }
-
         VkPipelineLayoutCreateInfo pipeline_layout_info {};
         pipeline_layout_info.sType =
             VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipeline_layout_info.setLayoutCount = descriptor_layouts_number;
         pipeline_layout_info.pSetLayouts = descriptor_set_layouts.data();
-
         if (vkCreatePipelineLayout(
                 device,
                 &pipeline_layout_info,
@@ -5414,7 +5323,6 @@ void CVulkanRenderer::create_graphics_pipeline() {
             != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout!");
         }
-
         VkGraphicsPipelineCreateInfo pipeline_info {};
         pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipeline_info.stageCount = shader_stages.size();
@@ -5431,7 +5339,6 @@ void CVulkanRenderer::create_graphics_pipeline() {
         pipeline_info.renderPass = render_pass;
         pipeline_info.subpass = 0;
         pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
-
         if (vkCreateGraphicsPipelines(
                 device,
                 VK_NULL_HANDLE,
@@ -5443,11 +5350,9 @@ void CVulkanRenderer::create_graphics_pipeline() {
             != VK_SUCCESS) {
             throw std::runtime_error("failed to create graphics pipeline!");
         }
-
         if (pipeline.vert_shader != nullptr) {
             vkDestroyShaderModule(device, vert_shader_module, nullptr);
         }
-
         if (pipeline.frag_shader != nullptr) {
             vkDestroyShaderModule(device, frag_shader_module, nullptr);
         }
@@ -5461,7 +5366,6 @@ void CVulkanRenderer::create_framebuffers() {
         std::vector<VkImageView> main_render_attachments;
         main_render_attachments.push_back(swap_chain_image_views[i]);
         main_render_attachments.push_back(main_depth_image_view);
-
         create_render_pass_framebuffers(
             main_render_attachments,
             RENDER_PASSES[SpecificPipeline::MainRenderPipeline],
@@ -5470,7 +5374,6 @@ void CVulkanRenderer::create_framebuffers() {
             swap_chain_extent.height
         );
     }
-
     // Directional lights shadow map renderer frame buffers initialization.
     unsigned int directional_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
@@ -5495,7 +5398,6 @@ void CVulkanRenderer::create_framebuffers() {
             FLAT_SHADOW_MAP_SIZE
         );
     }
-
     // Spot lights shadow map renderer frame buffers initialization.
     unsigned int spot_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
@@ -5511,7 +5413,6 @@ void CVulkanRenderer::create_framebuffers() {
                       .gpu_image)
                 .views[0]
         );
-
         create_render_pass_framebuffers(
             spot_lights_render_attachments,
             RENDER_PASSES[SpecificPipeline::SpotLightPipeline],
@@ -5520,7 +5421,6 @@ void CVulkanRenderer::create_framebuffers() {
             FLAT_SHADOW_MAP_SIZE
         );
     }
-
     // Point lights shadow map renderer frame buffers initialization.
     unsigned int descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
@@ -6198,8 +6098,6 @@ void CVulkanRenderer::create_vertex_buffer(
 ) {
     VkDeviceSize buffer_size = sizeof(vertex_data[0]) * vertex_data.size();
     if (vertex_data.size() == 0) {
-        std::cout << "warning: empty vertex mesh, skipping buffer copy"
-                  << std::endl;
         buffer_size = 1;
     }
 
@@ -6242,8 +6140,6 @@ void CVulkanRenderer::create_index_buffer(
 ) {
     VkDeviceSize buffer_size = sizeof(index_data[0]) * index_data.size();
     if (index_data.empty()) {
-        std::cout << "warning: empty index mesh, skipping buffer copy"
-                  << std::endl;
         buffer_size = 1;
     }
 
@@ -6372,7 +6268,7 @@ void CVulkanRenderer::update_descriptor_sets_ubo(
     const VkDeviceSize& ubo_struct_size,
     const unsigned int& ubo_descriptors_number,
     int ubo_binding,
-    [[maybe_unused]] std::vector<VkDescriptorSet>& ubo_descriptor_sets,
+    std::vector<VkDescriptorSet>& ubo_descriptor_sets,
     const unsigned int offset
 ) {
     for (size_t i = 0; i < ubo_descriptors_number; ++i) {
@@ -6616,8 +6512,6 @@ void CVulkanRenderer::create_buffer(
     VkBufferCreateInfo buffer_info {};
     buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     if (size == 0) {
-        std::cout << "warning: createBuffer with size 0, clamped to 1"
-                  << std::endl;
         size = 1;
     }
     buffer_info.size = size;
@@ -7966,7 +7860,7 @@ void CVulkanRenderer::update_spot_light_shadow_map_matrix_ubo(
 }
 
 void CVulkanRenderer::update_point_light_shadow_map_matrix_ubo(
-    [[maybe_unused]] uint32_t current_image,
+    uint32_t current_image,
     uint32_t current_light,
     uint32_t layer,
     unsigned int actor
@@ -8408,7 +8302,7 @@ void CVulkanRenderer::directional_light_shadow_map_draw_frame() {
         UINT64_MAX
     );
 
-    [[maybe_unused]] uint32_t image_index = 0;
+    uint32_t image_index = 0;
 
     vkResetFences(
         device,
@@ -8451,7 +8345,7 @@ void CVulkanRenderer::spot_light_shadow_map_draw_frame() {
         UINT64_MAX
     );
 
-    [[maybe_unused]] uint32_t image_index = 0;
+    uint32_t image_index = 0;
 
     vkResetFences(
         device,
@@ -8493,7 +8387,7 @@ void CVulkanRenderer::point_light_shadow_map_draw_frame() {
         UINT64_MAX
     );
 
-    [[maybe_unused]] uint32_t image_index = 0;
+    uint32_t image_index = 0;
 
     vkResetFences(
         device,
@@ -8528,7 +8422,7 @@ void CVulkanRenderer::point_light_shadow_map_draw_frame() {
 
 void CVulkanRenderer::directional_light_record_coomand_buffer(
     std::vector<VkCommandBuffer>& command_buffers,
-    [[maybe_unused]] uint32_t current_frame
+    uint32_t current_frame
 ) {
     for (uint32_t directional_light_counter = 0;
          directional_light_counter < directional_lights.size();
@@ -8650,7 +8544,7 @@ void CVulkanRenderer::directional_light_record_coomand_buffer(
 
 void CVulkanRenderer::spot_light_record_command_buffer(
     std::vector<VkCommandBuffer>& command_buffers,
-    [[maybe_unused]] uint32_t current_frame
+    uint32_t current_frame
 ) {
     for (uint32_t spot_light_counter = 0;
          spot_light_counter < spot_lights.size();
@@ -8769,7 +8663,7 @@ void CVulkanRenderer::spot_light_record_command_buffer(
 
 void CVulkanRenderer::point_light_record_command_buffer(
     std::vector<VkCommandBuffer>& command_buffers,
-    [[maybe_unused]] uint32_t current_frame
+    uint32_t current_frame
 ) {
     for (uint32_t point_light_counter = 0;
          point_light_counter < point_lights.size();
@@ -9052,7 +8946,8 @@ bool CVulkanRenderer::is_device_suitable(VkPhysicalDevice device) {
     vkGetPhysicalDeviceFeatures(device, &supported_features);
 
     return indices.is_complete() && extensions_supported && swap_chain_adequate
-        && supported_features.samplerAnisotropy;
+        && supported_features.samplerAnisotropy
+        && supported_features.fillModeNonSolid;
 }
 
 bool CVulkanRenderer::check_device_extension_support(VkPhysicalDevice device) {
@@ -9138,10 +9033,9 @@ std::vector<const char*> CVulkanRenderer::get_required_extensions() {
         "VK_EXT_acquire_xlib_display",
         "VK_KHR_display",
         "VK_KHR_surface",
-        "VK_EXT_direct_mode_display"
+        "VK_EXT_direct_mode_display",
     };
 #endif
-
 #ifdef VK_USE_PLATFORM_XCB_KHR
     std::vector<const char*> p_required_extensions = {
         "VK_KHR_xcb_surface",
@@ -9150,14 +9044,12 @@ std::vector<const char*> CVulkanRenderer::get_required_extensions() {
         "VK_EXT_direct_mode_display"
     };
 #endif
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     std::vector<const char*> p_required_extensions = {
         "VK_KHR_win32_surface",
         "VK_KHR_surface"
     };
 #endif
-
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
     std::vector<const char*> p_required_extensions = {
         "VK_KHR_wayland_surface",
@@ -9166,36 +9058,29 @@ std::vector<const char*> CVulkanRenderer::get_required_extensions() {
         "VK_KHR_surface"
     };
 #endif
-
     if (ENABLE_VALIDATION_LAYERS) {
         p_required_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
-
     return p_required_extensions;
 }
 
 bool CVulkanRenderer::check_validation_layer_support() {
     uint32_t layer_count;
     vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
-
     std::vector<VkLayerProperties> available_layers(layer_count);
     vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
-
     for (const char* layer_name : VALIDATION_LAYERS) {
         bool layer_found = false;
-
         for (const auto& layer_properties : available_layers) {
             if (strcmp(layer_name, layer_properties.layerName) == 0) {
                 layer_found = true;
                 break;
             }
         }
-
         if (!layer_found) {
             return false;
         }
     }
-
     return true;
 }
 
@@ -9208,7 +9093,6 @@ VkDescriptorBufferInfo CVulkanRenderer::create_descriptor_buffer_info(
     ubo_buffer_info.buffer = ubo;
     ubo_buffer_info.offset = offset_step * ubo_struct_size;
     ubo_buffer_info.range = ubo_struct_size;
-
     return ubo_buffer_info;
 }
 
@@ -9222,36 +9106,28 @@ VkDescriptorImageInfo CVulkanRenderer::create_descriptor_image_info(
     image_info.imageLayout = layout;
     image_info.imageView = texture_image.views[texture_view_index];
     image_info.sampler = texture_sampler;
-
     return image_info;
 }
 
 std::vector<char> CVulkanRenderer::read_file(const std::string& filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
-
     if (!file.is_open()) {
         throw std::runtime_error("failed to open file!");
     }
-
     size_t file_size = (size_t)file.tellg();
     std::vector<char> buffer(file_size);
-
     file.seekg(0);
     file.read(buffer.data(), file_size);
-
     file.close();
-
     return buffer;
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL CVulkanRenderer::debug_callback(
-    [[maybe_unused]] VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
-    [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT message_type,
+    VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+    VkDebugUtilsMessageTypeFlagsEXT message_type,
     const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data,
-    [[maybe_unused]] void* p_user_data
+    void* p_user_data
 ) {
-    std::cerr << "validation layer: " << p_callback_data->pMessage << std::endl;
-
     return VK_FALSE;
 }
 } // namespace glvm
@@ -9268,7 +9144,6 @@ void CJsonParser::read_file(const char* file_path) {
         json_file_input_stream.close();
         s_json_file_data = json_file_output_stream.str();
     } else {
-        std::cout << "Error of reading json file" << std::endl;
         return;
     }
 
@@ -9609,7 +9484,6 @@ double CJsonParser::parse_floating(std::vector<char> digits) {
                 integer_part_container.push_back(base_container[i]);
             }
         } else {
-            std::cout << "Element is not a number" << std::endl;
             return NAN;
         }
     }
@@ -9926,7 +9800,6 @@ void CJsonParser::load_gltf(
     bool& no_animations,
     float& top_y
 ) {
-    std::cout << "path: " << paths_gltf << std::endl;
     read_file(paths_gltf);
     parse();
     JsonValue* gltf = get_root();
@@ -10387,8 +10260,7 @@ void CJsonParser::load_gltf(
             }
         }
         // This logic related to joints that has inverseBindMatrices.
-        [[maybe_unused]] uint32_t transformations_max =
-            translations.size() > scales.size()
+        uint32_t transformations_max = translations.size() > scales.size()
             ? (translations.size() > rotations.size() ? translations.size()
                                                       : rotations.size())
             : (scales.size() > rotations.size() ? scales.size()
@@ -10812,9 +10684,11 @@ namespace glvm {
 MeshManager* MeshManager::p_instance = nullptr;
 std::mutex MeshManager::mutex;
 
-MeshManager::MeshManager() {}
+MeshManager::MeshManager() {
+}
 
-MeshManager::~MeshManager() {}
+MeshManager::~MeshManager() {
+}
 
 void MeshManager::set_mesh(const char* mesh_path) {
     paths_array.push_back(mesh_path);
@@ -10862,7 +10736,7 @@ void ProceduralLevelGeneratingSystem::update() {
             std::mt19937 mersenne(rd());
             std::uniform_int_distribution<int> dist_current_level_y(1, 1);
             unsigned int level_half_y = dist_current_level_y(mersenne);
-            std::uniform_int_distribution<int> dist_current_level_x_z(8, 16);
+            std::uniform_int_distribution<int> dist_current_level_x_z(16, 16);
             unsigned int level_half_x = dist_current_level_x_z(mersenne);
             unsigned int level_half_z = dist_current_level_x_z(mersenne);
 
@@ -10919,8 +10793,7 @@ void ProceduralLevelGeneratingSystem::update() {
             );
             set_mesh_bounds(mesh_axis_limiting_values);
 
-            [[maybe_unused]] MeshHandle game_level_mesh_handle =
-                glvm->load_mesh();
+            MeshHandle game_level_mesh_handle = glvm->load_mesh();
             uint64_t game_level_chunk_entity =
                 arch_entity_manager->create_entity();
 
@@ -10995,8 +10868,7 @@ void ProceduralLevelGeneratingSystem::update() {
             );
             set_mesh_bounds(mesh_axis_limiting_values);
 
-            [[maybe_unused]] MeshHandle transition_bridge_mesh_handle =
-                glvm->load_mesh();
+            MeshHandle transition_bridge_mesh_handle = glvm->load_mesh();
             uint64_t transition_bridge_entity =
                 arch_entity_manager->create_entity();
             WORLD.add_entity_to_archetype(
@@ -11136,7 +11008,6 @@ void ProceduralLevelGeneratingSystem::generate_level(
                 level_half_y,
                 level_half_z
             )) {
-            std::cout << "LEVEL COLLITION DETECTED" << std::endl;
             previous_iteration_transition_bridge_direction =
                 (4 + previous_iteration_transition_bridge_direction) % 4 + 1;
         } else {
@@ -11521,9 +11392,11 @@ void CSoundEngineAlsa::create_sound_sample(
 #endif // __linux__
 
 #ifdef _WIN32
-void CSoundEngineWaveform::open_device(const char* /* device */) {}
+void CSoundEngineWaveform::open_device(const char* /* device */) {
+}
 
-void CSoundEngineWaveform::close_device() {}
+void CSoundEngineWaveform::close_device() {
+}
 
 void CSoundEngineWaveform::create_sound_sample(
     const char* file_path,
@@ -11541,7 +11414,8 @@ namespace glvm {
 CSystemManager* CSystemManager::p_instance = nullptr;
 std::mutex CSystemManager::mutex;
 
-CSystemManager::CSystemManager() {}
+CSystemManager::CSystemManager() {
+}
 
 CSystemManager::~CSystemManager() {
     delete p_instance;
@@ -11650,7 +11524,7 @@ void CCollisionSystem::update() {
                     &view.backtracking_transforms[i];
                 Vector<float, 3> backtracking_transform =
                     backtracking_transform_component->position;
-                [[maybe_unused]] float backtracking_scale =
+                float backtracking_scale =
                     backtracking_transform_component->scale;
 
                 uint64_t move_required_mask =
@@ -11965,7 +11839,8 @@ void DamageSystem::update() {
                 if (font_component.removeble) {
                     font_component.life_time += delta_time;
                 }
-                if (font_component.life_time >= 1.5) {}
+                if (font_component.life_time >= 1.5) {
+                }
             }
         }
     }
@@ -12212,7 +12087,7 @@ void InventorySystem::update() {
                         inventory_slot_scale,
                         inventory_slot_half_scale
                     )) {
-                    [[maybe_unused]] Point2D<int> intersection_slot =
+                    Point2D<int> intersection_slot =
                         determine_actual_intersection_slot(
                             crosshair_transform_component,
                             inventory_transform_component,
@@ -12259,7 +12134,7 @@ void InventorySystem::update() {
                         inventory_slot_scale,
                         inventory_slot_half_scale
                     )) {
-                    [[maybe_unused]] Point2D<int> intersection_slot =
+                    Point2D<int> intersection_slot =
                         determine_actual_intersection_slot(
                             crosshair_transform_component,
                             inventory_transform_component,
@@ -12422,12 +12297,12 @@ int InventorySystem::determine_swappable_status_and_slots(
         int pivot_row = row - row_basic_offset;
         int pivot_column = column - column_basic_offset;
 
-        clamp<int>(
+        pivot_row = clamp<int>(
             0,
             pivot_row,
             static_cast<int>(inventory_component->row) - item_height
         );
-        clamp<int>(
+        pivot_column = clamp<int>(
             0,
             pivot_column,
             static_cast<int>(inventory_component->col) - item_width
@@ -12587,9 +12462,6 @@ bool ItemSystem::put_item2x2(
 
     unsigned int item_width = item_component->item_slot_type.width;
     unsigned int item_height = item_component->item_slot_type.height;
-
-    std::cout << "item width: " << item_width << std::endl;
-    std::cout << "item height: " << item_height << std::endl;
     for (unsigned int i = 0; i < row - item_height + 1; ++i) {
         for (unsigned int j = 0; j < col - item_width + 1; ++j) {
             std::vector<unsigned int> maybe_availabe_slots;
@@ -12679,10 +12551,6 @@ void ItemSystem::update() {
                         && components_view.items_view[i].is_actor) {
                         if (put_item2x2(inventory_component, item_entity)) {
                             components_view.items_view[i].is_actor = false;
-                        } else {
-                            std::cout
-                                << "No suitable slots for that item in inventory"
-                                << std::endl;
                         }
                     }
                 }
@@ -12732,7 +12600,8 @@ void ItemSystem::update() {
 
 namespace glvm {
 CMovementSystem::CMovementSystem(CStack& input_stack) :
-    input_stack(input_stack) {}
+    input_stack(input_stack) {
+}
 
 void CMovementSystem::update() {
     WORLD.search_cache_archetypes(
@@ -12859,7 +12728,7 @@ Vector<float, 3> CMovementSystem::calculate_vector_rl(Beholder& beholder) {
 
 Vector<float, 3> CMovementSystem::calculate_vector_fb(
     Beholder& beholder,
-    [[maybe_unused]] CEvent& event
+    CEvent& event
 ) {
     Vector<float, 3> forward(0.0f);
     current_x = (float)G_E_EVENT.mouse_pointer_position.offset_x;
@@ -13096,7 +12965,8 @@ void CPhysicsSystem::update() {
 
 namespace glvm {
 CProjectileSystem::CProjectileSystem(CStack& input_stack) :
-    input_stack(input_stack) {}
+    input_stack(input_stack) {
+}
 
 void CProjectileSystem::update() {
     float camera_speed = 5.5f * delta_frame_time;
@@ -13237,8 +13107,7 @@ void CProjectileSystem::update() {
         ColliderFlags* projectile_collider_flags =
             &components_view.projectile_collider_flags[i];
         Health* projectile_health = &components_view.projectile_health[i];
-        [[maybe_unused]] Attack* projectile_attack =
-            &components_view.projectile_attacks[i];
+        Attack* projectile_attack = &components_view.projectile_attacks[i];
         const uint8_t wall_collision_bit = 1;
         const uint8_t ground_collistion_bit = (1 << 1);
         if ((projectile_collider_flags->flags & wall_collision_bit)
@@ -13393,10 +13262,7 @@ void SpatialGridSystem::update() {
                             chunk_entities.push_back(entity);
                             const uint32_t current_grid_cell =
                                 entity_location.grid_cell_counter;
-                            assert(
-                                current_grid_cell < 8
-                            ); ///< 8 is a maximum number for 1 entity to exist
-                               ///< in grid cell
+                            assert(current_grid_cell < 32);
                             entity_location
                                 .grid_cell_indicies[current_grid_cell] =
                                 Vector<float, 3>(i2, i3, i4);
@@ -13609,7 +13475,8 @@ void CSoundEngineWaveform::playback_sound_sample(CSoundSample& sample) {
     waveOutClose(h_wave_out);
 }
 
-void CSoundEngineWaveform::set_master_volume(long /* l_volume */) {}
+void CSoundEngineWaveform::set_master_volume(long /* l_volume */) {
+}
 
 std::vector<CSoundSample*>& CSoundEngineWaveform::get_sound_container() {
     return t_sound_container;
@@ -13677,9 +13544,11 @@ WindowWinVulkan::WindowWinVulkan() {
     UpdateWindow(p_modern_window);
 }
 
-void WindowWinVulkan::swap_buffers() {}
+void WindowWinVulkan::swap_buffers() {
+}
 
-void WindowWinVulkan::clear_display() {}
+void WindowWinVulkan::clear_display() {
+}
 
 bool WindowWinVulkan::handle_event(CEvent& event) {
     // Create message struct object.
@@ -14186,7 +14055,8 @@ static bool equals_c_str(const std::vector<char>& v, const char* s) {
     return strcmp(v.data(), s) == 0;
 }
 
-CWaveFrontObjParser::CWaveFrontObjParser() {}
+CWaveFrontObjParser::CWaveFrontObjParser() {
+}
 
 const std::vector<SVertex>& CWaveFrontObjParser::get_coordinate_vertices() const {
     return coordinate_vertices;
@@ -14215,7 +14085,6 @@ void CWaveFrontObjParser::read_file(const char* file_path) {
         wavefront_obj_file_input_stream.close();
         s_wavefront_obj_file_data = wavefront_obj_file_output_stream.str();
     } else {
-        std::cout << "Error of reading " << file_path << " file" << std::endl;
         return;
     }
 
@@ -14374,7 +14243,6 @@ float CWaveFrontObjParser::parse_floating(std::vector<char> digits) {
                 integer_part_container.push_back(base_container[i]);
             }
         } else {
-            std::cout << "Element is not a number" << std::endl;
             return NAN;
         }
     }
@@ -14408,7 +14276,7 @@ namespace glvm {
 static WindowWaylandVulkan wayland_window;
 
 void xdg_surface_configure(
-    [[maybe_unused]] void* data,
+    void* data,
     struct xdg_surface* xdg_surface,
     uint32_t serial
 ) {
@@ -14423,9 +14291,9 @@ void xdg_surface_configure(
 }
 
 void new_frame_callback(
-    [[maybe_unused]] void* data,
+    void* data,
     struct wl_callback* frame_call_back,
-    [[maybe_unused]] uint32_t callback_data
+    uint32_t callback_data
 ) {
     wl_callback_destroy(frame_call_back);
     frame_call_back = wl_surface_frame(wayland_window.wl_surface);
@@ -14436,28 +14304,25 @@ void new_frame_callback(
     );
 }
 
-void shell_ping(
-    [[maybe_unused]] void* data,
-    struct xdg_wm_base* shell,
-    uint32_t serial
-) {
+void shell_ping(void* data, struct xdg_wm_base* shell, uint32_t serial) {
     xdg_wm_base_pong(shell, serial);
 }
 
 void keyboard_keymap(
-    [[maybe_unused]] void* data,
-    [[maybe_unused]] struct wl_keyboard* keyboard,
-    [[maybe_unused]] uint32_t format,
-    [[maybe_unused]] int32_t keymap_file_descriptor,
-    [[maybe_unused]] uint32_t size
-) {}
+    void* data,
+    struct wl_keyboard* keyboard,
+    uint32_t format,
+    int32_t keymap_file_descriptor,
+    uint32_t size
+) {
+}
 
 void keyboard_enter(
     void* data,
-    [[maybe_unused]] struct wl_keyboard* keyboard,
-    [[maybe_unused]] uint32_t serial,
-    [[maybe_unused]] struct wl_surface* surface,
-    [[maybe_unused]] struct wl_array* keys
+    struct wl_keyboard* keyboard,
+    uint32_t serial,
+    struct wl_surface* surface,
+    struct wl_array* keys
 ) {
     WindowWaylandVulkan* wayland_window_data = (WindowWaylandVulkan*)data;
     wayland_window_data->is_focused = true;
@@ -14465,9 +14330,9 @@ void keyboard_enter(
 
 void keyboard_leave(
     void* data,
-    [[maybe_unused]] struct wl_keyboard* keyboard,
-    [[maybe_unused]] uint32_t serial,
-    [[maybe_unused]] struct wl_surface* surface
+    struct wl_keyboard* keyboard,
+    uint32_t serial,
+    struct wl_surface* surface
 ) {
     WindowWaylandVulkan* wayland_window_data = (WindowWaylandVulkan*)data;
     wayland_window_data->is_focused = false;
@@ -14479,10 +14344,10 @@ void push_event(EEvents event_type) {
 }
 
 void keyboard_key(
-    [[maybe_unused]] void* data,
-    [[maybe_unused]] struct wl_keyboard* keyboard,
-    [[maybe_unused]] uint32_t serial,
-    [[maybe_unused]] uint32_t time,
+    void* data,
+    struct wl_keyboard* keyboard,
+    uint32_t serial,
+    uint32_t time,
     uint32_t key,
     uint32_t state
 ) {
@@ -14533,59 +14398,65 @@ void keyboard_key(
 }
 
 void keyboard_modifiers(
-    [[maybe_unused]] void* data,
-    [[maybe_unused]] struct wl_keyboard* keyboard,
-    [[maybe_unused]] uint32_t serial,
-    [[maybe_unused]] uint32_t mods_depressed,
-    [[maybe_unused]] uint32_t mods_latched,
-    [[maybe_unused]] uint32_t mods_locked,
-    [[maybe_unused]] uint32_t group
-) {}
+    void* data,
+    struct wl_keyboard* keyboard,
+    uint32_t serial,
+    uint32_t mods_depressed,
+    uint32_t mods_latched,
+    uint32_t mods_locked,
+    uint32_t group
+) {
+}
 
 void keyboard_repeat_info(
-    [[maybe_unused]] void* data,
-    [[maybe_unused]] struct wl_keyboard* keyboard,
-    [[maybe_unused]] int32_t rate,
-    [[maybe_unused]] int32_t delay
-) {}
+    void* data,
+    struct wl_keyboard* keyboard,
+    int32_t rate,
+    int32_t delay
+) {
+}
 
 void pointer_enter(
-    [[maybe_unused]] void* data,
-    [[maybe_unused]] struct wl_pointer* pointer,
-    [[maybe_unused]] uint32_t serial,
-    [[maybe_unused]] struct wl_surface* surface,
-    [[maybe_unused]] wl_fixed_t sx,
-    [[maybe_unused]] wl_fixed_t sy
-) {}
+    void* data,
+    struct wl_pointer* pointer,
+    uint32_t serial,
+    struct wl_surface* surface,
+    wl_fixed_t sx,
+    wl_fixed_t sy
+) {
+}
 
 void pointer_leave(
-    [[maybe_unused]] void* data,
-    [[maybe_unused]] struct wl_pointer* pointer,
-    [[maybe_unused]] uint32_t serial,
-    [[maybe_unused]] struct wl_surface* surface
-) {}
+    void* data,
+    struct wl_pointer* pointer,
+    uint32_t serial,
+    struct wl_surface* surface
+) {
+}
 
 void pointer_motion(
-    [[maybe_unused]] void* data,
-    [[maybe_unused]] struct wl_pointer* pointer,
-    [[maybe_unused]] uint32_t time,
-    [[maybe_unused]] wl_fixed_t sx,
-    [[maybe_unused]] wl_fixed_t sy
-) {}
+    void* data,
+    struct wl_pointer* pointer,
+    uint32_t time,
+    wl_fixed_t sx,
+    wl_fixed_t sy
+) {
+}
 
 void pointer_axis(
-    [[maybe_unused]] void* data,
-    [[maybe_unused]] struct wl_pointer* pointer,
-    [[maybe_unused]] uint32_t time,
-    [[maybe_unused]] uint32_t axis,
-    [[maybe_unused]] wl_fixed_t value
-) {}
+    void* data,
+    struct wl_pointer* pointer,
+    uint32_t time,
+    uint32_t axis,
+    wl_fixed_t value
+) {
+}
 
 void pointer_button(
-    [[maybe_unused]] void* data,
-    [[maybe_unused]] struct wl_pointer* pointer,
-    [[maybe_unused]] uint32_t serial,
-    [[maybe_unused]] uint32_t time,
+    void* data,
+    struct wl_pointer* pointer,
+    uint32_t serial,
+    uint32_t time,
     uint32_t button,
     uint32_t state
 ) {
@@ -14618,7 +14489,7 @@ void pointer_button(
         }
 
         // Lock pointer to the main window surface, not pointer_surface.
-        [[maybe_unused]] zwp_locked_pointer_v1* locked_pointer =
+        zwp_locked_pointer_v1* locked_pointer =
             zwp_pointer_constraints_v1_lock_pointer(
                 wayland_window.pointer_constraints,
                 wayland_window.wl_surface,
@@ -14642,24 +14513,20 @@ void pointer_button(
 }
 
 void handle_relative_motion(
-    [[maybe_unused]] void* data,
-    [[maybe_unused]] struct zwp_relative_pointer_v1* rel_pointer,
-    [[maybe_unused]] uint32_t utime_hi,
-    [[maybe_unused]] uint32_t utime_lo,
+    void* data,
+    struct zwp_relative_pointer_v1* rel_pointer,
+    uint32_t utime_hi,
+    uint32_t utime_lo,
     wl_fixed_t dx,
     wl_fixed_t dy,
-    [[maybe_unused]] wl_fixed_t dx_unaccel,
-    [[maybe_unused]] wl_fixed_t dy_unaccel
+    wl_fixed_t dx_unaccel,
+    wl_fixed_t dy_unaccel
 ) {
     X_POINTER = wl_fixed_to_int(dx);
     Y_POINTER = wl_fixed_to_int(dy);
 }
 
-void seat_capabilities(
-    [[maybe_unused]] void* data,
-    struct wl_seat* seat,
-    uint32_t capabilities
-) {
+void seat_capabilities(void* data, struct wl_seat* seat, uint32_t capabilities) {
     if ((capabilities & WL_SEAT_CAPABILITY_POINTER)
         && !wayland_window.pointer) {
         wayland_window.pointer = wl_seat_get_pointer(seat);
@@ -14686,32 +14553,30 @@ void seat_capabilities(
     }
 }
 
-void seat_name(
-    [[maybe_unused]] void* data,
-    [[maybe_unused]] struct wl_seat* seat,
-    [[maybe_unused]] const char* name
-) {}
+void seat_name(void* data, struct wl_seat* seat, const char* name) {
+}
 
 void output_geometry(
-    [[maybe_unused]] void* data,
-    [[maybe_unused]] struct wl_output* output,
-    [[maybe_unused]] int32_t x,
-    [[maybe_unused]] int32_t y,
-    [[maybe_unused]] int32_t physical_width,
-    [[maybe_unused]] int32_t physical_height,
-    [[maybe_unused]] int32_t subpixel,
-    [[maybe_unused]] const char* make,
-    [[maybe_unused]] const char* model,
-    [[maybe_unused]] int32_t transform
-) {}
+    void* data,
+    struct wl_output* output,
+    int32_t x,
+    int32_t y,
+    int32_t physical_width,
+    int32_t physical_height,
+    int32_t subpixel,
+    const char* make,
+    const char* model,
+    int32_t transform
+) {
+}
 
 void output_mode(
     void* data,
-    [[maybe_unused]] struct wl_output* output,
+    struct wl_output* output,
     uint32_t flags,
     int32_t width,
     int32_t height,
-    [[maybe_unused]] int32_t refresh
+    int32_t refresh
 ) {
     if (flags & WL_OUTPUT_MODE_CURRENT) {
         WindowWaylandVulkan* wayland_window_data = (WindowWaylandVulkan*)data;
@@ -14720,17 +14585,15 @@ void output_mode(
     }
 }
 
-void output_done(
-    [[maybe_unused]] void* data,
-    [[maybe_unused]] struct wl_output* output
-) {}
+void output_done(void* data, struct wl_output* output) {
+}
 
 void registry_global(
-    [[maybe_unused]] void* data,
+    void* data,
     struct wl_registry* registry,
     uint32_t name,
     const char* interface,
-    [[maybe_unused]] uint32_t version
+    uint32_t version
 ) {
     if (!strcmp(interface, wl_compositor_interface.name)) {
         wayland_window.compositor = (wl_compositor*)
@@ -14783,10 +14646,11 @@ void registry_global(
 }
 
 void registry_global_remove(
-    [[maybe_unused]] void* data,
-    [[maybe_unused]] struct wl_registry* registry,
-    [[maybe_unused]] uint32_t name
-) {}
+    void* data,
+    struct wl_registry* registry,
+    uint32_t name
+) {
+}
 
 int32_t alocate_shared_memory(uint64_t size) {
     char name[8];
@@ -14801,7 +14665,7 @@ int32_t alocate_shared_memory(uint64_t size) {
         S_IWUSR | S_IRUSR | S_IWOTH | S_IROTH
     );
     shm_unlink(name);
-    [[maybe_unused]] int result = ftruncate(file_descriptor, size);
+    int result = ftruncate(file_descriptor, size);
 
     return file_descriptor;
 }
@@ -14812,11 +14676,11 @@ void resize(void* data) {
 }
 
 void xdg_toplevel_configure(
-    [[maybe_unused]] void* data,
-    [[maybe_unused]] struct xdg_toplevel* xdg_toplevel,
+    void* data,
+    struct xdg_toplevel* xdg_toplevel,
     int32_t new_width,
     int32_t new_height,
-    [[maybe_unused]] struct wl_array* atate
+    struct wl_array* atate
 ) {
     if (!new_width && !new_height) {
         return;
@@ -14832,16 +14696,14 @@ void xdg_toplevel_configure(
     }
 }
 
-void xdg_toplevel_close(
-    [[maybe_unused]] void* data,
-    [[maybe_unused]] struct xdg_toplevel* xdg_toplevel
-) {
+void xdg_toplevel_close(void* data, struct xdg_toplevel* xdg_toplevel) {
     WindowWaylandVulkan* toplevel_data = (WindowWaylandVulkan*)data;
 
     toplevel_data->close_xdg_toplevel = 1;
 }
 
-WindowWaylandVulkan::WindowWaylandVulkan() {}
+WindowWaylandVulkan::WindowWaylandVulkan() {
+}
 
 void WindowWaylandVulkan::init() {
     display = wl_display_connect(0);
@@ -14880,7 +14742,7 @@ void WindowWaylandVulkan::init() {
     wl_surface_commit(wl_surface);
 }
 
-bool WindowWaylandVulkan::handle_event([[maybe_unused]] CEvent& event) {
+bool WindowWaylandVulkan::handle_event(CEvent& event) {
     event.mouse_pointer_position.position_x = X_POINTER;
     event.mouse_pointer_position.position_y = Y_POINTER;
     X_POINTER = 0;
@@ -14891,7 +14753,7 @@ bool WindowWaylandVulkan::handle_event([[maybe_unused]] CEvent& event) {
 
 // Create transparent cursor.
 struct wl_buffer* WindowWaylandVulkan::create_transparent_cursor(
-    [[maybe_unused]] struct wl_shm* shm
+    struct wl_shm* shm
 ) {
     int size = 4 * 64 * 64; // 64x64 RGBA cursor (common size).
     int32_t file_descriptor = alocate_shared_memory(size);
@@ -14920,15 +14782,17 @@ struct wl_buffer* WindowWaylandVulkan::create_transparent_cursor(
     return cursor_buffer;
 }
 
-void WindowWaylandVulkan::swap_buffers() {}
+void WindowWaylandVulkan::swap_buffers() {
+}
 
-void WindowWaylandVulkan::clear_display() {}
+void WindowWaylandVulkan::clear_display() {
+}
 
 void WindowWaylandVulkan::cursor_lock(
-    [[maybe_unused]] int pointer_x,
-    [[maybe_unused]] int pointer_y,
-    [[maybe_unused]] int* out_offset_x,
-    [[maybe_unused]] int* out_offset_y
+    int pointer_x,
+    int pointer_y,
+    int* out_offset_x,
+    int* out_offset_y
 ) {
     static int flag = 0;
     if (flag == 0) {

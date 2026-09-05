@@ -16,19 +16,9 @@ void ReadFile(const char* _filePath) {
         WavefrontObjFileInputStream.close();
         sWavefrontObjFileData = WavefrontObjFileOutputStream.str();
     } else {
-        std::cout << "Error of reading " << _filePath << " file " << std::endl;
         return;
     }
-
     pWavefrontObjFileData = sWavefrontObjFileData.c_str();
-
-    for (unsigned int i = 0; i < sWavefrontObjFileData.size(); ++i) {
-        if (sWavefrontObjFileData[i] == '\n') {
-            std::cout << sWavefrontObjFileData[i] << std::endl;
-        } else {
-            std::cout << sWavefrontObjFileData[i];
-        }
-    }
 }
 
 void readFile(const char* _filePath) {
@@ -44,7 +34,7 @@ void readFile(const char* _filePath) {
     }
 }
 
-int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
+int main(int argc, char* argv[]) {
     readFile("cube.bin");
 
     return 0;

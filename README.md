@@ -4,7 +4,7 @@ Simple game engine for Windows and Linux with Vulkan support.
 
 ## Features
 
-- **ECS** based on archetypes.
+- ECS based on archetypes.
 - `GLTf` and `Wavefront .obj` parsers.
 - Simple phong light (directional light, spotlight, point light).
 - Basic physics support (collisions, gravity).

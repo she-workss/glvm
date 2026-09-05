@@ -116,7 +116,10 @@ auto main() -> int {
         .scale = 1.0f
     };
     player_arch->rigid_bodies[player_index] = {.f_mass = 3.0f};
-    player_arch->health[player_index] = {.max_health = 100, .current_health = 100};
+    player_arch->health[player_index] = {
+        .max_health = 100,
+        .current_health = 100
+    };
     player_arch->beholders[player_index] = {
         .position = {0.0f, 2.0f, -3.0f},
         .forward = {0.0f, 0.0f, -1.0f}

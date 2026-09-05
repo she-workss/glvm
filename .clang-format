@@ -12,11 +12,11 @@ ContinuationIndentWidth: 4
 AllowAllArgumentsOnNextLine: false
 AllowAllConstructorInitializersOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
-AllowShortBlocksOnASingleLine: Empty
+AllowShortBlocksOnASingleLine: Never
 AllowShortCaseLabelsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
-AllowShortLambdasOnASingleLine: All
+AllowShortLambdasOnASingleLine: None
 AllowShortLoopsOnASingleLine: false
 AlwaysBreakAfterReturnType: None
 AlwaysBreakBeforeMultilineStrings: true
