@@ -655,8 +655,9 @@ inline auto operator!(const Scalar& scalar) -> PseudoScalar {
 }
 
 inline auto normalize(const Plane& plane) -> Plane {
-    f32 length =
-        std::sqrt(plane.x * plane.x + plane.y * plane.y + plane.z * plane.z);
+    f32 length = std::sqrt(
+        (plane.x * plane.x) + (plane.y * plane.y) + (plane.z * plane.z)
+    );
     assert(length != 0);
     return {
         .x = plane.x / length,
@@ -667,8 +668,9 @@ inline auto normalize(const Plane& plane) -> Plane {
 }
 
 inline auto normalize(const Line& line) -> Line {
-    f32 length =
-        std::sqrt(line.ix * line.ix + line.iy * line.iy + line.iz * line.iz);
+    f32 length = std::sqrt(
+        (line.ix * line.ix) + (line.iy * line.iy) + (line.iz * line.iz)
+    );
     assert(length != 0);
     return {
         .rx = line.rx / length,
@@ -2276,8 +2278,8 @@ namespace glvm {
 struct EventStack {
 private:
     i32 head = 0;
-    static const auto STACK_RANGE = 6;
-    EventKind stack[STACK_RANGE] = {};
+    static const auto stack_range = 6;
+    EventKind stack[stack_range] = {};
 
 public:
     auto push(const EventKind& event) -> void {
@@ -2287,7 +2289,7 @@ public:
             }
         }
 
-        if (head == STACK_RANGE) {
+        if (head == stack_range) {
             return;
         }
 
@@ -2304,11 +2306,11 @@ public:
     }
 
     auto remove(const EventKind& event) -> void {
-        EventKind temp_stack[STACK_RANGE] = {};
+        EventKind temp_stack[stack_range] = {};
         bool remove_flag = false;
         i32 n = 0;
 
-        for (i32 j = 0; j < STACK_RANGE; ++j) {
+        for (i32 j = 0; j < stack_range; ++j) {
             temp_stack[j] = stack[j];
         }
 
@@ -3349,9 +3351,9 @@ public:
             number_of_base_components += sizeof...(Args);
         }
         Vec<u32> return_vector;
-        for (u32 i = 0; i < dense.size(); ++i) {
-            if (multi_check_availability<Args...>(dense[i])) {
-                return_vector.push_back(dense[i]);
+        for (const auto& i : dense) {
+            if (multi_check_availability<Args...>(i)) {
+                return_vector.push_back(i);
             }
         }
         return return_vector;
@@ -3913,8 +3915,8 @@ extern Vec<glvm::MeshAxisMaxAbsoluteValues> all_mesh_max_absolute_values;
 
 extern glvm::EventStack global_input_stack;
 
-extern i32 global_pointer_x;
-extern i32 global_pointer_y;
+extern i32 GLOBAL_POINTER_X;
+extern i32 GLOBAL_POINTER_Y;
 extern i32 KEYS_PRESSED[6];
 
 namespace glvm {
@@ -6411,7 +6413,7 @@ const Vec<const char*> DEVICE_EXTENSIONS = {
 #ifdef NDEBUG
 const bool enable_validation_layers = false;
 #else
-const bool ENABLE_VALIDATION_LAYERS = true;
+const bool enable_validation_layers = true;
 #endif
 
 struct QueueFamilyIndices {
@@ -6433,7 +6435,7 @@ struct Renderer {
 public:
     bool print = true;
     Vector<i32, 4> indirect_texture
-        [INDIRECT_TEXTURE_WIDTH * INDIRECT_TEXTURE_HEIGHT / 4 + 1];
+        [(INDIRECT_TEXTURE_WIDTH * INDIRECT_TEXTURE_HEIGHT / 4) + 1];
     Vec<u32> entities_collection_linked_trn_mat_mes_act;
     Vec<u32> entities_collection_linked_trn_po_l_mes_act;
 

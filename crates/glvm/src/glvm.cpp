@@ -101,9 +101,9 @@ World::World() {
         -half_world_height + half_chunk_size,
         -half_world_depth + half_chunk_size
     );
-    for (u32 i0 = 0; i0 < spatial_grid.depth; ++i0) {
-        for (u32 i1 = 0; i1 < spatial_grid.height; ++i1) {
-            for (u32 i2 = 0; i2 < spatial_grid.width; ++i2) {
+    for (u32 i0 = 0; i0 < SpatialGrid::depth; ++i0) {
+        for (u32 i1 = 0; i1 < SpatialGrid::height; ++i1) {
+            for (u32 i2 = 0; i2 < SpatialGrid::width; ++i2) {
                 spatial_grid.grid[i0][i1][i2].position = Vector<f32, 3>(
                                                              i2 * chunk_size,
                                                              i1 * chunk_size,
@@ -116,9 +116,9 @@ World::World() {
 }
 
 World::~World() {
-    for (u32 i = 0; i < archetypes.size(); ++i) {
-        delete archetypes[i];
-        archetypes[i] = nullptr;
+    for (auto& archetype : archetypes) {
+        delete archetype;
+        archetype = nullptr;
     }
 }
 
@@ -183,9 +183,7 @@ auto World::search_cache_archetypes(
     Archetype* cached_archetypes[],
     u32& cached_archetypes_number
 ) -> void {
-    for (u32 i = 0; i < world.archetypes.size(); ++i) {
-        Archetype* arch = world.archetypes[i];
-
+    for (const auto arch : world.archetypes) {
         if ((arch->mask & required_mask) == required_mask) {
             cached_archetypes[cached_archetypes_number] = arch;
             ++cached_archetypes_number;
@@ -540,19 +538,15 @@ Mutex ComponentManager::mutex;
 ComponentManager::ComponentManager() = default;
 
 ComponentManager::~ComponentManager() {
-    for (i32 j = 0,
-             size_ordered = world_sparse_entities_map_to_components.size();
-         j < size_ordered;
-         ++j) {
-        delete world_sparse_entities_map_to_components[j];
-        world_sparse_entities_map_to_components[j] = nullptr;
+    for (auto& world_sparse_entities_map_to_component :
+         world_sparse_entities_map_to_components) {
+        delete world_sparse_entities_map_to_component;
+        world_sparse_entities_map_to_component = nullptr;
     }
-    for (i32 j = 0,
-             size_ordered = world_dense_components_map_to_entities.size();
-         j < size_ordered;
-         ++j) {
-        delete world_dense_components_map_to_entities[j];
-        world_dense_components_map_to_entities[j] = nullptr;
+    for (auto& world_dense_components_map_to_entity :
+         world_dense_components_map_to_entities) {
+        delete world_dense_components_map_to_entity;
+        world_dense_components_map_to_entity = nullptr;
     }
 }
 
@@ -580,8 +574,8 @@ auto ComponentManager::get_instance() -> ComponentManager* {
 
 glvm::EventStack global_input_stack {};
 
-i32 global_pointer_x;
-i32 global_pointer_y;
+i32 GLOBAL_POINTER_X;
+i32 GLOBAL_POINTER_Y;
 
 #ifdef __linux__
 #endif
@@ -925,8 +919,7 @@ auto Engine::render_vulkan() -> void {
 
 auto Engine::enlarge_frame_accumulator(f32 value) -> void {
     animation_archetypes_number = 0;
-    for (u32 m = 0; m < world.archetypes.size(); ++m) {
-        Archetype* arch = world.archetypes[m];
+    for (auto arch : world.archetypes) {
         u64 required_mask = (1ul << ComponentsIndices::MeshComponent)
             | (1ul << ComponentsIndices::AnimationComponent);
 
@@ -1037,7 +1030,7 @@ auto Engine::set_view_matrix() -> void {
                 // direction in which the mouse moved, but expressed in world
                 // (or 3D) space.
                 f32 rotation_angle =
-                    std::sqrt(delta_y * delta_y + delta_x * delta_x);
+                    std::sqrt((delta_y * delta_y) + (delta_x * delta_x));
                 constexpr auto ANGLE_SCALE = 0.05f;
                 rotation_angle = radians(rotation_angle * ANGLE_SCALE);
                 // Quaternions need division by 2.
@@ -1298,11 +1291,11 @@ auto Engine::update_point_light_space_matrix_shadow_map_ubo(
         ? inventory_component->slot_scale * 2.0f
         : inventory_component->slot_scale;
     const auto x = slot_transform_component->position[0]
-        + current_inventory_column * full_slot_scale;
+        + (current_inventory_column * full_slot_scale);
     const auto y_scale_multiplier =
         vulkan_renderer->aspect_ratio * full_slot_scale;
     const auto y = slot_transform_component->position[1]
-        + current_inventory_row * y_scale_multiplier;
+        + (current_inventory_row * y_scale_multiplier);
     const auto inventory_slot_scale = inventory_component->slot_scale;
     model[0][0] = inventory_slot_scale;
     model[1][1] = inventory_slot_scale;
@@ -1316,13 +1309,12 @@ auto Engine::update_point_light_space_matrix_shadow_map_ubo(
     bool highlighted_slot = false;
     for (u32 i = 0; i < inventory_component->highlighted_slots.size(); ++i) {
         if (inventory_component->highlighted_slots[i]
-            == current_inventory_row * inventory_component->col
+            == (current_inventory_row * inventory_component->col)
                 + current_inventory_column) {
             highlighted_slot = true;
             break;
-        } else {
-            continue;
         }
+        continue;
     }
 
     if (inventory_component->highlighted_slots.size() > 0) {
@@ -1372,13 +1364,13 @@ auto Engine::update_data_ubo_icons_ui(
         // Either division by 2.0f using multiply on 0.5f.
         constexpr auto CENTRE_MULTIPLIER = 0.5f;
         x_result_offset = inventory_transform_component->position[0]
-            + (col_index_first_slot * full_slot_scale
-               + col_index_second_slot * full_slot_scale)
-                * CENTRE_MULTIPLIER;
+            + (((col_index_first_slot * full_slot_scale)
+                + (col_index_second_slot * full_slot_scale))
+               * CENTRE_MULTIPLIER);
         y_result_offset = inventory_transform_component->position[1]
-            + (row_index_first_slot * full_slot_scale
-               + row_index_second_slot * full_slot_scale)
-                * CENTRE_MULTIPLIER * vulkan_renderer->aspect_ratio;
+            + (((row_index_first_slot * full_slot_scale)
+                + (row_index_second_slot * full_slot_scale))
+               * CENTRE_MULTIPLIER * vulkan_renderer->aspect_ratio);
     }
     f32 item_scale = item_transform_component->scale;
 
@@ -1716,7 +1708,7 @@ auto Engine::set_frame_data() -> void {
                             vulkan_renderer->inventories[inventory_counter]
                                 .slot_data.push_back({});
                             vulkan_renderer->inventories[inventory_counter]
-                                .slot_data[j * inventory_component->col + m] =
+                                .slot_data[(j * inventory_component->col) + m] =
                                 update_data_ubo_ui(
                                     j,
                                     m,
@@ -2196,7 +2188,7 @@ auto Engine::load_wavefront_obj() -> void {
         for (u32 i = 0; i < face_vertices_size; ++i) {
             for (i32 j = 0; j < 3; ++j) {
                 vertex_index = wavefront_obj_parser->get_faces()[i][0][j] - 1;
-                vulkan_renderer->indices[m].push_back(i * 3 + j);
+                vulkan_renderer->indices[m].push_back((i * 3) + j);
                 Position vertex = wavefront_obj_parser
                                       ->get_coordinate_vertices()[vertex_index];
                 texture_index = wavefront_obj_parser->get_faces()[i][1][j] - 1;
@@ -2519,42 +2511,41 @@ auto Engine::initialize_font_data() -> void {
         for (u32 j = 0; j < GLYPH_COLUMN; ++j) {
             Vec<Vertex> symbol_g_vertices;
             symbol_g_vertices.push_back(
-                {{-0.5f, 0.5f, 0.0f},
-                 {0.0f, 1.0f, 0.0f},
-                 {FONT_STEP * j, FONT_STEP * i + FONT_STEP},
-                 {0.0f, 0.0f, 0.0f, 0.0f},
-                 {1.0f, 0.0f, 0.0f, 0.0f}}
+                {.pos = {-0.5f, 0.5f, 0.0f},
+                 .color = {0.0f, 1.0f, 0.0f},
+                 .tex_coord = {FONT_STEP * j, (FONT_STEP * i) + FONT_STEP},
+                 .joint_indices = {0.0f, 0.0f, 0.0f, 0.0f},
+                 .weights = {1.0f, 0.0f, 0.0f, 0.0f}}
             );
             symbol_g_vertices.push_back(
-                {{0.5f, 0.5f, 0.0f},
-                 {1.0f, 1.0f, 0.0f},
-                 {FONT_STEP * j + FONT_STEP, FONT_STEP * i + FONT_STEP},
-                 {0.0f, 0.0f, 0.0f, 0.0f},
-                 {1.0f, 0.0f, 0.0f, 0.0f}}
+                {.pos = {0.5f, 0.5f, 0.0f},
+                 .color = {1.0f, 1.0f, 0.0f},
+                 .tex_coord =
+                     {(FONT_STEP * j) + FONT_STEP, (FONT_STEP * i) + FONT_STEP},
+                 .joint_indices = {0.0f, 0.0f, 0.0f, 0.0f},
+                 .weights = {1.0f, 0.0f, 0.0f, 0.0f}}
             );
             symbol_g_vertices.push_back(
-                {{-0.5f, -0.5f, 0.0f},
-                 {0.0f, 0.0f, 0.0f},
-                 {FONT_STEP * j, FONT_STEP * i},
-                 {0.0f, 0.0f, 0.0f, 0.0f},
-                 {1.0f, 0.0f, 0.0f, 0.0f}}
+                {.pos = {-0.5f, -0.5f, 0.0f},
+                 .color = {0.0f, 0.0f, 0.0f},
+                 .tex_coord = {FONT_STEP * j, FONT_STEP * i},
+                 .joint_indices = {0.0f, 0.0f, 0.0f, 0.0f},
+                 .weights = {1.0f, 0.0f, 0.0f, 0.0f}}
             );
             symbol_g_vertices.push_back(
-                {{0.5f, -0.5f, 0.0f},
-                 {1.0f, 0.0f, 0.0f},
-                 {FONT_STEP * j + FONT_STEP, FONT_STEP * i},
-                 {0.0f, 0.0f, 0.0f, 0.0f},
-                 {1.0f, 0.0f, 0.0f, 0.0f}}
+                {.pos = {0.5f, -0.5f, 0.0f},
+                 .color = {1.0f, 0.0f, 0.0f},
+                 .tex_coord = {(FONT_STEP * j) + FONT_STEP, FONT_STEP * i},
+                 .joint_indices = {0.0f, 0.0f, 0.0f, 0.0f},
+                 .weights = {1.0f, 0.0f, 0.0f, 0.0f}}
             );
-            u32 current_buffer_index = i * GLYPH_COLUMN + j;
+            u32 current_buffer_index = (i * GLYPH_COLUMN) + j;
             bool exit_flag = false;
             const auto next_buffer_index =
                 as<u32>(vulkan_renderer->glyphs[current_buffer_index]);
             // TODO: Fix garbage algorithm.
-            for (u32 n = 0; n < vulkan_renderer->font_indices_container.size();
-                 ++n) {
-                if (next_buffer_index
-                    == vulkan_renderer->font_indices_container[n]) {
+            for (const auto n : vulkan_renderer->font_indices_container) {
+                if (next_buffer_index == n) {
                     exit_flag = true;
                 }
             }
@@ -2610,11 +2601,11 @@ auto Engine::compute_hud_screen_coordinates() -> void {
         // Cursor is free while the inventory is open or the cursor is released:
         // track its real position instead of the locked-mouse offsets.
         hud_screen_x = 1.0f
-            - global_event.mouse_pointer_position.position_x
-                / (as<f32>(vulkan_renderer->window->width) / 2.0f);
+            - (global_event.mouse_pointer_position.position_x
+               / (as<f32>(vulkan_renderer->window->width) / 2.0f));
         hud_screen_y =
-            -(global_event.mouse_pointer_position.position_y
-                  / (as<f32>(vulkan_renderer->window->height) / 2.0f)
+            -((global_event.mouse_pointer_position.position_y
+               / (as<f32>(vulkan_renderer->window->height) / 2.0f))
               - 1.0f);
     } else {
         hud_screen_y -= (previous_mouse_offset_y
@@ -3370,34 +3361,30 @@ auto set_debug_object_names(
             reinterpret_cast<u64>(index_buffer_container[i]);
         set_debug_object_name(device, &uniform_buffer_object_info);
     }
-    for (usize i = 0; i < font_indices_container.size(); ++i) {
+    for (const auto i : font_indices_container) {
         VkDebugUtilsObjectNameInfoEXT uniform_buffer_object_info {};
         uniform_buffer_object_info.sType =
             VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
         String image_name = String(VK_DEBUG_IMAGE_SET_RED)
-            + " Font vertex uniform buffer # "
-            + std::to_string(font_indices_container[i]);
+            + " Font vertex uniform buffer # " + std::to_string(i);
         const char* str_image_name = image_name.c_str();
         uniform_buffer_object_info.pObjectName = str_image_name;
         uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
-        uniform_buffer_object_info.objectHandle = reinterpret_cast<u64>(
-            font_vertex_buffer_container[font_indices_container[i]]
-        );
+        uniform_buffer_object_info.objectHandle =
+            reinterpret_cast<u64>(font_vertex_buffer_container[i]);
         set_debug_object_name(device, &uniform_buffer_object_info);
     }
-    for (usize i = 0; i < font_indices_container.size(); ++i) {
+    for (const auto i : font_indices_container) {
         VkDebugUtilsObjectNameInfoEXT uniform_buffer_object_info {};
         uniform_buffer_object_info.sType =
             VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
         String image_name = String(VK_DEBUG_IMAGE_SET_RED)
-            + " Font index uniform buffer # "
-            + std::to_string(font_indices_container[i]);
+            + " Font index uniform buffer # " + std::to_string(i);
         const char* str_image_name = image_name.c_str();
         uniform_buffer_object_info.pObjectName = str_image_name;
         uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
-        uniform_buffer_object_info.objectHandle = reinterpret_cast<u64>(
-            font_index_buffer_container[font_indices_container[i]]
-        );
+        uniform_buffer_object_info.objectHandle =
+            reinterpret_cast<u64>(font_index_buffer_container[i]);
         set_debug_object_name(device, &uniform_buffer_object_info);
     }
     VkDebugUtilsObjectNameInfoEXT uniform_buffer_object_info {};
@@ -3486,12 +3473,12 @@ auto push_axis(
     f32 dx = target[0] - origin[0];
     f32 dy = target[1] - origin[1];
     f32 dz = target[2] - origin[2];
-    f32 len = std::sqrt(dx * dx + dy * dy + dz * dz);
+    f32 len = std::sqrt((dx * dx) + (dy * dy) + (dz * dz));
     if (len > 0.0001f) {
         Vector<f32, 3> tip = {
-            origin[0] + dx / len * length,
-            origin[1] + dy / len * length,
-            origin[2] + dz / len * length
+            origin[0] + (dx / len * length),
+            origin[1] + (dy / len * length),
+            origin[2] + (dz / len * length)
         };
         push_line(out, origin, tip, color);
     }
@@ -3769,8 +3756,8 @@ auto ImGuiOverlay::build_panel() -> void {
         ImGui::Separator();
         u32 draw_calls = as<u32>(renderer.actors.size());
         usize triangle_count = 0;
-        for (usize i = 0; i < renderer.actors.size(); ++i) {
-            u32 mesh_id = renderer.actors[i].mesh_id;
+        for (auto& actor : renderer.actors) {
+            u32 mesh_id = actor.mesh_id;
             if (mesh_id < renderer.indices.size()) {
                 triangle_count += renderer.indices[mesh_id].size() / 3;
             }
@@ -3781,8 +3768,8 @@ auto ImGuiOverlay::build_panel() -> void {
             frame_time_history.erase(frame_time_history.begin());
         }
         f32 total_ms = 0.0f;
-        for (usize i = 0; i < frame_time_history.size(); ++i) {
-            total_ms += frame_time_history[i];
+        for (const auto i : frame_time_history) {
+            total_ms += i;
         }
         f32 avg_ms = frame_time_history.empty()
             ? 0.0f
@@ -3831,11 +3818,10 @@ auto ImGuiOverlay::build_debug_vertices() -> void {
         Vec<Vector<f32, 3>> maxs;
         mins.reserve(renderer.actors.size());
         maxs.reserve(renderer.actors.size());
-        for (usize i = 0; i < renderer.actors.size(); ++i) {
-            RenderActor actor = renderer.actors[i];
+        for (const auto& actor : renderer.actors) {
             if (actor.mesh_id >= all_mesh_max_absolute_values.size()) {
-                mins.push_back({0, 0, 0});
-                maxs.push_back({0, 0, 0});
+                mins.emplace_back(0, 0, 0);
+                maxs.emplace_back(0, 0, 0);
                 continue;
             }
             const MeshAxisMaxAbsoluteValues& bounds =
@@ -3961,24 +3947,23 @@ auto ImGuiOverlay::build_debug_vertices() -> void {
         const Vector<f32, 3> white = {1.0f, 1.0f, 1.0f};
         const Vector<f32, 3> magenta = {1.0f, 0.0f, 1.0f};
         const Vector<f32, 3> orange = {1.0f, 0.5f, 0.0f};
-        for (usize i = 0; i < renderer.directional_lights.size(); ++i) {
-            Vector<f32, 4> raw_pos = renderer.directional_lights[i].position;
+        for (auto& directional_light : renderer.directional_lights) {
+            Vector<f32, 4> raw_pos = directional_light.position;
             Vector<f32, 3> pos = {raw_pos[0], raw_pos[1], raw_pos[2]};
             push_cross(vertices, pos, gizmo_size, white);
-            Vector<f32, 4> raw_target =
-                renderer.directional_lights[i].direction;
+            Vector<f32, 4> raw_target = directional_light.direction;
             Vector<f32, 3> target =
                 {raw_target[0], raw_target[1], raw_target[2]};
             push_axis(vertices, pos, target, gizmo_axis_length, white);
         }
-        for (usize i = 0; i < renderer.point_lights.size(); ++i) {
-            Vector<f32, 3> pos = renderer.point_lights[i].position;
+        for (auto& point_light : renderer.point_lights) {
+            Vector<f32, 3> pos = point_light.position;
             push_cross(vertices, pos, gizmo_size, magenta);
         }
-        for (usize i = 0; i < renderer.spot_lights.size(); ++i) {
-            Vector<f32, 3> pos = renderer.spot_lights[i].position;
+        for (auto& spot_light : renderer.spot_lights) {
+            Vector<f32, 3> pos = spot_light.position;
             push_cross(vertices, pos, gizmo_size, orange);
-            Vector<f32, 3> target = renderer.spot_lights[i].direction;
+            Vector<f32, 3> target = spot_light.direction;
             push_axis(vertices, pos, target, gizmo_axis_length, orange);
         }
     }
@@ -3986,10 +3971,9 @@ auto ImGuiOverlay::build_debug_vertices() -> void {
         const auto& grid = glvm::world.spatial_grid;
         const auto half_chunk = grid.grid[0][0][0].SIZE * 0.5f;
         const auto cross = 1.5f;
-        for (u32 z = 0; z < grid.depth; ++z) {
-            for (u32 y = 0; y < grid.height; ++y) {
-                for (u32 x = 0; x < grid.width; ++x) {
-                    const auto& chunk = grid.grid[z][y][x];
+        for (const auto& z : grid.grid) {
+            for (const auto& y : z) {
+                for (const auto& chunk : y) {
                     const auto count = chunk.entities.size();
                     if (count == 0) {
                         continue;
@@ -4441,8 +4425,8 @@ auto Renderer::recreate_swap_chain() -> void {
 
 auto Renderer::set_mesh_data(Vec<const char*> paths, Vec<const char*> paths_gltf)
     -> void {
-    for (u32 i = 0; i < paths.size(); ++i) {
-        paths_array.push_back(paths[i]);
+    for (auto path : paths) {
+        paths_array.push_back(path);
     }
 
     for (u32 i = 0; i < paths_gltf.size(); ++i) {
@@ -4570,8 +4554,9 @@ auto Renderer::init_vulkan() -> void {
     secondary_buffers_command_pools.resize(
         secondary_buffers_command_pools_number
     );
-    for (u32 i = 0; i < secondary_buffers_command_pools.size(); ++i) {
-        create_command_pool(secondary_buffers_command_pools[i]);
+    for (auto& secondary_buffers_command_pool :
+         secondary_buffers_command_pools) {
+        create_command_pool(secondary_buffers_command_pool);
     }
     create_depth_resources();
     create_directional_light_shadow_map_depth_resources();
@@ -4701,8 +4686,8 @@ auto Renderer::initialize_vertex_buffers_with_font_data() -> void {
 
 auto Renderer::clear_vk_image(GpuImage* texture_images) -> void {
     vkDestroySampler(device, texture_images->sampler, nullptr);
-    for (u32 j = 0; j < texture_images->views.size(); ++j) {
-        vkDestroyImageView(device, texture_images->views[j], nullptr);
+    for (auto& view : texture_images->views) {
+        vkDestroyImageView(device, view, nullptr);
     }
 
     texture_images->views.clear();
@@ -4835,29 +4820,13 @@ auto Renderer::cleanup() -> void {
         vkDestroyBuffer(device, index_buffer_container[j], nullptr);
         vkFreeMemory(device, index_buffer_memory_container[j], nullptr);
     }
-    for (usize j = 0; j < font_indices_container.size(); ++j) {
-        vkDestroyBuffer(
-            device,
-            font_vertex_buffer_container[font_indices_container[j]],
-            nullptr
-        );
-        vkFreeMemory(
-            device,
-            font_vertex_buffer_memory_container[font_indices_container[j]],
-            nullptr
-        );
+    for (const auto j : font_indices_container) {
+        vkDestroyBuffer(device, font_vertex_buffer_container[j], nullptr);
+        vkFreeMemory(device, font_vertex_buffer_memory_container[j], nullptr);
     }
-    for (usize j = 0; j < font_indices_container.size(); ++j) {
-        vkDestroyBuffer(
-            device,
-            font_index_buffer_container[font_indices_container[j]],
-            nullptr
-        );
-        vkFreeMemory(
-            device,
-            font_index_buffer_memory_container[font_indices_container[j]],
-            nullptr
-        );
+    for (const auto j : font_indices_container) {
+        vkDestroyBuffer(device, font_index_buffer_container[j], nullptr);
+        vkFreeMemory(device, font_index_buffer_memory_container[j], nullptr);
     }
     vkDestroyBuffer(device, model_matrix_uniform_buffer, nullptr);
     vkFreeMemory(device, model_matrix_uniform_buffers_memory, nullptr);
@@ -4893,14 +4862,14 @@ auto Renderer::cleanup() -> void {
 
     vkDestroySampler(device, texture_sampler, nullptr);
     vkDestroySampler(device, shadow_map_sampler, nullptr);
-    for (u32 i = 0; i < texture_images.size(); ++i) {
-        vkDestroySampler(device, texture_images[i].sampler, nullptr);
-        for (u32 j = 0; j < texture_images[i].views.size(); ++j) {
-            vkDestroyImageView(device, texture_images[i].views[j], nullptr);
+    for (auto& texture_image : texture_images) {
+        vkDestroySampler(device, texture_image.sampler, nullptr);
+        for (auto& view : texture_image.views) {
+            vkDestroyImageView(device, view, nullptr);
         }
 
-        vkDestroyImage(device, texture_images[i].image, nullptr);
-        vkFreeMemory(device, texture_images[i].device_memory, nullptr);
+        vkDestroyImage(device, texture_image.image, nullptr);
+        vkFreeMemory(device, texture_image.device_memory, nullptr);
     }
 
     for (usize i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
@@ -4922,19 +4891,16 @@ auto Renderer::cleanup() -> void {
     vkDestroyCommandPool(device, ui_command_pool, nullptr);
     vkDestroyCommandPool(device, ui_icons_command_pool, nullptr);
     vkDestroyCommandPool(device, virtual_textures_command_pool, nullptr);
-    for (u32 i = 0; i < secondary_buffers_command_pools.size(); ++i) {
-        vkDestroyCommandPool(
-            device,
-            secondary_buffers_command_pools[i],
-            nullptr
-        );
+    for (auto& secondary_buffers_command_pool :
+         secondary_buffers_command_pools) {
+        vkDestroyCommandPool(device, secondary_buffers_command_pool, nullptr);
     }
     vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
 
     vkDeviceWaitIdle(device);
     vkDestroyDevice(device, nullptr);
 
-    if (ENABLE_VALIDATION_LAYERS) {
+    if (enable_validation_layers) {
         destroy_debug_utils_messenger_ext(instance, debug_messenger, nullptr);
     }
 
@@ -4945,7 +4911,7 @@ auto Renderer::cleanup() -> void {
 }
 
 auto Renderer::create_instance() -> void {
-    if (ENABLE_VALIDATION_LAYERS && !check_validation_layer_support()) {
+    if (enable_validation_layers && !check_validation_layer_support()) {
         throw std::runtime_error(
             "validation layers requested, but not available!"
         );
@@ -4969,7 +4935,7 @@ auto Renderer::create_instance() -> void {
     create_info.ppEnabledExtensionNames = extensions.data();
 
     VkDebugUtilsMessengerCreateInfoEXT debug_create_info {};
-    if (ENABLE_VALIDATION_LAYERS) {
+    if (enable_validation_layers) {
         create_info.enabledLayerCount = as<u32>(VALIDATION_LAYERS.size());
         create_info.ppEnabledLayerNames = VALIDATION_LAYERS.data();
 
@@ -5002,7 +4968,7 @@ auto Renderer::populate_debug_messenger_create_info(
 }
 
 auto Renderer::setup_debug_messenger() -> void {
-    if (!ENABLE_VALIDATION_LAYERS) {
+    if (!enable_validation_layers) {
         return;
     }
 
@@ -5131,7 +5097,7 @@ auto Renderer::create_logical_device() -> void {
     create_info.enabledExtensionCount = as<u32>(DEVICE_EXTENSIONS.size());
     create_info.ppEnabledExtensionNames = DEVICE_EXTENSIONS.data();
 
-    if (ENABLE_VALIDATION_LAYERS) {
+    if (enable_validation_layers) {
         create_info.enabledLayerCount = as<u32>(VALIDATION_LAYERS.size());
         create_info.ppEnabledLayerNames = VALIDATION_LAYERS.data();
     } else {
@@ -6594,7 +6560,7 @@ auto Renderer::update_descriptor_sets_combined_image_sampler(
         );
         Vec<VkWriteDescriptorSet> descriptor_writes {};
 
-        for (u32 j = 0; j < bindings_ids.size(); ++j) {
+        for (const auto bindings_id : bindings_ids) {
             descriptor_writes.push_back({});
             const auto last_element = descriptor_writes.size() - 1;
             descriptor_writes[last_element].sType =
@@ -6603,7 +6569,7 @@ auto Renderer::update_descriptor_sets_combined_image_sampler(
                 *(DESCRIPTOR_SETS_CHUNKS.data()
                   + descriptor_set.descriptor_set_offset + i);
             descriptor_writes[last_element].dstBinding =
-                DESCRIPTOR_BINDINGS_CONFIG[bindings_ids[j]].binding;
+                DESCRIPTOR_BINDINGS_CONFIG[bindings_id].binding;
             descriptor_writes[last_element].dstArrayElement = 0;
             descriptor_writes[last_element].descriptorType =
                 VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -7583,14 +7549,12 @@ auto Renderer::font_record_command_buffer(
     scissor.offset = {0, 0};
     scissor.extent = swap_chain_extent;
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
-    for (u32 player_counter = 0; player_counter < players.size();
-         ++player_counter) {
-        player = players[player_counter];
+    for (const auto& p : players) {
+        player = p;
     }
     u32 current_actor_memory_offset =
         current_frame * font_ubo_descriptor_number;
-    for (u32 i = 0; i < fonts.size(); ++i) {
-        RenderFont font = fonts[i];
+    for (auto font : fonts) {
         Vector<f32, 3> player_target_direction =
             font.position - player.position;
         f32 dot_product = dot(player_target_direction, player.forward);
@@ -8197,12 +8161,10 @@ auto Renderer::update_view_position_uniform_buffer(u32 current_image, u32 player
     );
 
     if (print == true) {
-        for (i32 i = 0;
-             i < INDIRECT_TEXTURE_HEIGHT * INDIRECT_TEXTURE_WIDTH / 4 + 1;
-             ++i) {
+        for (auto& i : indirect_texture) {
             for (i32 j = 0; j < 4; ++j) {
                 i32 random_tile_index = distribution_tile_index(mersenne);
-                indirect_texture[i][j] = random_tile_index;
+                i[j] = random_tile_index;
             }
         }
     }
@@ -9220,7 +9182,7 @@ auto Renderer::get_required_extensions() -> Vec<const char*> {
         "VK_KHR_surface"
     };
 #endif
-    if (ENABLE_VALIDATION_LAYERS) {
+    if (enable_validation_layers) {
         required_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
     return required_extensions;
@@ -9509,8 +9471,8 @@ auto JsonParser::parse_bool_or_null() -> String {
 }
 
 auto JsonParser::contains_char(String text, char character) -> bool {
-    for (u32 i = 0; i < text.size(); ++i) {
-        if (text[i] == character) {
+    for (const auto i : text) {
+        if (i == character) {
             return true;
         }
     }
@@ -9553,8 +9515,8 @@ auto JsonParser::parse_string() -> String {
 
 auto JsonParser::string_to_vector_of_chars(String text) -> Vec<char> {
     Vec<char> vector_with_chars;
-    for (u32 i = 0; i < text.size(); ++i) {
-        vector_with_chars.push_back(text[i]);
+    for (const auto i : text) {
+        vector_with_chars.push_back(i);
     }
 
     return vector_with_chars;
@@ -9563,8 +9525,8 @@ auto JsonParser::string_to_vector_of_chars(String text) -> Vec<char> {
 auto JsonParser::parse_integer(Vec<char> digits) -> i32 {
     Vec<i32> base_container;
 
-    for (u32 i = 0; i < digits.size(); ++i) {
-        base_container.push_back(digits[i] - 48);
+    for (const auto digit : digits) {
+        base_container.push_back(digit - 48);
     }
 
     i32 result = 0;
@@ -9593,8 +9555,8 @@ auto JsonParser::parse_integer(Vec<char> digits) -> i32 {
 auto JsonParser::parse_float(Vec<char> digits) -> f64 {
     Vec<i32> base_container;
 
-    for (u32 i = 0; i < digits.size(); ++i) {
-        base_container.push_back(digits[i] - 48);
+    for (const auto digit : digits) {
+        base_container.push_back(digit - 48);
     }
 
     i32 integer_part = 0;
@@ -9690,21 +9652,13 @@ auto JsonParser::search_in_json_array(
     const char* key,
     Vec<JsonValue>& result_vector
 ) const -> void {
-    for (u32 i = 0; i < array_value->size(); ++i) {
-        if ((*array_value)[i].type == JsonObject) {
-            search_in_json_object(
-                (*array_value)[i].value.object,
-                key,
-                result_vector
-            );
+    for (const auto& i : *array_value) {
+        if (i.type == JsonObject) {
+            search_in_json_object(i.value.object, key, result_vector);
         }
 
-        if ((*array_value)[i].type == JsonArray) {
-            search_in_json_array(
-                (*array_value)[i].value.array,
-                key,
-                result_vector
-            );
+        if (i.type == JsonArray) {
+            search_in_json_array(i.value.array, key, result_vector);
         }
     }
 }
@@ -10052,9 +10006,8 @@ auto JsonParser::load_gltf(
         joints = (*gltf)["skins"][0]["joints"];
         JsonValue nodes = (*gltf)["nodes"];
         // Loop on joints.
-        for (u32 i = 0; i < joints.value.array->size(); ++i) {
-            u32 joint_index_map_to_node =
-                (*joints.value.array)[i].value.int_number;
+        for (auto& i : *joints.value.array) {
+            u32 joint_index_map_to_node = i.value.int_number;
             JsonValue node = nodes[joint_index_map_to_node];
             Quaternion rotation_quaternion;
             Matrix<f32, 4> rotation(1.0f);
@@ -10251,21 +10204,22 @@ auto JsonParser::load_gltf(
         JsonValue samplers = (*gltf)["animations"][0]["samplers"];
         Vec<u32> translation_inputs;
         Vec<u32> translation_outputs;
-        for (u32 i = 0; i < translation_sampler_indices.size(); ++i) {
+        for (const auto translation_sampler_index :
+             translation_sampler_indices) {
             translation_inputs.push_back(
-                samplers[translation_sampler_indices[i]]["input"].value.int_number
+                samplers[translation_sampler_index]["input"].value.int_number
             );
         }
-        for (u32 i = 0; i < translation_sampler_indices.size(); ++i) {
+        for (const auto translation_sampler_index :
+             translation_sampler_indices) {
             translation_outputs.push_back(
-                samplers[translation_sampler_indices[i]]["output"]
-                    .value.int_number
+                samplers[translation_sampler_index]["output"].value.int_number
             );
         }
         Vec<Vec<f32>> frame_inputs_translation;
-        for (u32 i = 0; i < translation_inputs.size(); ++i) {
+        for (const auto translation_input : translation_inputs) {
             AccessorMetaData frame_inputs_translation_accessor_meta_data =
-                read_accessor_meta_data(gltf, translation_inputs[i]);
+                read_accessor_meta_data(gltf, translation_input);
             BufferViewMetaData frame_inputs_translation_buffer_view_meta_data =
                 read_buffer_view_meta_data(
                     gltf,
@@ -10281,9 +10235,9 @@ auto JsonParser::load_gltf(
             frame_inputs_translation.push_back(temp);
         }
         Vec<Vec<f32>> translations;
-        for (u32 i = 0; i < translation_outputs.size(); ++i) {
+        for (const auto translation_output : translation_outputs) {
             AccessorMetaData frame_outputs_translation_accessor_meta_data =
-                read_accessor_meta_data(gltf, translation_outputs[i]);
+                read_accessor_meta_data(gltf, translation_output);
             BufferViewMetaData frame_outputs_translation_buffer_view_meta_data =
                 read_buffer_view_meta_data(
                     gltf,
@@ -10300,20 +10254,20 @@ auto JsonParser::load_gltf(
         }
         Vec<u32> rotation_inputs;
         Vec<u32> rotation_outputs;
-        for (u32 i = 0; i < rotation_sampler_indices.size(); ++i) {
+        for (const auto rotation_sampler_index : rotation_sampler_indices) {
             rotation_inputs.push_back(
-                samplers[rotation_sampler_indices[i]]["input"].value.int_number
+                samplers[rotation_sampler_index]["input"].value.int_number
             );
         }
-        for (u32 i = 0; i < rotation_sampler_indices.size(); ++i) {
+        for (const auto rotation_sampler_index : rotation_sampler_indices) {
             rotation_outputs.push_back(
-                samplers[rotation_sampler_indices[i]]["output"].value.int_number
+                samplers[rotation_sampler_index]["output"].value.int_number
             );
         }
         Vec<Vec<f32>> frame_inputs_rotation;
-        for (u32 i = 0; i < rotation_inputs.size(); ++i) {
+        for (const auto rotation_input : rotation_inputs) {
             AccessorMetaData frame_inputs_rotation_accessor_meta_data =
-                read_accessor_meta_data(gltf, rotation_inputs[i]);
+                read_accessor_meta_data(gltf, rotation_input);
             BufferViewMetaData frame_inputs_rotation_buffer_view_meta_data =
                 read_buffer_view_meta_data(
                     gltf,
@@ -10329,9 +10283,9 @@ auto JsonParser::load_gltf(
             frame_inputs_rotation.push_back(temp);
         }
         Vec<Vec<f32>> rotations;
-        for (u32 i = 0; i < rotation_outputs.size(); ++i) {
+        for (const auto rotation_output : rotation_outputs) {
             AccessorMetaData frame_outputs_rotation_accessor_meta_data =
-                read_accessor_meta_data(gltf, rotation_outputs[i]);
+                read_accessor_meta_data(gltf, rotation_output);
             BufferViewMetaData frame_outputs_rotation_buffer_view_meta_data =
                 read_buffer_view_meta_data(
                     gltf,
@@ -10348,20 +10302,20 @@ auto JsonParser::load_gltf(
         }
         Vec<u32> scale_inputs;
         Vec<u32> scale_outputs;
-        for (u32 i = 0; i < scale_sampler_indices.size(); ++i) {
+        for (const auto scale_sampler_index : scale_sampler_indices) {
             scale_inputs.push_back(
-                samplers[scale_sampler_indices[i]]["input"].value.int_number
+                samplers[scale_sampler_index]["input"].value.int_number
             );
         }
-        for (u32 i = 0; i < scale_sampler_indices.size(); ++i) {
+        for (const auto scale_sampler_index : scale_sampler_indices) {
             scale_outputs.push_back(
-                samplers[scale_sampler_indices[i]]["output"].value.int_number
+                samplers[scale_sampler_index]["output"].value.int_number
             );
         }
         Vec<Vec<f32>> frame_inputs_scale;
-        for (u32 i = 0; i < scale_inputs.size(); ++i) {
+        for (const auto scale_input : scale_inputs) {
             AccessorMetaData frame_inputs_scale_accessor_meta_data =
-                read_accessor_meta_data(gltf, scale_inputs[i]);
+                read_accessor_meta_data(gltf, scale_input);
             BufferViewMetaData frame_inputs_scale_buffer_view_meta_data =
                 read_buffer_view_meta_data(
                     gltf,
@@ -10377,9 +10331,9 @@ auto JsonParser::load_gltf(
             frame_inputs_scale.push_back(temp);
         }
         Vec<Vec<f32>> scales;
-        for (u32 i = 0; i < scale_outputs.size(); ++i) {
+        for (const auto scale_output : scale_outputs) {
             AccessorMetaData frame_outputs_scale_accessor_meta_data =
-                read_accessor_meta_data(gltf, scale_outputs[i]);
+                read_accessor_meta_data(gltf, scale_output);
             BufferViewMetaData frame_outputs_scale_buffer_view_meta_data =
                 read_buffer_view_meta_data(
                     gltf,
@@ -10396,11 +10350,11 @@ auto JsonParser::load_gltf(
         }
         // Searching for root joints.
         Vec<i32> root_nodes;
-        for (u32 s = 0; s < joints.value.array->size(); ++s) {
-            i32 current_joint = (*joints.value.array)[s].value.int_number;
-            for (u32 w = 0; w < children.size(); ++w) {
-                for (u32 q = 0; q < children[w].size(); ++q) {
-                    if (children[w][q] == current_joint) {
+        for (auto& s : *joints.value.array) {
+            i32 current_joint = s.value.int_number;
+            for (auto& w : children) {
+                for (const auto q : w) {
+                    if (q == current_joint) {
                         goto most_scary_operator_of_all_time;
                     }
                 }
@@ -10412,9 +10366,8 @@ auto JsonParser::load_gltf(
         }
         Vec<Vec<u32>> nodes_hierarchy;
         // Loop on parent joints.
-        for (u32 w = 0; w < root_nodes.size(); ++w) {
+        for (const auto current_root : root_nodes) {
             Vec<Vec<u32>> nodes_bones;
-            u32 current_root = root_nodes[w];
             Vec<u32> node_stack;
             // Start from root joint.
             node_stack.push_back(current_root);
@@ -10426,8 +10379,8 @@ auto JsonParser::load_gltf(
                 depth_stack,
                 nodes_bones
             );
-            for (u32 e = 0; e < nodes_bones.size(); ++e) {
-                nodes_hierarchy.push_back(nodes_bones[e]);
+            for (const auto& nodes_bone : nodes_bones) {
+                nodes_hierarchy.push_back(nodes_bone);
             }
         }
         // This logic related to joints that has inverseBindMatrices.
@@ -10438,22 +10391,21 @@ auto JsonParser::load_gltf(
                                                 : rotations.size());
         const auto num_joints = joints.value.array->size();
         u32 translation_frames_number = 0;
-        for (u32 k = 0; k < frame_inputs_translation.size(); ++k) {
-            if (frame_inputs_translation[k].size()
-                > translation_frames_number) {
-                translation_frames_number = frame_inputs_translation[k].size();
+        for (const auto& k : frame_inputs_translation) {
+            if (k.size() > translation_frames_number) {
+                translation_frames_number = k.size();
             }
         }
         u32 rotation_frames_number = 0;
-        for (u32 k = 0; k < frame_inputs_rotation.size(); ++k) {
-            if (frame_inputs_rotation[k].size() > rotation_frames_number) {
-                rotation_frames_number = frame_inputs_rotation[k].size();
+        for (const auto& k : frame_inputs_rotation) {
+            if (k.size() > rotation_frames_number) {
+                rotation_frames_number = k.size();
             }
         }
         u32 scale_frames_number = 0;
-        for (u32 k = 0; k < frame_inputs_scale.size(); ++k) {
-            if (frame_inputs_scale[k].size() > scale_frames_number) {
-                scale_frames_number = frame_inputs_scale[k].size();
+        for (const auto& k : frame_inputs_scale) {
+            if (k.size() > scale_frames_number) {
+                scale_frames_number = k.size();
             }
         }
         const auto frames_max = translation_frames_number > scale_frames_number
@@ -10463,19 +10415,19 @@ auto JsonParser::load_gltf(
             : (scale_frames_number > rotation_frames_number
                    ? scale_frames_number
                    : rotation_frames_number);
-        for (u32 k = 0; k < frame_inputs_translation.size(); ++k) {
-            if (frame_inputs_translation[k].size() > frames.size()) {
-                frames = frame_inputs_translation[k];
+        for (const auto& k : frame_inputs_translation) {
+            if (k.size() > frames.size()) {
+                frames = k;
             }
         }
-        for (u32 k = 0; k < frame_inputs_rotation.size(); ++k) {
-            if (frame_inputs_rotation[k].size() > frames.size()) {
-                frames = frame_inputs_rotation[k];
+        for (const auto& k : frame_inputs_rotation) {
+            if (k.size() > frames.size()) {
+                frames = k;
             }
         }
-        for (u32 k = 0; k < frame_inputs_scale.size(); ++k) {
-            if (frame_inputs_scale[k].size() > frames.size()) {
-                frames = frame_inputs_scale[k];
+        for (const auto& k : frame_inputs_scale) {
+            if (k.size() > frames.size()) {
+                frames = k;
             }
         }
         Vec<i32> joint_to_translation_ch;
@@ -10738,9 +10690,8 @@ auto JsonParser::traverse_bones(
             next_node_index = children[top_joint_index][depth_stack.back()];
             node_stack.push_back(next_node_index);
             Vec<u32> current_node_indices;
-            for (u32 i = 0; i < node_stack.size(); ++i) {
-                u32 current_joint_index =
-                    get_joint_index(joints, node_stack[i]);
+            for (auto i : node_stack) {
+                u32 current_joint_index = get_joint_index(joints, i);
                 current_node_indices.push_back(current_joint_index);
             }
             ++depth_stack.back();
@@ -10748,9 +10699,8 @@ auto JsonParser::traverse_bones(
             return;
         } else {
             Vec<u32> current_node_indices;
-            for (u32 i = 0; i < node_stack.size(); ++i) {
-                u32 current_joint_index =
-                    get_joint_index(joints, node_stack[i]);
+            for (auto i : node_stack) {
+                u32 current_joint_index = get_joint_index(joints, i);
                 current_node_indices.push_back(current_joint_index);
             }
             result.push_back(current_node_indices);
@@ -10767,8 +10717,8 @@ auto JsonParser::traverse_bones(
             result.push_back(current_node_indices);
             return;
         }
-        for (u32 i = 0; i < node_stack.size(); ++i) {
-            u32 current_joint_index = get_joint_index(joints, node_stack[i]);
+        for (const auto i : node_stack) {
+            u32 current_joint_index = get_joint_index(joints, i);
             current_node_indices.push_back(current_joint_index);
         }
         result.push_back(current_node_indices);
@@ -10785,16 +10735,16 @@ auto JsonParser::make_render_joints_indices(Vec<Vec<u32>>& input)
     bool accumulator_flag = false;
     bool inner_flag = false;
     u32 accumulator = input[0][0];
-    for (u32 i = 0; i < input.size(); ++i) {
-        for (u32 j = 0; j < input[i].size(); ++j) {
+    for (auto& i : input) {
+        for (u32 j = 0; j < i.size(); ++j) {
             Vec<u32> inner;
             for (u32 v = 0; v < j + 1; ++v) {
-                if (input[i][j] == accumulator && accumulator_flag) {
+                if (i[j] == accumulator && accumulator_flag) {
                     inner_flag = false;
                     continue;
                 } else {
                     inner_flag = true;
-                    inner.push_back(input[i][v]);
+                    inner.push_back(i[v]);
 
                     if (accumulator_flag == false) {
                         accumulator_flag = true;
@@ -10812,9 +10762,9 @@ auto JsonParser::make_render_joints_indices(Vec<Vec<u32>>& input)
 auto JsonParser::contains_element(Vec<Vec<u32>> container, u32 element)
     -> bool {
     bool flag = false;
-    for (u32 i = 0; i < container.size(); ++i) {
-        for (u32 j = 0; j < container[i].size(); ++j) {
-            if (container[i][j] == element) {
+    for (const auto& i : container) {
+        for (const auto j : i) {
+            if (j == element) {
                 return true;
             }
         }
@@ -10934,8 +10884,8 @@ auto ProceduralLevelGeneratingSystem::update() -> void {
                 TRANSITION_BRIDGE_HALF_HEIGHT
             );
 
-            for (u32 i = 0; i < 36; ++i) {
-                indices.push_back(BOX_INDICES_FOR_INDEX_BUFFER[i]);
+            for (const auto i : BOX_INDICES_FOR_INDEX_BUFFER) {
+                indices.push_back(i);
             }
 
             mesh_axis_limiting_values.set_to_default_values();
@@ -10993,10 +10943,8 @@ auto ProceduralLevelGeneratingSystem::update() -> void {
             level_chunk_arch->meshes[game_level_chunk_index].handle =
                 game_level_mesh_handle;
 
-            for (u32 i = 0; i < 36; ++i) {
-                transition_bridge_indices.push_back(
-                    BOX_INDICES_FOR_INDEX_BUFFER[i]
-                );
+            for (const auto i : BOX_INDICES_FOR_INDEX_BUFFER) {
+                transition_bridge_indices.push_back(i);
             }
 
             mesh_axis_limiting_values.set_to_default_values();
@@ -11096,7 +11044,7 @@ auto ProceduralLevelGeneratingSystem::generate_level(
                 std::uniform_int_distribution<i32>
                     dist_previous_transition_bridge_anchor_point(
                         0,
-                        level_half_x * 2 - 1
+                        (level_half_x * 2) - 1
                     );
                 previous_transition_bridge_anchor_point =
                     dist_previous_transition_bridge_anchor_point(mersenne);
@@ -11110,7 +11058,7 @@ auto ProceduralLevelGeneratingSystem::generate_level(
                 std::uniform_int_distribution<i32>
                     dist_previous_transition_bridge_anchor_point(
                         0,
-                        level_half_z * 2 - 1
+                        (level_half_z * 2) - 1
                     );
                 previous_transition_bridge_anchor_point =
                     dist_previous_transition_bridge_anchor_point(mersenne);
@@ -11124,7 +11072,7 @@ auto ProceduralLevelGeneratingSystem::generate_level(
                 std::uniform_int_distribution<i32>
                     dist_previous_transition_bridge_anchor_point(
                         0,
-                        level_half_x * 2 - 1
+                        (level_half_x * 2) - 1
                     );
                 previous_transition_bridge_anchor_point =
                     dist_previous_transition_bridge_anchor_point(mersenne);
@@ -11138,7 +11086,7 @@ auto ProceduralLevelGeneratingSystem::generate_level(
                 std::uniform_int_distribution<i32>
                     dist_previous_transition_bridge_anchor_point(
                         0,
-                        level_half_z * 2 - 1
+                        (level_half_z * 2) - 1
                     );
                 previous_transition_bridge_anchor_point =
                     dist_previous_transition_bridge_anchor_point(mersenne);
@@ -11157,7 +11105,7 @@ auto ProceduralLevelGeneratingSystem::generate_level(
                 level_half_z
             )) {
             previous_iteration_transition_bridge_direction =
-                (4 + previous_iteration_transition_bridge_direction) % 4 + 1;
+                ((4 + previous_iteration_transition_bridge_direction) % 4) + 1;
         } else {
             coordinate_maximum_value_per_direction
                 .compare_per_direction_and_set_to_maximum_value_by_module(
@@ -11199,7 +11147,7 @@ auto ProceduralLevelGeneratingSystem::generate_transition_bridge(
             || next_level_transition_direction == 3) {
             // In what point we connect next transition bridge to current level.
             std::uniform_int_distribution<i32>
-                dist_transition_bridge_anchor_point(0, level_half_x * 2 - 1);
+                dist_transition_bridge_anchor_point(0, (level_half_x * 2) - 1);
             transition_bridge_anchor_point =
                 dist_transition_bridge_anchor_point(mersenne);
             // Sum the leftmost position with the random value of the point
@@ -11234,7 +11182,7 @@ auto ProceduralLevelGeneratingSystem::generate_transition_bridge(
         ) {
             // In what point we connect next transition bridge to current level.
             std::uniform_int_distribution<i32>
-                dist_transition_bridge_anchor_point(0, level_half_z * 2 - 1);
+                dist_transition_bridge_anchor_point(0, (level_half_z * 2) - 1);
             transition_bridge_anchor_point =
                 dist_transition_bridge_anchor_point(mersenne);
             // Sum the foremost position with the random value of the point
@@ -11284,7 +11232,7 @@ auto ProceduralLevelGeneratingSystem::generate_transition_bridge(
             )) {
             // Need to choose another direction if we got collided with level.
             next_level_transition_direction =
-                (4 + next_level_transition_direction) % 4 + 1;
+                ((4 + next_level_transition_direction) % 4) + 1;
         } else {
             // Setting up bounds for all levels.
             coordinate_maximum_value_per_direction
@@ -11611,8 +11559,8 @@ auto SystemManager::return_system_to_activated_state(DeactivatedSystems system)
 auto SystemManager::update() -> void {
     bool removed_system_flag = false;
     for (u32 i = 0; i < system_count; ++i) {
-        for (u32 j = 0; j < deactivated_systems.size(); ++j) {
-            if (as<u32>(deactivated_systems[j]) == i) {
+        for (auto& deactivated_system : deactivated_systems) {
+            if (as<u32>(deactivated_system) == i) {
                 removed_system_flag = true;
                 continue;
             }
@@ -11761,8 +11709,7 @@ auto CollisionSystem::update() -> void {
                         for (auto i4 = index_min_x; i4 <= index_max_x; ++i4) {
                             const Vec<u32>& chunk_entities =
                                 spatial_grid.grid[i2][i3][i4].entities;
-                            for (u32 i5 = 0; i5 < chunk_entities.size(); ++i5) {
-                                const auto entity = chunk_entities[i5];
+                            for (const auto entity : chunk_entities) {
                                 if (!is_exist(collected_entities, entity)) {
                                     collected_entities.push_back(entity);
                                 }
@@ -11773,9 +11720,8 @@ auto CollisionSystem::update() -> void {
 
                 // Inner loop over every archetype.
                 // Iterate over every entity in the current inner archetype.
-                for (u32 j = 0; j < collected_entities.size(); ++j) {
+                for (auto compared_entity_id : collected_entities) {
                     // Check for the same entity ID and iteration.
-                    u32 compared_entity_id = collected_entities[j];
                     if (backtracking_entity_id == compared_entity_id) {
                         continue;
                     }
