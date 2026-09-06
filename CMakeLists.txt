@@ -48,6 +48,9 @@ include(cmake/docs.cmake)
 # [workspace]
 include(cmake/workspace.cmake)
 
+# [shaders] SPIR-V built at build time, needs the glvm target
+include(cmake/shaders.cmake)
+
 # [tests]
 include(cmake/tests.cmake)
 

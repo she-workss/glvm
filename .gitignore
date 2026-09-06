@@ -16,5 +16,8 @@ imgui.ini
 # RAD Debugger files
 *.rad
 
+# Compiled Vulkan shaders (built at build time into build/shaders)
+*.spv
+
 # Zvec index
 .zvec-grep/

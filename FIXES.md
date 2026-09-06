@@ -420,6 +420,47 @@ position + origin_offset_* * scale ± absolute_* * scale
 
 ---
 
+## 28. Access violation при закрытии приложения сразу после выстрела (память WAVEHDR/буфера и data-race на `sound_container`)
+
+**Файлы:** `crates/glvm/src/glvm.cpp` — `SoundEngineWaveform::playback_sound_sample()`, `SoundEngineWaveform::sound_stream()`, `SoundEngineWaveform::create_sound_sample()`, `SoundEngineWaveform::open_device()/close_device()` (плюс ALSA-аналоги); `crates/glvm/include/glvm/glvm.hpp` — `SoundEngineWaveform`/`SoundEngineAlsa` (члены `sound_mutex`, `played_chunks`, `wave_out`, `device_sample_rate`) и новый `PlayedChunk`
+
+**Ошибка (часть 1 — UAF в wdmaud):** `WAVEHDR` и PCM-буфер `buf` выделялись на стеке функции, а ожидание окончания воспроизведения было `Sleep((dwBufferLength * 1000) / nAvgBytesPerSec)` — оценка «реального времени». При нагрузке (закрытие движка, отставание аудио-потока) `waveOutUnprepareHeader`/`waveOutClose`/`free` срабатывали до завершения воспроизведения → поток драйвера `wdmaud.drv` обращался к освобождённой памяти → `C0000005` в `ucrtbase.dll` (memmove) прямо при закрытии. Краш стабильно воспроизводился так: выстрелить в воздух и в течение ~полсекунды закрыть окно.
+
+**Ошибка (часть 2 — data-race на `sound_container`):** главный поток пушил сэмплы из `create_sound_sample()` (при выстреле), а звуковой поток итерировал/стирал `sound_container` в `sound_stream()` без синхронизации → порча вектора и/или кучи.
+
+**Исправление:**
+- Ожидание по `WHDR_DONE` (bounded, до 5 с) вместо `Sleep`-оценки — `UnprepareHeader` больше не вызывается до фактического завершения воспроизведения.
+- Хедер и PCM-данные стали heap-owned: новый `struct PlayedChunk { Box<WAVEHDR> header; Vec<char> data; }`; отработанный чанк живёт в `played_chunks` до следующего сэмпла или `close_device()` (который вызывается из `game_kill()` уже после `join` звукового потока) — драйвер никогда не видит освобождённую память.
+- Устройство `waveOut` теперь персистентное: открывается один раз на sample rate, закрывается в `close_device()`.
+- `Mutex sound_mutex` защищает `sound_container` в обоих бэкендах (Waveform + ALSA); `sound_stream()` забирает и очищает очередь под локом, воспроизведение идёт вне лока:
+```cpp
+auto SoundEngineWaveform::sound_stream() -> void {
+    auto pending = Vec<SoundSample*>();
+    {
+        MutexGuard<Mutex> lock(sound_mutex);
+        pending = sound_container;
+        sound_container.clear();
+    }
+    for (auto* sample : pending) {
+        playback_sound_sample(*sample);
+        delete sample;
+    }
+}
+```
+```cpp
+waveOutPrepareHeader(wave_out, header.get(), sizeof(WAVEHDR));
+waveOutWrite(wave_out, header.get(), sizeof(WAVEHDR));
+auto waited_ms = 0u;
+constexpr auto MAX_WAIT_MS = 5000u;
+while ((header->dwFlags & WHDR_DONE) == 0u && waited_ms < MAX_WAIT_MS) {
+    Sleep(1);
+    ++waited_ms;
+}
+waveOutUnprepareHeader(wave_out, header.get(), sizeof(WAVEHDR));
+```
+
+---
+
 ## Замечено, но не исправлено (не влияет на текущий запуск)
 - `initializeGameLevelVertices()` (Vulkan.cpp) вызывается **каждый кадр** из Engine.cpp и добавляет новые записи в `aVertices_`/`aIndices_`/`vertexBufferContainer`, создавая буферы по индексу `wavefrontObjCounter + gltfCounter + m` - возможна утечка памяти и рассинхрон индексов при смене количества генерируемых мешей.
 - `warning: empty vertex mesh` - один из мешей действительно пустой (вероятно, глиф шрифта для символа без геометрии, например `'J'`/`'r'`); с фиксом №1 это безвредно.

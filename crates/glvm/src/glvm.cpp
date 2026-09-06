@@ -3962,12 +3962,10 @@ auto ImGuiOverlay::create_line_pipeline() -> void {
         return module;
     };
 
-    VkShaderModule vert = create_shader_module(
-        "../../../crates/glvm/assets/shaders/debug/debug_vert.spv"
-    );
-    VkShaderModule frag = create_shader_module(
-        "../../../crates/glvm/assets/shaders/debug/debug_frag.spv"
-    );
+    VkShaderModule vert =
+        create_shader_module(GLVM_SHADER_DIR "/debug/debug_vert.spv");
+    VkShaderModule frag =
+        create_shader_module(GLVM_SHADER_DIR "/debug/debug_frag.spv");
 
     VkPipelineShaderStageCreateInfo shader_stages[2] {};
     shader_stages[0].sType =
@@ -11255,9 +11253,15 @@ auto SoundEngineAlsa::close_device() -> void {
 }
 
 auto SoundEngineAlsa::sound_stream() -> void {
-    for (u32 i = 0; i < sound_container.size(); ++i) {
-        playback_sound_sample(*sound_container[i]);
-        sound_container.erase(sound_container.begin() + i);
+    auto pending = Vec<SoundSample*>();
+    {
+        MutexGuard<Mutex> lock(sound_mutex);
+        pending = sound_container;
+        sound_container.clear();
+    }
+    for (auto* sample : pending) {
+        playback_sound_sample(*sample);
+        delete sample;
     }
 }
 
@@ -11350,9 +11354,9 @@ auto SoundEngineAlsa::create_sound_sample(
     u32 rate,
     f32 volume
 ) -> void {
-    sound_container.push_back(
-        new SoundSample {file_path, duration, rate, volume}
-    );
+    auto sample = new SoundSample {file_path, duration, rate, volume};
+    MutexGuard<Mutex> lock(sound_mutex);
+    sound_container.push_back(sample);
 }
 #endif // __linux__
 
@@ -11361,6 +11365,11 @@ auto SoundEngineWaveform::open_device(const char* /* device */) -> void {
 }
 
 auto SoundEngineWaveform::close_device() -> void {
+    played_chunks.clear();
+    if (wave_out != nullptr) {
+        waveOutClose(wave_out);
+        wave_out = nullptr;
+    }
 }
 
 auto SoundEngineWaveform::create_sound_sample(
@@ -11369,7 +11378,8 @@ auto SoundEngineWaveform::create_sound_sample(
     u32 rate,
     f32 volume
 ) -> void {
-    SoundSample* sample = new SoundSample {file_path, duration, rate, volume};
+    auto sample = new SoundSample {file_path, duration, rate, volume};
+    MutexGuard<Mutex> lock(sound_mutex);
     sound_container.push_back(sample);
 }
 #endif // _WIN32
@@ -13363,32 +13373,43 @@ auto TimerWin::get_elapsed() -> f64 {
 
 namespace glvm {
 auto SoundEngineWaveform::sound_stream() -> void {
-    for (u32 i = 0; i < sound_container.size(); ++i) {
-        playback_sound_sample(*sound_container[i]);
-        sound_container.erase(sound_container.begin() + i);
+    auto pending = Vec<SoundSample*>();
+    {
+        MutexGuard<Mutex> lock(sound_mutex);
+        pending = sound_container;
+        sound_container.clear();
+    }
+    for (auto* sample : pending) {
+        playback_sound_sample(*sample);
+        delete sample;
     }
 }
 
 auto SoundEngineWaveform::playback_sound_sample(SoundSample& sample) -> void {
-    HWAVEOUT wave_out;
-    WAVEHDR lp_wave_hdr {};
-    WAVEFORMATEX format;
-    format.wFormatTag = WAVE_FORMAT_PCM;
-    format.nChannels = 2;
-    format.nSamplesPerSec = sample.ui_rate;
-    format.nAvgBytesPerSec = format.nSamplesPerSec * format.nChannels * 2;
-    // Change this field first if there are any problems.
-    format.nBlockAlign = 4;
-    format.wBitsPerSample = 16;
-    format.cbSize = 0;
-    // Open a waveform device for output using a window callback.
-    u32 rc = 0;
-    rc = waveOutOpen(&wave_out, WAVE_MAPPER, &format, 0L, 0L, 0L);
-    if (rc != MMSYSERR_NOERROR) {
-        std::cerr << "waveOutOpen: " << "error code: " << rc << std::endl;
-        std::exit(-1);
+    played_chunks.clear();
+    if (wave_out == nullptr || device_sample_rate != sample.ui_rate) {
+        if (wave_out != nullptr) {
+            waveOutClose(wave_out);
+            wave_out = nullptr;
+        }
+        WAVEFORMATEX format;
+        format.wFormatTag = WAVE_FORMAT_PCM;
+        format.nChannels = 2;
+        format.nSamplesPerSec = sample.ui_rate;
+        format.nAvgBytesPerSec = format.nSamplesPerSec * format.nChannels * 2;
+        // Change this field first if there are any problems.
+        format.nBlockAlign = 4;
+        format.wBitsPerSample = 16;
+        format.cbSize = 0;
+        // Open a waveform device for output using a window callback.
+        u32 rc = 0;
+        rc = waveOutOpen(&wave_out, WAVE_MAPPER, &format, 0L, 0L, 0L);
+        if (rc != MMSYSERR_NOERROR) {
+            std::cerr << "waveOutOpen: " << "error code: " << rc << std::endl;
+            std::exit(-1);
+        }
+        device_sample_rate = sample.ui_rate;
     }
-
     std::ifstream file(
         sample.path_to_file,
         std::ios_base::binary | std::ios_base::in
@@ -13397,28 +13418,37 @@ auto SoundEngineWaveform::playback_sound_sample(SoundSample& sample) -> void {
         std::cerr << "Failed to open file." << std::endl;
         std::exit(-1);
     }
-
-    char* buf = (char*)malloc(format.nAvgBytesPerSec * 2);
+    auto header = make_box<WAVEHDR>();
+    constexpr auto BYTES_PER_FRAME = 4u;
+    constexpr auto CHUNK_SECONDS = 2u;
+    auto data = Vec<char>(sample.ui_rate * BYTES_PER_FRAME * CHUNK_SECONDS);
+    auto chunk_bytes = as<std::streamsize>(data.size());
     while (true) {
-        file.read(buf, format.nAvgBytesPerSec * 2);
+        file.read(data.data(), chunk_bytes);
         if (file.gcount() == 0) {
             break;
         }
-
-        lp_wave_hdr.lpData = buf;
-        lp_wave_hdr.dwBufferLength = file.gcount();
-        lp_wave_hdr.dwFlags = 0L;
-        lp_wave_hdr.dwLoops = 0L;
-        waveOutPrepareHeader(wave_out, &lp_wave_hdr, sizeof(WAVEHDR));
-        waveOutWrite(wave_out, &lp_wave_hdr, sizeof(WAVEHDR));
-        Sleep(
-            (lp_wave_hdr.dwBufferLength * 1000) / (format.nAvgBytesPerSec * 2)
-        );
-        waveOutUnprepareHeader(wave_out, &lp_wave_hdr, sizeof(WAVEHDR));
+        header->lpData = data.data();
+        header->dwBufferLength = file.gcount();
+        header->dwFlags = 0L;
+        header->dwLoops = 0L;
+        waveOutPrepareHeader(wave_out, header.get(), sizeof(WAVEHDR));
+        waveOutWrite(wave_out, header.get(), sizeof(WAVEHDR));
+        // Wait until the driver is done with the header. A Sleep estimate
+        // assumes real-time playback, but under load (e.g. engine teardown)
+        // audio lags behind: unpreparing early lets the wdmaud thread touch
+        // freed memory and crash the process.
+        auto waited_ms = 0u;
+        constexpr auto MAX_WAIT_MS = 5000u;
+        while ((header->dwFlags & WHDR_DONE) == 0u && waited_ms < MAX_WAIT_MS) {
+            Sleep(1);
+            ++waited_ms;
+        }
+        waveOutUnprepareHeader(wave_out, header.get(), sizeof(WAVEHDR));
     }
-
-    free(buf);
-    waveOutClose(wave_out);
+    played_chunks.push_back(
+        PlayedChunk {.header = std::move(header), .data = std::move(data)}
+    );
 }
 
 auto SoundEngineWaveform::set_master_volume(long /* volume */) -> void {

@@ -2,6 +2,11 @@
 
 #include "rusty/prelude.hpp"
 
+#ifndef GLVM_SHADER_DIR // NOLINT(readability-identifier-naming)
+#define GLVM_SHADER_DIR                                                        \
+    "../../../crates/glvm/assets/shaders" // NOLINT(readability-identifier-naming)
+#endif
+
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -3131,6 +3136,8 @@ namespace glvm {
 struct SoundEngineAlsa: public SoundEngine {
 private:
     snd_pcm_t* pcm;
+    /// Guards sound_container between the main thread and the sound thread.
+    Mutex sound_mutex;
     Vec<SoundSample*> sound_container;
 
 public:
@@ -3162,9 +3169,29 @@ public:
 
 #ifdef _WIN32
 namespace glvm {
+/// A played audio chunk. Heap-owned and freed only at the next sample or
+/// close_device: the wdmaud driver thread may trail behind Unprepare/Close,
+// so stack or promptly-freed memory is use-after-free.
+struct PlayedChunk {
+    /// The wave header handed to waveOutWrite.
+    Box<WAVEHDR> header;
+    /// The PCM bytes referenced by the header.
+    Vec<char> data;
+};
+} // namespace glvm
+
+namespace glvm {
 struct SoundEngineWaveform: public SoundEngine {
 private:
+    /// Guards sound_container between the main thread and the sound thread.
+    Mutex sound_mutex;
     Vec<SoundSample*> sound_container;
+    /// Retired chunks, freed at the next sample or close_device.
+    Vec<PlayedChunk> played_chunks;
+    /// Persistent waveOut device, closed in close_device after thread join.
+    HWAVEOUT wave_out = nullptr;
+    /// Sample rate the device was opened with.
+    u32 device_sample_rate = 0;
 
 public:
     auto open_device(const char* device) -> void override;
@@ -4967,7 +4994,7 @@ inline auto vk_config_initializer() -> void {
     DESCRIPTOR_BINDINGS_CONFIG[0].ubo_chunk_size = sizeof(ShadowMapMatrixUBO);
 
     PIPELINE_CONFIGS[DirectionalLightPipeline].vert_shader =
-        "../../../crates/glvm/assets/shaders/flat_shadow_map/vertFlatShadowMap.spv";
+        GLVM_SHADER_DIR "/flat_shadow_map/vertFlatShadowMap.spv";
     PIPELINE_CONFIGS[DirectionalLightPipeline].binding_description =
         Vertex::get_binding_description();
     PIPELINE_CONFIGS[DirectionalLightPipeline].attribute_descriptions =
@@ -5070,7 +5097,7 @@ inline auto vk_config_initializer() -> void {
     DESCRIPTOR_BINDINGS_CONFIG[1].ubo_chunk_size = sizeof(ShadowMapMatrixUBO);
 
     PIPELINE_CONFIGS[SpotLightPipeline].vert_shader =
-        "../../../crates/glvm/assets/shaders/flat_shadow_map/vertFlatShadowMap.spv";
+        GLVM_SHADER_DIR "/flat_shadow_map/vertFlatShadowMap.spv";
     PIPELINE_CONFIGS[SpotLightPipeline].binding_description =
         Vertex::get_binding_description();
     PIPELINE_CONFIGS[SpotLightPipeline].attribute_descriptions =
@@ -5154,9 +5181,9 @@ inline auto vk_config_initializer() -> void {
         sizeof(PointLightShadowMapMatrixUBO);
 
     PIPELINE_CONFIGS[PointLightPipeline].vert_shader =
-        "../../../crates/glvm/assets/shaders/cube_shadow_map/vertCubeShadowMap.spv";
+        GLVM_SHADER_DIR "/cube_shadow_map/vertCubeShadowMap.spv";
     PIPELINE_CONFIGS[PointLightPipeline].frag_shader =
-        "../../../crates/glvm/assets/shaders/cube_shadow_map/fragCubeShadowMap.spv";
+        GLVM_SHADER_DIR "/cube_shadow_map/fragCubeShadowMap.spv";
     PIPELINE_CONFIGS[PointLightPipeline].binding_description =
         Vertex::get_binding_description();
     PIPELINE_CONFIGS[PointLightPipeline].attribute_descriptions =
@@ -5244,9 +5271,9 @@ inline auto vk_config_initializer() -> void {
     DESCRIPTOR_BINDINGS_CONFIG[3].ubo_chunk_size = sizeof(HudUbo);
 
     PIPELINE_CONFIGS[HudPipeline].vert_shader =
-        "../../../crates/glvm/assets/shaders/hud/hud_vert.spv";
+        GLVM_SHADER_DIR "/hud/hud_vert.spv";
     PIPELINE_CONFIGS[HudPipeline].frag_shader =
-        "../../../crates/glvm/assets/shaders/hud/hud_frag.spv";
+        GLVM_SHADER_DIR "/hud/hud_frag.spv";
     PIPELINE_CONFIGS[HudPipeline].binding_description =
         Vertex::get_binding_description();
     PIPELINE_CONFIGS[HudPipeline].attribute_descriptions =
@@ -5340,9 +5367,9 @@ inline auto vk_config_initializer() -> void {
     DESCRIPTOR_BINDINGS_CONFIG[5].shader_descriptors_number = 1;
 
     PIPELINE_CONFIGS[FontPipeline].vert_shader =
-        "../../../crates/glvm/assets/shaders/font/font_vert.spv";
+        GLVM_SHADER_DIR "/font/font_vert.spv";
     PIPELINE_CONFIGS[FontPipeline].frag_shader =
-        "../../../crates/glvm/assets/shaders/font/font_frag.spv";
+        GLVM_SHADER_DIR "/font/font_frag.spv";
     PIPELINE_CONFIGS[FontPipeline].binding_description =
         Vertex::get_binding_description();
     PIPELINE_CONFIGS[FontPipeline].attribute_descriptions =
@@ -5423,9 +5450,9 @@ inline auto vk_config_initializer() -> void {
     DESCRIPTOR_BINDINGS_CONFIG[6].ubo_chunk_size = sizeof(HudScreenUbo);
 
     PIPELINE_CONFIGS[HudScreenPipeline].vert_shader =
-        "../../../crates/glvm/assets/shaders/hud_screen/vert_hud_screen.spv";
+        GLVM_SHADER_DIR "/hud_screen/vert_hud_screen.spv";
     PIPELINE_CONFIGS[HudScreenPipeline].frag_shader =
-        "../../../crates/glvm/assets/shaders/hud_screen/frag_hud_screen.spv";
+        GLVM_SHADER_DIR "/hud_screen/frag_hud_screen.spv";
     PIPELINE_CONFIGS[HudScreenPipeline].binding_description =
         Vertex::get_binding_description();
     PIPELINE_CONFIGS[HudScreenPipeline].attribute_descriptions =
@@ -5534,9 +5561,9 @@ inline auto vk_config_initializer() -> void {
     DESCRIPTOR_BINDINGS_CONFIG[8].shader_descriptors_number = 1;
 
     PIPELINE_CONFIGS[UiPipeline].vert_shader =
-        "../../../crates/glvm/assets/shaders/ui/vert_ui.spv";
+        GLVM_SHADER_DIR "/ui/vert_ui.spv";
     PIPELINE_CONFIGS[UiPipeline].frag_shader =
-        "../../../crates/glvm/assets/shaders/ui/frag_ui.spv";
+        GLVM_SHADER_DIR "/ui/frag_ui.spv";
     PIPELINE_CONFIGS[UiPipeline].binding_description =
         Vertex::get_binding_description();
     PIPELINE_CONFIGS[UiPipeline].attribute_descriptions =
@@ -5629,9 +5656,9 @@ inline auto vk_config_initializer() -> void {
     DESCRIPTOR_BINDINGS_CONFIG[10].shader_descriptors_number = 1;
 
     PIPELINE_CONFIGS[UiIconsPipeline].vert_shader =
-        "../../../crates/glvm/assets/shaders/ui_icons/vert_ui_icons.spv";
+        GLVM_SHADER_DIR "/ui_icons/vert_ui_icons.spv";
     PIPELINE_CONFIGS[UiIconsPipeline].frag_shader =
-        "../../../crates/glvm/assets/shaders/ui_icons/frag_ui_icons.spv";
+        GLVM_SHADER_DIR "/ui_icons/frag_ui_icons.spv";
     PIPELINE_CONFIGS[UiIconsPipeline].binding_description =
         Vertex::get_binding_description();
     PIPELINE_CONFIGS[UiIconsPipeline].attribute_descriptions =
@@ -5736,9 +5763,9 @@ inline auto vk_config_initializer() -> void {
     DESCRIPTOR_BINDINGS_CONFIG[12].shader_descriptors_number = 1;
 
     PIPELINE_CONFIGS[VirtualTexturesPipeline].vert_shader =
-        "../../../crates/glvm/assets/shaders/virtual_textures/virtualTexturesVert.spv";
+        GLVM_SHADER_DIR "/virtual_textures/virtualTexturesVert.spv";
     PIPELINE_CONFIGS[VirtualTexturesPipeline].frag_shader =
-        "../../../crates/glvm/assets/shaders/virtual_textures/virtualTexturesFrag.spv";
+        GLVM_SHADER_DIR "/virtual_textures/virtualTexturesFrag.spv";
     PIPELINE_CONFIGS[VirtualTexturesPipeline].binding_description =
         Vertex::get_binding_description();
     PIPELINE_CONFIGS[VirtualTexturesPipeline].attribute_descriptions =
@@ -5913,9 +5940,9 @@ inline auto vk_config_initializer() -> void {
     DESCRIPTOR_BINDINGS_CONFIG[19].shader_descriptors_number = 1;
 
     PIPELINE_CONFIGS[MainRenderPipeline].vert_shader =
-        "../../../crates/glvm/assets/shaders/main_renderer/vert.spv";
+        GLVM_SHADER_DIR "/main_renderer/vert.spv";
     PIPELINE_CONFIGS[MainRenderPipeline].frag_shader =
-        "../../../crates/glvm/assets/shaders/main_renderer/frag.spv";
+        GLVM_SHADER_DIR "/main_renderer/frag.spv";
     PIPELINE_CONFIGS[MainRenderPipeline].binding_description =
         Vertex::get_binding_description();
     PIPELINE_CONFIGS[MainRenderPipeline].attribute_descriptions =
@@ -6017,9 +6044,9 @@ inline auto vk_config_initializer() -> void {
     DESCRIPTOR_BINDINGS_CONFIG[20].ubo_chunk_size = sizeof(SdfUbo);
 
     PIPELINE_CONFIGS[SdfPipeline].vert_shader =
-        "../../../crates/glvm/assets/shaders/sdf/sdf_vert.spv";
+        GLVM_SHADER_DIR "/sdf/sdf_vert.spv";
     PIPELINE_CONFIGS[SdfPipeline].frag_shader =
-        "../../../crates/glvm/assets/shaders/sdf/sdf_frag.spv";
+        GLVM_SHADER_DIR "/sdf/sdf_frag.spv";
     PIPELINE_CONFIGS[SdfPipeline].binding_description =
         Vertex::get_binding_description();
     PIPELINE_CONFIGS[SdfPipeline].attribute_descriptions =
