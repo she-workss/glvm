@@ -70,7 +70,7 @@ auto matches_required_mask(const u64 archetype_mask, const u64& system_mask)
 }
 
 auto make_entity(u32 id, u32 generation) -> u64 {
-    return ((u64)generation << ENTITY_ID_BITS) | id;
+    return (as<u64>(generation) << ENTITY_ID_BITS) | id;
 }
 
 auto get_id(u64 entity) -> u32 {
@@ -261,126 +261,102 @@ auto Archetype::remove_entity(u32 index) -> u64 {
 
         switch (component_id) {
             case ComponentsIndices::TransformComponent:
-                static_cast<Transform*>(components[component_id])[index] =
-                    static_cast<Transform*>(components[component_id])[last];
+                as<Transform*>(components[component_id])[index] =
+                    as<Transform*>(components[component_id])[last];
                 break;
             case ComponentsIndices::RigidBodyComponent:
-                static_cast<RigidBody*>(components[component_id])[index] =
-                    static_cast<RigidBody*>(components[component_id])[last];
+                as<RigidBody*>(components[component_id])[index] =
+                    as<RigidBody*>(components[component_id])[last];
                 break;
             case ComponentsIndices::MeshComponent:
-                static_cast<Mesh*>(components[component_id])[index] =
-                    static_cast<Mesh*>(components[component_id])[last];
+                as<Mesh*>(components[component_id])[index] =
+                    as<Mesh*>(components[component_id])[last];
                 break;
             case ComponentsIndices::FontComponent:
-                static_cast<Font*>(components[component_id])[index] =
-                    static_cast<Font*>(components[component_id])[last];
+                as<Font*>(components[component_id])[index] =
+                    as<Font*>(components[component_id])[last];
                 break;
             case ComponentsIndices::ColliderComponent:
-                static_cast<Collider*>(components[component_id])[index] =
-                    static_cast<Collider*>(components[component_id])[last];
+                as<Collider*>(components[component_id])[index] =
+                    as<Collider*>(components[component_id])[last];
                 break;
             case ComponentsIndices::ColliderFlagsComponent:
-                static_cast<ColliderFlags*>(components[component_id])[index] =
-                    static_cast<ColliderFlags*>(components[component_id])[last];
+                as<ColliderFlags*>(components[component_id])[index] =
+                    as<ColliderFlags*>(components[component_id])[last];
                 break;
             case ComponentsIndices::MaterialComponent:
-                static_cast<Material*>(components[component_id])[index] =
-                    static_cast<Material*>(components[component_id])[last];
+                as<Material*>(components[component_id])[index] =
+                    as<Material*>(components[component_id])[last];
                 break;
             case ComponentsIndices::ViewComponent:
-                static_cast<Beholder*>(components[component_id])[index] =
-                    static_cast<Beholder*>(components[component_id])[last];
+                as<Beholder*>(components[component_id])[index] =
+                    as<Beholder*>(components[component_id])[last];
                 break;
             case ComponentsIndices::HealthComponent:
-                static_cast<Health*>(components[component_id])[index] =
-                    static_cast<Health*>(components[component_id])[last];
+                as<Health*>(components[component_id])[index] =
+                    as<Health*>(components[component_id])[last];
                 break;
             case ComponentsIndices::AnimationComponent:
-                static_cast<Animation*>(components[component_id])[index] =
-                    static_cast<Animation*>(components[component_id])[last];
+                as<Animation*>(components[component_id])[index] =
+                    as<Animation*>(components[component_id])[last];
                 break;
             case ComponentsIndices::StateComponent:
-                static_cast<State*>(components[component_id])[index] =
-                    static_cast<State*>(components[component_id])[last];
+                as<State*>(components[component_id])[index] =
+                    as<State*>(components[component_id])[last];
                 break;
             case ComponentsIndices::EnemyComponent:
-                static_cast<Enemy*>(components[component_id])[index] =
-                    static_cast<Enemy*>(components[component_id])[last];
+                as<Enemy*>(components[component_id])[index] =
+                    as<Enemy*>(components[component_id])[last];
                 break;
             case ComponentsIndices::DamageComponent:
-                static_cast<Damage*>(components[component_id])[index] =
-                    static_cast<Damage*>(components[component_id])[last];
+                as<Damage*>(components[component_id])[index] =
+                    as<Damage*>(components[component_id])[last];
                 break;
             case ComponentsIndices::AttackComponent:
-                static_cast<Attack*>(components[component_id])[index] =
-                    static_cast<Attack*>(components[component_id])[last];
+                as<Attack*>(components[component_id])[index] =
+                    as<Attack*>(components[component_id])[last];
                 break;
             case ComponentsIndices::InventoryComponent:
-                static_cast<Inventory*>(components[component_id])[index] =
-                    static_cast<Inventory*>(components[component_id])[last];
+                as<Inventory*>(components[component_id])[index] =
+                    as<Inventory*>(components[component_id])[last];
                 break;
             case ComponentsIndices::DirectionalLightComponent:
-                static_cast<DirectionalLightComponent*>(
-                    components[component_id]
-                )[index] =
-                    static_cast<DirectionalLightComponent*>(
+                as<DirectionalLightComponent*>(components[component_id])[index] =
+                    as<DirectionalLightComponent*>(
                         components[component_id]
                     )[last];
                 break;
             case ComponentsIndices::SpotLightComponent:
-                static_cast<SpotLightComponent*>(
-                    components[component_id]
-                )[index] =
-                    static_cast<SpotLightComponent*>(
-                        components[component_id]
-                    )[last];
+                as<SpotLightComponent*>(components[component_id])[index] =
+                    as<SpotLightComponent*>(components[component_id])[last];
                 break;
             case ComponentsIndices::PointLightComponent:
-                static_cast<PointLightComponent*>(
-                    components[component_id]
-                )[index] =
-                    static_cast<PointLightComponent*>(
-                        components[component_id]
-                    )[last];
+                as<PointLightComponent*>(components[component_id])[index] =
+                    as<PointLightComponent*>(components[component_id])[last];
                 break;
             case ComponentsIndices::ItemComponent:
-                static_cast<Item*>(components[component_id])[index] =
-                    static_cast<Item*>(components[component_id])[last];
+                as<Item*>(components[component_id])[index] =
+                    as<Item*>(components[component_id])[last];
                 break;
             case ComponentsIndices::MoveComponent:
-                static_cast<Move*>(components[component_id])[index] =
-                    static_cast<Move*>(components[component_id])[last];
+                as<Move*>(components[component_id])[index] =
+                    as<Move*>(components[component_id])[last];
                 break;
             case ComponentsIndices::ProjectileBundleComponent:
-                static_cast<ProjectileBundle*>(components[component_id])[index] =
-                    static_cast<ProjectileBundle*>(
-                        components[component_id]
-                    )[last];
+                as<ProjectileBundle*>(components[component_id])[index] =
+                    as<ProjectileBundle*>(components[component_id])[last];
                 break;
             case ComponentsIndices::LevelChunkTagComponent:
-                static_cast<LevelChunkTagComponent*>(
-                    components[component_id]
-                )[index] =
-                    static_cast<LevelChunkTagComponent*>(
-                        components[component_id]
-                    )[last];
+                as<LevelChunkTagComponent*>(components[component_id])[index] =
+                    as<LevelChunkTagComponent*>(components[component_id])[last];
                 break;
             case ComponentsIndices::ProjectileTagComponent:
-                static_cast<ProjectileTagComponent*>(
-                    components[component_id]
-                )[index] =
-                    static_cast<ProjectileTagComponent*>(
-                        components[component_id]
-                    )[last];
+                as<ProjectileTagComponent*>(components[component_id])[index] =
+                    as<ProjectileTagComponent*>(components[component_id])[last];
                 break;
             case ComponentsIndices::PlayerTagComponent:
-                static_cast<PlayerTagComponent*>(
-                    components[component_id]
-                )[index] =
-                    static_cast<PlayerTagComponent*>(
-                        components[component_id]
-                    )[last];
+                as<PlayerTagComponent*>(components[component_id])[index] =
+                    as<PlayerTagComponent*>(components[component_id])[last];
                 break;
         }
     }
@@ -530,7 +506,7 @@ auto create_projectile(
     const EntityLocation& projectile_location
 ) -> void {
     ProjectileArchetype* projectile_arch =
-        static_cast<ProjectileArchetype*>(projectile_location.arch);
+        as<ProjectileArchetype*>(projectile_location.arch);
     const auto projectile_index = projectile_location.index;
 
     Mesh* projectile_mesh = &projectile_arch->meshes[projectile_index];
@@ -777,6 +753,9 @@ auto Engine::render_vulkan() -> void {
     while (game_loop_active) {
         delta_frame_time = as<f32>(chrono->get_elapsed());
         chrono->reset();
+        if (vulkan_renderer->imgui_overlay->pause_time) {
+            delta_frame_time = 0.0f;
+        }
         gravity += delta_frame_time;
 
         vulkan_renderer->window->clear_display();
@@ -964,14 +943,12 @@ auto Engine::enlarge_frame_accumulator(f32 value) -> void {
         if (arch != nullptr) {
             switch (arch->mask) {
                 case ENEMY_COMPONENT_MASK:
-                    animation_view =
-                        static_cast<EnemyArchetype*>(arch)->animations;
-                    mesh_view = static_cast<EnemyArchetype*>(arch)->meshes;
+                    animation_view = as<EnemyArchetype*>(arch)->animations;
+                    mesh_view = as<EnemyArchetype*>(arch)->meshes;
                     break;
                 case PLAYER_COMPONENT_MASK:
-                    animation_view =
-                        static_cast<PlayerArchetype*>(arch)->animations;
-                    mesh_view = static_cast<PlayerArchetype*>(arch)->meshes;
+                    animation_view = as<PlayerArchetype*>(arch)->animations;
+                    mesh_view = as<PlayerArchetype*>(arch)->meshes;
                     break;
             }
 
@@ -1002,9 +979,10 @@ auto Engine::set_view_matrix() -> void {
     for (u32 n = 0; n < player_archetypes_number; ++n) {
         Archetype* arch = cached_player_archetypes[n];
         Beholder* views =
-            (Beholder*)arch->components[ComponentsIndices::ViewComponent];
-        Transform* transforms =
-            (Transform*)arch->components[ComponentsIndices::TransformComponent];
+            as<Beholder*>(arch->components[ComponentsIndices::ViewComponent]);
+        Transform* transforms = as<Transform*>(
+            arch->components[ComponentsIndices::TransformComponent]
+        );
 
         for (u32 x = 0; x < arch->entity_count; ++x) {
             Beholder* camera_component = &views[x];
@@ -1021,9 +999,9 @@ auto Engine::set_view_matrix() -> void {
             global_event.mouse_pointer_position.yaw = yaw;
 
             vulkan_renderer->current_x =
-                (f32)global_event.mouse_pointer_position.offset_x;
+                as<f32>(global_event.mouse_pointer_position.offset_x);
             vulkan_renderer->current_y =
-                (f32)global_event.mouse_pointer_position.offset_y;
+                as<f32>(global_event.mouse_pointer_position.offset_y);
             f32 delta_x = 0.0f;
             f32 delta_y = 0.0f;
             if (!vulkan_renderer->is_inventory_opened) {
@@ -1111,9 +1089,9 @@ auto Engine::set_view_matrix() -> void {
             vulkan_renderer->view_matrix = view_matrix;
 
             vulkan_renderer->prev_y =
-                (f32)global_event.mouse_pointer_position.offset_y;
+                as<f32>(global_event.mouse_pointer_position.offset_y);
             vulkan_renderer->prev_x =
-                (f32)global_event.mouse_pointer_position.offset_x;
+                as<f32>(global_event.mouse_pointer_position.offset_x);
         }
     }
 }
@@ -1230,7 +1208,7 @@ auto Engine::update_spot_light_space_matrix_shadow_map_ubo(
     f32 far_plane_flat_shadow_map = 100.0f;
     Matrix<f32, 4> spot_projection_matrix_light = perspective<f32>(
         radians<f32>(90.0f),
-        (f32)SHADOW_MAP_SIZE / (f32)SHADOW_MAP_SIZE,
+        as<f32>(SHADOW_MAP_SIZE) / as<f32>(SHADOW_MAP_SIZE),
         near_plane_flat_shadow_map,
         far_plane_flat_shadow_map
     );
@@ -1296,7 +1274,7 @@ auto Engine::update_point_light_space_matrix_shadow_map_ubo(
 
     Matrix<f32, 4> projection_matrix_cube_shadow_map = perspective<f32>(
         radians<f32>(90.0f),
-        (f32)SHADOW_MAP_SIZE / (f32)SHADOW_MAP_SIZE,
+        as<f32>(SHADOW_MAP_SIZE) / as<f32>(SHADOW_MAP_SIZE),
         0.3f,
         100.0f
     );
@@ -1470,7 +1448,7 @@ auto Engine::set_frame_data() -> void {
     u32 directional_light_counter = 0;
     for (u32 x = 0; x < directional_light_archetypes_number; ++x) {
         Archetype* arch = cached_directional_light_archetypes[x];
-        auto* directional_lights = static_cast<DirectionalLightComponent*>(
+        auto* directional_lights = as<DirectionalLightComponent*>(
             arch->components[ComponentsIndices::DirectionalLightComponent]
         );
 
@@ -1532,7 +1510,7 @@ auto Engine::set_frame_data() -> void {
     u32 spot_light_counter = 0;
     for (u32 x = 0; x < spot_light_archetypes_number; ++x) {
         Archetype* arch = cached_spot_light_archetypes[x];
-        auto* spot_lights = static_cast<SpotLightComponent*>(
+        auto* spot_lights = as<SpotLightComponent*>(
             arch->components[ComponentsIndices::SpotLightComponent]
         );
 
@@ -1579,7 +1557,7 @@ auto Engine::set_frame_data() -> void {
     u32 point_light_counter = 0;
     for (u32 x = 0; x < point_light_archetypes_number; ++x) {
         Archetype* arch = cached_point_light_archetypes[x];
-        auto* point_lights = static_cast<PointLightComponent*>(
+        auto* point_lights = as<PointLightComponent*>(
             arch->components[ComponentsIndices::PointLightComponent]
         );
 
@@ -1629,15 +1607,13 @@ auto Engine::set_frame_data() -> void {
     u32 health_bar_counter = 0;
     for (u32 x = 0; x < health_bars_archetypes_number; ++x) {
         Archetype* arch = cached_health_bars_archetypes[x];
-        auto* health_bar_transforms = static_cast<Transform*>(
+        auto* health_bar_transforms = as<Transform*>(
             arch->components[ComponentsIndices::TransformComponent]
         );
-        auto* health_bar_meshes = static_cast<Mesh*>(
-            arch->components[ComponentsIndices::MeshComponent]
-        );
-        auto* health_bars = static_cast<Health*>(
-            arch->components[ComponentsIndices::HealthComponent]
-        );
+        auto* health_bar_meshes =
+            as<Mesh*>(arch->components[ComponentsIndices::MeshComponent]);
+        auto* health_bars =
+            as<Health*>(arch->components[ComponentsIndices::HealthComponent]);
 
         u32 ui_vertex_id = 0;
         if (matches_required_mask(arch->mask, PLAYER_COMPONENT_MASK)) {
@@ -1671,9 +1647,11 @@ auto Engine::set_frame_data() -> void {
     u32 font_counter = 0;
     for (u32 x = 0; x < fonts_archetypes_number; ++x) {
         Archetype* arch = cached_fonts_archetypes[x];
-        Transform* font_transforms =
-            (Transform*)arch->components[ComponentsIndices::TransformComponent];
-        Font* fonts = (Font*)arch->components[ComponentsIndices::FontComponent];
+        Transform* font_transforms = as<Transform*>(
+            arch->components[ComponentsIndices::TransformComponent]
+        );
+        Font* fonts =
+            as<Font*>(arch->components[ComponentsIndices::FontComponent]);
 
         for (u32 i = 0; i < arch->entity_count; ++i) {
             vulkan_renderer->fonts.push_back({});
@@ -1701,17 +1679,17 @@ auto Engine::set_frame_data() -> void {
 
         for (u32 x = 0; x < inventory_archetypes_number; ++x) {
             Archetype* arch = cached_inventory_archetypes[x];
-            Transform* inventory_transforms =
-                (Transform*)
-                    arch->components[ComponentsIndices::TransformComponent];
-            Inventory* inventory_data =
-                (Inventory*)
-                    arch->components[ComponentsIndices::InventoryComponent];
-            Material* inventory_materials =
-                (Material*)
-                    arch->components[ComponentsIndices::MaterialComponent];
+            Transform* inventory_transforms = as<Transform*>(
+                arch->components[ComponentsIndices::TransformComponent]
+            );
+            Inventory* inventory_data = as<Inventory*>(
+                arch->components[ComponentsIndices::InventoryComponent]
+            );
+            Material* inventory_materials = as<Material*>(
+                arch->components[ComponentsIndices::MaterialComponent]
+            );
             Mesh* inventory_meshes =
-                (Mesh*)arch->components[ComponentsIndices::MeshComponent];
+                as<Mesh*>(arch->components[ComponentsIndices::MeshComponent]);
 
             if (inventory_transforms && inventory_materials && inventory_data
                 && inventory_meshes) {
@@ -1767,21 +1745,21 @@ auto Engine::set_frame_data() -> void {
 
                     for (u32 c = 0; c < item_archetypes_number; ++c) {
                         Archetype* arch = cached_item_archetypes[c];
-                        Transform* item_transforms =
-                            (Transform*)arch->components
-                                [ComponentsIndices::TransformComponent];
-                        Item* items =
-                            (Item*)arch
-                                ->components[ComponentsIndices::ItemComponent];
-                        Material* item_materials =
-                            (Material*)arch->components
-                                [ComponentsIndices::MaterialComponent];
-                        Mesh* item_meshes =
-                            (Mesh*)arch
-                                ->components[ComponentsIndices::MeshComponent];
-                        Collider* item_colliders =
-                            (Collider*)arch->components
-                                [ComponentsIndices::ColliderComponent];
+                        Transform* item_transforms = as<Transform*>(
+                            arch->components[ComponentsIndices::TransformComponent]
+                        );
+                        Item* items = as<Item*>(
+                            arch->components[ComponentsIndices::ItemComponent]
+                        );
+                        Material* item_materials = as<Material*>(
+                            arch->components[ComponentsIndices::MaterialComponent]
+                        );
+                        Mesh* item_meshes = as<Mesh*>(
+                            arch->components[ComponentsIndices::MeshComponent]
+                        );
+                        Collider* item_colliders = as<Collider*>(
+                            arch->components[ComponentsIndices::ColliderComponent]
+                        );
 
                         if (item_transforms && item_materials && item_meshes
                             && item_colliders && items) {
@@ -1834,10 +1812,11 @@ auto Engine::set_frame_data() -> void {
 
     for (u32 x = 0; x < crosshair_actors_archetypes_number; ++x) {
         Archetype* arch = cached_crosshair_actors_archetypes[x];
-        Transform* crosshair_transforms =
-            (Transform*)arch->components[ComponentsIndices::TransformComponent];
+        Transform* crosshair_transforms = as<Transform*>(
+            arch->components[ComponentsIndices::TransformComponent]
+        );
         Mesh* crosshair_meshes =
-            (Mesh*)arch->components[ComponentsIndices::MeshComponent];
+            as<Mesh*>(arch->components[ComponentsIndices::MeshComponent]);
 
         for (u32 i = 0; i < arch->entity_count; ++i) {
             vulkan_renderer->crosshairs.push_back({});
@@ -1860,17 +1839,20 @@ auto Engine::set_frame_data() -> void {
     u32 level_chunk_actors_counter = 0;
     for (u32 x = 0; x < level_chunk_actors_archetypes_number; ++x) {
         Archetype* arch = cached_level_chunk_actors_archetypes[x];
-        Transform* level_chunk_transforms =
-            (Transform*)arch->components[ComponentsIndices::TransformComponent];
+        Transform* level_chunk_transforms = as<Transform*>(
+            arch->components[ComponentsIndices::TransformComponent]
+        );
         Mesh* level_chunk_meshes =
-            (Mesh*)arch->components[ComponentsIndices::MeshComponent];
-        Material* level_chunk_materials =
-            (Material*)arch->components[ComponentsIndices::MaterialComponent];
-        Rotation* level_chunk_rotations =
-            (Rotation*)arch->components[ComponentsIndices::RotationComponent];
-        LevelChunkTagComponent* level_chunks =
-            (LevelChunkTagComponent*)
-                arch->components[ComponentsIndices::LevelChunkTagComponent];
+            as<Mesh*>(arch->components[ComponentsIndices::MeshComponent]);
+        Material* level_chunk_materials = as<Material*>(
+            arch->components[ComponentsIndices::MaterialComponent]
+        );
+        Rotation* level_chunk_rotations = as<Rotation*>(
+            arch->components[ComponentsIndices::RotationComponent]
+        );
+        LevelChunkTagComponent* level_chunks = as<LevelChunkTagComponent*>(
+            arch->components[ComponentsIndices::LevelChunkTagComponent]
+        );
 
         Vec<Matrix<f32, 4>> joint_matrices;
         joint_matrices.resize(MAX_JOINTS_NUMBER);
@@ -1921,16 +1903,20 @@ auto Engine::set_frame_data() -> void {
     u32 animation_actors_counter = level_chunk_actors_counter;
     for (u32 x = 0; x < animation_actors_archetypes_number; ++x) {
         Archetype* arch = cached_animation_actors_archetypes[x];
-        Transform* actor_transforms =
-            (Transform*)arch->components[ComponentsIndices::TransformComponent];
+        Transform* actor_transforms = as<Transform*>(
+            arch->components[ComponentsIndices::TransformComponent]
+        );
         Mesh* actor_meshes =
-            (Mesh*)arch->components[ComponentsIndices::MeshComponent];
-        Material* actor_materials =
-            (Material*)arch->components[ComponentsIndices::MaterialComponent];
-        Rotation* actor_rotations =
-            (Rotation*)arch->components[ComponentsIndices::RotationComponent];
-        Animation* actor_animations =
-            (Animation*)arch->components[ComponentsIndices::AnimationComponent];
+            as<Mesh*>(arch->components[ComponentsIndices::MeshComponent]);
+        Material* actor_materials = as<Material*>(
+            arch->components[ComponentsIndices::MaterialComponent]
+        );
+        Rotation* actor_rotations = as<Rotation*>(
+            arch->components[ComponentsIndices::RotationComponent]
+        );
+        Animation* actor_animations = as<Animation*>(
+            arch->components[ComponentsIndices::AnimationComponent]
+        );
 
         for (u32 n = 0; n < arch->entity_count; ++n) {
             vulkan_renderer->actors.push_back({});
@@ -1976,14 +1962,17 @@ auto Engine::set_frame_data() -> void {
     u32 static_actors_counter = animation_actors_counter;
     for (u32 x = 0; x < static_actors_archetypes_number; ++x) {
         Archetype* arch = cached_static_actors_archetypes[x];
-        Transform* static_actor_transforms =
-            (Transform*)arch->components[ComponentsIndices::TransformComponent];
+        Transform* static_actor_transforms = as<Transform*>(
+            arch->components[ComponentsIndices::TransformComponent]
+        );
         Mesh* static_actor_meshes =
-            (Mesh*)arch->components[ComponentsIndices::MeshComponent];
-        Material* static_actor_materials =
-            (Material*)arch->components[ComponentsIndices::MaterialComponent];
-        Rotation* static_actor_rotations =
-            (Rotation*)arch->components[ComponentsIndices::RotationComponent];
+            as<Mesh*>(arch->components[ComponentsIndices::MeshComponent]);
+        Material* static_actor_materials = as<Material*>(
+            arch->components[ComponentsIndices::MaterialComponent]
+        );
+        Rotation* static_actor_rotations = as<Rotation*>(
+            arch->components[ComponentsIndices::RotationComponent]
+        );
 
         Vec<Matrix<f32, 4>> joint_matrices;
         joint_matrices.resize(MAX_JOINTS_NUMBER);
@@ -2034,15 +2023,17 @@ auto Engine::set_frame_data() -> void {
     u32 projectile_actors_counter = static_actors_counter;
     for (u32 x = 0; x < projectile_actors_archetypes_number; ++x) {
         Archetype* arch = cached_projectile_actors_archetypes[x];
-        Transform* actor_transforms =
-            (Transform*)arch->components[ComponentsIndices::TransformComponent];
+        Transform* actor_transforms = as<Transform*>(
+            arch->components[ComponentsIndices::TransformComponent]
+        );
         Mesh* actor_meshes =
-            (Mesh*)arch->components[ComponentsIndices::MeshComponent];
-        ProjectileBundle* actor_projectile_bundles =
-            (ProjectileBundle*)
-                arch->components[ComponentsIndices::ProjectileBundleComponent];
-        Rotation* actor_rotations =
-            (Rotation*)arch->components[ComponentsIndices::RotationComponent];
+            as<Mesh*>(arch->components[ComponentsIndices::MeshComponent]);
+        ProjectileBundle* actor_projectile_bundles = as<ProjectileBundle*>(
+            arch->components[ComponentsIndices::ProjectileBundleComponent]
+        );
+        Rotation* actor_rotations = as<Rotation*>(
+            arch->components[ComponentsIndices::RotationComponent]
+        );
 
         Vec<Matrix<f32, 4>> joint_matrices;
         joint_matrices.resize(MAX_JOINTS_NUMBER);
@@ -2096,15 +2087,19 @@ auto Engine::set_frame_data() -> void {
     u32 item_actors_counter = projectile_actors_counter;
     for (u32 x = 0; x < item_actors_archetypes_number; ++x) {
         Archetype* arch = cached_item_actors_archetypes[x];
-        Transform* item_transforms =
-            (Transform*)arch->components[ComponentsIndices::TransformComponent];
+        Transform* item_transforms = as<Transform*>(
+            arch->components[ComponentsIndices::TransformComponent]
+        );
         Mesh* item_meshes =
-            (Mesh*)arch->components[ComponentsIndices::MeshComponent];
-        Material* item_materials =
-            (Material*)arch->components[ComponentsIndices::MaterialComponent];
-        Rotation* item_rotations =
-            (Rotation*)arch->components[ComponentsIndices::RotationComponent];
-        Item* items = (Item*)arch->components[ComponentsIndices::ItemComponent];
+            as<Mesh*>(arch->components[ComponentsIndices::MeshComponent]);
+        Material* item_materials = as<Material*>(
+            arch->components[ComponentsIndices::MaterialComponent]
+        );
+        Rotation* item_rotations = as<Rotation*>(
+            arch->components[ComponentsIndices::RotationComponent]
+        );
+        Item* items =
+            as<Item*>(arch->components[ComponentsIndices::ItemComponent]);
 
         Vec<Matrix<f32, 4>> joint_matrices;
         joint_matrices.resize(MAX_JOINTS_NUMBER);
@@ -2158,8 +2153,9 @@ auto Engine::set_frame_data() -> void {
     u32 player_entity_count = 0;
     for (u32 x = 0; x < player_archetypes_number; ++x) {
         Archetype* arch = cached_player_archetypes[x];
-        Transform* player_transforms =
-            (Transform*)arch->components[ComponentsIndices::TransformComponent];
+        Transform* player_transforms = as<Transform*>(
+            arch->components[ComponentsIndices::TransformComponent]
+        );
 
         for (u32 n = 0; n < arch->entity_count; ++n) {
             vulkan_renderer->players.push_back({});
@@ -2552,9 +2548,8 @@ auto Engine::initialize_font_data() -> void {
             );
             u32 current_buffer_index = i * GLYPH_COLUMN + j;
             bool exit_flag = false;
-            const auto next_buffer_index = static_cast<const u32>(
-                vulkan_renderer->glyphs[current_buffer_index]
-            );
+            const auto next_buffer_index =
+                as<u32>(vulkan_renderer->glyphs[current_buffer_index]);
             // TODO: Fix garbage algorithm.
             for (u32 n = 0; n < vulkan_renderer->font_indices_container.size();
                  ++n) {
@@ -2606,9 +2601,9 @@ auto Engine::compute_model_matrix(Transform* transform, Rotation* rotation)
 auto Engine::compute_hud_screen_coordinates() -> void {
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
     hud_screen_y -= global_event.mouse_pointer_position.offset_y
-        / (f32)vulkan_renderer->window->height;
+        / as<f32>(vulkan_renderer->window->height);
     hud_screen_x += global_event.mouse_pointer_position.offset_x
-        / (f32)vulkan_renderer->window->width;
+        / as<f32>(vulkan_renderer->window->width);
 #else
     if (vulkan_renderer->is_inventory_opened
         || vulkan_renderer->is_cursor_released) {
@@ -2616,18 +2611,18 @@ auto Engine::compute_hud_screen_coordinates() -> void {
         // track its real position instead of the locked-mouse offsets.
         hud_screen_x = 1.0f
             - global_event.mouse_pointer_position.position_x
-                / ((f32)vulkan_renderer->window->width / 2.0f);
+                / (as<f32>(vulkan_renderer->window->width) / 2.0f);
         hud_screen_y =
             -(global_event.mouse_pointer_position.position_y
-                  / ((f32)vulkan_renderer->window->height / 2.0f)
+                  / (as<f32>(vulkan_renderer->window->height) / 2.0f)
               - 1.0f);
     } else {
         hud_screen_y -= (previous_mouse_offset_y
                          - global_event.mouse_pointer_position.offset_y)
-            / (f32)vulkan_renderer->window->height;
+            / as<f32>(vulkan_renderer->window->height);
         hud_screen_x += (previous_mouse_offset_x
                          - global_event.mouse_pointer_position.offset_x)
-            / (f32)vulkan_renderer->window->width;
+            / as<f32>(vulkan_renderer->window->width);
     }
     previous_mouse_offset_x = global_event.mouse_pointer_position.offset_x;
     previous_mouse_offset_y = global_event.mouse_pointer_position.offset_y;
@@ -2937,8 +2932,9 @@ auto create_debug_utils_messenger_ext(
     const VkAllocationCallbacks* allocator,
     VkDebugUtilsMessengerEXT* debug_messenger
 ) -> VkResult {
-    static auto FUNC = (PFN_vkCreateDebugUtilsMessengerEXT)
-        vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    static auto FUNC = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
+        vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT")
+    );
     if (FUNC != nullptr) {
         return FUNC(instance, create_info, allocator, debug_messenger);
     } else {
@@ -2952,8 +2948,9 @@ auto create_begin_debug_utils_label_ext(
     const VkDebugUtilsLabelEXT* label_info
 ) -> void {
 #ifndef NDEBUG
-    static auto FUNC = (PFN_vkCmdBeginDebugUtilsLabelEXT)
-        vkGetInstanceProcAddr(instance, "vkCmdBeginDebugUtilsLabelEXT");
+    static auto FUNC = reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(
+        vkGetInstanceProcAddr(instance, "vkCmdBeginDebugUtilsLabelEXT")
+    );
     FUNC(command_buffer, label_info);
 #endif
 }
@@ -2963,8 +2960,9 @@ auto create_end_debug_utils_label_ext(
     VkCommandBuffer command_buffer
 ) -> void {
 #ifndef NDEBUG
-    static auto FUNC = (PFN_vkCmdEndDebugUtilsLabelEXT)
-        vkGetInstanceProcAddr(instance, "vkCmdEndDebugUtilsLabelEXT");
+    static auto FUNC = reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(
+        vkGetInstanceProcAddr(instance, "vkCmdEndDebugUtilsLabelEXT")
+    );
     FUNC(command_buffer);
 #endif
 }
@@ -2974,8 +2972,9 @@ auto destroy_debug_utils_messenger_ext(
     VkDebugUtilsMessengerEXT debug_messenger,
     const VkAllocationCallbacks* allocator
 ) -> void {
-    static auto FUNC = (PFN_vkDestroyDebugUtilsMessengerEXT)
-        vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    static auto FUNC = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+        vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT")
+    );
     if (FUNC != nullptr) {
         FUNC(instance, debug_messenger, allocator);
     }
@@ -2985,8 +2984,9 @@ auto set_debug_object_name(
     VkDevice device,
     const VkDebugUtilsObjectNameInfoEXT* object_name_info
 ) -> VkResult {
-    static auto FUNC = (PFN_vkSetDebugUtilsObjectNameEXT)
-        vkGetDeviceProcAddr(device, "vkSetDebugUtilsObjectNameEXT");
+    static auto FUNC = reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(
+        vkGetDeviceProcAddr(device, "vkSetDebugUtilsObjectNameEXT")
+    );
     if (FUNC != nullptr) {
         return FUNC(device, object_name_info);
     } else {
@@ -3007,7 +3007,7 @@ auto set_image_debug_object_name(
     const char* str_image_name = image_name1.c_str();
     image_object_info.pObjectName = str_image_name;
     image_object_info.objectType = VK_OBJECT_TYPE_IMAGE;
-    image_object_info.objectHandle = (u64)image.image;
+    image_object_info.objectHandle = reinterpret_cast<u64>(image.image);
     set_debug_object_name(device, &image_object_info);
 }
 
@@ -3025,7 +3025,7 @@ auto set_pipeline_debug_object_name(
     const char* main_pipeline_str_image_name = main_pipeline_image_name.c_str();
     main_pipeline_object_info.pObjectName = main_pipeline_str_image_name;
     main_pipeline_object_info.objectType = VK_OBJECT_TYPE_PIPELINE;
-    main_pipeline_object_info.objectHandle = (u64)pipeline;
+    main_pipeline_object_info.objectHandle = reinterpret_cast<u64>(pipeline);
     set_debug_object_name(device, &main_pipeline_object_info);
 }
 
@@ -3044,7 +3044,8 @@ auto set_descriptor_set_object_name(
     const char* str_name = name.c_str();
     descriptor_set_object_info.pObjectName = str_name;
     descriptor_set_object_info.objectType = VK_OBJECT_TYPE_DESCRIPTOR_SET;
-    descriptor_set_object_info.objectHandle = (u64)descriptor_set;
+    descriptor_set_object_info.objectHandle =
+        reinterpret_cast<u64>(descriptor_set);
     set_debug_object_name(device, &descriptor_set_object_info);
 }
 
@@ -3081,8 +3082,9 @@ auto set_debug_object_names(
     const char* main_pipeline_str_image_name = main_pipeline_image_name.c_str();
     main_pipeline_object_info.pObjectName = main_pipeline_str_image_name;
     main_pipeline_object_info.objectType = VK_OBJECT_TYPE_PIPELINE;
-    main_pipeline_object_info.objectHandle =
-        (u64)PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline].pipeline;
+    main_pipeline_object_info.objectHandle = reinterpret_cast<u64>(
+        PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline].pipeline
+    );
     set_debug_object_name(device, &main_pipeline_object_info);
 
     VkDebugUtilsObjectNameInfoEXT main_pipeline_layout_object_info {};
@@ -3097,9 +3099,9 @@ auto set_debug_object_names(
         main_pipeline_layout_str_image_name;
     main_pipeline_layout_object_info.objectType =
         VK_OBJECT_TYPE_PIPELINE_LAYOUT;
-    main_pipeline_layout_object_info.objectHandle =
-        (u64)PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline]
-            .pipeline_layout;
+    main_pipeline_layout_object_info.objectHandle = reinterpret_cast<u64>(
+        PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline].pipeline_layout
+    );
     set_debug_object_name(device, &main_pipeline_object_info);
 
     VkDebugUtilsObjectNameInfoEXT directional_light_pipeline_object_info {};
@@ -3112,9 +3114,9 @@ auto set_debug_object_names(
     directional_light_pipeline_object_info.pObjectName =
         directional_light_pipeline_str_image_name;
     directional_light_pipeline_object_info.objectType = VK_OBJECT_TYPE_PIPELINE;
-    directional_light_pipeline_object_info.objectHandle =
-        (u64)PIPELINE_CONFIGS[SpecificPipeline::DirectionalLightPipeline]
-            .pipeline;
+    directional_light_pipeline_object_info.objectHandle = reinterpret_cast<u64>(
+        PIPELINE_CONFIGS[SpecificPipeline::DirectionalLightPipeline].pipeline
+    );
     set_debug_object_name(device, &directional_light_pipeline_object_info);
 
     VkDebugUtilsObjectNameInfoEXT
@@ -3132,8 +3134,10 @@ auto set_debug_object_names(
     directional_light_pipeline_layout_object_info.objectType =
         VK_OBJECT_TYPE_PIPELINE_LAYOUT;
     directional_light_pipeline_layout_object_info.objectHandle =
-        (u64)PIPELINE_CONFIGS[SpecificPipeline::DirectionalLightPipeline]
-            .pipeline_layout;
+        reinterpret_cast<u64>(
+            PIPELINE_CONFIGS[SpecificPipeline::DirectionalLightPipeline]
+                .pipeline_layout
+        );
     set_debug_object_name(
         device,
         &directional_light_pipeline_layout_object_info
@@ -3149,8 +3153,9 @@ auto set_debug_object_names(
     spot_light_pipeline_object_info.pObjectName =
         spot_light_pipeline_str_image_name;
     spot_light_pipeline_object_info.objectType = VK_OBJECT_TYPE_PIPELINE;
-    spot_light_pipeline_object_info.objectHandle =
-        (u64)PIPELINE_CONFIGS[SpecificPipeline::SpotLightPipeline].pipeline;
+    spot_light_pipeline_object_info.objectHandle = reinterpret_cast<u64>(
+        PIPELINE_CONFIGS[SpecificPipeline::SpotLightPipeline].pipeline
+    );
     set_debug_object_name(device, &spot_light_pipeline_object_info);
 
     VkDebugUtilsObjectNameInfoEXT spot_light_pipeline_layout_object_info {};
@@ -3165,9 +3170,9 @@ auto set_debug_object_names(
         spot_light_pipeline_layout_str_image_name;
     spot_light_pipeline_layout_object_info.objectType =
         VK_OBJECT_TYPE_PIPELINE_LAYOUT;
-    spot_light_pipeline_layout_object_info.objectHandle =
-        (u64)PIPELINE_CONFIGS[SpecificPipeline::SpotLightPipeline]
-            .pipeline_layout;
+    spot_light_pipeline_layout_object_info.objectHandle = reinterpret_cast<u64>(
+        PIPELINE_CONFIGS[SpecificPipeline::SpotLightPipeline].pipeline_layout
+    );
     set_debug_object_name(device, &spot_light_pipeline_layout_object_info);
 
     VkDebugUtilsObjectNameInfoEXT point_light_pipeline_object_info {};
@@ -3180,8 +3185,9 @@ auto set_debug_object_names(
     point_light_pipeline_object_info.pObjectName =
         point_light_pipeline_str_image_name;
     point_light_pipeline_object_info.objectType = VK_OBJECT_TYPE_PIPELINE;
-    point_light_pipeline_object_info.objectHandle =
-        (u64)PIPELINE_CONFIGS[SpecificPipeline::PointLightPipeline].pipeline;
+    point_light_pipeline_object_info.objectHandle = reinterpret_cast<u64>(
+        PIPELINE_CONFIGS[SpecificPipeline::PointLightPipeline].pipeline
+    );
     set_debug_object_name(device, &point_light_pipeline_object_info);
 
     VkDebugUtilsObjectNameInfoEXT point_light_pipeline_layout_object_info {};
@@ -3196,9 +3202,9 @@ auto set_debug_object_names(
         point_light_pipeline_layout_str_image_name;
     point_light_pipeline_layout_object_info.objectType =
         VK_OBJECT_TYPE_PIPELINE_LAYOUT;
-    point_light_pipeline_layout_object_info.objectHandle =
-        (u64)PIPELINE_CONFIGS[SpecificPipeline::PointLightPipeline]
-            .pipeline_layout;
+    point_light_pipeline_layout_object_info.objectHandle = reinterpret_cast<u64>(
+        PIPELINE_CONFIGS[SpecificPipeline::PointLightPipeline].pipeline_layout
+    );
     set_debug_object_name(device, &point_light_pipeline_layout_object_info);
 
     VkDebugUtilsObjectNameInfoEXT hud_uniform_buffer_object_info {};
@@ -3212,11 +3218,12 @@ auto set_debug_object_names(
     u32 hud_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::HUD]
             .descriptors_bindings_ids[0];
-    hud_uniform_buffer_object_info.objectHandle =
-        (u64)gpu_descriptors
+    hud_uniform_buffer_object_info.objectHandle = reinterpret_cast<u64>(
+        gpu_descriptors
             [DESCRIPTOR_BINDINGS_CONFIG[hud_ubo_descriptor_binding_index]
                  .global_descriptor_offset]
-                .gpu_buffer->buffer;
+                .gpu_buffer->buffer
+    );
     set_debug_object_name(device, &hud_uniform_buffer_object_info);
 
     VkDebugUtilsObjectNameInfoEXT font_uniform_buffer_object_info {};
@@ -3230,11 +3237,12 @@ auto set_debug_object_names(
     u32 font_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::FontRenderUbo]
             .descriptors_bindings_ids[0];
-    font_uniform_buffer_object_info.objectHandle =
-        (u64)gpu_descriptors
+    font_uniform_buffer_object_info.objectHandle = reinterpret_cast<u64>(
+        gpu_descriptors
             [DESCRIPTOR_BINDINGS_CONFIG[font_ubo_descriptor_binding_index]
                  .global_descriptor_offset]
-                .gpu_buffer->buffer;
+                .gpu_buffer->buffer
+    );
     set_debug_object_name(device, &font_uniform_buffer_object_info);
     VkDebugUtilsObjectNameInfoEXT ui_uniform_buffer_object_info {};
     ui_uniform_buffer_object_info.sType =
@@ -3247,11 +3255,11 @@ auto set_debug_object_names(
     u32 ui_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::UI]
             .descriptors_bindings_ids[0];
-    ui_uniform_buffer_object_info.objectHandle =
-        (u64)gpu_descriptors
-            [DESCRIPTOR_BINDINGS_CONFIG[ui_ubo_descriptor_binding_index]
-                 .global_descriptor_offset]
-                .gpu_buffer->buffer;
+    ui_uniform_buffer_object_info.objectHandle = reinterpret_cast<u64>(
+        gpu_descriptors[DESCRIPTOR_BINDINGS_CONFIG[ui_ubo_descriptor_binding_index]
+                            .global_descriptor_offset]
+            .gpu_buffer->buffer
+    );
     set_debug_object_name(device, &ui_uniform_buffer_object_info);
     VkDebugUtilsObjectNameInfoEXT ui_icons_uniform_buffer_object_info {};
     ui_icons_uniform_buffer_object_info.sType =
@@ -3264,11 +3272,12 @@ auto set_debug_object_names(
     u32 ui_icons_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::UiIcons]
             .descriptors_bindings_ids[0];
-    ui_icons_uniform_buffer_object_info.objectHandle =
-        (u64)gpu_descriptors
+    ui_icons_uniform_buffer_object_info.objectHandle = reinterpret_cast<u64>(
+        gpu_descriptors
             [DESCRIPTOR_BINDINGS_CONFIG[ui_icons_ubo_descriptor_binding_index]
                  .global_descriptor_offset]
-                .gpu_buffer->buffer;
+                .gpu_buffer->buffer
+    );
     set_debug_object_name(device, &ui_icons_uniform_buffer_object_info);
     VkDebugUtilsObjectNameInfoEXT
         directional_light_uniform_buffer_object_info {};
@@ -3287,11 +3296,13 @@ auto set_debug_object_names(
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ShadowMapDirectionalLight]
             .descriptors_bindings_ids[0];
     directional_light_uniform_buffer_object_info.objectHandle =
-        (u64)gpu_descriptors
-            [DESCRIPTOR_BINDINGS_CONFIG
-                 [shadow_map_directional_light_descriptor_binding_index]
-                     .global_descriptor_offset]
-                .gpu_buffer->buffer;
+        reinterpret_cast<u64>(
+            gpu_descriptors
+                [DESCRIPTOR_BINDINGS_CONFIG
+                     [shadow_map_directional_light_descriptor_binding_index]
+                         .global_descriptor_offset]
+                    .gpu_buffer->buffer
+        );
     set_debug_object_name(device, &directional_light_uniform_buffer_object_info);
     VkDebugUtilsObjectNameInfoEXT point_light_uniform_buffer_object_info {};
     point_light_uniform_buffer_object_info.sType =
@@ -3306,12 +3317,12 @@ auto set_debug_object_names(
     u32 shadow_map_point_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ShadowMapPointLight]
             .descriptors_bindings_ids[0];
-    point_light_uniform_buffer_object_info.objectHandle =
-        (u64)
-            gpu_descriptors[DESCRIPTOR_BINDINGS_CONFIG
-                                [shadow_map_point_light_descriptor_binding_index]
-                                    .global_descriptor_offset]
-                .gpu_buffer->buffer;
+    point_light_uniform_buffer_object_info.objectHandle = reinterpret_cast<u64>(
+        gpu_descriptors[DESCRIPTOR_BINDINGS_CONFIG
+                            [shadow_map_point_light_descriptor_binding_index]
+                                .global_descriptor_offset]
+            .gpu_buffer->buffer
+    );
     set_debug_object_name(device, &point_light_uniform_buffer_object_info);
     VkDebugUtilsObjectNameInfoEXT spot_light_uniform_buffer_object_info {};
     spot_light_uniform_buffer_object_info.sType =
@@ -3326,11 +3337,12 @@ auto set_debug_object_names(
     u32 shadow_map_spot_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ShadowMapSpotLight]
             .descriptors_bindings_ids[0];
-    spot_light_uniform_buffer_object_info.objectHandle =
-        (u64)gpu_descriptors[DESCRIPTOR_BINDINGS_CONFIG
-                                 [shadow_map_spot_light_descriptor_binding_index]
-                                     .global_descriptor_offset]
-            .gpu_buffer->buffer;
+    spot_light_uniform_buffer_object_info.objectHandle = reinterpret_cast<u64>(
+        gpu_descriptors[DESCRIPTOR_BINDINGS_CONFIG
+                            [shadow_map_spot_light_descriptor_binding_index]
+                                .global_descriptor_offset]
+            .gpu_buffer->buffer
+    );
     set_debug_object_name(device, &spot_light_uniform_buffer_object_info);
     for (usize i = 0; i < vertex_buffer_container.size(); ++i) {
         VkDebugUtilsObjectNameInfoEXT uniform_buffer_object_info {};
@@ -3342,7 +3354,7 @@ auto set_debug_object_names(
         uniform_buffer_object_info.pObjectName = str_image_name;
         uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
         uniform_buffer_object_info.objectHandle =
-            (u64)vertex_buffer_container[i];
+            reinterpret_cast<u64>(vertex_buffer_container[i]);
         set_debug_object_name(device, &uniform_buffer_object_info);
     }
     for (usize i = 0; i < index_buffer_container.size(); ++i) {
@@ -3355,7 +3367,7 @@ auto set_debug_object_names(
         uniform_buffer_object_info.pObjectName = str_image_name;
         uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
         uniform_buffer_object_info.objectHandle =
-            (u64)index_buffer_container[i];
+            reinterpret_cast<u64>(index_buffer_container[i]);
         set_debug_object_name(device, &uniform_buffer_object_info);
     }
     for (usize i = 0; i < font_indices_container.size(); ++i) {
@@ -3368,8 +3380,9 @@ auto set_debug_object_names(
         const char* str_image_name = image_name.c_str();
         uniform_buffer_object_info.pObjectName = str_image_name;
         uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
-        uniform_buffer_object_info.objectHandle =
-            (u64)font_vertex_buffer_container[font_indices_container[i]];
+        uniform_buffer_object_info.objectHandle = reinterpret_cast<u64>(
+            font_vertex_buffer_container[font_indices_container[i]]
+        );
         set_debug_object_name(device, &uniform_buffer_object_info);
     }
     for (usize i = 0; i < font_indices_container.size(); ++i) {
@@ -3382,8 +3395,9 @@ auto set_debug_object_names(
         const char* str_image_name = image_name.c_str();
         uniform_buffer_object_info.pObjectName = str_image_name;
         uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
-        uniform_buffer_object_info.objectHandle =
-            (u64)font_index_buffer_container[font_indices_container[i]];
+        uniform_buffer_object_info.objectHandle = reinterpret_cast<u64>(
+            font_index_buffer_container[font_indices_container[i]]
+        );
         set_debug_object_name(device, &uniform_buffer_object_info);
     }
     VkDebugUtilsObjectNameInfoEXT uniform_buffer_object_info {};
@@ -3394,9 +3408,10 @@ auto set_debug_object_names(
     const char* str_image_name = image_name.c_str();
     uniform_buffer_object_info.pObjectName = str_image_name;
     uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
-    uniform_buffer_object_info.objectHandle =
-        (u64)gpu_descriptors[DescriptorSetDataLink::MainRenderMatrixUbo]
-            .gpu_buffer->buffer;
+    uniform_buffer_object_info.objectHandle = reinterpret_cast<u64>(
+        gpu_descriptors[DescriptorSetDataLink::MainRenderMatrixUbo]
+            .gpu_buffer->buffer
+    );
     set_debug_object_name(device, &uniform_buffer_object_info);
     VkDebugUtilsObjectNameInfoEXT light_data_uniform_buffer_object_info {};
     light_data_uniform_buffer_object_info.sType =
@@ -3410,11 +3425,12 @@ auto set_debug_object_names(
     u32 light_data_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
             .descriptors_bindings_ids[0];
-    light_data_uniform_buffer_object_info.objectHandle =
-        (u64)gpu_descriptors
+    light_data_uniform_buffer_object_info.objectHandle = reinterpret_cast<u64>(
+        gpu_descriptors
             [DESCRIPTOR_BINDINGS_CONFIG[light_data_ubo_descriptor_binding_index]
                  .global_descriptor_offset]
-                .gpu_buffer->buffer;
+                .gpu_buffer->buffer
+    );
     set_debug_object_name(device, &light_data_uniform_buffer_object_info);
 }
 }; // namespace glvm
@@ -3432,6 +3448,53 @@ auto push_line(
 ) -> void {
     out.push_back({a[0], a[1], a[2], color[0], color[1], color[2]});
     out.push_back({b[0], b[1], b[2], color[0], color[1], color[2]});
+}
+
+auto push_cross(
+    Vec<DebugVertex>& out,
+    const Vector<f32, 3>& center,
+    f32 size,
+    const Vector<f32, 3>& color
+) -> void {
+    push_line(
+        out,
+        {center[0] - size, center[1], center[2]},
+        {center[0] + size, center[1], center[2]},
+        color
+    );
+    push_line(
+        out,
+        {center[0], center[1] - size, center[2]},
+        {center[0], center[1] + size, center[2]},
+        color
+    );
+    push_line(
+        out,
+        {center[0], center[1], center[2] - size},
+        {center[0], center[1], center[2] + size},
+        color
+    );
+}
+
+auto push_axis(
+    Vec<DebugVertex>& out,
+    const Vector<f32, 3>& origin,
+    const Vector<f32, 3>& target,
+    f32 length,
+    const Vector<f32, 3>& color
+) -> void {
+    f32 dx = target[0] - origin[0];
+    f32 dy = target[1] - origin[1];
+    f32 dz = target[2] - origin[2];
+    f32 len = std::sqrt(dx * dx + dy * dy + dz * dz);
+    if (len > 0.0001f) {
+        Vector<f32, 3> tip = {
+            origin[0] + dx / len * length,
+            origin[1] + dy / len * length,
+            origin[2] + dz / len * length
+        };
+        push_line(out, origin, tip, color);
+    }
 }
 
 auto push_box(
@@ -3503,7 +3566,7 @@ auto ImGuiOverlay::init() -> void {
     init_info.Queue = renderer.graphics_queue;
     init_info.DescriptorPoolSize = 512;
     init_info.MinImageCount = MAX_FRAMES_IN_FLIGHT;
-    init_info.ImageCount = static_cast<u32>(renderer.swap_chain_images.size());
+    init_info.ImageCount = as<u32>(renderer.swap_chain_images.size());
     init_info.PipelineInfoMain.RenderPass = render_pass;
     init_info.PipelineInfoMain.Subpass = 0;
     if (!ImGui_ImplVulkan_Init(&init_info)) {
@@ -3574,8 +3637,10 @@ auto ImGuiOverlay::new_frame() -> void {
     ImGui_ImplWin32_NewFrame();
 #else
     ImGuiIO& io = ImGui::GetIO();
-    io.DisplaySize =
-        ImVec2((f32)renderer.window->width, (f32)renderer.window->height);
+    io.DisplaySize = ImVec2(
+        as<f32>(renderer.window->width),
+        as<f32>(renderer.window->height)
+    );
     static auto last_frame_time = std::chrono::steady_clock::now();
     const auto now_time = std::chrono::steady_clock::now();
     io.DeltaTime =
@@ -3626,8 +3691,8 @@ auto ImGuiOverlay::record_command_buffer(
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = static_cast<f32>(renderer.swap_chain_extent.width);
-    viewport.height = static_cast<f32>(renderer.swap_chain_extent.height);
+    viewport.width = as<f32>(renderer.swap_chain_extent.width);
+    viewport.height = as<f32>(renderer.swap_chain_extent.height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);
@@ -3664,11 +3729,15 @@ auto ImGuiOverlay::build_panel() -> void {
         return;
     }
     ImGui::Begin("Debug overlay", nullptr, ImGuiWindowFlags_NoCollapse);
-    ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-    ImGui::Separator();
+    ImGui::Checkbox("Show colliders", &show_colliders);
     ImGui::Checkbox("Actor bounds", &show_actor_bounds);
     ImGui::Checkbox("Light frustums", &show_light_frustums);
+    ImGui::Checkbox("Light gizmos", &show_light_gizmos);
     ImGui::Checkbox("Spatial grid", &show_spatial_grid);
+    ImGui::Checkbox("Ambient light", &ambient_enabled);
+    ImGui::Checkbox("Directional light", &directional_enabled);
+    ImGui::Checkbox("Point lights", &point_enabled);
+    ImGui::Checkbox("Spot lights", &spot_enabled);
     ImGui::Checkbox("Shadows", &shadows_enabled);
     ImGui::Checkbox("Shadow maps", &show_shadow_maps);
     if (show_shadow_maps) {
@@ -3676,8 +3745,8 @@ auto ImGuiOverlay::build_panel() -> void {
         ImGui::SameLine();
         ImGui::RadioButton("Spot", &shadow_map_mode, 1);
         i32 max_light = (shadow_map_mode == 0)
-            ? static_cast<i32>(renderer.directional_light_number)
-            : static_cast<i32>(renderer.spot_light_number);
+            ? as<i32>(renderer.directional_light_number)
+            : as<i32>(renderer.spot_light_number);
         ImGui::SliderInt(
             "Light",
             &shadow_map_light,
@@ -3690,12 +3759,59 @@ auto ImGuiOverlay::build_panel() -> void {
             std::max(1, max_light)
         );
     }
-    ImGui::Text("Actors: %zu", renderer.actors.size());
-    ImGui::Text(
-        "Dir lights: %u, Spot lights: %u",
-        renderer.directional_light_number,
-        renderer.spot_light_number
-    );
+    ImGui::Checkbox("Wireframe", &wireframe_enabled);
+    if (ImGui::Checkbox("VSync", &vsync_enabled)) {
+        renderer.recreate_swap_chain();
+    }
+    ImGui::Checkbox("Pause time", &pause_time);
+    ImGui::Checkbox("Stats", &show_stats);
+    if (show_stats) {
+        ImGui::Separator();
+        u32 draw_calls = as<u32>(renderer.actors.size());
+        usize triangle_count = 0;
+        for (usize i = 0; i < renderer.actors.size(); ++i) {
+            u32 mesh_id = renderer.actors[i].mesh_id;
+            if (mesh_id < renderer.indices.size()) {
+                triangle_count += renderer.indices[mesh_id].size() / 3;
+            }
+        }
+        f32 frame_ms = ImGui::GetIO().DeltaTime * 1000.0f;
+        frame_time_history.push_back(frame_ms);
+        if (frame_time_history.size() > 120) {
+            frame_time_history.erase(frame_time_history.begin());
+        }
+        f32 total_ms = 0.0f;
+        for (usize i = 0; i < frame_time_history.size(); ++i) {
+            total_ms += frame_time_history[i];
+        }
+        f32 avg_ms = frame_time_history.empty()
+            ? 0.0f
+            : total_ms / as<f32>(frame_time_history.size());
+        f32 avg_fps = avg_ms > 0.0f ? 1000.0f / avg_ms : 0.0f;
+        ImGui::Text("Frame Time: %.1f ms (avg %.1f ms)", frame_ms, avg_ms);
+        ImGui::Text(
+            "FPS: %.0f (avg %.0f)",
+            as<f64>(ImGui::GetIO().Framerate),
+            as<f64>(avg_fps)
+        );
+        ImGui::PlotLines(
+            "##frame_time",
+            [](void* data, int idx) -> float {
+                Vec<f32>* history = as<Vec<f32>*>(data);
+                return (*history)[as<usize>(idx)];
+            },
+            &frame_time_history,
+            as<i32>(frame_time_history.size())
+        );
+        ImGui::Text("Draw Calls: %u", draw_calls);
+        ImGui::Text("Triangles: %zu", triangle_count);
+        ImGui::Text("Actors: %zu", renderer.actors.size());
+        ImGui::Text(
+            "Dir lights: %u, Spot lights: %u",
+            renderer.directional_light_number,
+            renderer.spot_light_number
+        );
+    }
     ImGui::Separator();
     if (ImGui::Button("Hide panel (F1)")) {
         show_panel = false;
@@ -3707,9 +3823,10 @@ auto ImGuiOverlay::build_debug_vertices() -> void {
     Vec<DebugVertex> vertices;
     vertices.reserve(MAX_DEBUG_VERTICES);
     line_vertex_count = 0;
-    if (show_actor_bounds) {
+    if (show_actor_bounds || show_colliders) {
         const Vector<f32, 3> green = {0.0f, 1.0f, 0.0f};
         const Vector<f32, 3> red = {1.0f, 0.0f, 0.0f};
+        const Vector<f32, 3> orange = {1.0f, 0.5f, 0.0f};
         Vec<Vector<f32, 3>> mins;
         Vec<Vector<f32, 3>> maxs;
         mins.reserve(renderer.actors.size());
@@ -3800,7 +3917,11 @@ auto ImGuiOverlay::build_debug_vertices() -> void {
                     * renderer.actors[i].model_matrix
                 );
             }
-            push_box(vertices, world_corners, collides[i] ? red : green);
+            if (show_actor_bounds) {
+                push_box(vertices, world_corners, collides[i] ? red : green);
+            } else if (collides[i]) {
+                push_box(vertices, world_corners, orange);
+            }
         }
     }
 
@@ -3834,7 +3955,33 @@ auto ImGuiOverlay::build_debug_vertices() -> void {
             push_box(vertices, corners, cyan);
         }
     }
-
+    if (show_light_gizmos) {
+        const f32 gizmo_size = 0.5f;
+        const f32 gizmo_axis_length = 3.0f;
+        const Vector<f32, 3> white = {1.0f, 1.0f, 1.0f};
+        const Vector<f32, 3> magenta = {1.0f, 0.0f, 1.0f};
+        const Vector<f32, 3> orange = {1.0f, 0.5f, 0.0f};
+        for (usize i = 0; i < renderer.directional_lights.size(); ++i) {
+            Vector<f32, 4> raw_pos = renderer.directional_lights[i].position;
+            Vector<f32, 3> pos = {raw_pos[0], raw_pos[1], raw_pos[2]};
+            push_cross(vertices, pos, gizmo_size, white);
+            Vector<f32, 4> raw_target =
+                renderer.directional_lights[i].direction;
+            Vector<f32, 3> target =
+                {raw_target[0], raw_target[1], raw_target[2]};
+            push_axis(vertices, pos, target, gizmo_axis_length, white);
+        }
+        for (usize i = 0; i < renderer.point_lights.size(); ++i) {
+            Vector<f32, 3> pos = renderer.point_lights[i].position;
+            push_cross(vertices, pos, gizmo_size, magenta);
+        }
+        for (usize i = 0; i < renderer.spot_lights.size(); ++i) {
+            Vector<f32, 3> pos = renderer.spot_lights[i].position;
+            push_cross(vertices, pos, gizmo_size, orange);
+            Vector<f32, 3> target = renderer.spot_lights[i].direction;
+            push_axis(vertices, pos, target, gizmo_axis_length, orange);
+        }
+    }
     if (show_spatial_grid) {
         const auto& grid = glvm::world.spatial_grid;
         const auto half_chunk = grid.grid[0][0][0].SIZE * 0.5f;
@@ -3877,7 +4024,7 @@ auto ImGuiOverlay::build_debug_vertices() -> void {
         }
     }
 
-    line_vertex_count = static_cast<u32>(vertices.size());
+    line_vertex_count = as<u32>(vertices.size());
 
     if (!vertices.empty() && vertex_buffer_mapped) {
         const auto bytes = vertices.size() * sizeof(DebugVertex);
@@ -4000,7 +4147,7 @@ auto ImGuiOverlay::create_line_pipeline() -> void {
     vertex_input_info.vertexBindingDescriptionCount = 1;
     vertex_input_info.pVertexBindingDescriptions = &binding_description;
     vertex_input_info.vertexAttributeDescriptionCount =
-        static_cast<u32>(attribute_descriptions.size());
+        as<u32>(attribute_descriptions.size());
     vertex_input_info.pVertexAttributeDescriptions =
         attribute_descriptions.data();
 
@@ -4221,7 +4368,7 @@ auto Renderer::create_texture_image() -> void {
 
         void* data;
         vkMapMemory(device, staging_buffer_memory, 0, image_size, 0, &data);
-        memcpy(data, pixels, static_cast<usize>(image_size));
+        memcpy(data, pixels, as<usize>(image_size));
         vkUnmapMemory(device, staging_buffer_memory);
         GpuImage texture_image = {
             .image = VkImage {},
@@ -4249,8 +4396,8 @@ auto Renderer::create_texture_image() -> void {
         copy_buffer_to_image(
             staging_buffer,
             texture_image.image,
-            static_cast<u32>(tex_width),
-            static_cast<u32>(tex_height)
+            as<u32>(tex_width),
+            as<u32>(tex_height)
         );
         transition_image_layout(
             texture_image.image,
@@ -4281,7 +4428,7 @@ auto Renderer::recreate_swap_chain() -> void {
     create_swap_chain();
     window->width = swap_chain_extent.width;
     window->height = swap_chain_extent.height;
-    aspect_ratio = (f32)window->width / (f32)window->height;
+    aspect_ratio = as<f32>(window->width) / as<f32>(window->height);
     create_image_views();
     create_depth_resources();
     create_directional_light_shadow_map_depth_resources();
@@ -4320,7 +4467,7 @@ auto Renderer::init_window() -> void {
     window = initialize_wayland_window();
     create_wayland_surface_info.display = window->display;
     create_wayland_surface_info.surface = window->wl_surface;
-    aspect_ratio = (f32)window->width / (f32)window->height;
+    aspect_ratio = as<f32>(window->width) / as<f32>(window->height);
     create_wayland_surface_info.sType =
         VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
     create_wayland_surface_info.pNext = nullptr;
@@ -4331,7 +4478,7 @@ auto Renderer::init_window() -> void {
     window = new glvm::WindowXVulkan();
     create_xlib_surface_info.dpy = window->get_display();
     create_xlib_surface_info.window = window->get_window();
-    aspect_ratio = (f32)window->width / (f32)window->height;
+    aspect_ratio = as<f32>(window->width) / as<f32>(window->height);
 
     create_xlib_surface_info.sType =
         VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
@@ -4343,7 +4490,7 @@ auto Renderer::init_window() -> void {
     window = new glvm::WindowXCBVulkan();
     create_xcb_surface_info.window = window->get_window();
     create_xcb_surface_info.connection = window->get_connection();
-    aspect_ratio = (f32)window->width / (f32)window->height;
+    aspect_ratio = as<f32>(window->width) / as<f32>(window->height);
 
     create_xcb_surface_info.sType =
         VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
@@ -4354,7 +4501,7 @@ auto Renderer::init_window() -> void {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     window = new glvm::WindowWinVulkan();
     create_win32_surface_info.hwnd = window->get_modern_window_hwnd();
-    aspect_ratio = (f32)window->width / (f32)window->height;
+    aspect_ratio = as<f32>(window->width) / as<f32>(window->height);
 
     create_win32_surface_info.sType =
         VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
@@ -4731,6 +4878,10 @@ auto Renderer::cleanup() -> void {
             nullptr
         );
     }
+    if (main_wireframe_pipeline != VK_NULL_HANDLE) {
+        vkDestroyPipeline(device, main_wireframe_pipeline, nullptr);
+        main_wireframe_pipeline = VK_NULL_HANDLE;
+    }
     for (u32 i = 0; i < SpecificPipeline::PipelinesNumber; ++i) {
         vkDestroyPipeline(device, PIPELINE_CONFIGS[i].pipeline, nullptr);
         vkDestroyPipelineLayout(
@@ -4814,18 +4965,16 @@ auto Renderer::create_instance() -> void {
 
     Vec<const char*> extensions = get_required_extensions();
 
-    create_info.enabledExtensionCount = static_cast<u32>(extensions.size());
+    create_info.enabledExtensionCount = as<u32>(extensions.size());
     create_info.ppEnabledExtensionNames = extensions.data();
 
     VkDebugUtilsMessengerCreateInfoEXT debug_create_info {};
     if (ENABLE_VALIDATION_LAYERS) {
-        create_info.enabledLayerCount =
-            static_cast<u32>(VALIDATION_LAYERS.size());
+        create_info.enabledLayerCount = as<u32>(VALIDATION_LAYERS.size());
         create_info.ppEnabledLayerNames = VALIDATION_LAYERS.data();
 
         populate_debug_messenger_create_info(debug_create_info);
-        create_info.pNext =
-            (VkDebugUtilsMessengerCreateInfoEXT*)&debug_create_info;
+        create_info.pNext = &debug_create_info;
     } else {
         create_info.enabledLayerCount = 0;
 
@@ -4974,19 +5123,16 @@ auto Renderer::create_logical_device() -> void {
     VkDeviceCreateInfo create_info {};
     create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
-    create_info.queueCreateInfoCount =
-        static_cast<u32>(queue_create_infos.size());
+    create_info.queueCreateInfoCount = as<u32>(queue_create_infos.size());
     create_info.pQueueCreateInfos = queue_create_infos.data();
 
     create_info.pEnabledFeatures = &device_features;
 
-    create_info.enabledExtensionCount =
-        static_cast<u32>(DEVICE_EXTENSIONS.size());
+    create_info.enabledExtensionCount = as<u32>(DEVICE_EXTENSIONS.size());
     create_info.ppEnabledExtensionNames = DEVICE_EXTENSIONS.data();
 
     if (ENABLE_VALIDATION_LAYERS) {
-        create_info.enabledLayerCount =
-            static_cast<u32>(VALIDATION_LAYERS.size());
+        create_info.enabledLayerCount = as<u32>(VALIDATION_LAYERS.size());
         create_info.ppEnabledLayerNames = VALIDATION_LAYERS.data();
     } else {
         create_info.enabledLayerCount = 0;
@@ -5118,7 +5264,7 @@ auto Renderer::create_main_render_pass() -> void {
         }
         VkRenderPassCreateInfo render_pass_info {};
         render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        render_pass_info.attachmentCount = static_cast<u32>(
+        render_pass_info.attachmentCount = as<u32>(
             RENDER_PASS_CONFIGS[j].actual_attachment_description_number
         );
         render_pass_info.pAttachments =
@@ -5173,7 +5319,7 @@ auto Renderer::create_descriptor_set_layout() -> void {
         VkDescriptorSetLayoutCreateInfo layout_info {};
         layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         layout_info.flags = 0;
-        layout_info.bindingCount = static_cast<u32>(bindings.size());
+        layout_info.bindingCount = as<u32>(bindings.size());
         layout_info.pBindings = bindings.data();
         if (vkCreateDescriptorSetLayout(
                 device,
@@ -5224,7 +5370,7 @@ auto Renderer::create_graphics_pipeline() -> void {
             VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vertex_input_info.vertexBindingDescriptionCount = 1;
         vertex_input_info.vertexAttributeDescriptionCount =
-            static_cast<u32>(pipeline.attribute_descriptions.size());
+            as<u32>(pipeline.attribute_descriptions.size());
         vertex_input_info.pVertexBindingDescriptions =
             &pipeline.binding_description;
         vertex_input_info.pVertexAttributeDescriptions =
@@ -5303,8 +5449,7 @@ auto Renderer::create_graphics_pipeline() -> void {
         VkPipelineDynamicStateCreateInfo dynamic_state {};
         dynamic_state.sType =
             VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-        dynamic_state.dynamicStateCount =
-            static_cast<u32>(dynamic_states.size());
+        dynamic_state.dynamicStateCount = as<u32>(dynamic_states.size());
         dynamic_state.pDynamicStates = dynamic_states.data();
         // Need to access inside the pipeline and take the ID of a specific
         // descriptor set, then with that ID we get the descriptor set and take
@@ -5358,6 +5503,21 @@ auto Renderer::create_graphics_pipeline() -> void {
             )
             != VK_SUCCESS) {
             throw std::runtime_error("failed to create graphics pipeline!");
+        }
+        if (graphics_pipeline_counter == SpecificPipeline::MainRenderPipeline) {
+            rasterizer.polygonMode = VK_POLYGON_MODE_LINE;
+            if (vkCreateGraphicsPipelines(
+                    device,
+                    VK_NULL_HANDLE,
+                    1,
+                    &pipeline_info,
+                    nullptr,
+                    &main_wireframe_pipeline
+                )
+                != VK_SUCCESS) {
+                throw std::runtime_error("failed to create wireframe pipeline!");
+            }
+            rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
         }
         if (pipeline.vert_shader != nullptr) {
             vkDestroyShaderModule(device, vert_shader_module, nullptr);
@@ -5468,7 +5628,7 @@ auto Renderer::create_render_pass_framebuffers(
     VkFramebufferCreateInfo framebuffer_info {};
     framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     framebuffer_info.renderPass = render_pass;
-    framebuffer_info.attachmentCount = static_cast<u32>(attachments.size());
+    framebuffer_info.attachmentCount = as<u32>(attachments.size());
     framebuffer_info.pAttachments = attachments.data();
     framebuffer_info.width = width;
     framebuffer_info.height = height;
@@ -6123,7 +6283,7 @@ auto Renderer::create_vertex_buffer(
     void* data;
     vkMapMemory(device, staging_buffer_memory, 0, buffer_size, 0, &data);
     if (vertex_data.size() > 0) {
-        memcpy(data, vertex_data.data(), (usize)buffer_size);
+        memcpy(data, vertex_data.data(), as<usize>(buffer_size));
     }
     vkUnmapMemory(device, staging_buffer_memory);
 
@@ -6165,7 +6325,7 @@ auto Renderer::create_index_buffer(
     void* data;
     vkMapMemory(device, staging_buffer_memory, 0, buffer_size, 0, &data);
     if (!index_data.empty()) {
-        memcpy(data, index_data.data(), (usize)buffer_size);
+        memcpy(data, index_data.data(), as<usize>(buffer_size));
     }
     vkUnmapMemory(device, staging_buffer_memory);
 
@@ -6228,15 +6388,15 @@ auto Renderer::create_main_render_descriptor_pool() -> void {
 
     u32 descriptor_count = 10000;
     pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    pool_sizes[0].descriptorCount = static_cast<u32>(descriptor_count);
+    pool_sizes[0].descriptorCount = as<u32>(descriptor_count);
     pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    pool_sizes[1].descriptorCount = static_cast<u32>(descriptor_count);
+    pool_sizes[1].descriptorCount = as<u32>(descriptor_count);
 
     VkDescriptorPoolCreateInfo pool_info {};
     pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    pool_info.poolSizeCount = static_cast<u32>(pool_sizes.size());
+    pool_info.poolSizeCount = as<u32>(pool_sizes.size());
     pool_info.pPoolSizes = pool_sizes.data();
-    pool_info.maxSets = static_cast<u32>(descriptor_count);
+    pool_info.maxSets = as<u32>(descriptor_count);
 
     if (vkCreateDescriptorPool(device, &pool_info, nullptr, &descriptor_pool)
         != VK_SUCCESS) {
@@ -6257,7 +6417,7 @@ auto Renderer::allocate_descriptor_sets(
     VkDescriptorSetAllocateInfo alloc_info {};
     alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     alloc_info.descriptorPool = descriptor_pool;
-    alloc_info.descriptorSetCount = static_cast<u32>(descriptor_sets_number);
+    alloc_info.descriptorSetCount = as<u32>(descriptor_sets_number);
     alloc_info.pSetLayouts = matrix_ubo_layouts.data();
     if (vkAllocateDescriptorSets(
             device,
@@ -6293,7 +6453,7 @@ auto Renderer::update_descriptor_sets_ubo(
 
         vkUpdateDescriptorSets(
             device,
-            static_cast<u32>(descriptor_writes.size()),
+            as<u32>(descriptor_writes.size()),
             descriptor_writes.data(),
             0,
             nullptr
@@ -6397,7 +6557,7 @@ auto Renderer::update_light_data_descriptor_sets(
 
         vkUpdateDescriptorSets(
             device,
-            static_cast<u32>(descriptor_writes.size()),
+            as<u32>(descriptor_writes.size()),
             descriptor_writes.data(),
             0,
             nullptr
@@ -6452,7 +6612,7 @@ auto Renderer::update_descriptor_sets_combined_image_sampler(
         }
         vkUpdateDescriptorSets(
             device,
-            static_cast<u32>(descriptor_writes.size()),
+            as<u32>(descriptor_writes.size()),
             descriptor_writes.data(),
             0,
             nullptr
@@ -6626,7 +6786,7 @@ auto Renderer::create_command_buffers(
     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     alloc_info.commandPool = command_pool;
     alloc_info.level = command_buffer_level_flag;
-    alloc_info.commandBufferCount = (u32)command_buffers.size();
+    alloc_info.commandBufferCount = as<u32>(command_buffers.size());
 
     if (vkAllocateCommandBuffers(device, &alloc_info, command_buffers.data())
         != VK_SUCCESS) {
@@ -6862,7 +7022,7 @@ auto Renderer::hud_record_command_buffer(
     clear_values[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
     clear_values[1].depthStencil = {1.0f, 0};
 
-    render_pass_info.clearValueCount = static_cast<u32>(clear_values.size());
+    render_pass_info.clearValueCount = as<u32>(clear_values.size());
     render_pass_info.pClearValues = clear_values.data();
 
     vkCmdBeginRenderPass(
@@ -6880,8 +7040,8 @@ auto Renderer::hud_record_command_buffer(
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (f32)swap_chain_extent.width;
-    viewport.height = (f32)swap_chain_extent.height;
+    viewport.width = as<f32>(swap_chain_extent.width);
+    viewport.height = as<f32>(swap_chain_extent.height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);
@@ -6927,7 +7087,7 @@ auto Renderer::hud_record_command_buffer(
 
         vkCmdDrawIndexed(
             command_buffer,
-            static_cast<u32>(indices_container_size),
+            as<u32>(indices_container_size),
             1,
             0,
             0,
@@ -6956,7 +7116,7 @@ auto Renderer::ui_record_command_buffer(
     clear_values[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
     clear_values[1].depthStencil = {1.0f, 0};
 
-    render_pass_info.clearValueCount = static_cast<u32>(clear_values.size());
+    render_pass_info.clearValueCount = as<u32>(clear_values.size());
     render_pass_info.pClearValues = clear_values.data();
 
     vkCmdBeginRenderPass(
@@ -6974,8 +7134,8 @@ auto Renderer::ui_record_command_buffer(
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (f32)swap_chain_extent.width;
-    viewport.height = (f32)swap_chain_extent.height;
+    viewport.width = as<f32>(swap_chain_extent.width);
+    viewport.height = as<f32>(swap_chain_extent.height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);
@@ -7056,7 +7216,7 @@ auto Renderer::ui_record_command_buffer(
 
                 vkCmdDrawIndexed(
                     command_buffer,
-                    static_cast<u32>(indices_container_size),
+                    as<u32>(indices_container_size),
                     1,
                     0,
                     0,
@@ -7088,7 +7248,7 @@ auto Renderer::ui_icons_record_command_buffer(
     clear_values[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
     clear_values[1].depthStencil = {1.0f, 0};
 
-    render_pass_info.clearValueCount = static_cast<u32>(clear_values.size());
+    render_pass_info.clearValueCount = as<u32>(clear_values.size());
     render_pass_info.pClearValues = clear_values.data();
 
     vkCmdBeginRenderPass(
@@ -7106,8 +7266,8 @@ auto Renderer::ui_icons_record_command_buffer(
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (f32)swap_chain_extent.width;
-    viewport.height = (f32)swap_chain_extent.height;
+    viewport.width = as<f32>(swap_chain_extent.width);
+    viewport.height = as<f32>(swap_chain_extent.height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);
@@ -7174,7 +7334,7 @@ auto Renderer::ui_icons_record_command_buffer(
 
         vkCmdDrawIndexed(
             command_buffer,
-            static_cast<u32>(indices_container_size),
+            as<u32>(indices_container_size),
             1,
             0,
             0,
@@ -7205,7 +7365,7 @@ auto Renderer::hud_screen_record_command_buffer(
     clear_values[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
     clear_values[1].depthStencil = {1.0f, 0};
 
-    render_pass_info.clearValueCount = static_cast<u32>(clear_values.size());
+    render_pass_info.clearValueCount = as<u32>(clear_values.size());
     render_pass_info.pClearValues = clear_values.data();
 
     vkCmdBeginRenderPass(
@@ -7223,8 +7383,8 @@ auto Renderer::hud_screen_record_command_buffer(
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (f32)swap_chain_extent.width;
-    viewport.height = (f32)swap_chain_extent.height;
+    viewport.width = as<f32>(swap_chain_extent.width);
+    viewport.height = as<f32>(swap_chain_extent.height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);
@@ -7273,7 +7433,7 @@ auto Renderer::hud_screen_record_command_buffer(
 
         vkCmdDrawIndexed(
             command_buffer,
-            static_cast<u32>(indices_container_size),
+            as<u32>(indices_container_size),
             1,
             0,
             0,
@@ -7306,7 +7466,7 @@ auto Renderer::sdf_record_command_buffer(
     clear_values[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
     clear_values[1].depthStencil = {1.0f, 0};
 
-    render_pass_info.clearValueCount = static_cast<u32>(clear_values.size());
+    render_pass_info.clearValueCount = as<u32>(clear_values.size());
     render_pass_info.pClearValues = clear_values.data();
 
     vkCmdBeginRenderPass(
@@ -7324,8 +7484,8 @@ auto Renderer::sdf_record_command_buffer(
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (f32)swap_chain_extent.width;
-    viewport.height = (f32)swap_chain_extent.height;
+    viewport.width = as<f32>(swap_chain_extent.width);
+    viewport.height = as<f32>(swap_chain_extent.height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);
@@ -7395,7 +7555,7 @@ auto Renderer::font_record_command_buffer(
     clear_values[0].color = {{0.5f, 0.2f, 0.2f, 1.0f}};
     clear_values[1].depthStencil = {1.0f, 0};
 
-    render_pass_info.clearValueCount = static_cast<u32>(clear_values.size());
+    render_pass_info.clearValueCount = as<u32>(clear_values.size());
     render_pass_info.pClearValues = clear_values.data();
 
     vkCmdBeginRenderPass(
@@ -7413,8 +7573,8 @@ auto Renderer::font_record_command_buffer(
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (f32)swap_chain_extent.width;
-    viewport.height = (f32)swap_chain_extent.height;
+    viewport.width = as<f32>(swap_chain_extent.width);
+    viewport.height = as<f32>(swap_chain_extent.height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);
@@ -7439,7 +7599,7 @@ auto Renderer::font_record_command_buffer(
         }
 
         for (u32 j = 0; j < font.font_string.size(); ++j) {
-            u32 ascii_code = static_cast<u32>(font.font_string[j]);
+            u32 ascii_code = as<u32>(font.font_string[j]);
             VkBuffer vertex_buffers[] = {
                 font_vertex_buffer_container[ascii_code]
             };
@@ -7481,7 +7641,7 @@ auto Renderer::font_record_command_buffer(
             font_ubo.proj = projection_matrix;
 
             font_ubo.scale = 0.3f;
-            ndc_position[0] += (f32)j * 0.17f * font_ubo.scale;
+            ndc_position[0] += as<f32>(j) * 0.17f * font_ubo.scale;
             ndc_position[1] -= font.lifetime / 5.0f;
             font_ubo.position = ndc_position;
 
@@ -7548,7 +7708,7 @@ auto Renderer::font_record_command_buffer(
 
             vkCmdDrawIndexed(
                 command_buffer,
-                static_cast<u32>(indices_container_size),
+                as<u32>(indices_container_size),
                 1,
                 0,
                 0,
@@ -7586,7 +7746,7 @@ auto Renderer::record_command_buffer(
     }
     clear_values[1].depthStencil = {1.0f, 0};
 
-    render_pass_info.clearValueCount = static_cast<u32>(clear_values.size());
+    render_pass_info.clearValueCount = as<u32>(clear_values.size());
     render_pass_info.pClearValues = clear_values.data();
 
     vkCmdBeginRenderPass(
@@ -7595,17 +7755,23 @@ auto Renderer::record_command_buffer(
         VK_SUBPASS_CONTENTS_INLINE
     );
 
+    VkPipeline main_pipeline =
+        PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline].pipeline;
+    if (imgui_overlay->wireframe_enabled
+        && main_wireframe_pipeline != VK_NULL_HANDLE) {
+        main_pipeline = main_wireframe_pipeline;
+    }
     vkCmdBindPipeline(
         command_buffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
-        PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline].pipeline
+        main_pipeline
     );
 
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (f32)swap_chain_extent.width;
-    viewport.height = (f32)swap_chain_extent.height;
+    viewport.width = as<f32>(swap_chain_extent.width);
+    viewport.height = as<f32>(swap_chain_extent.height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);
@@ -7714,7 +7880,7 @@ auto Renderer::record_command_buffer(
 
         vkCmdDrawIndexed(
             command_buffer,
-            static_cast<u32>(indices_container_size),
+            as<u32>(indices_container_size),
             1,
             0,
             0,
@@ -7944,6 +8110,9 @@ auto Renderer::update_view_position_uniform_buffer(u32 current_image, u32 player
 
     DirectionalLight directional_light {};
     directional_light_number = directional_lights.size();
+    if (!imgui_overlay->directional_enabled) {
+        directional_light_number = 0;
+    }
     assert(
         directional_light_number <= 4
         && "Directional lights number greater then 4"
@@ -7954,6 +8123,9 @@ auto Renderer::update_view_position_uniform_buffer(u32 current_image, u32 player
         directional_light.position = dir_light.position;
         directional_light.direction = dir_light.direction;
         directional_light.ambient = dir_light.ambient;
+        if (!imgui_overlay->ambient_enabled) {
+            directional_light.ambient = Vector<f32, 4>(0.0f, 0.0f, 0.0f, 0.0f);
+        }
         directional_light.diffuse = dir_light.diffuse;
         directional_light.specular = dir_light.specular;
 
@@ -7962,6 +8134,9 @@ auto Renderer::update_view_position_uniform_buffer(u32 current_image, u32 player
     light_data_ubo.directional_lights_array_size = directional_light_number;
 
     point_light_number = point_lights.size();
+    if (!imgui_overlay->point_enabled) {
+        point_light_number = 0;
+    }
     assert(
         point_light_number <= POINT_LIGHTS_NUMBER
         && "Point lights number greater than 32"
@@ -7972,6 +8147,9 @@ auto Renderer::update_view_position_uniform_buffer(u32 current_image, u32 player
 
         point_light_ubo.position = point_light.position;
         point_light_ubo.ambient = point_light.ambient;
+        if (!imgui_overlay->ambient_enabled) {
+            point_light_ubo.ambient = Vector<f32, 3>(0.0f, 0.0f, 0.0f);
+        }
         point_light_ubo.diffuse = point_light.diffuse;
         point_light_ubo.specular = point_light.specular;
         point_light_ubo.constant = point_light.constant;
@@ -7985,6 +8163,9 @@ auto Renderer::update_view_position_uniform_buffer(u32 current_image, u32 player
 
     SpotLight spot_light_ubo {};
     spot_light_number = spot_lights.size();
+    if (!imgui_overlay->spot_enabled) {
+        spot_light_number = 0;
+    }
     assert(spot_light_number <= 8 && "Spot light number greater then 8");
     for (u32 i = 0; i < spot_light_number; ++i) {
         RenderSpotLight spot_light = spot_lights[i];
@@ -7995,6 +8176,9 @@ auto Renderer::update_view_position_uniform_buffer(u32 current_image, u32 player
         spot_light_ubo.outer_cut_off =
             std::cos(radians(spot_light.outer_cut_off));
         spot_light_ubo.ambient = spot_light.ambient;
+        if (!imgui_overlay->ambient_enabled) {
+            spot_light_ubo.ambient = Vector<f32, 3>(0.0f, 0.0f, 0.0f);
+        }
         spot_light_ubo.diffuse = spot_light.diffuse;
         spot_light_ubo.specular = spot_light.specular;
         spot_light_ubo.constant = spot_light.constant;
@@ -8511,7 +8695,7 @@ auto Renderer::directional_light_record_command_buffer(
             u32 indices_container_size = indices[mesh_id].size();
             vkCmdDrawIndexed(
                 command_buffer,
-                static_cast<u32>(indices_container_size),
+                as<u32>(indices_container_size),
                 1,
                 0,
                 0,
@@ -8629,7 +8813,7 @@ auto Renderer::spot_light_record_command_buffer(
             u32 indices_container_size = indices[mesh_id].size();
             vkCmdDrawIndexed(
                 command_buffer,
-                static_cast<u32>(indices_container_size),
+                as<u32>(indices_container_size),
                 1,
                 0,
                 0,
@@ -8769,7 +8953,7 @@ auto Renderer::point_light_record_command_buffer(
                 u32 indices_container_size = indices[mesh_id].size();
                 vkCmdDrawIndexed(
                     command_buffer,
-                    static_cast<u32>(indices_container_size),
+                    as<u32>(indices_container_size),
                     1,
                     0,
                     0,
@@ -8816,6 +9000,9 @@ auto Renderer::choose_swap_surface_format(
 auto Renderer::choose_swap_present_mode(
     const Vec<VkPresentModeKHR>& available_present_modes
 ) -> VkPresentModeKHR {
+    if (imgui_overlay != nullptr && imgui_overlay->vsync_enabled) {
+        return VK_PRESENT_MODE_FIFO_KHR;
+    }
     for (const auto& available_present_mode : available_present_modes) {
         if (available_present_mode == VK_PRESENT_MODE_MAILBOX_KHR
             || available_present_mode == VK_PRESENT_MODE_IMMEDIATE_KHR) {
@@ -9089,7 +9276,7 @@ auto Renderer::read_file(const String& filename) -> Vec<char> {
     if (!file.is_open()) {
         throw std::runtime_error("failed to open file!");
     }
-    usize file_size = (usize)file.tellg();
+    usize file_size = as<usize>(file.tellg());
     Vec<char> buffer(file_size);
     file.seekg(0);
     file.read(buffer.data(), file_size);
@@ -9481,7 +9668,7 @@ auto JsonParser::parse_float(Vec<char> digits) -> f64 {
     }
 
     f64 result = 0;
-    result = (f64)(integer_part + floating_part);
+    result = as<f64>((integer_part + floating_part));
 
     if (has_exponent) {
         if (exponent_negative) {
@@ -10301,22 +10488,23 @@ auto JsonParser::load_gltf(
         }
         for (u32 k = 0; k < nodes_map_translations.size(); ++k) {
             u32 joint_idx =
-                get_joint_index(joints, (i32)nodes_map_translations[k]);
+                get_joint_index(joints, as<i32>(nodes_map_translations[k]));
             if (joint_idx != UINT32_MAX) {
-                joint_to_translation_ch[joint_idx] = (i32)k;
+                joint_to_translation_ch[joint_idx] = as<i32>(k);
             }
         }
         for (u32 k = 0; k < nodes_map_rotations.size(); ++k) {
             u32 joint_idx =
-                get_joint_index(joints, (i32)nodes_map_rotations[k]);
+                get_joint_index(joints, as<i32>(nodes_map_rotations[k]));
             if (joint_idx != UINT32_MAX) {
-                joint_to_rotation_ch[joint_idx] = (i32)k;
+                joint_to_rotation_ch[joint_idx] = as<i32>(k);
             }
         }
         for (u32 k = 0; k < nodes_map_scales.size(); ++k) {
-            u32 joint_idx = get_joint_index(joints, (i32)nodes_map_scales[k]);
+            u32 joint_idx =
+                get_joint_index(joints, as<i32>(nodes_map_scales[k]));
             if (joint_idx != UINT32_MAX) {
-                joint_to_scale_ch[joint_idx] = (i32)k;
+                joint_to_scale_ch[joint_idx] = as<i32>(k);
             }
         }
         // Build animated_nodes_matrices_accumulator indexed by joint-index
@@ -10332,7 +10520,7 @@ auto JsonParser::load_gltf(
             Vec<f32> default_rotations;
             Vec<f32> default_scales;
             // Static TRS from node. Used if the channel does not exist.
-            i32 node_idx = (i32)(*joints.value.array)[j].value.int_number;
+            i32 node_idx = as<i32>((*joints.value.array)[j].value.int_number);
             f32 static_tx = 0.f, static_ty = 0.f, static_tz = 0.f;
             f32 static_rx = 0.f, static_ry = 0.f, static_rz = 0.f,
                 static_rw = 1.f;
@@ -10691,8 +10879,8 @@ auto ProceduralLevelGeneratingSystem::update() -> void {
         cached_player_arch_number
     );
     components_view.player_transforms =
-        (Transform*)arch_view.cached_player_arch
-            ->components[ComponentsIndices::TransformComponent];
+        as<Transform*>(arch_view.cached_player_arch
+                           ->components[ComponentsIndices::TransformComponent]);
 
     while (level_number < 5) {
         Vec<Vertex> next_level;
@@ -10781,9 +10969,7 @@ auto ProceduralLevelGeneratingSystem::update() -> void {
                 world.entity_locations[get_id(game_level_chunk_entity)];
 
             LevelChunkArchetype* level_chunk_arch =
-                static_cast<LevelChunkArchetype*>(
-                    game_level_chunk_location.arch
-                );
+                as<LevelChunkArchetype*>(game_level_chunk_location.arch);
             const auto game_level_chunk_index = game_level_chunk_location.index;
             TextureHandle game_level_texture = texture_handlers[2];
             if (level_number == 0) {
@@ -10846,9 +11032,7 @@ auto ProceduralLevelGeneratingSystem::update() -> void {
                 world.entity_locations[get_id(transition_bridge_entity)];
 
             LevelChunkArchetype* transition_bridge_arch =
-                static_cast<LevelChunkArchetype*>(
-                    transition_bridge_location.arch
-                );
+                as<LevelChunkArchetype*>(transition_bridge_location.arch);
             const auto transition_bridge_index =
                 transition_bridge_location.index;
             TextureHandle transition_bridge_texture = texture_handlers[3];
@@ -10978,9 +11162,9 @@ auto ProceduralLevelGeneratingSystem::generate_level(
             coordinate_maximum_value_per_direction
                 .compare_per_direction_and_set_to_maximum_value_by_module(
                     current_level_position,
-                    (f32)level_half_x,
-                    (f32)level_half_y,
-                    (f32)level_half_z
+                    as<f32>(level_half_x),
+                    as<f32>(level_half_y),
+                    as<f32>(level_half_z)
                 );
             valid_level = true;
         }
@@ -11020,25 +11204,25 @@ auto ProceduralLevelGeneratingSystem::generate_transition_bridge(
                 dist_transition_bridge_anchor_point(mersenne);
             // Sum the leftmost position with the random value of the point
             // where the transition bridge will be inserted.
-            transition_bridge_offset_x =
-                -(f32)level_half_x + (f32)transition_bridge_anchor_point;
+            transition_bridge_offset_x = -as<f32>(level_half_x)
+                + as<f32>(transition_bridge_anchor_point);
             if (next_level_transition_direction == 1) {
                 // Move to the bottom level edge.
                 transition_bridge_offset_z = level_half_z;
                 transition_bridge_position = {
                     current_level_position[0] + transition_bridge_offset_x
                         + transition_bridge_half_width,
-                    (f32)level_half_y,
+                    as<f32>(level_half_y),
                     current_level_position[2] + transition_bridge_offset_z
                         + transition_bridge_half_height
                 };
             } else {
                 // Move to the upper level edge.
-                transition_bridge_offset_z = -(f32)level_half_z;
+                transition_bridge_offset_z = -as<f32>(level_half_z);
                 transition_bridge_position = {
                     current_level_position[0] + transition_bridge_offset_x
                         + transition_bridge_half_width,
-                    (f32)level_half_y,
+                    as<f32>(level_half_y),
                     current_level_position[2] + transition_bridge_offset_z
                         - transition_bridge_half_height
                 };
@@ -11055,25 +11239,25 @@ auto ProceduralLevelGeneratingSystem::generate_transition_bridge(
                 dist_transition_bridge_anchor_point(mersenne);
             // Sum the foremost position with the random value of the point
             // where the transition bridge will be inserted.
-            transition_bridge_offset_z =
-                -(f32)level_half_z + (f32)transition_bridge_anchor_point;
+            transition_bridge_offset_z = -as<f32>(level_half_z)
+                + as<f32>(transition_bridge_anchor_point);
             if (next_level_transition_direction == 2) {
                 // Move to the right level edge.
                 transition_bridge_offset_x = level_half_x;
                 transition_bridge_position = {
                     current_level_position[0] + transition_bridge_offset_x
                         + transition_bridge_half_height,
-                    (f32)level_half_y,
+                    as<f32>(level_half_y),
                     current_level_position[2] + transition_bridge_offset_z
                         + transition_bridge_half_width
                 };
             } else {
                 // Move to the left level edge.
-                transition_bridge_offset_x = -(f32)level_half_x;
+                transition_bridge_offset_x = -as<f32>(level_half_x);
                 transition_bridge_position = {
                     current_level_position[0] + transition_bridge_offset_x
                         - transition_bridge_half_height,
-                    (f32)level_half_y,
+                    as<f32>(level_half_y),
                     current_level_position[2] + transition_bridge_offset_z
                         + transition_bridge_half_width
                 };
@@ -11106,9 +11290,9 @@ auto ProceduralLevelGeneratingSystem::generate_transition_bridge(
             coordinate_maximum_value_per_direction
                 .compare_per_direction_and_set_to_maximum_value_by_module(
                     transition_bridge_position,
-                    (f32)width,
-                    (f32)level_half_y,
-                    (f32)height
+                    as<f32>(width),
+                    as<f32>(level_half_y),
+                    as<f32>(height)
                 );
             valid_transition_bridge = true;
         }
@@ -11137,39 +11321,39 @@ auto ProceduralLevelGeneratingSystem::make_cube_object_vertices(
                 vertex[2] = half_z;
                 break;
             case 1:
-                vertex[0] = -(f32)half_x;
+                vertex[0] = -as<f32>(half_x);
                 vertex[1] = half_y;
                 vertex[2] = half_z;
                 break;
             case 2:
-                vertex[0] = -(f32)half_x;
-                vertex[1] = -(f32)half_y;
+                vertex[0] = -as<f32>(half_x);
+                vertex[1] = -as<f32>(half_y);
                 vertex[2] = half_z;
                 break;
             case 3:
                 vertex[0] = half_x;
-                vertex[1] = -(f32)half_y;
+                vertex[1] = -as<f32>(half_y);
                 vertex[2] = half_z;
                 break;
             case 4:
                 vertex[0] = half_x;
                 vertex[1] = half_y;
-                vertex[2] = -(f32)half_z;
+                vertex[2] = -as<f32>(half_z);
                 break;
             case 5:
-                vertex[0] = -(f32)half_x;
+                vertex[0] = -as<f32>(half_x);
                 vertex[1] = half_y;
-                vertex[2] = -(f32)half_z;
+                vertex[2] = -as<f32>(half_z);
                 break;
             case 6:
-                vertex[0] = -(f32)half_x;
-                vertex[1] = -(f32)half_y;
-                vertex[2] = -(f32)half_z;
+                vertex[0] = -as<f32>(half_x);
+                vertex[1] = -as<f32>(half_y);
+                vertex[2] = -as<f32>(half_z);
                 break;
             case 7:
                 vertex[0] = half_x;
-                vertex[1] = -(f32)half_y;
-                vertex[2] = -(f32)half_z;
+                vertex[1] = -as<f32>(half_y);
+                vertex[2] = -as<f32>(half_z);
                 break;
         }
 
@@ -11288,7 +11472,7 @@ auto SoundEngineAlsa::playback_sound_sample(SoundSample& sample) -> void {
     if (file_descriptor == nullptr) {
         return;
     }
-    char* buffer = (char*)malloc(alsa_frames * frame_size);
+    char* buffer = as<char*>(malloc(alsa_frames * frame_size));
     for (i32 i = 0; i < 300; ++i) {
         i32 frames = fread(buffer, frame_size, alsa_frames, file_descriptor);
         if (frames <= 0) {
@@ -11299,8 +11483,8 @@ auto SoundEngineAlsa::playback_sound_sample(SoundSample& sample) -> void {
         i16* samples = reinterpret_cast<i16*>(buffer);
         i32 sample_count = frames * channels;
         for (i32 j = 0; j < sample_count; ++j) {
-            i32 scaled = static_cast<i32>(samples[j] * sample.volume);
-            samples[j] = static_cast<i16>(std::clamp(scaled, -32768, 32767));
+            i32 scaled = as<i32>(samples[j] * sample.volume);
+            samples[j] = as<i16>(std::clamp(scaled, -32768, 32767));
         }
 
         char* data = buffer;
@@ -11428,7 +11612,7 @@ auto SystemManager::update() -> void {
     bool removed_system_flag = false;
     for (u32 i = 0; i < system_count; ++i) {
         for (u32 j = 0; j < deactivated_systems.size(); ++j) {
-            if ((u32)deactivated_systems[j] == i) {
+            if (as<u32>(deactivated_systems[j]) == i) {
                 removed_system_flag = true;
                 continue;
             }
@@ -11469,15 +11653,17 @@ auto CollisionSystem::update() -> void {
     // Outer loop over every archetype.
     for (u32 x = 0; x < cached_archetypes_number; ++x) {
         Archetype* arch = cached_archetypes[x];
-        view.backtracking_transforms =
-            (Transform*)arch->components[ComponentsIndices::TransformComponent];
-        view.backtracking_colliders =
-            (Collider*)arch->components[ComponentsIndices::ColliderComponent];
-        view.backtracking_collider_flags =
-            (ColliderFlags*)
-                arch->components[ComponentsIndices::ColliderFlagsComponent];
+        view.backtracking_transforms = as<Transform*>(
+            arch->components[ComponentsIndices::TransformComponent]
+        );
+        view.backtracking_colliders = as<Collider*>(
+            arch->components[ComponentsIndices::ColliderComponent]
+        );
+        view.backtracking_collider_flags = as<ColliderFlags*>(
+            arch->components[ComponentsIndices::ColliderFlagsComponent]
+        );
         view.backtracking_meshes =
-            (Mesh*)arch->components[ComponentsIndices::MeshComponent];
+            as<Mesh*>(arch->components[ComponentsIndices::MeshComponent]);
 
         for (u32 i = 0; i < arch->entity_count; ++i) {
             // Iterate over every entity in the current outer archetype.
@@ -11505,9 +11691,9 @@ auto CollisionSystem::update() -> void {
                     (1ul << ComponentsIndices::MoveComponent);
                 // Check if the outer (current) archetype has a move component.
                 if (matches_required_mask(arch->mask, move_required_mask)) {
-                    view.backtracking_move =
-                        (Move*)
-                            arch->components[ComponentsIndices::MoveComponent];
+                    view.backtracking_move = as<Move*>(
+                        arch->components[ComponentsIndices::MoveComponent]
+                    );
                     backtracking_transform +=
                         normalize(view.backtracking_move[i].frame_movement)
                         * camera_speed;
@@ -11535,40 +11721,40 @@ auto CollisionSystem::update() -> void {
                 const Vector<f32, 3> max_entity_position =
                     entity_box_corner_bound_points[1];
 
-                i32 index_min_x = static_cast<i32>(
+                i32 index_min_x = as<i32>(
                     (min_entity_position[0] + chunk_half_width) / chunk_size
                 );
-                i32 index_min_y = static_cast<i32>(
+                i32 index_min_y = as<i32>(
                     (min_entity_position[1] + chunk_half_height) / chunk_size
                 );
-                i32 index_min_z = static_cast<i32>(
+                i32 index_min_z = as<i32>(
                     (min_entity_position[2] + chunk_half_depth) / chunk_size
                 );
 
-                i32 index_max_x = static_cast<i32>(
+                i32 index_max_x = as<i32>(
                     (max_entity_position[0] + chunk_half_width) / chunk_size
                 );
-                i32 index_max_y = static_cast<i32>(
+                i32 index_max_y = as<i32>(
                     (max_entity_position[1] + chunk_half_height) / chunk_size
                 );
-                i32 index_max_z = static_cast<i32>(
+                i32 index_max_z = as<i32>(
                     (max_entity_position[2] + chunk_half_depth) / chunk_size
                 );
 
                 // Entity can legitimately leave the fixed-size world grid -
                 // clamp to nearest edge cell instead of crashing.
                 index_min_x =
-                    std::clamp(index_min_x, 0, (i32)spatial_grid.width - 1);
+                    std::clamp(index_min_x, 0, as<i32>(spatial_grid.width) - 1);
                 index_min_y =
-                    std::clamp(index_min_y, 0, (i32)spatial_grid.height - 1);
+                    std::clamp(index_min_y, 0, as<i32>(spatial_grid.height) - 1);
                 index_min_z =
-                    std::clamp(index_min_z, 0, (i32)spatial_grid.depth - 1);
+                    std::clamp(index_min_z, 0, as<i32>(spatial_grid.depth) - 1);
                 index_max_x =
-                    std::clamp(index_max_x, 0, (i32)spatial_grid.width - 1);
+                    std::clamp(index_max_x, 0, as<i32>(spatial_grid.width) - 1);
                 index_max_y =
-                    std::clamp(index_max_y, 0, (i32)spatial_grid.height - 1);
+                    std::clamp(index_max_y, 0, as<i32>(spatial_grid.height) - 1);
                 index_max_z =
-                    std::clamp(index_max_z, 0, (i32)spatial_grid.depth - 1);
+                    std::clamp(index_max_z, 0, as<i32>(spatial_grid.depth) - 1);
 
                 for (auto i2 = index_min_z; i2 <= index_max_z; ++i2) {
                     for (auto i3 = index_min_y; i3 <= index_max_y; ++i3) {
@@ -11610,10 +11796,9 @@ auto CollisionSystem::update() -> void {
                             required_mask
                         )) {
                         Archetype* arch = compared_entity_location.arch;
-                        view.compared_transforms = &(
-                            (Transform*)arch->components
-                                [ComponentsIndices::TransformComponent]
-                        )[compared_entity_index];
+                        view.compared_transforms = &(as<Transform*>(
+                            arch->components[ComponentsIndices::TransformComponent]
+                        ))[compared_entity_index];
                         view.compared_meshes = &(
                             (
                                 Mesh*
@@ -11628,10 +11813,9 @@ auto CollisionSystem::update() -> void {
                                 compared_entity_location.arch->mask,
                                 move_required_mask
                             )) {
-                            view.compared_move = &(
-                                (Move*)arch
-                                    ->components[ComponentsIndices::MoveComponent]
-                            )[compared_entity_index];
+                            view.compared_move = &(as<Move*>(
+                                arch->components[ComponentsIndices::MoveComponent]
+                            ))[compared_entity_index];
                         }
                     }
 
@@ -11762,11 +11946,11 @@ auto DamageSystem::update() -> void {
     for (u32 x = 0; x < cached_attackable_archetypes_number; ++x) {
         Archetype* arch = arch_view.cached_attackable_archetypes[x];
         components_view.attackable_attacks =
-            (Attack*)arch->components[ComponentsIndices::AttackComponent];
+            as<Attack*>(arch->components[ComponentsIndices::AttackComponent]);
         components_view.attackable_health =
-            (Health*)arch->components[ComponentsIndices::HealthComponent];
+            as<Health*>(arch->components[ComponentsIndices::HealthComponent]);
         components_view.attackable_fonts =
-            (Font*)arch->components[ComponentsIndices::FontComponent];
+            as<Font*>(arch->components[ComponentsIndices::FontComponent]);
 
         u32 i = 0;
         while (i < arch->entity_count) {
@@ -11810,7 +11994,7 @@ auto DamageSystem::update() -> void {
     for (u32 x = 0; x < cached_font_archetypes_number; ++x) {
         Archetype* arch = arch_view.cached_font_archetypes[x];
         components_view.fonts =
-            (Font*)arch->components[ComponentsIndices::FontComponent];
+            as<Font*>(arch->components[ComponentsIndices::FontComponent]);
 
         for (u32 i = 0; i < arch->entity_count; ++i) {
             if (components_view.fonts) {
@@ -11835,8 +12019,8 @@ auto EnemySystem::update() -> void {
         player_archetypes_number
     );
     components_view.player_transforms =
-        (Transform*)arch_view.player_cached_archetype
-            ->components[ComponentsIndices::TransformComponent];
+        as<Transform*>(arch_view.player_cached_archetype
+                           ->components[ComponentsIndices::TransformComponent]);
 
     enemy_archetypes_number = 0;
     world.search_cache_archetypes(
@@ -11845,14 +12029,14 @@ auto EnemySystem::update() -> void {
         enemy_archetypes_number
     );
     components_view.enemy_transforms =
-        (Transform*)arch_view.enemy_cached_archetype
-            ->components[ComponentsIndices::TransformComponent];
+        as<Transform*>(arch_view.enemy_cached_archetype
+                           ->components[ComponentsIndices::TransformComponent]);
     components_view.enemy_states =
-        (State*)arch_view.enemy_cached_archetype
-            ->components[ComponentsIndices::StateComponent];
+        as<State*>(arch_view.enemy_cached_archetype
+                       ->components[ComponentsIndices::StateComponent]);
     components_view.enemies =
-        (Enemy*)arch_view.enemy_cached_archetype
-            ->components[ComponentsIndices::EnemyComponent];
+        as<Enemy*>(arch_view.enemy_cached_archetype
+                       ->components[ComponentsIndices::EnemyComponent]);
 
     projectile_archetypes_number = 0;
     world.search_cache_archetypes(
@@ -11962,9 +12146,10 @@ auto InventorySystem::update() -> void {
             &arch_view.crosshair_cached_archetype,
             crosshair_archetypes_number
         );
-        components_view.crosshair_transforms_view =
-            (Transform*)arch_view.crosshair_cached_archetype
-                ->components[ComponentsIndices::TransformComponent];
+        components_view.crosshair_transforms_view = as<Transform*>(
+            arch_view.crosshair_cached_archetype
+                ->components[ComponentsIndices::TransformComponent]
+        );
 
         inventory_archetypes_number = 0;
         world.search_cache_archetypes(
@@ -11973,15 +12158,17 @@ auto InventorySystem::update() -> void {
             inventory_archetypes_number
         );
 
-        components_view.inventory_transforms_view =
-            (Transform*)arch_view.inventory_cached_archetype
-                ->components[ComponentsIndices::TransformComponent];
-        components_view.inventory_view =
-            (Inventory*)arch_view.inventory_cached_archetype
-                ->components[ComponentsIndices::InventoryComponent];
+        components_view.inventory_transforms_view = as<Transform*>(
+            arch_view.inventory_cached_archetype
+                ->components[ComponentsIndices::TransformComponent]
+        );
+        components_view.inventory_view = as<Inventory*>(
+            arch_view.inventory_cached_archetype
+                ->components[ComponentsIndices::InventoryComponent]
+        );
         components_view.inventory_meshes_view =
-            (Mesh*)arch_view.inventory_cached_archetype
-                ->components[ComponentsIndices::MeshComponent];
+            as<Mesh*>(arch_view.inventory_cached_archetype
+                          ->components[ComponentsIndices::MeshComponent]);
 
         if (components_view.crosshair_transforms_view
             && components_view.inventory_transforms_view
@@ -12029,7 +12216,7 @@ auto InventorySystem::update() -> void {
                         EntityLocation item_location =
                             world.entity_locations[get_id(entity)];
                         ItemArchetype* item_arch =
-                            static_cast<ItemArchetype*>(item_location.arch);
+                            as<ItemArchetype*>(item_location.arch);
                         const auto item_index = item_location.index;
                         Item* item_component = &item_arch->items[item_index];
 
@@ -12074,7 +12261,7 @@ auto InventorySystem::update() -> void {
                     EntityLocation item_location =
                         world.entity_locations[get_id(*is_item_dragged)];
                     ItemArchetype* item_arch =
-                        static_cast<ItemArchetype*>(item_location.arch);
+                        as<ItemArchetype*>(item_location.arch);
                     const auto item_index = item_location.index;
                     Item* item_component = &item_arch->items[item_index];
 
@@ -12121,7 +12308,7 @@ auto InventorySystem::update() -> void {
                     EntityLocation item_location =
                         world.entity_locations[get_id(*is_item_dragged)];
                     ItemArchetype* item_arch =
-                        static_cast<ItemArchetype*>(item_location.arch);
+                        as<ItemArchetype*>(item_location.arch);
                     const auto item_index = item_location.index;
                     Item* item_component = &item_arch->items[item_index];
 
@@ -12158,7 +12345,7 @@ auto InventorySystem::update() -> void {
                         EntityLocation item_location =
                             world.entity_locations[get_id(is_swappable)];
                         ItemArchetype* item_arch =
-                            static_cast<ItemArchetype*>(item_location.arch);
+                            as<ItemArchetype*>(item_location.arch);
                         const auto item_index = item_location.index;
                         Item* swapped_item_component =
                             &item_arch->items[item_index];
@@ -12199,7 +12386,7 @@ auto InventorySystem::update() -> void {
                     EntityLocation item_location =
                         world.entity_locations[get_id(*is_item_dragged)];
                     ItemArchetype* item_arch =
-                        static_cast<ItemArchetype*>(item_location.arch);
+                        as<ItemArchetype*>(item_location.arch);
                     const auto item_index = item_location.index;
                     item_arch->rigid_bodies[item_index] = {.mass = 2.0f};
                     Transform* item_transform =
@@ -12212,7 +12399,7 @@ auto InventorySystem::update() -> void {
                         world.entity_locations[get_id(player)];
                     if (player_location.arch != nullptr) {
                         PlayerArchetype* player_arch =
-                            static_cast<PlayerArchetype*>(player_location.arch);
+                            as<PlayerArchetype*>(player_location.arch);
                         const auto player_index = player_location.index;
                         Transform* player_transform =
                             &player_arch->transforms[player_index];
@@ -12282,12 +12469,12 @@ auto InventorySystem::determine_swappable_status_and_slots(
         pivot_row = clamp<i32>(
             0,
             pivot_row,
-            static_cast<i32>(inventory_component->row) - item_height
+            as<i32>(inventory_component->row) - item_height
         );
         pivot_column = clamp<i32>(
             0,
             pivot_column,
-            static_cast<i32>(inventory_component->col) - item_width
+            as<i32>(inventory_component->col) - item_width
         );
 
         return determine_swappable_field(
@@ -12352,7 +12539,7 @@ auto InventorySystem::determine_swappable_field(
                 is_swappable > 0
                 && inventory_component->slots[final_row][final_column]
                     != UINT_MAX
-                && (i32)inventory_component->slots[final_row][final_column]
+                && as<i32>(inventory_component->slots[final_row][final_column])
                     != is_swappable
             ) {
                 is_swappable = -2;
@@ -12375,8 +12562,8 @@ auto InventorySystem::calculate_basic_offset(
     const f32 inventory_slot_scale
 ) -> i32 {
     if (item_axis_size % 2 == 0) {
-        const auto slot_center_x = axis_value
-            + static_cast<f32>(axis_slot_index) * inventory_slot_scale;
+        const auto slot_center_x =
+            axis_value + as<f32>(axis_slot_index) * inventory_slot_scale;
         if (slot_center_x > crosshair_axis_position) {
             return item_axis_size / 2;
         }
@@ -12420,8 +12607,8 @@ auto InventorySystem::determine_actual_intersection_slot(
         + inventory_slot_half_scale * aspect_ratio;
 
     return Point2D<i32> {
-        (i32)(x_delta / inventory_slot_scale),
-        (i32)(y_delta / (inventory_slot_scale * aspect_ratio))
+        as<i32>((x_delta / inventory_slot_scale)),
+        as<i32>((y_delta / (inventory_slot_scale * aspect_ratio)))
     };
 }
 } // namespace glvm
@@ -12436,7 +12623,7 @@ auto ItemSystem::put_item2x2(Inventory* inventory_component, u32 item_entity)
     u32 col = inventory_component->col;
 
     EntityLocation item_location = world.entity_locations[get_id(item_entity)];
-    ItemArchetype* item_arch = static_cast<ItemArchetype*>(item_location.arch);
+    ItemArchetype* item_arch = as<ItemArchetype*>(item_location.arch);
     const auto item_index = item_location.index;
     Item* item_component = &item_arch->items[item_index];
 
@@ -12491,9 +12678,10 @@ auto ItemSystem::update() -> void {
             &arch_view.inventory_cached_archetype,
             inventory_archetypes_number
         );
-        components_view.inventories_view =
-            (Inventory*)arch_view.inventory_cached_archetype
-                ->components[ComponentsIndices::InventoryComponent];
+        components_view.inventories_view = as<Inventory*>(
+            arch_view.inventory_cached_archetype
+                ->components[ComponentsIndices::InventoryComponent]
+        );
 
         item_archetypes_number = 0;
         world.search_cache_archetypes(
@@ -12502,11 +12690,12 @@ auto ItemSystem::update() -> void {
             item_archetypes_number
         );
         components_view.items_view =
-            (Item*)arch_view.item_archetype
-                ->components[ComponentsIndices::ItemComponent];
-        components_view.item_colliders_view =
-            (Collider*)arch_view.item_archetype
-                ->components[ComponentsIndices::ColliderComponent];
+            as<Item*>(arch_view.item_archetype
+                          ->components[ComponentsIndices::ItemComponent]);
+        components_view.item_colliders_view = as<Collider*>(
+            arch_view.item_archetype
+                ->components[ComponentsIndices::ColliderComponent]
+        );
 
         for (u32 m = 0; m < arch_view.inventory_cached_archetype->entity_count;
              ++m) {
@@ -12539,9 +12728,10 @@ auto ItemSystem::update() -> void {
             &arch_view.crosshair_archetype,
             crosshair_archetypes_number
         );
-        components_view.crosshair_transforms =
-            (Transform*)arch_view.crosshair_archetype
-                ->components[ComponentsIndices::TransformComponent];
+        components_view.crosshair_transforms = as<Transform*>(
+            arch_view.crosshair_archetype
+                ->components[ComponentsIndices::TransformComponent]
+        );
 
         item_archetypes_number = 0;
         world.search_cache_archetypes(
@@ -12549,9 +12739,10 @@ auto ItemSystem::update() -> void {
             &arch_view.item_archetype,
             item_archetypes_number
         );
-        components_view.item_transforms_view =
-            (Transform*)arch_view.item_archetype
-                ->components[ComponentsIndices::TransformComponent];
+        components_view.item_transforms_view = as<Transform*>(
+            arch_view.item_archetype
+                ->components[ComponentsIndices::TransformComponent]
+        );
 
         Transform* crosshair_transform_component =
             &components_view.crosshair_transforms[0];
@@ -12560,7 +12751,7 @@ auto ItemSystem::update() -> void {
             Transform* item_transform_component =
                 &components_view.item_transforms_view[i];
             if (*dragged_item_entity >= 0
-                && *dragged_item_entity == (i32)entity_item_containing) {
+                && *dragged_item_entity == as<i32>(entity_item_containing)) {
                 // Set crosshair position to dragged items.
                 item_transform_component->position =
                     crosshair_transform_component->position;
@@ -12582,17 +12773,18 @@ auto MovementSystem::update() -> void {
         player_archetypes_number
     );
     components_view.player_moves =
-        (Move*)arch_view.player_cached_archetype
-            ->components[ComponentsIndices::MoveComponent];
+        as<Move*>(arch_view.player_cached_archetype
+                      ->components[ComponentsIndices::MoveComponent]);
     components_view.player_views =
-        (Beholder*)arch_view.player_cached_archetype
-            ->components[ComponentsIndices::ViewComponent];
-    components_view.player_collider_flags =
-        (ColliderFlags*)arch_view.player_cached_archetype
-            ->components[ComponentsIndices::ColliderFlagsComponent];
+        as<Beholder*>(arch_view.player_cached_archetype
+                          ->components[ComponentsIndices::ViewComponent]);
+    components_view.player_collider_flags = as<ColliderFlags*>(
+        arch_view.player_cached_archetype
+            ->components[ComponentsIndices::ColliderFlagsComponent]
+    );
     components_view.player_rigid_body =
-        (RigidBody*)arch_view.player_cached_archetype
-            ->components[ComponentsIndices::RigidBodyComponent];
+        as<RigidBody*>(arch_view.player_cached_archetype
+                           ->components[ComponentsIndices::RigidBodyComponent]);
 
     const auto camera_speed = 3.0f * delta_frame_time;
     for (u32 i = 0; i < arch_view.player_cached_archetype->entity_count; ++i) {
@@ -12653,16 +12845,18 @@ auto MovementSystem::update() -> void {
     for (u32 i0 = 0; i0 < rigid_body_contained_archetypes_number; ++i0) {
         Archetype* current_arch =
             arch_view.rigid_body_contained_archetypes_cache[i0];
-        components_view.transforms =
-            (Transform*)
-                current_arch->components[ComponentsIndices::TransformComponent];
-        components_view.rigid_bodies =
-            (RigidBody*)
-                current_arch->components[ComponentsIndices::RigidBodyComponent];
-        components_view.moves =
-            (Move*)current_arch->components[ComponentsIndices::MoveComponent];
-        components_view.items =
-            (Item*)current_arch->components[ComponentsIndices::ItemComponent];
+        components_view.transforms = as<Transform*>(
+            current_arch->components[ComponentsIndices::TransformComponent]
+        );
+        components_view.rigid_bodies = as<RigidBody*>(
+            current_arch->components[ComponentsIndices::RigidBodyComponent]
+        );
+        components_view.moves = as<Move*>(
+            current_arch->components[ComponentsIndices::MoveComponent]
+        );
+        components_view.items = as<Item*>(
+            current_arch->components[ComponentsIndices::ItemComponent]
+        );
 
         for (u32 i1 = 0; i1 < current_arch->entity_count; ++i1) {
             const auto entity = current_arch->entities[i1];
@@ -12698,7 +12892,7 @@ auto MovementSystem::calculate_vector_rl(Beholder& beholder) -> Vector<f32, 3> {
 auto MovementSystem::calculate_vector_fb(Beholder& beholder, Event& event)
     -> Vector<f32, 3> {
     Vector<f32, 3> forward(0.0f);
-    current_x = (f32)global_event.mouse_pointer_position.offset_x;
+    current_x = as<f32>(global_event.mouse_pointer_position.offset_x);
     f32 delta_x = current_x - prev_x;
     const Vector<f32, 3> rotate_axis = {0.0f, -1.0f, 0.0f};
     f32 rotation_angle = delta_x;
@@ -12726,7 +12920,7 @@ auto MovementSystem::calculate_vector_fb(Beholder& beholder, Event& event)
     forward[0] = applied_rotation_quat.x;
     forward[1] = 0.0f;
     forward[2] = applied_rotation_quat.z;
-    prev_x = (f32)global_event.mouse_pointer_position.offset_x;
+    prev_x = as<f32>(global_event.mouse_pointer_position.offset_x);
     forward = normalize(forward);
     return forward;
 }
@@ -12799,24 +12993,28 @@ auto PhysicsSystem::update() -> void {
     for (u32 x = 0; x < cached_archetypes_number; ++x) {
         Archetype* arch = arch_view.cached_archetypes[x];
 
-        components_view.transforms_view =
-            (Transform*)arch_view.cached_archetypes[x]
-                ->components[ComponentsIndices::TransformComponent];
+        components_view.transforms_view = as<Transform*>(
+            arch_view.cached_archetypes[x]
+                ->components[ComponentsIndices::TransformComponent]
+        );
         components_view.moves_view =
-            (Move*)arch_view.cached_archetypes[x]
-                ->components[ComponentsIndices::MoveComponent];
-        components_view.rigid_bodies_view =
-            (RigidBody*)arch_view.cached_archetypes[x]
-                ->components[ComponentsIndices::RigidBodyComponent];
-        components_view.collider_flags_view =
-            (ColliderFlags*)arch_view.cached_archetypes[x]
-                ->components[ComponentsIndices::ColliderFlagsComponent];
-        components_view.colliders_view =
-            (Collider*)arch_view.cached_archetypes[x]
-                ->components[ComponentsIndices::ColliderComponent];
+            as<Move*>(arch_view.cached_archetypes[x]
+                          ->components[ComponentsIndices::MoveComponent]);
+        components_view.rigid_bodies_view = as<RigidBody*>(
+            arch_view.cached_archetypes[x]
+                ->components[ComponentsIndices::RigidBodyComponent]
+        );
+        components_view.collider_flags_view = as<ColliderFlags*>(
+            arch_view.cached_archetypes[x]
+                ->components[ComponentsIndices::ColliderFlagsComponent]
+        );
+        components_view.colliders_view = as<Collider*>(
+            arch_view.cached_archetypes[x]
+                ->components[ComponentsIndices::ColliderComponent]
+        );
         components_view.meshes_view =
-            (Mesh*)arch_view.cached_archetypes[x]
-                ->components[ComponentsIndices::MeshComponent];
+            as<Mesh*>(arch_view.cached_archetypes[x]
+                          ->components[ComponentsIndices::MeshComponent]);
 
         f32 frame_step = 5.5f * delta_time;
         for (u32 i = 0; i < arch->entity_count; ++i) {
@@ -12862,12 +13060,14 @@ auto PhysicsSystem::update() -> void {
                                 continue;
                             }
                             const auto collided_index = collided_location.index;
-                            Transform* collided_transform =
-                                (Transform*)collided_arch->components
-                                    [ComponentsIndices::TransformComponent];
-                            Mesh* collided_mesh =
-                                (Mesh*)collided_arch->components
-                                    [ComponentsIndices::MeshComponent];
+                            Transform* collided_transform = as<Transform*>(
+                                collided_arch->components
+                                    [ComponentsIndices::TransformComponent]
+                            );
+                            Mesh* collided_mesh = as<Mesh*>(
+                                collided_arch
+                                    ->components[ComponentsIndices::MeshComponent]
+                            );
                             if (!collided_transform || !collided_mesh) {
                                 continue;
                             }
@@ -12945,11 +13145,11 @@ auto ProjectileSystem::update() -> void {
         player_archetypes_number
     );
     components_view.player_transforms =
-        (Transform*)arch_view.player_cached_archetype
-            ->components[ComponentsIndices::TransformComponent];
+        as<Transform*>(arch_view.player_cached_archetype
+                           ->components[ComponentsIndices::TransformComponent]);
     components_view.player_views =
-        (Beholder*)arch_view.player_cached_archetype
-            ->components[ComponentsIndices::ViewComponent];
+        as<Beholder*>(arch_view.player_cached_archetype
+                          ->components[ComponentsIndices::ViewComponent]);
 
     projectile_archetypes_number = 0;
     world.search_cache_archetypes(
@@ -13039,23 +13239,25 @@ auto ProjectileSystem::update() -> void {
     );
 
     components_view.projectile_transforms =
-        (Transform*)arch_view.projectile_archetype
-            ->components[ComponentsIndices::TransformComponent];
-    components_view.projectile_collider_flags =
-        (ColliderFlags*)arch_view.projectile_archetype
-            ->components[ComponentsIndices::ColliderFlagsComponent];
+        as<Transform*>(arch_view.projectile_archetype
+                           ->components[ComponentsIndices::TransformComponent]);
+    components_view.projectile_collider_flags = as<ColliderFlags*>(
+        arch_view.projectile_archetype
+            ->components[ComponentsIndices::ColliderFlagsComponent]
+    );
     components_view.projectile_colliders =
-        (Collider*)arch_view.projectile_archetype
-            ->components[ComponentsIndices::ColliderComponent];
-    components_view.projectile_bundles =
-        (ProjectileBundle*)arch_view.projectile_archetype
-            ->components[ComponentsIndices::ProjectileBundleComponent];
+        as<Collider*>(arch_view.projectile_archetype
+                          ->components[ComponentsIndices::ColliderComponent]);
+    components_view.projectile_bundles = as<ProjectileBundle*>(
+        arch_view.projectile_archetype
+            ->components[ComponentsIndices::ProjectileBundleComponent]
+    );
     components_view.projectile_health =
-        (Health*)arch_view.projectile_archetype
-            ->components[ComponentsIndices::HealthComponent];
+        as<Health*>(arch_view.projectile_archetype
+                        ->components[ComponentsIndices::HealthComponent]);
     components_view.projectile_attacks =
-        (Attack*)arch_view.projectile_archetype
-            ->components[ComponentsIndices::AttackComponent];
+        as<Attack*>(arch_view.projectile_archetype
+                        ->components[ComponentsIndices::AttackComponent]);
 
     // Update position of every projectile.
     for (u32 x = 0; x < arch_view.projectile_archetype->entity_count; ++x) {
@@ -13090,9 +13292,10 @@ auto ProjectileSystem::update() -> void {
                 if ((collided_entity_location.arch != nullptr)
                     && (collided_entity_location.arch->mask & required_mask)
                         == required_mask) {
-                    Attack* attacks =
-                        (Attack*)collided_entity_location.arch
-                            ->components[ComponentsIndices::AttackComponent];
+                    Attack* attacks = as<Attack*>(
+                        collided_entity_location.arch
+                            ->components[ComponentsIndices::AttackComponent]
+                    );
                     attacks[collided_entity_location.index].damage =
                         projectile_damage->maximum_damage;
                     projectile_health->current_health = 0;
@@ -13125,9 +13328,11 @@ auto SpatialGridSystem::update() -> void {
 
     for (u32 i0 = 0; i0 < cached_archetypes_number; ++i0) {
         Archetype* arch = cached_archetypes[i0];
-        view.transforms =
-            (Transform*)arch->components[ComponentsIndices::TransformComponent];
-        view.meshes = (Mesh*)arch->components[ComponentsIndices::MeshComponent];
+        view.transforms = as<Transform*>(
+            arch->components[ComponentsIndices::TransformComponent]
+        );
+        view.meshes =
+            as<Mesh*>(arch->components[ComponentsIndices::MeshComponent]);
 
         for (u32 i1 = 0; i1 < arch->entity_count; ++i1) {
             const auto entity = arch->entities[i1];
@@ -13176,41 +13381,35 @@ auto SpatialGridSystem::update() -> void {
             const Vector<f32, 3> max_entity_position =
                 entity_box_corner_bound_points[1];
 
-            i32 index_min_x = static_cast<i32>(
-                (min_entity_position[0] + half_width) / chunk_size
-            );
-            i32 index_min_y = static_cast<i32>(
-                (min_entity_position[1] + half_height) / chunk_size
-            );
-            i32 index_min_z = static_cast<i32>(
-                (min_entity_position[2] + half_depth) / chunk_size
-            );
+            i32 index_min_x =
+                as<i32>((min_entity_position[0] + half_width) / chunk_size);
+            i32 index_min_y =
+                as<i32>((min_entity_position[1] + half_height) / chunk_size);
+            i32 index_min_z =
+                as<i32>((min_entity_position[2] + half_depth) / chunk_size);
 
-            i32 index_max_x = static_cast<i32>(
-                (max_entity_position[0] + half_width) / chunk_size
-            );
-            i32 index_max_y = static_cast<i32>(
-                (max_entity_position[1] + half_height) / chunk_size
-            );
-            i32 index_max_z = static_cast<i32>(
-                (max_entity_position[2] + half_depth) / chunk_size
-            );
+            i32 index_max_x =
+                as<i32>((max_entity_position[0] + half_width) / chunk_size);
+            i32 index_max_y =
+                as<i32>((max_entity_position[1] + half_height) / chunk_size);
+            i32 index_max_z =
+                as<i32>((max_entity_position[2] + half_depth) / chunk_size);
 
             // Entity can legitimately leave the fixed-size world grid (fell off
             // the world edge, projectile flew away) - clamp to nearest edge
             // cell instead of crashing.
             index_min_x =
-                std::clamp(index_min_x, 0, (i32)spatial_grid.width - 1);
+                std::clamp(index_min_x, 0, as<i32>(spatial_grid.width) - 1);
             index_min_y =
-                std::clamp(index_min_y, 0, (i32)spatial_grid.height - 1);
+                std::clamp(index_min_y, 0, as<i32>(spatial_grid.height) - 1);
             index_min_z =
-                std::clamp(index_min_z, 0, (i32)spatial_grid.depth - 1);
+                std::clamp(index_min_z, 0, as<i32>(spatial_grid.depth) - 1);
             index_max_x =
-                std::clamp(index_max_x, 0, (i32)spatial_grid.width - 1);
+                std::clamp(index_max_x, 0, as<i32>(spatial_grid.width) - 1);
             index_max_y =
-                std::clamp(index_max_y, 0, (i32)spatial_grid.height - 1);
+                std::clamp(index_max_y, 0, as<i32>(spatial_grid.height) - 1);
             index_max_z =
-                std::clamp(index_max_z, 0, (i32)spatial_grid.depth - 1);
+                std::clamp(index_max_z, 0, as<i32>(spatial_grid.depth) - 1);
 
             for (auto i2 = index_min_z; i2 <= index_max_z; ++i2) {
                 for (auto i3 = index_min_y; i3 <= index_max_y; ++i3) {
@@ -13353,18 +13552,18 @@ TimerWin::TimerWin() {
 }
 
 auto TimerWin::init_frequency() -> f64 {
-    QueryPerformanceFrequency((PLARGE_INTEGER)&i64_freq);
-    return (f64)i64_freq;
+    QueryPerformanceFrequency(reinterpret_cast<PLARGE_INTEGER>(&i64_freq));
+    return as<f64>(i64_freq);
 }
 
 auto TimerWin::reset() -> f64 {
-    QueryPerformanceCounter((PLARGE_INTEGER)&i64_start);
-    return (f64)i64_start;
+    QueryPerformanceCounter(reinterpret_cast<PLARGE_INTEGER>(&i64_start));
+    return as<f64>(i64_start);
 }
 
 auto TimerWin::get_elapsed() -> f64 {
-    QueryPerformanceCounter((PLARGE_INTEGER)&i64_now);
-    return (f64)(i64_now - i64_start) / i64_freq;
+    QueryPerformanceCounter(reinterpret_cast<PLARGE_INTEGER>(&i64_now));
+    return as<f64>((i64_now - i64_start)) / i64_freq;
 }
 } // namespace glvm
 #endif // _WIN32
@@ -13509,10 +13708,10 @@ WindowWinVulkan::WindowWinVulkan() {
         window_y,
         rect.right - rect.left,
         rect.bottom - rect.top,
-        (HWND)NULL,
-        (HMENU)NULL,
+        as<HWND>(nullptr),
+        as<HMENU>(nullptr),
         NULL,
-        (LPVOID)NULL
+        as<LPVOID>(nullptr)
     );
 
     // Show the window and paint its contents.
@@ -13530,7 +13729,11 @@ auto WindowWinVulkan::handle_event(Event& event) -> bool {
     // Create a message struct object.
     MSG msg;
 
-    SetWindowLongPtrW(modern_window, GWLP_USERDATA, (LONG_PTR)&event);
+    SetWindowLongPtrW(
+        modern_window,
+        GWLP_USERDATA,
+        reinterpret_cast<LONG_PTR>(&event)
+    );
     while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
@@ -13616,7 +13819,8 @@ auto WindowWinVulkan::main_wnd_proc(
     LPARAM l_param
 ) -> LRESULT {
     ImGui_ImplWin32_WndProcHandler(hwnd, msg, w_param, l_param);
-    Event* event = (Event*)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
+    Event* event =
+        reinterpret_cast<Event*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
 
     if (msg == WM_KEYDOWN && w_param == VK_ESCAPE && event != nullptr
         && (l_param & (1 << 30)) == 0) {
@@ -14198,7 +14402,7 @@ auto WavefrontObjParser::parse_float(Vec<char> digits) -> f32 {
     }
 
     f32 result = 0;
-    result = (f32)(integer_part + floating_part);
+    result = as<f32>((integer_part + floating_part));
 
     if (negate_flag) {
         result *= -1.0f;
@@ -14221,7 +14425,7 @@ auto xdg_surface_configure(
 ) -> void {
     // The compositor sends a configure event before the surface is shown;
     // it must be acknowledged, otherwise the window never appears.
-    WindowWaylandVulkan* config_data = (WindowWaylandVulkan*)data;
+    WindowWaylandVulkan* config_data = as<WindowWaylandVulkan*>(data);
 
     xdg_surface_ack_configure(xdg_surface, serial);
     if (!config_data->pixels) {
@@ -14263,7 +14467,7 @@ auto keyboard_enter(
     struct wl_surface* surface,
     struct wl_array* keys
 ) -> void {
-    WindowWaylandVulkan* wayland_window_data = (WindowWaylandVulkan*)data;
+    WindowWaylandVulkan* wayland_window_data = as<WindowWaylandVulkan*>(data);
     wayland_window_data->is_focused = true;
 }
 
@@ -14273,7 +14477,7 @@ auto keyboard_leave(
     u32 serial,
     struct wl_surface* surface
 ) -> void {
-    WindowWaylandVulkan* wayland_window_data = (WindowWaylandVulkan*)data;
+    WindowWaylandVulkan* wayland_window_data = as<WindowWaylandVulkan*>(data);
     wayland_window_data->is_focused = false;
 }
 
@@ -14519,7 +14723,8 @@ auto output_mode(
     i32 refresh
 ) -> void {
     if (flags & WL_OUTPUT_MODE_CURRENT) {
-        WindowWaylandVulkan* wayland_window_data = (WindowWaylandVulkan*)data;
+        WindowWaylandVulkan* wayland_window_data =
+            as<WindowWaylandVulkan*>(data);
         wayland_window_data->width = width;
         wayland_window_data->height = height;
     }
@@ -14623,7 +14828,7 @@ auto xdg_toplevel_configure(
         return;
     }
 
-    WindowWaylandVulkan* toplevel_data = (WindowWaylandVulkan*)data;
+    WindowWaylandVulkan* toplevel_data = as<WindowWaylandVulkan*>(data);
 
     if (toplevel_data->width != new_width
         || toplevel_data->height != new_height) {
@@ -14634,7 +14839,7 @@ auto xdg_toplevel_configure(
 }
 
 auto xdg_toplevel_close(void* data, struct xdg_toplevel* xdg_toplevel) -> void {
-    WindowWaylandVulkan* toplevel_data = (WindowWaylandVulkan*)data;
+    WindowWaylandVulkan* toplevel_data = as<WindowWaylandVulkan*>(data);
 
     toplevel_data->close_xdg_toplevel = 1;
 }
@@ -14648,7 +14853,7 @@ auto WindowWaylandVulkan::init() -> void {
     wl_registry_add_listener(
         registry,
         &registry_listener,
-        (void*)(&wayland_window)
+        as<void*>((&wayland_window))
     );
     wl_display_roundtrip(display);
     if (!compositor || !xdg_shell) {
@@ -14661,19 +14866,19 @@ auto WindowWaylandVulkan::init() -> void {
     wl_callback_add_listener(
         frame_callback,
         &callback_listener,
-        (void*)(&wayland_window)
+        as<void*>((&wayland_window))
     );
     xdg_surface = xdg_wm_base_get_xdg_surface(xdg_shell, wl_surface);
     xdg_surface_add_listener(
         xdg_surface,
         &xdg_surface_listener,
-        (void*)(&wayland_window)
+        as<void*>((&wayland_window))
     );
     xdg_toplevel = xdg_surface_get_toplevel(xdg_surface);
     xdg_toplevel_add_listener(
         xdg_toplevel,
         &xdg_toplevel_listener,
-        (void*)(&wayland_window)
+        as<void*>((&wayland_window))
     );
     xdg_toplevel_set_title(xdg_toplevel, "wayland glvm client");
     wl_surface_commit(wl_surface);
@@ -14698,7 +14903,7 @@ auto WindowWaylandVulkan::create_transparent_cursor(struct wl_shm* shm)
 
     // Fill with transparent pixels.
     for (i32 i = 0; i < 64 * 64; ++i) {
-        ((i32*)data)[i] = 0x00000000;
+        (as<i32*>(data))[i] = 0x00000000;
     }
 
     struct wl_shm_pool* pool = wl_shm_create_pool(shm, file_descriptor, size);
@@ -14732,8 +14937,8 @@ auto WindowWaylandVulkan::cursor_lock(
 ) -> void {
     static i32 flag = 0;
     if (flag == 0) {
-        *out_offset_x = -((i32)width / 2);
-        *out_offset_y = -((i32)height / 2);
+        *out_offset_x = -(as<i32>(width) / 2);
+        *out_offset_y = -(as<i32>(height) / 2);
         ++flag;
     } else {
         *out_offset_x = pointer_x;
@@ -14886,8 +15091,8 @@ auto WindowXVulkan::cursor_lock(
     i32* out_offset_x,
     i32* out_offset_y
 ) -> void {
-    *out_offset_x += pointer_x - (i32)(width / 2);
-    *out_offset_y -= pointer_y - (i32)(height / 2);
+    *out_offset_x += pointer_x - as<i32>((width / 2));
+    *out_offset_y -= pointer_y - as<i32>((height / 2));
     // Pitch is limited by angle in Engine::SetViewMatrix(), so this offset may
     // accumulate freely; no pixel clamp here (resolution-independent).
     XWarpPointer(
@@ -14898,8 +15103,8 @@ auto WindowXVulkan::cursor_lock(
         0,
         0,
         0,
-        (i32)(width / 2),
-        (i32)(height / 2)
+        as<i32>((width / 2)),
+        as<i32>((height / 2))
     );
     XFlush(display);
 }
@@ -15440,8 +15645,8 @@ auto WindowXCBVulkan::cursor_lock(
     i32* out_offset_x,
     i32* out_offset_y
 ) -> void {
-    *out_offset_x += pointer_x - (i32)(width / 2);
-    *out_offset_y -= pointer_y - (i32)(height / 2);
+    *out_offset_x += pointer_x - as<i32>((width / 2));
+    *out_offset_y -= pointer_y - as<i32>((height / 2));
     xcb_warp_pointer(
         connection,
         XCB_NONE,
@@ -15450,8 +15655,8 @@ auto WindowXCBVulkan::cursor_lock(
         0,
         0,
         0,
-        (i32)(width / 2),
-        (i32)(height / 2)
+        as<i32>((width / 2)),
+        as<i32>((height / 2))
     );
     xcb_flush(connection);
 }

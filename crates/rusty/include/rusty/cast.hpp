@@ -3,12 +3,10 @@
 #include <concepts>
 
 namespace rusty::cast {
-// libstdc++'s is_convertible_v is false for extended floating-point
-// conversions (e.g. _Float64 -> _Float32), so arithmetic casts are allowed
-// unconditionally, like Rust's `as`.
+// Like Rust's `as`: anything `static_cast` can do, including arithmetic,
+// pointer-to-pointer and explicit conversions.
 template<typename To, typename From>
-    requires std::convertible_to<From, To>
-    || (std::is_arithmetic_v<From> && std::is_arithmetic_v<To>)
+    requires requires(From v) { static_cast<To>(v); }
 constexpr auto as(From val) noexcept -> To {
     return static_cast<To>(val);
 }
@@ -17,7 +15,7 @@ template<typename To>
 struct Cast {};
 
 template<typename From, typename To>
-    requires std::convertible_to<From, To>
+    requires requires(From v) { static_cast<To>(v); }
 constexpr auto operator|(From val, Cast<To> /*unused*/) noexcept -> To {
     return static_cast<To>(val);
 }

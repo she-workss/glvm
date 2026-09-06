@@ -1800,14 +1800,14 @@ auto normalize(Vector<T, 3> other) -> Vector<T, 3> {
 template<typename T>
 auto glvm_perspective_rh_no(T fov, T aspect, T near_plane, T far_plane)
     -> Matrix<T, 4> {
-    const T tan_half_fov = std::tan(fov / static_cast<T>(2));
-    Matrix<f32, 4> result(static_cast<T>(0));
-    result[0][0] = static_cast<T>(1) / (aspect * tan_half_fov);
-    result[1][1] = static_cast<T>(1) / (tan_half_fov);
+    const T tan_half_fov = std::tan(fov / as<T>(2));
+    Matrix<f32, 4> result(as<T>(0));
+    result[0][0] = as<T>(1) / (aspect * tan_half_fov);
+    result[1][1] = as<T>(1) / (tan_half_fov);
     result[2][2] = -(far_plane - near_plane) / (far_plane - near_plane);
-    result[2][3] = -static_cast<T>(1);
-    result[3][2] = -(static_cast<T>(2) * far_plane * near_plane)
-        / (far_plane - near_plane);
+    result[2][3] = -as<T>(1);
+    result[3][2] =
+        -(as<T>(2) * far_plane * near_plane) / (far_plane - near_plane);
     return result;
 }
 
@@ -1868,7 +1868,7 @@ auto fps_view(Vector<T, 3> eye, Vector<T, 3> center, Vector<T, 3> up)
 
 template<typename T3>
 auto radians(T3 degrees) -> T3 {
-    degrees *= PI / static_cast<T3>(180);
+    degrees *= PI / as<T3>(180);
     return degrees;
 }
 
@@ -1898,36 +1898,30 @@ auto rotate(Vector<T, VecSize> vector, f32 angle) -> Matrix<T, Var> {
     Matrix<T, Var> temp_matrix(1.0f);
     // Transposed rotate matrix.
     temp_matrix[0][0] = std::cos(angle)
-        + (vector[0] * vector[0]) * (static_cast<T>(1) - std::cos(angle));
-    temp_matrix[1][0] =
-        vector[0] * vector[1] * (static_cast<T>(1) - std::cos(angle))
+        + (vector[0] * vector[0]) * (as<T>(1) - std::cos(angle));
+    temp_matrix[1][0] = vector[0] * vector[1] * (as<T>(1) - std::cos(angle))
         - vector[2] * std::sin(angle);
-    temp_matrix[2][0] =
-        vector[0] * vector[2] * (static_cast<T>(1) - std::cos(angle))
+    temp_matrix[2][0] = vector[0] * vector[2] * (as<T>(1) - std::cos(angle))
         + vector[1] * std::sin(angle);
-    temp_matrix[3][0] = static_cast<T>(0);
-    temp_matrix[0][1] =
-        vector[1] * vector[0] * (static_cast<T>(1) - std::cos(angle))
+    temp_matrix[3][0] = as<T>(0);
+    temp_matrix[0][1] = vector[1] * vector[0] * (as<T>(1) - std::cos(angle))
         + vector[2] * std::sin(angle);
     temp_matrix[1][1] = std::cos(angle)
-        + (vector[1] * vector[1]) * (static_cast<T>(1) - std::cos(angle));
-    temp_matrix[2][1] =
-        vector[1] * vector[2] * (static_cast<T>(1) - std::cos(angle))
+        + (vector[1] * vector[1]) * (as<T>(1) - std::cos(angle));
+    temp_matrix[2][1] = vector[1] * vector[2] * (as<T>(1) - std::cos(angle))
         - vector[0] * std::sin(angle);
-    temp_matrix[3][1] = static_cast<T>(0);
-    temp_matrix[0][2] =
-        vector[2] * vector[0] * (static_cast<T>(1) - std::cos(angle))
+    temp_matrix[3][1] = as<T>(0);
+    temp_matrix[0][2] = vector[2] * vector[0] * (as<T>(1) - std::cos(angle))
         - vector[1] * std::sin(angle);
-    temp_matrix[1][2] =
-        vector[2] * vector[1] * (static_cast<T>(1) - std::cos(angle))
+    temp_matrix[1][2] = vector[2] * vector[1] * (as<T>(1) - std::cos(angle))
         + vector[0] * std::sin(angle);
     temp_matrix[2][2] = std::cos(angle)
-        + (vector[2] * vector[2]) * (static_cast<T>(1) - std::cos(angle));
-    temp_matrix[3][2] = static_cast<T>(0);
-    temp_matrix[0][3] = static_cast<T>(0);
-    temp_matrix[1][3] = static_cast<T>(0);
-    temp_matrix[2][3] = static_cast<T>(0);
-    temp_matrix[3][3] = static_cast<T>(1);
+        + (vector[2] * vector[2]) * (as<T>(1) - std::cos(angle));
+    temp_matrix[3][2] = as<T>(0);
+    temp_matrix[0][3] = as<T>(0);
+    temp_matrix[1][3] = as<T>(0);
+    temp_matrix[2][3] = as<T>(0);
+    temp_matrix[3][3] = as<T>(1);
     return temp_matrix;
 }
 
@@ -1944,9 +1938,9 @@ template<typename T>
 auto ortho_rh_zo(T left, T right, T bottom, T top, T near_plane, T far_plane)
     -> Matrix<T, 4> {
     Matrix<f32, 4> temp_matrix(1);
-    temp_matrix[0][0] = static_cast<T>(2) / (right - left);
-    temp_matrix[1][1] = static_cast<T>(2) / (top - bottom);
-    temp_matrix[2][2] = -static_cast<T>(1) / (far_plane - near_plane);
+    temp_matrix[0][0] = as<T>(2) / (right - left);
+    temp_matrix[1][1] = as<T>(2) / (top - bottom);
+    temp_matrix[2][2] = -as<T>(1) / (far_plane - near_plane);
     temp_matrix[3][0] = -(right + left) / (right - left);
     temp_matrix[3][1] = -(top + bottom) / (top - bottom);
     temp_matrix[3][2] = -near_plane / (far_plane - near_plane);
@@ -1964,11 +1958,11 @@ template<typename T, i32 Var>
 auto perspective_rh_zo(T fov, T aspect, T near_plane, T far_plane)
     -> Matrix<T, Var> {
     const auto tan_half_fov = std::tan((fov * 0.5f) * (PI / 360));
-    Matrix<f32, Var> temp_matrix(static_cast<T>(0));
-    temp_matrix[0][0] = static_cast<T>(1) / (aspect * tan_half_fov);
-    temp_matrix[1][1] = static_cast<T>(1) / tan_half_fov;
+    Matrix<f32, Var> temp_matrix(as<T>(0));
+    temp_matrix[0][0] = as<T>(1) / (aspect * tan_half_fov);
+    temp_matrix[1][1] = as<T>(1) / tan_half_fov;
     temp_matrix[2][2] = far_plane / (near_plane - far_plane);
-    temp_matrix[2][3] = static_cast<T>(1);
+    temp_matrix[2][3] = as<T>(1);
     temp_matrix[3][2] = -(far_plane * near_plane) / (far_plane - near_plane);
     return temp_matrix;
 }
@@ -2660,7 +2654,7 @@ union JsonVariant {
     }
 
     JsonVariant(const JsonVariant& object) {
-        memcpy((void*)this, &object, sizeof(JsonVariant));
+        memcpy(as<void*>(this), &object, sizeof(JsonVariant));
     }
 
     ~JsonVariant() {
@@ -3305,10 +3299,10 @@ public:
         ComponentType component;
         local_container_id = create_component_container<ComponentType>();
 
-        Vec<u32>& sparse = *static_cast<Vec<u32>*>(
+        Vec<u32>& sparse = *as<Vec<u32>*>(
             world_sparse_entities_map_to_components[local_container_id]
         );
-        Vec<u32>& dense = *static_cast<Vec<u32>*>(
+        Vec<u32>& dense = *as<Vec<u32>*>(
             world_dense_components_map_to_entities[local_container_id]
         );
         Vec<ComponentType>& components =
@@ -3346,7 +3340,7 @@ public:
         number_of_base_components = 0;
         u32 first_component_array_index =
             create_component_container<ComponentType>();
-        Vec<u32>& dense = *static_cast<Vec<u32>*>(
+        Vec<u32>& dense = *as<Vec<u32>*>(
             world_dense_components_map_to_entities[first_component_array_index]
         );
 
@@ -3373,12 +3367,10 @@ public:
             number_of_component_arrays = 0;
             for (u32 i = 0; i < world_dense_components_map_to_entities.size();
                  ++i) {
-                Vec<u32>& sparse = *static_cast<Vec<u32>*>(
-                    world_sparse_entities_map_to_components[i]
-                );
-                Vec<u32>& dense = *static_cast<Vec<u32>*>(
-                    world_dense_components_map_to_entities[i]
-                );
+                Vec<u32>& sparse =
+                    *as<Vec<u32>*>(world_sparse_entities_map_to_components[i]);
+                Vec<u32>& dense =
+                    *as<Vec<u32>*>(world_dense_components_map_to_entities[i]);
 
                 if (check_availability(sparse, dense, base_sub_set_entities[j])) {
                     ++number_of_component_arrays;
@@ -3402,10 +3394,10 @@ public:
     template<typename ComponentType>
     auto multi_check_availability_base(u32 entity) -> bool {
         u32 component_array_index = create_component_container<ComponentType>();
-        Vec<u32>& sparse = *static_cast<Vec<u32>*>(
+        Vec<u32>& sparse = *as<Vec<u32>*>(
             world_sparse_entities_map_to_components[component_array_index]
         );
-        Vec<u32>& dense = *static_cast<Vec<u32>*>(
+        Vec<u32>& dense = *as<Vec<u32>*>(
             world_dense_components_map_to_entities[component_array_index]
         );
         return check_availability(sparse, dense, entity);
@@ -3415,10 +3407,10 @@ public:
     auto is_component_exists(const u32& entity) -> bool {
         u32 local_container_id;
         local_container_id = create_component_container<ComponentType>();
-        Vec<u32>& sparse = *static_cast<Vec<u32>*>(
+        Vec<u32>& sparse = *as<Vec<u32>*>(
             world_sparse_entities_map_to_components[local_container_id]
         );
-        Vec<u32>& dense = *static_cast<Vec<u32>*>(
+        Vec<u32>& dense = *as<Vec<u32>*>(
             world_dense_components_map_to_entities[local_container_id]
         );
         return check_availability(sparse, dense, entity);
@@ -3428,10 +3420,10 @@ public:
     auto get_component(const u32& entity) -> ComponentType* {
         u32 local_container_id;
         local_container_id = create_component_container<ComponentType>();
-        Vec<u32>& sparse = *static_cast<Vec<u32>*>(
+        Vec<u32>& sparse = *as<Vec<u32>*>(
             world_sparse_entities_map_to_components[local_container_id]
         );
-        Vec<u32>& dense = *static_cast<Vec<u32>*>(
+        Vec<u32>& dense = *as<Vec<u32>*>(
             world_dense_components_map_to_entities[local_container_id]
         );
         Vec<ComponentType>& components =
@@ -3452,10 +3444,10 @@ public:
     auto remove_component(u32& entity) -> void {
         u32 local_container_id;
         local_container_id = create_component_container<ComponentType>();
-        Vec<u32>& sparse = *static_cast<Vec<u32>*>(
+        Vec<u32>& sparse = *as<Vec<u32>*>(
             world_sparse_entities_map_to_components[local_container_id]
         );
-        Vec<u32>& dense = *static_cast<Vec<u32>*>(
+        Vec<u32>& dense = *as<Vec<u32>*>(
             world_dense_components_map_to_entities[local_container_id]
         );
         Vec<ComponentType>& components =
@@ -3536,10 +3528,8 @@ public:
 
     template<typename ComponentType>
     auto get_entity_container() -> Vec<u32>* {
-        return static_cast<Vec<u32>*>(
-            world_dense_components_map_to_entities
-                [create_component_container<ComponentType>()]
-        );
+        return as<Vec<u32>*>(world_dense_components_map_to_entities
+                                 [create_component_container<ComponentType>()]);
     }
 };
 
@@ -4932,11 +4922,31 @@ public:
     }
 
     bool show_panel = true;
+    /// Draws only the AABBs that currently overlap (collision suspects).
+    bool show_colliders = false;
     bool show_actor_bounds = false;
     bool show_light_frustums = false;
+    /// Draws a cross gizmo at each light position plus its direction.
+    bool show_light_gizmos = false;
     bool show_shadow_maps = false;
     bool show_spatial_grid = false;
+    /// Scales every light ambient term to zero when disabled.
+    bool ambient_enabled = true;
+    /// Includes directional lights in the light UBO when enabled.
+    bool directional_enabled = true;
+    /// Includes point lights in the light UBO when enabled.
+    bool point_enabled = true;
+    /// Includes spot lights in the light UBO when enabled.
+    bool spot_enabled = true;
     bool shadows_enabled = true;
+    /// Renders the main pass with a VK_POLYGON_MODE_LINE pipeline.
+    bool wireframe_enabled = false;
+    /// Uses VK_PRESENT_MODE_FIFO_KHR; recreates the swap chain on toggle.
+    bool vsync_enabled = false;
+    /// Freezes simulation time (delta forced to zero) while rendering goes on.
+    bool pause_time = false;
+    /// Shows the frame time / FPS / draw call / triangle stats block.
+    bool show_stats = true;
     i32 shadow_map_mode = 0; // 0 = directional, 1 = spot.
     i32 shadow_map_light = 0;
 
@@ -4954,6 +4964,8 @@ private:
     VkDeviceMemory vertex_buffer_memory = VK_NULL_HANDLE;
     void* vertex_buffer_mapped = nullptr;
     u32 line_vertex_count = 0;
+    /// Rolling frame times in ms for the stats graph (capped at 120 samples).
+    Vec<f32> frame_time_history;
 
     auto create_render_pass() -> void;
     auto create_line_pipeline() -> void;
@@ -6147,10 +6159,10 @@ template<typename T>
 auto unwrap_archetype(Archetype* arch, u64 mask, void (*func)(T*)) -> void {
     switch (mask) {
         case PLAYER_COMPONENT_MASK:
-            func(static_cast<PlayerArchetype*>(arch));
+            func(as<PlayerArchetype*>(arch));
             break;
         case ENEMY_COMPONENT_MASK:
-            func(static_cast<EnemyArchetype*>(arch));
+            func(as<EnemyArchetype*>(arch));
             break;
     }
 }
@@ -6503,6 +6515,9 @@ public:
 #endif
 
     ImGuiOverlay* imgui_overlay = nullptr;
+
+    /// LINE variant of the main render pipeline, bound when wireframe is on.
+    VkPipeline main_wireframe_pipeline = VK_NULL_HANDLE;
 
     Renderer();
     ~Renderer();
