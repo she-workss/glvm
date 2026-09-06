@@ -227,13 +227,18 @@ void main() {
         }
     }
     // Debug: visualize the selected shadow map depth projected onto the scene,
-    // seen from the normal moving camera.
+    // seen from the normal moving camera. Fragments outside the light frustum
+    // read blue so "no data" is never confused with far geometry (black).
     if (lightData.debugShadowMode == 1
         && lightData.debugShadowLight < DIRECTIONAL_LIGHTS_NUMBER) {
         int li = lightData.debugShadowLight;
         vec3 proj = fs_in.fragmentPositionDirectionalLightSpace[li].xyz
             / fs_in.fragmentPositionDirectionalLightSpace[li].w;
         vec3 zo = proj * 0.5 + 0.5;
+        if (zo.x < 0.0 || zo.x > 1.0 || zo.y < 0.0 || zo.y > 1.0) {
+            outColor = vec4(0.0, 0.0, 1.0, 1.0);
+            return;
+        }
         float depth = texture(directionalLightsShadowMaps[li], zo.xy).r;
         // Invert so close geometry reads bright, far reads dark.
         outColor = vec4(vec3(1.0 - clamp(depth, 0.0, 1.0)), 1.0);
@@ -245,6 +250,10 @@ void main() {
         vec3 proj = fs_in.fragmentPositionSpotLightSpace[li].xyz
             / fs_in.fragmentPositionSpotLightSpace[li].w;
         vec3 zo = proj * 0.5 + 0.5;
+        if (zo.x < 0.0 || zo.x > 1.0 || zo.y < 0.0 || zo.y > 1.0) {
+            outColor = vec4(0.0, 0.0, 1.0, 1.0);
+            return;
+        }
         float depth = texture(spotLightsShadowMaps[li], zo.xy).r;
         outColor = vec4(vec3(1.0 - clamp(depth, 0.0, 1.0)), 1.0);
         return;
@@ -327,10 +336,9 @@ vec3 ComputeSpotLight(
     vec3 toFragment = normalize(fragmentPosition - light.position);
     vec3 coneAxis = normalize(light.direction - light.position);
     float theta = dot(toFragment, coneAxis);
-    float epsilon =
-        cos(radians(light.cutOff)) - cos(radians(light.outerCutOff));
-    float intensity =
-        clamp((theta - cos(radians(light.outerCutOff))) / epsilon, 0.0, 1.0);
+    // cutOff/outerCutOff arrive as cosines precomputed on the CPU.
+    float epsilon = light.cutOff - light.outerCutOff;
+    float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
     // Combine results.
     vec3 ambient = light.ambient * fs_in.ambient;
     vec3 diffuse =
@@ -447,10 +455,11 @@ float ComputeSpotShadow(
     // Perform perspective divide.
     vec3 projectiveCoordinates =
         fragmentPositionSpotLightSpace.xyz / fragmentPositionSpotLightSpace.w;
-    // Transform to [0.1] range.
+    // Transform to [0.1] range for UVs only. Depth is compared against
+    // the stored Vulkan depth, so it stays in NDC without the remap.
     vec3 projectiveCoordinatesZO = projectiveCoordinates * 0.5 + 0.5;
     // Get depth of current fragment from light's perspective.
-    float currentDepth = projectiveCoordinatesZO.z;
+    float currentDepth = projectiveCoordinates.z;
     if (projectiveCoordinates.x < -1.0 || projectiveCoordinates.x > 1.0
         || projectiveCoordinates.y < -1.0 || projectiveCoordinates.y > 1.0) {
         return 0.0;
