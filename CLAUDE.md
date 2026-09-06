@@ -33,3 +33,10 @@ After writing, reviewing, or refactoring any code, always verify that compilatio
 Strict GLVM coding conventions - Rust-style naming, type aliases, ownership rules, C++26 idioms - apply to **all** code written or reviewed in this repository. They are defined in `.claude/skills/glvm-rules/SKILL.md` and available as the `/glvm-rules` skill.
 
 Read `.claude/skills/glvm-rules/SKILL.md` and follow it whenever writing or reviewing code.
+
+## MCP servers (project-local, auto-connected)
+
+- `gdb` (`mcp-gdb`) - CPU debugging: breakpoints, stepping, variables. Debug a `build/debug` binary, never a release one.
+- `renderdoc` (`renderdoc-mcp`) - GPU frame analysis of `.rdc` captures (`open_capture`, `list_draws`, `goto_event`, export render targets). Produce a capture first via RenderDoc UI / `renderdoccmd` (Vulkan layer), then analyze - do not guess GPU state from code alone.
+- `context7` - up-to-date library docs. Prefer over training knowledge for API details.
+- `zvec_grep` - semantic workspace search. Prefer over `grep` when location is unknown.

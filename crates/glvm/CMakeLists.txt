@@ -16,6 +16,7 @@ target_include_directories(glvm
 
 target_link_libraries(glvm
   PUBLIC
+    glvm_log
     imgui
     rusty
     ${Vulkan_LIBRARY}

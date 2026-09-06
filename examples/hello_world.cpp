@@ -1,32 +1,36 @@
-#include "assets/textures/chelik.h"
 #include "assets/textures/container2.h"
 #include "assets/textures/container2_specular.h"
 #include "assets/textures/crosshair.h"
-#include "assets/textures/fontAtlas.h"
+#include "assets/textures/font_atlas.h"
 #include "assets/textures/gray.h"
-#include "assets/textures/inventorySlot.h"
+#include "assets/textures/human.h"
+#include "assets/textures/inventory_slot.h"
 #include "assets/textures/tileset.h"
 #include "assets/textures/witch.h"
 #include "glvm/glvm.hpp"
+#include "glvm_log/prelude.hpp"
 
 #include <cstdio>
 #include <map>
 #include <random>
 
 using namespace glvm;
+using namespace glvm_log::prelude;
 
 auto main() -> i32 {
+    glvm_log::info("hello", "main start");
     auto* entity_manager = EntityManager::get_instance();
     auto* component_manager = ComponentManager::get_instance();
     auto* arch_entity_manager = ArchetypeEntityManager::get_instance();
     auto* engine = Engine::get_instance();
+    glvm_log::info("hello", "engine created");
     auto hyper_cube = engine->load_mesh_from_gltf(
         "../../../examples/assets/gltf/hyper_cube.gltf"
     );
     auto hyper_cube2 = engine->load_mesh_from_gltf(
         "../../../examples/assets/gltf/hyper_cube2.gltf"
     );
-    auto mega_chel = engine->load_mesh_from_gltf(
+    auto mega_human = engine->load_mesh_from_gltf(
         "../../../examples/assets/gltf/mega_chel.gltf"
     );
     auto simple_cube = engine->load_mesh_from_gltf(
@@ -43,8 +47,8 @@ auto main() -> i32 {
     );
     auto robot0_handle =
         engine->load_mesh_from_gltf("../../../examples/assets/gltf/scene.gltf");
-    auto chelik_texture =
-        engine->load_texture_from_address(128, 96, chelik_dat_len, chelik_dat);
+    auto human_texture =
+        engine->load_texture_from_address(128, 96, human_dat_len, human_dat);
     auto witch_texture =
         engine->load_texture_from_address(32, 32, witch_dat_len, witch_dat);
     auto gray_texture =
@@ -64,24 +68,25 @@ auto main() -> i32 {
     auto crosshair_texture = engine->load_texture_from_address(
         32,
         32,
-        Crosshair_dat_len,
-        Crosshair_dat
+        crosshair_dat_len,
+        crosshair_dat
     );
     auto font_atlas_texture = engine->load_texture_from_address(
         84,
         132,
-        fontAtlas_dat_len,
-        fontAtlas_dat
+        font_atlas_dat_len,
+        font_atlas_dat
     );
     auto inventory_texture = engine->load_texture_from_address(
         64,
         64,
-        inventorySlot_dat_len,
-        inventorySlot_dat
+        inventory_slot_dat_len,
+        inventory_slot_dat
     );
     auto tileset_texture =
         engine
             ->load_texture_from_address(512, 512, tileset_dat_len, tileset_dat);
+    glvm_log::info("hello", "meshes and textures loaded");
     {
         auto* level_chunk_arch = new LevelChunkArchetype;
         auto* player_arch = new PlayerArchetype;
@@ -94,28 +99,28 @@ auto main() -> i32 {
         auto* directional_light_arch = new DirectionalLightArchetype;
         auto* point_light_arch = new PointLightArchetype;
         auto* spot_light_arch = new SpotLightArchetype;
-        WORLD.archetypes.push_back(level_chunk_arch);
-        WORLD.archetypes.push_back(player_arch);
-        WORLD.archetypes.push_back(enemy_arch);
-        WORLD.archetypes.push_back(projectile_arch);
-        WORLD.archetypes.push_back(static_mesh_arch);
-        WORLD.archetypes.push_back(crosshair_arch);
-        WORLD.archetypes.push_back(inventory_arch);
-        WORLD.archetypes.push_back(item_arch);
-        WORLD.archetypes.push_back(directional_light_arch);
-        WORLD.archetypes.push_back(point_light_arch);
-        WORLD.archetypes.push_back(spot_light_arch);
+        world.archetypes.push_back(level_chunk_arch);
+        world.archetypes.push_back(player_arch);
+        world.archetypes.push_back(enemy_arch);
+        world.archetypes.push_back(projectile_arch);
+        world.archetypes.push_back(static_mesh_arch);
+        world.archetypes.push_back(crosshair_arch);
+        world.archetypes.push_back(inventory_arch);
+        world.archetypes.push_back(item_arch);
+        world.archetypes.push_back(directional_light_arch);
+        world.archetypes.push_back(point_light_arch);
+        world.archetypes.push_back(spot_light_arch);
     }
     auto player = arch_entity_manager->create_entity();
-    WORLD.add_entity_to_archetype(player, WORLD.archetypes[1]);
-    auto player_location = WORLD.entity_locations[get_id(player)];
+    world.add_entity_to_archetype(player, world.archetypes[1]);
+    auto player_location = world.entity_locations[get_id(player)];
     auto* player_arch = dynamic_cast<PlayerArchetype*>(player_location.arch);
     const auto player_index = player_location.index;
     player_arch->transforms[player_index] = {
         .position = {15.0f, 15.0f, 15.0f},
         .scale = 1.0f
     };
-    player_arch->rigid_bodies[player_index] = {.f_mass = 3.0f};
+    player_arch->rigid_bodies[player_index] = {.mass = 3.0f};
     player_arch->health[player_index] = {
         .max_health = 100,
         .current_health = 100
@@ -124,7 +129,7 @@ auto main() -> i32 {
         .position = {0.0f, 2.0f, -3.0f},
         .forward = {0.0f, 0.0f, -1.0f}
     };
-    player_arch->meshes[player_index] = {.handle = mega_chel, .gltf = true};
+    player_arch->meshes[player_index] = {.handle = mega_human, .gltf = true};
     player_arch->materials[player_index] = {
         .diffuse_texture_id = gray_texture,
         .specular_texture_id = gray_texture,
@@ -137,8 +142,8 @@ auto main() -> i32 {
     std::uniform_int_distribution<i32> dist(0, 3);
     for (auto i = 0; i < 5; ++i) {
         auto enemy = arch_entity_manager->create_entity();
-        WORLD.add_entity_to_archetype(enemy, WORLD.archetypes[2]);
-        auto enemy_location = WORLD.entity_locations[get_id(enemy)];
+        world.add_entity_to_archetype(enemy, world.archetypes[2]);
+        auto enemy_location = world.entity_locations[get_id(enemy)];
         auto* enemy_arch = dynamic_cast<EnemyArchetype*>(enemy_location.arch);
         const auto enemy_index = enemy_location.index;
         auto random = dist(mersenne);
@@ -166,7 +171,7 @@ auto main() -> i32 {
             .scale = 0.02f
         };
         enemy_arch->states[enemy_index] = {.state = States::ROAMING};
-        enemy_arch->rigid_bodies[enemy_index] = {.f_mass = 0.0f};
+        enemy_arch->rigid_bodies[enemy_index] = {.mass = 0.0f};
         enemy_arch->enemies[enemy_index] = {.detect_radius = 10.0f};
         enemy_arch->health[enemy_index] = {
             .max_health = 100,
@@ -186,8 +191,8 @@ auto main() -> i32 {
             enemy_font_component->font_string.push_back('J');
             enemy_font_component->font_string.push_back('r');
         }
-        enemy_font_component->life_time = 0.0f;
-        enemy_font_component->removeble = false;
+        enemy_font_component->lifetime = 0.0f;
+        enemy_font_component->removable = false;
         enemy_arch->meshes[enemy_index] = {
             .handle = robot0_handle,
             .gltf = true
@@ -201,8 +206,8 @@ auto main() -> i32 {
     }
     for (auto i = 0; i < 5; ++i) {
         auto cube = arch_entity_manager->create_entity();
-        WORLD.add_entity_to_archetype(cube, WORLD.archetypes[4]);
-        auto cube_location = WORLD.entity_locations[get_id(cube)];
+        world.add_entity_to_archetype(cube, world.archetypes[4]);
+        auto cube_location = world.entity_locations[get_id(cube)];
         auto* cube_arch =
             dynamic_cast<StaticMeshArchetype*>(cube_location.arch);
         const auto cube_index = cube_location.index;
@@ -220,8 +225,8 @@ auto main() -> i32 {
         cube_arch->fonts[cube_index].font_string.push_back('R');
     }
     auto crosshair = arch_entity_manager->create_entity();
-    WORLD.add_entity_to_archetype(crosshair, WORLD.archetypes[5]);
-    auto crosshair_location = WORLD.entity_locations[get_id(crosshair)];
+    world.add_entity_to_archetype(crosshair, world.archetypes[5]);
+    auto crosshair_location = world.entity_locations[get_id(crosshair)];
     auto* crosshair_arch =
         dynamic_cast<CrosshairArchetype*>(crosshair_location.arch);
     const auto crosshair_index = crosshair_location.index;
@@ -234,12 +239,12 @@ auto main() -> i32 {
         .shininess = 128.0f * 0.078125f
     };
     auto inventory = arch_entity_manager->create_entity();
-    WORLD.add_entity_to_archetype(inventory, WORLD.archetypes[6]);
-    auto inventory_location = WORLD.entity_locations[get_id(inventory)];
+    world.add_entity_to_archetype(inventory, world.archetypes[6]);
+    auto inventory_location = world.entity_locations[get_id(inventory)];
     auto* inventory_arch =
         dynamic_cast<InventoryArchetype*>(inventory_location.arch);
     const auto inventory_index = inventory_location.index;
-    auto* inventory_component = &inventory_arch->invetories[inventory_index];
+    auto* inventory_component = &inventory_arch->inventories[inventory_index];
     inventory_component->entity_owner = player;
     inventory_component->slot_mesh_id = inventory_handle;
     inventory_component->slot_scale = 0.05f;
@@ -257,8 +262,8 @@ auto main() -> i32 {
     };
     for (auto i = 0; i < 5; ++i) {
         u64 item = arch_entity_manager->create_entity();
-        WORLD.add_entity_to_archetype(item, WORLD.archetypes[7]);
-        EntityLocation item_location = WORLD.entity_locations[get_id(item)];
+        world.add_entity_to_archetype(item, world.archetypes[7]);
+        EntityLocation item_location = world.entity_locations[get_id(item)];
         auto* item_arch = dynamic_cast<ItemArchetype*>(item_location.arch);
         const auto item_index = item_location.index;
         auto row = i + 1;
@@ -271,7 +276,7 @@ auto main() -> i32 {
             .position = {3.0f, 5.0f, 10.0f + (static_cast<f32>(i) * 2.0f)},
             .scale = 0.05f
         };
-        item_arch->rigid_bodies[item_index] = {.f_mass = 0.0f};
+        item_arch->rigid_bodies[item_index] = {.mass = 0.0f};
         item_arch->meshes[item_index].handle = hyper_cube;
         item_arch->materials[item_index] = {
             .diffuse_texture_id = container2,
@@ -281,9 +286,9 @@ auto main() -> i32 {
         };
     }
     auto directional_light = arch_entity_manager->create_entity();
-    WORLD.add_entity_to_archetype(directional_light, WORLD.archetypes[8]);
+    world.add_entity_to_archetype(directional_light, world.archetypes[8]);
     auto directional_light_location =
-        WORLD.entity_locations[get_id(directional_light)];
+        world.entity_locations[get_id(directional_light)];
     auto* directional_light_arch = dynamic_cast<DirectionalLightArchetype*>(
         directional_light_location.arch
     );
@@ -307,8 +312,8 @@ auto main() -> i32 {
         .shininess = 128.0f * 0.078125f
     };
     auto point_light = arch_entity_manager->create_entity();
-    WORLD.add_entity_to_archetype(point_light, WORLD.archetypes[9]);
-    auto point_light_location = WORLD.entity_locations[get_id(point_light)];
+    world.add_entity_to_archetype(point_light, world.archetypes[9]);
+    auto point_light_location = world.entity_locations[get_id(point_light)];
     auto* point_light_arch =
         dynamic_cast<PointLightArchetype*>(point_light_location.arch);
     const auto point_light_index = point_light_location.index;
@@ -333,8 +338,8 @@ auto main() -> i32 {
         .shininess = 128.0f * 0.078125f
     };
     auto spot_light = arch_entity_manager->create_entity();
-    WORLD.add_entity_to_archetype(spot_light, WORLD.archetypes[10]);
-    auto spot_light_location = WORLD.entity_locations[get_id(spot_light)];
+    world.add_entity_to_archetype(spot_light, world.archetypes[10]);
+    auto spot_light_location = world.entity_locations[get_id(spot_light)];
     auto* spot_light_arch =
         dynamic_cast<SpotLightArchetype*>(spot_light_location.arch);
     const auto spot_light_index = spot_light_location.index;
@@ -359,9 +364,12 @@ auto main() -> i32 {
         .diffuse_texture_id = gray_texture,
         .specular_texture_id = gray_texture
     };
+    glvm_log::info("hello", "scene built, entering game loop");
     engine->game_loop();
+    glvm_log::info("hello", "game loop exited");
     engine->game_kill();
     delete entity_manager;
     delete component_manager;
     delete engine;
+    glvm_log::info("hello", "teardown done, exiting");
 }

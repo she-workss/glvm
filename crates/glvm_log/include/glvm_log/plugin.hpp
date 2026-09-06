@@ -8,15 +8,11 @@
 
 #include <string>
 
-namespace glvm_app::app {
-struct App;
-}
-
 namespace glvm_log {
 
 struct LogPlugin {
     LogLevel level = LogLevel::Info;
-    String filter = "";
+    String filter;
     LogFormat format = LogFormat::full();
 
     auto build() const -> void {

@@ -1,5 +1,6 @@
 #include "glvm/glvm.hpp"
 
+#include "glvm_log/prelude.hpp"
 #include "imgui.h"
 #include "imgui_impl_vulkan.h"
 #include "rusty/prelude.hpp"
@@ -52,6 +53,7 @@
 #endif // __linux__
 
 using namespace rusty::prelude;
+using namespace glvm_log::prelude;
 
 #ifdef _WIN32
 constexpr auto VK_W = 0x57;
@@ -81,7 +83,7 @@ auto get_gen(u64 entity) -> u32 {
 }; // namespace glvm
 
 namespace glvm {
-World WORLD = {};
+World world = {};
 
 World::World() {
     assert(
@@ -130,7 +132,7 @@ auto World::add_entity_to_archetype(u64 entity, Archetype* arch) -> void {
     EntityLocation& location = entity_locations[id];
 
     if (location.arch != nullptr) {
-        assert(false && "u32 already assigned to archetype");
+        assert(false && "Entity already assigned to archetype");
     }
 
     u32 index = arch->add_entity(entity);
@@ -142,13 +144,16 @@ auto World::add_entity_to_archetype(u64 entity, Archetype* arch) -> void {
 auto World::remove_entity(u64 entity) -> void {
     u32 id = get_id(entity);
     EntityLocation& location = entity_locations[id];
+    if (location.arch == nullptr) {
+        return;
+    }
     // Remove entity from spatial grid cells it occupies, otherwise stale
     // references crash collision/physics on later frames.
     if (location.grid_cell_counter > 0) {
         for (u8 i = 0; i < location.grid_cell_counter; ++i) {
-            u32 z = location.grid_cell_indicies[i][0];
-            u32 y = location.grid_cell_indicies[i][1];
-            u32 x = location.grid_cell_indicies[i][2];
+            u32 z = location.grid_cell_indices[i][0];
+            u32 y = location.grid_cell_indices[i][1];
+            u32 x = location.grid_cell_indices[i][2];
             Vec<u32>& chunk_entities = spatial_grid.grid[z][y][x].entities;
             for (u32 k = 0; k < chunk_entities.size(); ++k) {
                 if (chunk_entities[k] == entity) {
@@ -178,8 +183,8 @@ auto World::search_cache_archetypes(
     Archetype* cached_archetypes[],
     u32& cached_archetypes_number
 ) -> void {
-    for (u32 i = 0; i < WORLD.archetypes.size(); ++i) {
-        Archetype* arch = WORLD.archetypes[i];
+    for (u32 i = 0; i < world.archetypes.size(); ++i) {
+        Archetype* arch = world.archetypes[i];
 
         if ((arch->mask & required_mask) == required_mask) {
             cached_archetypes[cached_archetypes_number] = arch;
@@ -190,7 +195,7 @@ auto World::search_cache_archetypes(
 }; // namespace glvm
 
 namespace glvm {
-ArchetypeEntityManager* ArchetypeEntityManager::p_instance = nullptr;
+ArchetypeEntityManager* ArchetypeEntityManager::instance = nullptr;
 Mutex ArchetypeEntityManager::mutex;
 
 ArchetypeEntityManager::ArchetypeEntityManager() {
@@ -201,15 +206,15 @@ ArchetypeEntityManager::~ArchetypeEntityManager() {
 
 auto ArchetypeEntityManager::get_instance() -> ArchetypeEntityManager* {
     MutexGuard<Mutex> lock(mutex);
-    if (p_instance == nullptr) {
-        p_instance = new ArchetypeEntityManager();
+    if (instance == nullptr) {
+        instance = new ArchetypeEntityManager();
     }
-    return p_instance;
+    return instance;
 }
 
 [[nodiscard]] auto ArchetypeEntityManager::create_entity() -> u64 {
     u32 new_id = 0;
-    // Check out wether or not free ID in removed entities registry.
+    // Check out whether or not free ID in removed entities registry.
     if (!free_list.empty()) {
         new_id = free_list.back();
         free_list.pop_back();
@@ -464,7 +469,7 @@ auto compute_box_corner_bound_points(
     Vector<f32, 3> entity_position,
     const f32 scale
 ) -> Vec<Vector<f32, 3>> {
-    const auto half_widht = entity_chunk_bounds.absolute_x * scale;
+    const auto half_width = entity_chunk_bounds.absolute_x * scale;
     const auto half_height = entity_chunk_bounds.absolute_y * scale;
     const auto half_depth = entity_chunk_bounds.absolute_z * scale;
     const Vector<f32, 3> center_offset = {
@@ -476,41 +481,41 @@ auto compute_box_corner_bound_points(
     // Left bottom back.
     result.push_back(
         entity_position + center_offset
-        + Vector<f32, 3>(-half_widht, -half_height, -half_depth)
+        + Vector<f32, 3>(-half_width, -half_height, -half_depth)
     );
     // Right upper front.
     result.push_back(
         entity_position + center_offset
-        + Vector<f32, 3>(half_widht, half_height, half_depth)
+        + Vector<f32, 3>(half_width, half_height, half_depth)
     );
     return result;
 }
 
 auto set_mesh_bounds(MeshAxisLimitingValues mesh_axis_limiting_values) -> void {
-    ALL_MESH_MAX_ABSOLUTE_VALUES.push_back({});
+    all_mesh_max_absolute_values.push_back({});
 
-    ALL_MESH_MAX_ABSOLUTE_VALUES[ALL_MESH_MAX_ABSOLUTE_VALUES.size() - 1]
+    all_mesh_max_absolute_values[all_mesh_max_absolute_values.size() - 1]
         .absolute_x = (mesh_axis_limiting_values.highest_x
                        - mesh_axis_limiting_values.lowest_x)
         / 2.0f;
-    ALL_MESH_MAX_ABSOLUTE_VALUES[ALL_MESH_MAX_ABSOLUTE_VALUES.size() - 1]
+    all_mesh_max_absolute_values[all_mesh_max_absolute_values.size() - 1]
         .absolute_y = (mesh_axis_limiting_values.highest_y
                        - mesh_axis_limiting_values.lowest_y)
         / 2.0f;
-    ALL_MESH_MAX_ABSOLUTE_VALUES[ALL_MESH_MAX_ABSOLUTE_VALUES.size() - 1]
+    all_mesh_max_absolute_values[all_mesh_max_absolute_values.size() - 1]
         .absolute_z = (mesh_axis_limiting_values.highest_z
                        - mesh_axis_limiting_values.lowest_z)
         / 2.0f;
 
-    ALL_MESH_MAX_ABSOLUTE_VALUES[ALL_MESH_MAX_ABSOLUTE_VALUES.size() - 1]
+    all_mesh_max_absolute_values[all_mesh_max_absolute_values.size() - 1]
         .origin_offset_x = (mesh_axis_limiting_values.highest_x
                             + mesh_axis_limiting_values.lowest_x)
         / 2.0f;
-    ALL_MESH_MAX_ABSOLUTE_VALUES[ALL_MESH_MAX_ABSOLUTE_VALUES.size() - 1]
+    all_mesh_max_absolute_values[all_mesh_max_absolute_values.size() - 1]
         .origin_offset_y = (mesh_axis_limiting_values.highest_y
                             + mesh_axis_limiting_values.lowest_y)
         / 2.0f;
-    ALL_MESH_MAX_ABSOLUTE_VALUES[ALL_MESH_MAX_ABSOLUTE_VALUES.size() - 1]
+    all_mesh_max_absolute_values[all_mesh_max_absolute_values.size() - 1]
         .origin_offset_z = (mesh_axis_limiting_values.highest_z
                             + mesh_axis_limiting_values.lowest_z)
         / 2.0f;
@@ -535,40 +540,40 @@ auto create_projectile(
         &projectile_arch->projectile_bundles[projectile_index];
     projectile_bundle->material = material;
 
-    Transform* r_transform_projectile =
+    Transform* projectile_transform =
         &projectile_arch->transforms[projectile_index];
-    Health* projectile_health = &projectile_arch->heath[projectile_index];
+    Health* projectile_health = &projectile_arch->health[projectile_index];
     projectile_health->max_health = 100;
     projectile_health->current_health = 100;
 
     projectile_arch->colliders[projectile_index].colliders.clear();
 
-    r_transform_projectile->scale = 0.1f;
-    r_transform_projectile->position = projectile_position;
-    r_transform_projectile->forward = projectile_forward;
-    r_transform_projectile->position += r_transform_projectile->forward;
+    projectile_transform->scale = 0.1f;
+    projectile_transform->position = projectile_position;
+    projectile_transform->forward = projectile_forward;
+    projectile_transform->position += projectile_transform->forward;
 
     projectile_bundle->damage = damage;
 }
 }; // namespace glvm
 
 namespace glvm {
-ComponentManager* ComponentManager::p_instance = nullptr;
+ComponentManager* ComponentManager::instance = nullptr;
 Mutex ComponentManager::mutex;
 
 ComponentManager::ComponentManager() = default;
 
 ComponentManager::~ComponentManager() {
     for (i32 j = 0,
-             i_size_ordered = world_sparse_entities_map_to_components.size();
-         j < i_size_ordered;
+             size_ordered = world_sparse_entities_map_to_components.size();
+         j < size_ordered;
          ++j) {
         delete world_sparse_entities_map_to_components[j];
         world_sparse_entities_map_to_components[j] = nullptr;
     }
     for (i32 j = 0,
-             i_size_ordered = world_dense_components_map_to_entities.size();
-         j < i_size_ordered;
+             size_ordered = world_dense_components_map_to_entities.size();
+         j < size_ordered;
          ++j) {
         delete world_dense_components_map_to_entities[j];
         world_dense_components_map_to_entities[j] = nullptr;
@@ -590,30 +595,30 @@ auto ComponentManager::get_container_id() -> u32 {
 
 auto ComponentManager::get_instance() -> ComponentManager* {
     MutexGuard<Mutex> lock(mutex);
-    if (p_instance == nullptr) {
-        p_instance = new ComponentManager();
+    if (instance == nullptr) {
+        instance = new ComponentManager();
     }
-    return p_instance;
+    return instance;
 }
 } // namespace glvm
 
-glvm::CStack INPUT_STACK {};
+glvm::EventStack global_input_stack {};
 
-i32 X_POINTER;
-i32 Y_POINTER;
+i32 global_pointer_x;
+i32 global_pointer_y;
 
 #ifdef __linux__
 #endif
 
-glvm::CEvent G_E_EVENT;
+glvm::Event global_event;
 // Contains all maximum absolute axis values.
-Vec<glvm::MeshAxisMaxAbsoluteValues> ALL_MESH_MAX_ABSOLUTE_VALUES;
+Vec<glvm::MeshAxisMaxAbsoluteValues> all_mesh_max_absolute_values;
 
 namespace glvm {
-Engine* Engine::p_instance = nullptr;
+Engine* Engine::instance = nullptr;
 Mutex Engine::mutex;
 
-auto playback_sound(ISoundEngine* sound_engine, AtomicBool& running_sound)
+auto playback_sound(SoundEngine* sound_engine, AtomicBool& running_sound)
     -> void {
     running_sound = true;
     while (running_sound) {
@@ -622,36 +627,39 @@ auto playback_sound(ISoundEngine* sound_engine, AtomicBool& running_sound)
 }
 
 Engine::Engine() {
-    chrono = CTimerCreator().create();
-    sound_engine = CSoundEngineFactory().create_sound_engine();
+    glvm_log::info("glvm", "Engine::Engine start");
+    chrono = TimerCreator().create();
+    glvm_log::info("glvm", "chrono created");
+    sound_engine = SoundEngineFactory().create_sound_engine();
+    glvm_log::info("glvm", "sound engine created");
 
     spatial_grid_system = new SpatialGridSystem();
-    collision_system = new CCollisionSystem(INPUT_STACK);
-    movement_system = new CMovementSystem(INPUT_STACK);
-    physics_system = new CPhysicsSystem(gravity, INPUT_STACK);
-    projectile_system = new CProjectileSystem(INPUT_STACK);
+    collision_system = new CollisionSystem(global_input_stack);
+    movement_system = new MovementSystem(global_input_stack);
+    physics_system = new PhysicsSystem(gravity, global_input_stack);
+    projectile_system = new ProjectileSystem(global_input_stack);
     damage_system = new DamageSystem();
-    enemy_sytem = new EnemySystem();
+    enemy_system = new EnemySystem();
     item_system = new ItemSystem();
-    procudural_level_generating_system = new ProceduralLevelGeneratingSystem();
+    procedural_level_generating_system = new ProceduralLevelGeneratingSystem();
     inventory_system = new InventorySystem();
 
     delta_frame_time = 0.0f;
-    G_E_EVENT.set_event(EDefault);
+    global_event.set_event(Default);
 
-    CSystemManager* p_system_manager = CSystemManager::get_instance();
+    SystemManager* system_manager = SystemManager::get_instance();
 
     // Call of ActivateSystem function must be in this order.
-    p_system_manager->activate_system(procudural_level_generating_system);
-    p_system_manager->activate_system(movement_system);
-    p_system_manager->activate_system(enemy_sytem);
-    p_system_manager->activate_system(projectile_system);
-    p_system_manager->activate_system(spatial_grid_system);
-    p_system_manager->activate_system(collision_system);
-    p_system_manager->activate_system(damage_system);
-    p_system_manager->activate_system(physics_system);
-    p_system_manager->activate_system(inventory_system);
-    p_system_manager->activate_system(item_system);
+    system_manager->activate_system(procedural_level_generating_system);
+    system_manager->activate_system(movement_system);
+    system_manager->activate_system(enemy_system);
+    system_manager->activate_system(projectile_system);
+    system_manager->activate_system(spatial_grid_system);
+    system_manager->activate_system(collision_system);
+    system_manager->activate_system(damage_system);
+    system_manager->activate_system(physics_system);
+    system_manager->activate_system(inventory_system);
+    system_manager->activate_system(item_system);
 
     sound_thread = std::thread(
         playback_sound,
@@ -659,6 +667,7 @@ Engine::Engine() {
         std::ref(running_sound)
     );
     sound_engine->open_device("default");
+    glvm_log::info("glvm", "Engine::Engine end");
 }
 
 Engine::~Engine() {
@@ -666,10 +675,10 @@ Engine::~Engine() {
 
 auto Engine::get_instance() -> Engine* {
     MutexGuard<Mutex> lock(mutex);
-    if (p_instance == nullptr) {
-        p_instance = new Engine();
+    if (instance == nullptr) {
+        instance = new Engine();
     }
-    return p_instance;
+    return instance;
 }
 
 auto Engine::game_loop() -> void {
@@ -680,22 +689,23 @@ auto Engine::event_queue_flush() -> void {
 }
 
 auto Engine::render_vulkan() -> void {
-    CSystemManager* p_system_manager = CSystemManager::get_instance();
-    bool b_game_loop_active = true;
+    SystemManager* system_manager = SystemManager::get_instance();
+    bool game_loop_active = true;
 
     projectile_system->texture_handlers = texture_handlers;
-    projectile_system->mesh_handlers = mesh_handlers;
+    projectile_system->mesh_handles = mesh_handles;
 
-    enemy_sytem->texture_handlers = texture_handlers;
-    enemy_sytem->mesh_handlers = mesh_handlers;
+    enemy_system->texture_handlers = texture_handlers;
+    enemy_system->mesh_handles = mesh_handles;
 
-    procudural_level_generating_system->mesh_handlers = mesh_handlers;
-    procudural_level_generating_system->texture_handlers = texture_handlers;
+    procedural_level_generating_system->mesh_handles = mesh_handles;
+    procedural_level_generating_system->texture_handlers = texture_handlers;
 
-    inventory_system->is_item_draged = &dragged_item_entity;
+    inventory_system->is_item_dragged = &dragged_item_entity;
     item_system->dragged_item_entity = &dragged_item_entity;
 
-    vulkan_renderer = new CVulkanRenderer();
+    glvm_log::info("glvm", "render_vulkan: creating renderer");
+    vulkan_renderer = new Renderer();
     vulkan_renderer->initialize_texture_data = texture_vector;
     vulkan_renderer->paths_array = paths_array;
     vulkan_renderer->paths_gltf = paths_gltf;
@@ -706,49 +716,54 @@ auto Engine::render_vulkan() -> void {
     );
 
     directional_light_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         directional_light_required_mask,
-        cached_directional_ligth_archetypes,
+        cached_directional_light_archetypes,
         directional_light_archetypes_number
     );
     vulkan_renderer->directional_light_number =
         directional_light_archetypes_number;
 
     spot_light_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         spot_light_required_mask,
-        cached_spot_ligth_archetypes,
+        cached_spot_light_archetypes,
         spot_light_archetypes_number
     );
     vulkan_renderer->spot_light_number = spot_light_archetypes_number;
 
     point_light_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         point_light_required_mask,
-        cached_point_ligth_archetypes,
+        cached_point_light_archetypes,
         point_light_archetypes_number
     );
     vulkan_renderer->point_light_number = point_light_archetypes_number;
 
     animation_actors_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         animated_actors_required_mask,
         cached_animation_actors_archetypes,
         animation_actors_archetypes_number
     );
 
     static_actors_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         static_actors_required_mask,
         cached_static_actors_archetypes,
         static_actors_archetypes_number
     );
 
+    glvm_log::info("glvm", "render_vulkan: load_wavefront_obj");
     load_wavefront_obj();
+    glvm_log::info("glvm", "render_vulkan: initialize_gltf");
     initialize_gltf();
+    glvm_log::info("glvm", "render_vulkan: initialize_font_data");
     initialize_font_data();
+    glvm_log::info("glvm", "render_vulkan: run");
     vulkan_renderer->run();
-    vulkan_renderer->window->input_stack = &INPUT_STACK;
+    glvm_log::info("glvm", "render_vulkan: entering game loop");
+    vulkan_renderer->window->input_stack = &global_input_stack;
 
 #ifdef _WIN32
     MSG msg;
@@ -759,63 +774,63 @@ auto Engine::render_vulkan() -> void {
     }
 #endif
 
-    while (b_game_loop_active) {
+    while (game_loop_active) {
         delta_frame_time = as<f32>(chrono->get_elapsed());
         chrono->reset();
         gravity += delta_frame_time;
 
         vulkan_renderer->window->clear_display();
 
-        vulkan_renderer->window->handle_event(G_E_EVENT);
-        if ((INPUT_STACK.search_element(EEvents::EGameLoopKill))
-            == EEvents::EGameLoopKill) {
-            b_game_loop_active = false;
+        vulkan_renderer->window->handle_event(global_event);
+        if ((global_input_stack.search_element(EventKind::GameLoopKill))
+            == EventKind::GameLoopKill) {
+            game_loop_active = false;
         }
 
-        if ((INPUT_STACK.search_element(EEvents::ECursorReleased))
-            == EEvents::ECursorReleased) {
+        if ((global_input_stack.search_element(EventKind::CursorReleased))
+            == EventKind::CursorReleased) {
             vulkan_renderer->is_cursor_released =
                 !vulkan_renderer->is_cursor_released;
-            INPUT_STACK.remove(EEvents::ECursorReleased);
-            INPUT_STACK.remove(EEvents::ECursorReleased);
+            global_input_stack.remove(EventKind::CursorReleased);
+            global_input_stack.remove(EventKind::CursorReleased);
             // The click-to-relock must not trigger on the button that was
             // already held while Esc was pressed.
-            INPUT_STACK.remove(EEvents::EMouseLeftButton);
+            global_input_stack.remove(EventKind::MouseLeftButton);
         }
         if (vulkan_renderer->is_cursor_released
-            && (INPUT_STACK.search_element(EEvents::EMouseLeftButton))
-                == EEvents::EMouseLeftButton
+            && (global_input_stack.search_element(EventKind::MouseLeftButton))
+                == EventKind::MouseLeftButton
             && !vulkan_renderer->imgui_overlay->wants_mouse()) {
             vulkan_renderer->is_cursor_released = false;
         }
 
-        if ((INPUT_STACK.search_element(EEvents::EMouseLeftButton))
-            == EEvents::EMouseLeftButton) {
+        if ((global_input_stack.search_element(EventKind::MouseLeftButton))
+            == EventKind::MouseLeftButton) {
             is_left_mouse_button_pressed = true;
         } else {
             is_left_mouse_button_pressed = false;
         }
 
         bool inventory_key_pressed =
-            (INPUT_STACK.search_element(EEvents::EInventory)
-             == EEvents::EInventory);
+            (global_input_stack.search_element(EventKind::InventoryToggle)
+             == EventKind::InventoryToggle);
         if (inventory_key_pressed && !is_inventory_key_held) {
             vulkan_renderer->is_inventory_opened =
                 !vulkan_renderer->is_inventory_opened;
             if (vulkan_renderer->is_inventory_opened) {
-                p_system_manager->deactivate_system(
+                system_manager->deactivate_system(
                     DeactivatedSystems::DeactivatedMovementSystem
                 );
                 hud_screen_x = 0.0f;
                 hud_screen_y = 0.0f;
             } else {
-                p_system_manager->return_system_to_activated_state(
+                system_manager->return_system_to_activated_state(
                     DeactivatedSystems::DeactivatedMovementSystem
                 );
             }
         }
         is_inventory_key_held = inventory_key_pressed;
-        G_E_EVENT.set_last_event(INPUT_STACK);
+        global_event.set_last_event(global_input_stack);
 
 #ifndef VK_USE_PLATFORM_WAYLAND_KHR
         const bool cursor_should_be_hidden =
@@ -832,10 +847,10 @@ auto Engine::render_vulkan() -> void {
         }
         if (cursor_should_be_hidden) {
             vulkan_renderer->window->cursor_lock(
-                G_E_EVENT.mouse_pointer_position.position_x,
-                G_E_EVENT.mouse_pointer_position.position_y,
-                &G_E_EVENT.mouse_pointer_position.offset_x,
-                &G_E_EVENT.mouse_pointer_position.offset_y
+                global_event.mouse_pointer_position.position_x,
+                global_event.mouse_pointer_position.position_y,
+                &global_event.mouse_pointer_position.offset_x,
+                &global_event.mouse_pointer_position.offset_y
             );
         }
 
@@ -844,8 +859,8 @@ auto Engine::render_vulkan() -> void {
             // state so the first locked sample doesn't feed a fake delta to the
             // camera. WindowWinVulkan::cursor_lock also discards the >250px
             // teleport on its own.
-            G_E_EVENT.mouse_pointer_position.offset_x = 0;
-            G_E_EVENT.mouse_pointer_position.offset_y = 0;
+            global_event.mouse_pointer_position.offset_x = 0;
+            global_event.mouse_pointer_position.offset_y = 0;
             vulkan_renderer->prev_x = 0.0f;
             vulkan_renderer->prev_y = 0.0f;
             vulkan_renderer->current_x = 0.0f;
@@ -858,60 +873,60 @@ auto Engine::render_vulkan() -> void {
 #else
         if (vulkan_renderer->window->is_focused) {
             vulkan_renderer->window->cursor_lock(
-                G_E_EVENT.mouse_pointer_position.position_x,
-                G_E_EVENT.mouse_pointer_position.position_y,
-                &G_E_EVENT.mouse_pointer_position.offset_x,
-                &G_E_EVENT.mouse_pointer_position.offset_y
+                global_event.mouse_pointer_position.position_x,
+                global_event.mouse_pointer_position.position_y,
+                &global_event.mouse_pointer_position.offset_x,
+                &global_event.mouse_pointer_position.offset_y
             );
         }
 #endif
 
-        compute_hud_screeen_coordinates();
+        compute_hud_screen_coordinates();
         damage_system->delta_time = delta_frame_time;
         movement_system->delta_frame_time = delta_frame_time;
         movement_system->gravity = gravity;
-        collision_system->f_delta_time = delta_frame_time;
+        collision_system->delta_time = delta_frame_time;
         collision_system->gravity = gravity;
         collision_system->is_inventory_opened =
             vulkan_renderer->is_inventory_opened;
         collision_system->is_left_mouse_button_pressed =
             is_left_mouse_button_pressed;
         collision_system->is_left_mouse_button_released =
-            &G_E_EVENT.is_left_mouse_button_released;
-        enemy_sytem->delta_frame_time = delta_frame_time;
-        enemy_sytem->sound_engine = sound_engine;
+            &global_event.is_left_mouse_button_released;
+        enemy_system->delta_frame_time = delta_frame_time;
+        enemy_system->sound_engine = sound_engine;
         projectile_system->delta_frame_time = delta_frame_time;
         projectile_system->sound_engine = sound_engine;
         projectile_system->is_inventory_opened =
             vulkan_renderer->is_inventory_opened;
-        physics_system->f_delta_time = delta_frame_time;
-        physics_system->f_acceleration_of_gravity += (delta_frame_time / 20);
+        physics_system->delta_time = delta_frame_time;
+        physics_system->acceleration_of_gravity += (delta_frame_time / 20);
         physics_system->gravity = gravity;
         inventory_system->is_inventory_opened =
             vulkan_renderer->is_inventory_opened;
-        inventory_system->aspect_rate = vulkan_renderer->aspect_rate;
+        inventory_system->aspect_ratio = vulkan_renderer->aspect_ratio;
         inventory_system->is_left_mouse_button_released =
-            &G_E_EVENT.is_left_mouse_button_released;
+            &global_event.is_left_mouse_button_released;
         inventory_system->is_left_mouse_button_pressed =
             is_left_mouse_button_pressed;
         inventory_system->mouse_offset_x = hud_screen_x;
         inventory_system->mouse_offset_y = hud_screen_y;
-        item_system->input_stack = &INPUT_STACK;
+        item_system->input_stack = &global_input_stack;
         item_system->is_inventory_opened = vulkan_renderer->is_inventory_opened;
         item_system->is_left_mouse_button_released =
-            &G_E_EVENT.is_left_mouse_button_released;
+            &global_event.is_left_mouse_button_released;
         item_system->is_left_mouse_button_pressed =
             is_left_mouse_button_pressed;
         item_system->mouse_offset_x = hud_screen_x;
         item_system->mouse_offset_y = hud_screen_y;
         enlarge_frame_accumulator(delta_frame_time);
-        p_system_manager->update();
+        system_manager->update();
         vulkan_renderer->level_generated_vertices =
-            procudural_level_generating_system->level_generated_vertices;
+            procedural_level_generating_system->level_generated_vertices;
         vulkan_renderer->level_generated_indices =
-            procudural_level_generating_system->level_generated_indices;
-        procudural_level_generating_system->level_generated_vertices.clear();
-        procudural_level_generating_system->level_generated_indices.clear();
+            procedural_level_generating_system->level_generated_indices;
+        procedural_level_generating_system->level_generated_vertices.clear();
+        procedural_level_generating_system->level_generated_indices.clear();
         vulkan_renderer->dragged_item_entity = dragged_item_entity;
         vulkan_renderer->hud_screen_x = hud_screen_x;
         vulkan_renderer->hud_screen_y = hud_screen_y;
@@ -924,13 +939,15 @@ auto Engine::render_vulkan() -> void {
         vulkan_renderer->draw();
         vulkan_renderer->window->swap_buffers();
     }
+    glvm_log::info("glvm", "render_vulkan: loop exited, deleting renderer");
     delete vulkan_renderer;
+    glvm_log::info("glvm", "render_vulkan: renderer deleted");
 }
 
 auto Engine::enlarge_frame_accumulator(f32 value) -> void {
     animation_archetypes_number = 0;
-    for (u32 m = 0; m < WORLD.archetypes.size(); ++m) {
-        Archetype* arch = WORLD.archetypes[m];
+    for (u32 m = 0; m < world.archetypes.size(); ++m) {
+        Archetype* arch = world.archetypes[m];
         u64 required_mask = (1ul << ComponentsIndices::MeshComponent)
             | (1ul << ComponentsIndices::AnimationComponent);
 
@@ -976,7 +993,7 @@ auto Engine::enlarge_frame_accumulator(f32 value) -> void {
 
 auto Engine::set_view_matrix() -> void {
     player_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         player_required_mask,
         cached_player_archetypes,
         player_archetypes_number
@@ -986,27 +1003,27 @@ auto Engine::set_view_matrix() -> void {
         Archetype* arch = cached_player_archetypes[n];
         Beholder* views =
             (Beholder*)arch->components[ComponentsIndices::ViewComponent];
-        Transform* transfroms =
+        Transform* transforms =
             (Transform*)arch->components[ComponentsIndices::TransformComponent];
 
         for (u32 x = 0; x < arch->entity_count; ++x) {
             Beholder* camera_component = &views[x];
-            Transform* player_transform = &transfroms[x];
+            Transform* player_transform = &transforms[x];
 
             Matrix<f32, 4> view_matrix(1.0f);
-            const auto k_sensitivity = 0.1f;
-            f_yaw = G_E_EVENT.mouse_pointer_position.offset_x;
-            f_pitch = G_E_EVENT.mouse_pointer_position.offset_y;
-            f_yaw *= k_sensitivity;
-            f_pitch *= k_sensitivity;
+            const auto SENSITIVITY = 0.1f;
+            yaw = global_event.mouse_pointer_position.offset_x;
+            pitch = global_event.mouse_pointer_position.offset_y;
+            yaw *= SENSITIVITY;
+            pitch *= SENSITIVITY;
 
-            G_E_EVENT.mouse_pointer_position.pitch = f_pitch;
-            G_E_EVENT.mouse_pointer_position.yaw = f_yaw;
+            global_event.mouse_pointer_position.pitch = pitch;
+            global_event.mouse_pointer_position.yaw = yaw;
 
             vulkan_renderer->current_x =
-                (f32)G_E_EVENT.mouse_pointer_position.offset_x;
+                (f32)global_event.mouse_pointer_position.offset_x;
             vulkan_renderer->current_y =
-                (f32)G_E_EVENT.mouse_pointer_position.offset_y;
+                (f32)global_event.mouse_pointer_position.offset_y;
             f32 delta_x = 0.0f;
             f32 delta_y = 0.0f;
             if (!vulkan_renderer->is_inventory_opened) {
@@ -1026,10 +1043,10 @@ auto Engine::set_view_matrix() -> void {
             );
             const Vector<f32, 3> new_up_vec =
                 cross(right_vec, camera_component->forward);
-            // 1.f The mouse direction determines the "intended direction of
+            // 1. The mouse direction determines the "intended direction of
             // rotation" for the object.
-            // 2.f The camera is "looking forward."
-            // 3.f To make the object "rotate as if the mouse is pushing it,"
+            // 2. The camera is "looking forward."
+            // 3. To make the object "rotate as if the mouse is pushing it,"
             // you need to rotate it around an axis that is perpendicular to
             // both the view direction and the mouse movement.
             const Vector<f32, 3> rotate_axis = normalize(cross(
@@ -1045,16 +1062,16 @@ auto Engine::set_view_matrix() -> void {
                     std::sqrt(delta_y * delta_y + delta_x * delta_x);
                 constexpr auto ANGLE_SCALE = 0.05f;
                 rotation_angle = radians(rotation_angle * ANGLE_SCALE);
-                // Quaternions need devision by 2.f
+                // Quaternions need division by 2.
                 constexpr auto QUAT_ANGLE_CORRECTION = 0.5f;
                 const auto sin_rotation_angle =
                     sinf(rotation_angle * QUAT_ANGLE_CORRECTION);
                 Point applied_rotation_point =
                     exp(rotation_angle,
-                        Rline {
-                            .rx = -rotate_axis.m_vector[0],
-                            .ry = -rotate_axis.m_vector[1],
-                            .rz = -rotate_axis.m_vector[2]
+                        RLine {
+                            .rx = -rotate_axis.elements[0],
+                            .ry = -rotate_axis.elements[1],
+                            .rz = -rotate_axis.elements[2]
                         })
                     >> Point {
                         .x = camera_component->forward[0],
@@ -1094,9 +1111,9 @@ auto Engine::set_view_matrix() -> void {
             vulkan_renderer->view_matrix = view_matrix;
 
             vulkan_renderer->prev_y =
-                (f32)G_E_EVENT.mouse_pointer_position.offset_y;
+                (f32)global_event.mouse_pointer_position.offset_y;
             vulkan_renderer->prev_x =
-                (f32)G_E_EVENT.mouse_pointer_position.offset_x;
+                (f32)global_event.mouse_pointer_position.offset_x;
         }
     }
 }
@@ -1104,7 +1121,7 @@ auto Engine::set_view_matrix() -> void {
 auto Engine::set_projection_matrix() -> void {
     Matrix<f32, 4> t_projection_matrix = perspective<f32>(
         radians<f32>(90.0f),
-        vulkan_renderer->aspect_rate,
+        vulkan_renderer->aspect_ratio,
         0.1f,
         100.0f
     );
@@ -1131,14 +1148,14 @@ auto Engine::set_projection_matrix() -> void {
         }
     }
 
-    u32 join_matrices_data_size {};
+    u32 joint_matrices_data_size {};
     if (vulkan_renderer->joint_matrices_per_mesh.size() > 0) {
-        join_matrices_data_size =
+        joint_matrices_data_size =
             vulkan_renderer->joint_matrices_per_mesh[mesh_id].size();
     }
 
     Vec<Matrix<f32, 4>> joint_matrices;
-    if (join_matrices_data_size == 0) {
+    if (joint_matrices_data_size == 0) {
         joint_matrices.resize(MAX_JOINTS_NUMBER);
         for (u32 i = 0; i < MAX_JOINTS_NUMBER; ++i) {
             Matrix<f32, 4> unit_matrix(1.0f);
@@ -1147,18 +1164,24 @@ auto Engine::set_projection_matrix() -> void {
 
     } else {
         joint_matrices.resize(MAX_JOINTS_NUMBER);
-        for (u32 i = 0; i < join_matrices_data_size; ++i) {
+        for (u32 i = 0; i < joint_matrices_data_size; ++i) {
             if (mesh_id >= vulkan_renderer->joint_matrices_per_mesh.size()) {
-                throw("sdfsdf");
+                throw std::runtime_error(
+                    "mesh_id out of range of joint matrices"
+                );
             } else if (
                 i >= vulkan_renderer->joint_matrices_per_mesh[mesh_id].size()
             ) {
-                throw("sdfsdf");
+                throw std::runtime_error(
+                    "joint index out of range of joint matrices"
+                );
             } else if (
                 animation_component->current_animation_frame
                 >= vulkan_renderer->joint_matrices_per_mesh[mesh_id][i].size()
             ) {
-                throw("sdfsdf");
+                throw std::runtime_error(
+                    "animation frame out of range of joint matrices"
+                );
             }
 
             joint_matrices[i] =
@@ -1166,7 +1189,7 @@ auto Engine::set_projection_matrix() -> void {
                     [mesh_id][i][animation_component->current_animation_frame];
         }
 
-        for (u32 j = join_matrices_data_size; j < MAX_JOINTS_NUMBER; ++j) {
+        for (u32 j = joint_matrices_data_size; j < MAX_JOINTS_NUMBER; ++j) {
             Matrix<f32, 4> unit_matrix(1.0f);
             joint_matrices[j] = unit_matrix;
         }
@@ -1288,7 +1311,7 @@ auto Engine::update_point_light_space_matrix_shadow_map_ubo(
     const u32 current_inventory_row,
     const u32 current_inventory_column,
     Inventory* inventory_component,
-    Transform* slot_transfrom_component,
+    Transform* slot_transform_component,
     Mesh* mesh_component
 ) -> SlotData {
     SlotData hud_ubo {};
@@ -1296,12 +1319,12 @@ auto Engine::update_point_light_space_matrix_shadow_map_ubo(
     const auto full_slot_scale = mesh_component->gltf
         ? inventory_component->slot_scale * 2.0f
         : inventory_component->slot_scale;
-    const auto x = slot_transfrom_component->position[0]
+    const auto x = slot_transform_component->position[0]
         + current_inventory_column * full_slot_scale;
-    const auto y_scale_multilayer =
-        vulkan_renderer->aspect_rate * full_slot_scale;
-    const auto y = slot_transfrom_component->position[1]
-        + current_inventory_row * y_scale_multilayer;
+    const auto y_scale_multiplier =
+        vulkan_renderer->aspect_ratio * full_slot_scale;
+    const auto y = slot_transform_component->position[1]
+        + current_inventory_row * y_scale_multiplier;
     const auto inventory_slot_scale = inventory_component->slot_scale;
     model[0][0] = inventory_slot_scale;
     model[1][1] = inventory_slot_scale;
@@ -1312,12 +1335,12 @@ auto Engine::update_point_light_space_matrix_shadow_map_ubo(
 
     hud_ubo.model = model;
 
-    bool high_lighted_slot = false;
+    bool highlighted_slot = false;
     for (u32 i = 0; i < inventory_component->highlighted_slots.size(); ++i) {
         if (inventory_component->highlighted_slots[i]
             == current_inventory_row * inventory_component->col
                 + current_inventory_column) {
-            high_lighted_slot = true;
+            highlighted_slot = true;
             break;
         } else {
             continue;
@@ -1325,7 +1348,7 @@ auto Engine::update_point_light_space_matrix_shadow_map_ubo(
     }
 
     if (inventory_component->highlighted_slots.size() > 0) {
-        if (high_lighted_slot) {
+        if (highlighted_slot) {
             if (inventory_component->is_available_highlighted_slots) {
                 hud_ubo.color = {0.0f, 0.3f, 0.0f};
             } else {
@@ -1340,7 +1363,7 @@ auto Engine::update_point_light_space_matrix_shadow_map_ubo(
 }
 
 auto Engine::update_data_ubo_icons_ui(
-    Transform* item_transfrom_component,
+    Transform* item_transform_component,
     Collider* item_collider_component,
     Item* item_component,
     const u32 row_inventory,
@@ -1365,36 +1388,36 @@ auto Engine::update_data_ubo_icons_ui(
         const auto col_index_second_slot =
             inventory_slot_entity_3 % column_inventory;
 
-        const auto item_scale = item_transfrom_component->scale;
+        const auto item_scale = item_transform_component->scale;
         const auto full_slot_scale =
             item_mesh->gltf ? item_scale * 2.0f : item_scale;
-        // Eather division by 2.0f using multiply on 0.5f.
-        constexpr auto CENTRE_MULTIPLAYER = 0.5f;
+        // Either division by 2.0f using multiply on 0.5f.
+        constexpr auto CENTRE_MULTIPLIER = 0.5f;
         x_result_offset = inventory_transform_component->position[0]
             + (col_index_first_slot * full_slot_scale
                + col_index_second_slot * full_slot_scale)
-                * CENTRE_MULTIPLAYER;
+                * CENTRE_MULTIPLIER;
         y_result_offset = inventory_transform_component->position[1]
             + (row_index_first_slot * full_slot_scale
                + row_index_second_slot * full_slot_scale)
-                * CENTRE_MULTIPLAYER * vulkan_renderer->aspect_rate;
+                * CENTRE_MULTIPLIER * vulkan_renderer->aspect_ratio;
     }
-    f32 item_scale = item_transfrom_component->scale;
+    f32 item_scale = item_transform_component->scale;
 
     if (dragged_item_entity != item_entity) {
-        item_transfrom_component->position =
+        item_transform_component->position =
             Vector<f32, 3>(x_result_offset, y_result_offset, 0.1f);
     } else {
         item_scale *= 1.1f;
-        item_transfrom_component->position[2] = 0.0f;
+        item_transform_component->position[2] = 0.0f;
     }
     Matrix<f32, 4> model(1.0f);
     model[0][0] = item_scale * item_component->item_slot_type.width;
     model[1][1] = item_scale * item_component->item_slot_type.height;
     model[2][2] = 0.0f;
-    model[3][0] = item_transfrom_component->position[0];
-    model[3][1] = item_transfrom_component->position[1];
-    model[3][2] = item_transfrom_component->position[2];
+    model[3][0] = item_transform_component->position[0];
+    model[3][1] = item_transform_component->position[1];
+    model[3][2] = item_transform_component->position[2];
 
     return model;
 }
@@ -1404,12 +1427,11 @@ auto Engine::update_data_hud_screen_ubo(Transform* cursor_transform)
     Matrix<f32, 4> model;
     Vector<f32, 3> default_position = Vector<f32, 3>(0.0f, 0.0f, 0.0f);
 
-    f32 hud_screen_x = hud_screen_x;
+    auto hud_x = this->hud_screen_x;
 #ifndef VK_USE_PLATFORM_WAYLAND_KHR
-    hud_screen_x = -hud_screen_x;
+    hud_x = -hud_x;
 #endif
-
-    cursor_transform->position[0] = hud_screen_x;
+    cursor_transform->position[0] = hud_x;
     cursor_transform->position[1] = -hud_screen_y;
 
     if (!vulkan_renderer->is_inventory_opened
@@ -1422,7 +1444,7 @@ auto Engine::update_data_hud_screen_ubo(Transform* cursor_transform)
         model[2][2] = cursor_transform->scale;
         model[3][3] = 1.0f;
     } else {
-        default_position[0] = hud_screen_x;
+        default_position[0] = hud_x;
         default_position[1] = -hud_screen_y;
 
         model[3][0] = default_position[0];
@@ -1439,15 +1461,15 @@ auto Engine::update_data_hud_screen_ubo(Transform* cursor_transform)
 auto Engine::set_frame_data() -> void {
     vulkan_renderer->directional_lights.clear();
     directional_light_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         directional_light_required_mask,
-        cached_directional_ligth_archetypes,
+        cached_directional_light_archetypes,
         directional_light_archetypes_number
     );
 
     u32 directional_light_counter = 0;
     for (u32 x = 0; x < directional_light_archetypes_number; ++x) {
-        Archetype* arch = cached_directional_ligth_archetypes[x];
+        Archetype* arch = cached_directional_light_archetypes[x];
         auto* directional_lights = static_cast<DirectionalLightComponent*>(
             arch->components[ComponentsIndices::DirectionalLightComponent]
         );
@@ -1501,15 +1523,15 @@ auto Engine::set_frame_data() -> void {
 
     vulkan_renderer->spot_lights.clear();
     spot_light_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         spot_light_required_mask,
-        cached_spot_ligth_archetypes,
+        cached_spot_light_archetypes,
         spot_light_archetypes_number
     );
 
     u32 spot_light_counter = 0;
     for (u32 x = 0; x < spot_light_archetypes_number; ++x) {
-        Archetype* arch = cached_spot_ligth_archetypes[x];
+        Archetype* arch = cached_spot_light_archetypes[x];
         auto* spot_lights = static_cast<SpotLightComponent*>(
             arch->components[ComponentsIndices::SpotLightComponent]
         );
@@ -1519,7 +1541,7 @@ auto Engine::set_frame_data() -> void {
                 vulkan_renderer->spot_lights.push_back({});
                 SpotLightComponent* light = &spot_lights[x1];
                 vulkan_renderer->spot_lights[spot_light_counter]
-                    .spot_ligth_space_matrix =
+                    .spot_light_space_matrix =
                     update_spot_light_space_matrix_shadow_map_ubo(light);
                 vulkan_renderer->spot_lights[spot_light_counter].position =
                     light->position;
@@ -1548,15 +1570,15 @@ auto Engine::set_frame_data() -> void {
 
     vulkan_renderer->point_lights.clear();
     point_light_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         point_light_required_mask,
-        cached_point_ligth_archetypes,
+        cached_point_light_archetypes,
         point_light_archetypes_number
     );
 
     u32 point_light_counter = 0;
     for (u32 x = 0; x < point_light_archetypes_number; ++x) {
-        Archetype* arch = cached_point_ligth_archetypes[x];
+        Archetype* arch = cached_point_light_archetypes[x];
         auto* point_lights = static_cast<PointLightComponent*>(
             arch->components[ComponentsIndices::PointLightComponent]
         );
@@ -1598,7 +1620,7 @@ auto Engine::set_frame_data() -> void {
 
     vulkan_renderer->health_bars.clear();
     health_bars_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         health_bars_required_mask,
         cached_health_bars_archetypes,
         health_bars_archetypes_number
@@ -1640,7 +1662,7 @@ auto Engine::set_frame_data() -> void {
 
     vulkan_renderer->fonts.clear();
     fonts_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         font_required_mask,
         cached_fonts_archetypes,
         fonts_archetypes_number
@@ -1661,8 +1683,8 @@ auto Engine::set_frame_data() -> void {
                 transform_component->position;
             vulkan_renderer->fonts[font_counter].font_string =
                 font_component->font_string;
-            vulkan_renderer->fonts[font_counter].life_time =
-                font_component->life_time;
+            vulkan_renderer->fonts[font_counter].lifetime =
+                font_component->lifetime;
             ++font_counter;
         }
     }
@@ -1671,7 +1693,7 @@ auto Engine::set_frame_data() -> void {
         vulkan_renderer->inventories.clear();
         u32 inventory_counter = 0;
         inventory_archetypes_number = 0;
-        WORLD.search_cache_archetypes(
+        world.search_cache_archetypes(
             inventory_required_mask,
             cached_inventory_archetypes,
             inventory_archetypes_number
@@ -1737,7 +1759,7 @@ auto Engine::set_frame_data() -> void {
                     vulkan_renderer->items.clear();
                     u32 item_counter = 0;
                     item_archetypes_number = 0;
-                    WORLD.search_cache_archetypes(
+                    world.search_cache_archetypes(
                         item_required_mask,
                         cached_item_archetypes,
                         item_archetypes_number
@@ -1804,7 +1826,7 @@ auto Engine::set_frame_data() -> void {
 
     vulkan_renderer->crosshairs.clear();
     crosshair_actors_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         crosshair_required_mask,
         cached_crosshair_actors_archetypes,
         crosshair_actors_archetypes_number
@@ -1829,7 +1851,7 @@ auto Engine::set_frame_data() -> void {
 
     vulkan_renderer->actors.clear();
     level_chunk_actors_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         level_chunk_required_mask,
         cached_level_chunk_actors_archetypes,
         level_chunk_actors_archetypes_number
@@ -1890,7 +1912,7 @@ auto Engine::set_frame_data() -> void {
     }
 
     animation_actors_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         animation_required_mask,
         cached_animation_archetypes,
         animation_actors_archetypes_number
@@ -1945,7 +1967,7 @@ auto Engine::set_frame_data() -> void {
     }
 
     static_actors_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         static_actors_required_mask,
         cached_static_actors_archetypes,
         static_actors_archetypes_number
@@ -2003,7 +2025,7 @@ auto Engine::set_frame_data() -> void {
     }
 
     projectile_actors_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         projectile_required_mask,
         cached_projectile_actors_archetypes,
         projectile_actors_archetypes_number
@@ -2062,10 +2084,10 @@ auto Engine::set_frame_data() -> void {
         }
     }
 
-    // Item actors renders in the game world.
+    // Item actors render in the game world.
 
     item_actors_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         rotation_item_required_mask,
         cached_item_actors_archetypes,
         item_actors_archetypes_number
@@ -2127,7 +2149,7 @@ auto Engine::set_frame_data() -> void {
 
     vulkan_renderer->players.clear();
     player_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         player_required_mask,
         cached_player_archetypes,
         player_archetypes_number
@@ -2155,14 +2177,14 @@ auto Engine::set_frame_data() -> void {
 
 auto Engine::load_wavefront_obj() -> void {
     for (u32 m = 0; m < paths_array.size(); ++m) {
-        CWaveFrontObjParser parser;
-        CWaveFrontObjParser* wavefront_obj_parser = &parser;
+        WavefrontObjParser parser;
+        WavefrontObjParser* wavefront_obj_parser = &parser;
 
         wavefront_obj_parser->read_file(paths_array[m]);
         wavefront_obj_parser->parse_file();
 
-        vulkan_renderer->a_indices.emplace_back();
-        vulkan_renderer->a_vertices.emplace_back();
+        vulkan_renderer->indices.emplace_back();
+        vulkan_renderer->vertices.emplace_back();
         vulkan_renderer->highest_gltf_y.emplace_back();
         vulkan_renderer->highest_gltf_y[m] = -999.999f;
 
@@ -2178,14 +2200,14 @@ auto Engine::load_wavefront_obj() -> void {
         for (u32 i = 0; i < face_vertices_size; ++i) {
             for (i32 j = 0; j < 3; ++j) {
                 vertex_index = wavefront_obj_parser->get_faces()[i][0][j] - 1;
-                vulkan_renderer->a_indices[m].push_back(i * 3 + j);
-                SVertex vertex = wavefront_obj_parser
-                                     ->get_coordinate_vertices()[vertex_index];
+                vulkan_renderer->indices[m].push_back(i * 3 + j);
+                Position vertex = wavefront_obj_parser
+                                      ->get_coordinate_vertices()[vertex_index];
                 texture_index = wavefront_obj_parser->get_faces()[i][1][j] - 1;
-                SVertex texture =
+                Position texture =
                     wavefront_obj_parser->get_texture_vertices()[texture_index];
                 normal_index = wavefront_obj_parser->get_faces()[i][2][j] - 1;
-                SVertex normal =
+                Position normal =
                     wavefront_obj_parser->get_normals()[normal_index];
 
                 Vector<f32, 4> joint_indices;
@@ -2239,13 +2261,13 @@ auto Engine::load_wavefront_obj() -> void {
                 weights[0] = 1.0f;
                 weights[1] = 1.0f;
                 weights[2] = 1.0f;
-                weights[2] = 1.0f;
+                weights[3] = 1.0f;
 
-                vulkan_renderer->a_vertices[m].push_back(
+                vulkan_renderer->vertices[m].push_back(
                     {.pos = {vertex[0], vertex[1], vertex[2]},
                      .color = {normal[0], normal[1], normal[2]},
                      .tex_coord = {texture[0], texture[1]},
-                     .join_indices =
+                     .joint_indices =
                          {joint_indices[0], joint_indices[1], joint_indices[2]},
                      .weights = {weights[0], weights[1], weights[2]}}
                 );
@@ -2357,9 +2379,9 @@ auto Engine::write_models_cache(const String& model_file_path) -> void {
 auto Engine::initialize_gltf() -> void {
     Vec<bool> animation_flags;
     for (u32 m = 0; m < paths_gltf.size(); ++m) {
-        CJsonParser json_parser;
-        vulkan_renderer->a_vertexes_temp.emplace_back();
-        vulkan_renderer->a_indices.emplace_back();
+        JsonParser json_parser;
+        vulkan_renderer->vertices_temp.emplace_back();
+        vulkan_renderer->indices.emplace_back();
         vulkan_renderer->frames.emplace_back();
         vulkan_renderer->joint_matrices_per_mesh.emplace_back();
         animation_flags.push_back({});
@@ -2368,17 +2390,27 @@ auto Engine::initialize_gltf() -> void {
         bool animation_flag = false;
         json_parser.load_gltf(
             paths_gltf[m],
-            vulkan_renderer->a_vertexes_temp[m],
-            vulkan_renderer->a_indices[next_index_gltf],
+            vulkan_renderer->vertices_temp[m],
+            vulkan_renderer->indices[next_index_gltf],
             vulkan_renderer->joint_matrices_per_mesh[next_index_gltf],
             vulkan_renderer->frames[next_index_gltf],
             animation_flag,
             vulkan_renderer->highest_gltf_y[next_index_gltf]
         );
         animation_flags[m] = animation_flag;
+        glvm_log::info(
+            "glvm",
+            "gltf parsed {}: raw_floats={} indices={} joints={} framesets={} animated={}",
+            paths_gltf[m],
+            vulkan_renderer->vertices_temp[m].size(),
+            vulkan_renderer->indices[next_index_gltf].size(),
+            vulkan_renderer->joint_matrices_per_mesh[next_index_gltf].size(),
+            vulkan_renderer->frames[next_index_gltf].size(),
+            animation_flag
+        );
     }
     for (u32 m = 0; m < paths_gltf.size(); ++m) {
-        vulkan_renderer->a_vertices.emplace_back();
+        vulkan_renderer->vertices.emplace_back();
         vulkan_renderer->mesh_axis_limiting_values.set_to_default_values();
         is_already_cached = false;
         is_model_cache_exists(paths_gltf[m]);
@@ -2388,51 +2420,51 @@ auto Engine::initialize_gltf() -> void {
         } else {
             step_offset = 16;
         }
-        for (u32 n = 0; n < vulkan_renderer->a_vertexes_temp[m].size();
+        for (u32 n = 0; n < vulkan_renderer->vertices_temp[m].size();
              n += step_offset) {
-            SVertex vertex;
-            vertex[0] = vulkan_renderer->a_vertexes_temp[m][n];
-            vertex[1] = vulkan_renderer->a_vertexes_temp[m][n + 1];
-            vertex[2] = vulkan_renderer->a_vertexes_temp[m][n + 2];
-            SVertex normal;
-            normal[0] = vulkan_renderer->a_vertexes_temp[m][n + 3];
-            normal[1] = vulkan_renderer->a_vertexes_temp[m][n + 4];
-            normal[2] = vulkan_renderer->a_vertexes_temp[m][n + 5];
-            SVertex texture;
-            texture[0] = vulkan_renderer->a_vertexes_temp[m][n + 6];
-            texture[1] = vulkan_renderer->a_vertexes_temp[m][n + 7];
-            Vector<f32, 4> join_indices;
+            Position vertex;
+            vertex[0] = vulkan_renderer->vertices_temp[m][n];
+            vertex[1] = vulkan_renderer->vertices_temp[m][n + 1];
+            vertex[2] = vulkan_renderer->vertices_temp[m][n + 2];
+            Position normal;
+            normal[0] = vulkan_renderer->vertices_temp[m][n + 3];
+            normal[1] = vulkan_renderer->vertices_temp[m][n + 4];
+            normal[2] = vulkan_renderer->vertices_temp[m][n + 5];
+            Position texture;
+            texture[0] = vulkan_renderer->vertices_temp[m][n + 6];
+            texture[1] = vulkan_renderer->vertices_temp[m][n + 7];
+            Vector<f32, 4> joint_indices;
             Vector<f32, 4> weights;
             if (animation_flags[m]) {
-                join_indices[0] = -1;
-                join_indices[1] = -1;
-                join_indices[2] = -1;
-                join_indices[3] = -1;
+                joint_indices[0] = -1;
+                joint_indices[1] = -1;
+                joint_indices[2] = -1;
+                joint_indices[3] = -1;
                 weights[0] = 1;
                 weights[1] = 1;
                 weights[2] = 1;
                 weights[3] = 1;
             } else {
-                join_indices[0] = vulkan_renderer->a_vertexes_temp[m][n + 8];
-                join_indices[1] = vulkan_renderer->a_vertexes_temp[m][n + 9];
-                join_indices[2] = vulkan_renderer->a_vertexes_temp[m][n + 10];
-                join_indices[3] = vulkan_renderer->a_vertexes_temp[m][n + 11];
+                joint_indices[0] = vulkan_renderer->vertices_temp[m][n + 8];
+                joint_indices[1] = vulkan_renderer->vertices_temp[m][n + 9];
+                joint_indices[2] = vulkan_renderer->vertices_temp[m][n + 10];
+                joint_indices[3] = vulkan_renderer->vertices_temp[m][n + 11];
 
-                weights[0] = vulkan_renderer->a_vertexes_temp[m][n + 12];
-                weights[1] = vulkan_renderer->a_vertexes_temp[m][n + 13];
-                weights[2] = vulkan_renderer->a_vertexes_temp[m][n + 14];
-                weights[3] = vulkan_renderer->a_vertexes_temp[m][n + 15];
+                weights[0] = vulkan_renderer->vertices_temp[m][n + 12];
+                weights[1] = vulkan_renderer->vertices_temp[m][n + 13];
+                weights[2] = vulkan_renderer->vertices_temp[m][n + 14];
+                weights[3] = vulkan_renderer->vertices_temp[m][n + 15];
             }
             u32 next_index_gltf = wavefront_obj_counter + m;
-            vulkan_renderer->a_vertices[next_index_gltf].push_back(
+            vulkan_renderer->vertices[next_index_gltf].push_back(
                 {.pos = {vertex[0], vertex[1], vertex[2]},
                  .color = {normal[0], normal[1], normal[2]},
                  .tex_coord = {texture[0], texture[1]},
-                 .join_indices =
-                     {join_indices[0],
-                      join_indices[1],
-                      join_indices[2],
-                      join_indices[3]},
+                 .joint_indices =
+                     {joint_indices[0],
+                      joint_indices[1],
+                      joint_indices[2],
+                      joint_indices[3]},
                  .weights = {weights[0], weights[1], weights[2], weights[3]}}
             );
             if (is_already_cached) {
@@ -2451,16 +2483,16 @@ auto Engine::initialize_gltf() -> void {
                      ++frame) {
                     Matrix<f32, 4> skin_matrix =
                         (vulkan_renderer->joint_matrices_per_mesh
-                             [next_index_gltf][i32(join_indices[0])][frame]
+                             [next_index_gltf][i32(joint_indices[0])][frame]
                          * weights[0])
                         + (vulkan_renderer->joint_matrices_per_mesh
-                               [next_index_gltf][i32(join_indices[1])][frame]
+                               [next_index_gltf][i32(joint_indices[1])][frame]
                            * weights[1])
                         + (vulkan_renderer->joint_matrices_per_mesh
-                               [next_index_gltf][i32(join_indices[2])][frame]
+                               [next_index_gltf][i32(joint_indices[2])][frame]
                            * weights[2])
                         + (vulkan_renderer->joint_matrices_per_mesh
-                               [next_index_gltf][i32(join_indices[3])][frame]
+                               [next_index_gltf][i32(joint_indices[3])][frame]
                            * weights[3]);
 
                     animated_vertex =
@@ -2486,7 +2518,7 @@ auto Engine::initialize_font_data() -> void {
     vulkan_renderer->font_vertex_buffer_container.resize(128);
     vulkan_renderer->font_vertex_buffer_memory_container.resize(128);
     vulkan_renderer->font_index_buffer_container.resize(128);
-    vulkan_renderer->font_index_buffer_memory_contaner.resize(128);
+    vulkan_renderer->font_index_buffer_memory_container.resize(128);
     for (u32 i = 0; i < GLYPH_ROW; ++i) {
         for (u32 j = 0; j < GLYPH_COLUMN; ++j) {
             Vec<Vertex> symbol_g_vertices;
@@ -2523,7 +2555,7 @@ auto Engine::initialize_font_data() -> void {
             const auto next_buffer_index = static_cast<const u32>(
                 vulkan_renderer->glyphs[current_buffer_index]
             );
-            // TODO: Fix gabage algorithm.
+            // TODO: Fix garbage algorithm.
             for (u32 n = 0; n < vulkan_renderer->font_indices_container.size();
                  ++n) {
                 if (next_buffer_index
@@ -2571,11 +2603,11 @@ auto Engine::compute_model_matrix(Transform* transform, Rotation* rotation)
     return scaling_matrix * translation_matrix;
 }
 
-auto Engine::compute_hud_screeen_coordinates() -> void {
+auto Engine::compute_hud_screen_coordinates() -> void {
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-    hud_screen_y -= G_E_EVENT.mouse_pointer_position.offset_y
+    hud_screen_y -= global_event.mouse_pointer_position.offset_y
         / (f32)vulkan_renderer->window->height;
-    hud_screen_x += G_E_EVENT.mouse_pointer_position.offset_x
+    hud_screen_x += global_event.mouse_pointer_position.offset_x
         / (f32)vulkan_renderer->window->width;
 #else
     if (vulkan_renderer->is_inventory_opened
@@ -2583,22 +2615,22 @@ auto Engine::compute_hud_screeen_coordinates() -> void {
         // Cursor is free while the inventory is open or the cursor is released:
         // track its real position instead of the locked-mouse offsets.
         hud_screen_x = 1.0f
-            - G_E_EVENT.mouse_pointer_position.position_x
+            - global_event.mouse_pointer_position.position_x
                 / ((f32)vulkan_renderer->window->width / 2.0f);
         hud_screen_y =
-            -(G_E_EVENT.mouse_pointer_position.position_y
+            -(global_event.mouse_pointer_position.position_y
                   / ((f32)vulkan_renderer->window->height / 2.0f)
               - 1.0f);
     } else {
         hud_screen_y -= (previous_mouse_offset_y
-                         - G_E_EVENT.mouse_pointer_position.offset_y)
+                         - global_event.mouse_pointer_position.offset_y)
             / (f32)vulkan_renderer->window->height;
         hud_screen_x += (previous_mouse_offset_x
-                         - G_E_EVENT.mouse_pointer_position.offset_x)
+                         - global_event.mouse_pointer_position.offset_x)
             / (f32)vulkan_renderer->window->width;
     }
-    previous_mouse_offset_x = G_E_EVENT.mouse_pointer_position.offset_x;
-    previous_mouse_offset_y = G_E_EVENT.mouse_pointer_position.offset_y;
+    previous_mouse_offset_x = global_event.mouse_pointer_position.offset_x;
+    previous_mouse_offset_y = global_event.mouse_pointer_position.offset_y;
 #endif
     if (hud_screen_x > 1.0f) {
         hud_screen_x = 1.0f;
@@ -2625,19 +2657,26 @@ auto Engine::load_texture_from_file(const char* path_to_texture)
 }
 
 auto Engine::load_texture_from_address(
-    u32 i_width,
-    u32 i_height,
-    u32 dat_length,
-    u8* u_i_data
+    u32 width,
+    u32 height,
+    u32 data_length,
+    u8* data
 ) -> TextureHandle {
+    glvm_log::info(
+        "glvm",
+        "load_texture_from_address {}x{} len {}",
+        width,
+        height,
+        data_length
+    );
     u32 texture_id = texture_vector.size();
     TextureHandle texture_handle;
     texture_handle.id = texture_id;
     texture_vector.push_back(
-        {.i_width = i_width,
-         .i_height = i_height,
-         .dat_length = dat_length,
-         .u_i_data = u_i_data}
+        {.width = width,
+         .height = height,
+         .data_length = data_length,
+         .data = data}
     );
     texture_handlers.push_back(texture_handle);
 
@@ -2648,17 +2687,18 @@ auto Engine::load_mesh_from_obj(const char* mesh_path) -> MeshHandle {
     MeshHandle mesh_handle;
     mesh_handle.id = mesh_id;
     paths_array.push_back(mesh_path);
-    mesh_handlers.push_back(mesh_handle);
+    mesh_handles.push_back(mesh_handle);
     ++mesh_id;
 
     return mesh_handle;
 }
 
 auto Engine::load_mesh_from_gltf(const char* path_to_mesh) -> MeshHandle {
+    glvm_log::info("glvm", "load_mesh_from_gltf {}", path_to_mesh);
     MeshHandle mesh_handle;
     mesh_handle.id = mesh_id;
     paths_gltf.push_back(path_to_mesh);
-    mesh_handlers.push_back(mesh_handle);
+    mesh_handles.push_back(mesh_handle);
     ++mesh_id;
 
     return mesh_handle;
@@ -2667,7 +2707,7 @@ auto Engine::load_mesh_from_gltf(const char* path_to_mesh) -> MeshHandle {
 auto Engine::load_mesh() -> MeshHandle {
     MeshHandle mesh_handle;
     mesh_handle.id = mesh_id;
-    mesh_handlers.push_back(mesh_handle);
+    mesh_handles.push_back(mesh_handle);
     ++mesh_id;
 
     return mesh_handle;
@@ -2675,11 +2715,12 @@ auto Engine::load_mesh() -> MeshHandle {
 
 auto Engine::game_kill() -> void {
     running_sound = false;
-    sound_engine->close_device();
-
+    // Join the sound thread before touching the sound engine: it may still
+    // be inside sound_stream().
     if (sound_thread.joinable()) {
         sound_thread.join();
     }
+    sound_engine->close_device();
 
     delete sound_engine;
     sound_engine = nullptr;
@@ -2696,10 +2737,11 @@ auto Engine::game_kill() -> void {
     projectile_system = nullptr;
     delete damage_system;
     damage_system = nullptr;
-    delete enemy_sytem;
-    enemy_sytem = nullptr;
+    delete enemy_system;
+    enemy_system = nullptr;
     delete item_system;
     item_system = nullptr;
+    glvm_log::info("glvm", "game_kill done");
 }
 } // namespace glvm
 
@@ -2723,8 +2765,8 @@ auto EntityManager::get_instance() -> EntityManager* {
 
 [[nodiscard]] auto EntityManager::create_entity() -> u32 {
     u32 new_id;
-    // Check out wether or not free ID in removed entities registry.
-    if (removed_entity_registry.size() > K_I_NULL) {
+    // Check out whether or not free ID in removed entities registry.
+    if (!removed_entity_registry.empty()) {
         new_id = removed_entity_registry.front();
         active_entity_registry.push_back(removed_entity_registry.front());
         removed_entity_registry.erase(removed_entity_registry.begin());
@@ -2737,55 +2779,55 @@ auto EntityManager::get_instance() -> EntityManager* {
     return new_id;
 }
 
-// Don't need to delete real component in this method. Because systems dont work
-// with component without indices for that component in ordered container.
+// No need to delete the real component in this method, because systems don't
+// work with components lacking indices in the ordered container.
 auto EntityManager::remove_entity(
     u32& entity_id,
     ComponentManager* component_manager
 ) -> void {
     component_manager->remove_all_components(entity_id);
-    active_entity_registry[entity_id] = K_I_UINT_MAX;
+    active_entity_registry[entity_id] = INVALID_ENTITY_ID;
     removed_entity_registry.push_back(entity_id);
     is_entities_collection_changed = true;
 }
 } // namespace glvm
 
 namespace glvm {
-CEvent::CEvent() {
+Event::Event() {
 }
 
-auto CEvent::get_event() -> EEvents& {
-    return e_event;
+auto Event::get_event() -> EventKind& {
+    return event;
 }
 
-auto CEvent::set_event(EEvents new_event) -> void {
-    e_event = new_event;
+auto Event::set_event(EventKind new_event) -> void {
+    event = new_event;
 }
 
-auto CEvent::set_next_event(EEvents new_event) -> void {
+auto Event::set_next_event(EventKind new_event) -> void {
     next_event = new_event;
 }
 
-auto CEvent::get_next_event() -> EEvents {
+auto Event::get_next_event() -> EventKind {
     return next_event;
 }
 
-auto CEvent::set_last_event(CStack stack) -> void {
+auto Event::set_last_event(EventStack stack) -> void {
     switch (stack.pop()) {
-        case glvm::EMoveRight:
-            set_event(glvm::EEvents::EMoveRight);
+        case glvm::MoveRight:
+            set_event(glvm::EventKind::MoveRight);
             break;
-        case glvm::EMoveLeft:
-            set_event(glvm::EEvents::EMoveLeft);
+        case glvm::MoveLeft:
+            set_event(glvm::EventKind::MoveLeft);
             break;
-        case glvm::EMoveBackward:
-            set_event(glvm::EEvents::EMoveBackward);
+        case glvm::MoveBackward:
+            set_event(glvm::EventKind::MoveBackward);
             break;
-        case glvm::EMoveForward:
-            set_event(glvm::EEvents::EMoveForward);
+        case glvm::MoveForward:
+            set_event(glvm::EventKind::MoveForward);
             break;
-        case glvm::EMouseLeftButton:
-            set_event(glvm::EEvents::EMouseLeftButton);
+        case glvm::MouseLeftButton:
+            set_event(glvm::EventKind::MouseLeftButton);
             break;
         default:
             break;
@@ -2829,7 +2871,7 @@ auto descriptor_set_builder() -> void {
 
             // Index for ds bindings inside ds.
             DESCRIPTOR_SETS_CONFIG[ds_counter]
-                .descriptors_bindings_i_ds[ds_local_bindings_counter] =
+                .descriptors_bindings_ids[ds_local_bindings_counter] =
                 ds_sum_bindings_counter;
             if (DESCRIPTOR_BINDINGS_CONFIG[ds_sum_bindings_counter].vk_type
                 == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
@@ -2874,7 +2916,7 @@ auto pipeline_builder() -> void {
                    .actual_linked_descriptor_sets_number;
              ++linked_ds_layout_counter) {
             PIPELINE_CONFIGS[pipeline_counter]
-                .linked_descriptor_set_i_ds[linked_ds_layout_counter] =
+                .linked_descriptor_set_ids[linked_ds_layout_counter] =
                 DESCRIPTOR_SETS_LAYOUT_ID_COUNTER + linked_ds_layout_counter;
         }
         DESCRIPTOR_SETS_LAYOUT_ID_COUNTER +=
@@ -2891,14 +2933,14 @@ auto render_passes_builder() -> void {
 namespace glvm {
 auto create_debug_utils_messenger_ext(
     VkInstance instance,
-    const VkDebugUtilsMessengerCreateInfoEXT* p_create_info,
-    const VkAllocationCallbacks* p_allocator,
-    VkDebugUtilsMessengerEXT* p_debug_messenger
+    const VkDebugUtilsMessengerCreateInfoEXT* create_info,
+    const VkAllocationCallbacks* allocator,
+    VkDebugUtilsMessengerEXT* debug_messenger
 ) -> VkResult {
     static auto FUNC = (PFN_vkCreateDebugUtilsMessengerEXT)
         vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
     if (FUNC != nullptr) {
-        return FUNC(instance, p_create_info, p_allocator, p_debug_messenger);
+        return FUNC(instance, create_info, allocator, debug_messenger);
     } else {
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
@@ -2930,12 +2972,12 @@ auto create_end_debug_utils_label_ext(
 auto destroy_debug_utils_messenger_ext(
     VkInstance instance,
     VkDebugUtilsMessengerEXT debug_messenger,
-    const VkAllocationCallbacks* p_allocator
+    const VkAllocationCallbacks* allocator
 ) -> void {
     static auto FUNC = (PFN_vkDestroyDebugUtilsMessengerEXT)
         vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
     if (FUNC != nullptr) {
-        FUNC(instance, debug_messenger, p_allocator);
+        FUNC(instance, debug_messenger, allocator);
     }
 }
 
@@ -2977,12 +3019,11 @@ auto set_pipeline_debug_object_name(
     VkDebugUtilsObjectNameInfoEXT main_pipeline_object_info {};
     main_pipeline_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    String main_pipe_line_image_name = String(VK_DEBUG_PIPELINE_RED)
+    String main_pipeline_image_name = String(VK_DEBUG_PIPELINE_RED)
         + " \x1b[31m" + pipeline_name + " pipeline #\x1b[0m "
         + std::to_string(0);
-    const char* main_pipe_line_str_image_name =
-        main_pipe_line_image_name.c_str();
-    main_pipeline_object_info.pObjectName = main_pipe_line_str_image_name;
+    const char* main_pipeline_str_image_name = main_pipeline_image_name.c_str();
+    main_pipeline_object_info.pObjectName = main_pipeline_str_image_name;
     main_pipeline_object_info.objectType = VK_OBJECT_TYPE_PIPELINE;
     main_pipeline_object_info.objectHandle = (u64)pipeline;
     set_debug_object_name(device, &main_pipeline_object_info);
@@ -3035,11 +3076,10 @@ auto set_debug_object_names(
     VkDebugUtilsObjectNameInfoEXT main_pipeline_object_info {};
     main_pipeline_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    String main_pipe_line_image_name = String(VK_DEBUG_PIPELINE_RED)
+    String main_pipeline_image_name = String(VK_DEBUG_PIPELINE_RED)
         + " \x1b[31mMain pipeline #\x1b[0m " + std::to_string(0);
-    const char* main_pipe_line_str_image_name =
-        main_pipe_line_image_name.c_str();
-    main_pipeline_object_info.pObjectName = main_pipe_line_str_image_name;
+    const char* main_pipeline_str_image_name = main_pipeline_image_name.c_str();
+    main_pipeline_object_info.pObjectName = main_pipeline_str_image_name;
     main_pipeline_object_info.objectType = VK_OBJECT_TYPE_PIPELINE;
     main_pipeline_object_info.objectHandle =
         (u64)PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline].pipeline;
@@ -3065,13 +3105,12 @@ auto set_debug_object_names(
     VkDebugUtilsObjectNameInfoEXT directional_light_pipeline_object_info {};
     directional_light_pipeline_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    String directional_light_pipe_line_image_name =
-        String(VK_DEBUG_PIPELINE_RED)
+    String directional_light_pipeline_image_name = String(VK_DEBUG_PIPELINE_RED)
         + " \x1b[31mDirectional light pipeline #\x1b[0m " + std::to_string(0);
-    const char* directional_light_pipe_line_str_image_name =
-        directional_light_pipe_line_image_name.c_str();
+    const char* directional_light_pipeline_str_image_name =
+        directional_light_pipeline_image_name.c_str();
     directional_light_pipeline_object_info.pObjectName =
-        directional_light_pipe_line_str_image_name;
+        directional_light_pipeline_str_image_name;
     directional_light_pipeline_object_info.objectType = VK_OBJECT_TYPE_PIPELINE;
     directional_light_pipeline_object_info.objectHandle =
         (u64)PIPELINE_CONFIGS[SpecificPipeline::DirectionalLightPipeline]
@@ -3103,12 +3142,12 @@ auto set_debug_object_names(
     VkDebugUtilsObjectNameInfoEXT spot_light_pipeline_object_info {};
     spot_light_pipeline_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    String spot_light_pipe_line_image_name = String(VK_DEBUG_PIPELINE_RED)
+    String spot_light_pipeline_image_name = String(VK_DEBUG_PIPELINE_RED)
         + " \x1b[31mSpot light pipeline #\x1b[0m " + std::to_string(0);
-    const char* spot_light_pipe_line_str_image_name =
-        spot_light_pipe_line_image_name.c_str();
+    const char* spot_light_pipeline_str_image_name =
+        spot_light_pipeline_image_name.c_str();
     spot_light_pipeline_object_info.pObjectName =
-        spot_light_pipe_line_str_image_name;
+        spot_light_pipeline_str_image_name;
     spot_light_pipeline_object_info.objectType = VK_OBJECT_TYPE_PIPELINE;
     spot_light_pipeline_object_info.objectHandle =
         (u64)PIPELINE_CONFIGS[SpecificPipeline::SpotLightPipeline].pipeline;
@@ -3134,12 +3173,12 @@ auto set_debug_object_names(
     VkDebugUtilsObjectNameInfoEXT point_light_pipeline_object_info {};
     point_light_pipeline_object_info.sType =
         VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    String point_light_pipe_line_image_name = String(VK_DEBUG_PIPELINE_RED)
+    String point_light_pipeline_image_name = String(VK_DEBUG_PIPELINE_RED)
         + " \x1b[31mPoint light pipeline #\x1b[0m " + std::to_string(0);
-    const char* point_light_pipe_line_str_image_name =
-        point_light_pipe_line_image_name.c_str();
+    const char* point_light_pipeline_str_image_name =
+        point_light_pipeline_image_name.c_str();
     point_light_pipeline_object_info.pObjectName =
-        point_light_pipe_line_str_image_name;
+        point_light_pipeline_str_image_name;
     point_light_pipeline_object_info.objectType = VK_OBJECT_TYPE_PIPELINE;
     point_light_pipeline_object_info.objectHandle =
         (u64)PIPELINE_CONFIGS[SpecificPipeline::PointLightPipeline].pipeline;
@@ -3172,7 +3211,7 @@ auto set_debug_object_names(
     hud_uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
     u32 hud_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::HUD]
-            .descriptors_bindings_i_ds[0];
+            .descriptors_bindings_ids[0];
     hud_uniform_buffer_object_info.objectHandle =
         (u64)gpu_descriptors
             [DESCRIPTOR_BINDINGS_CONFIG[hud_ubo_descriptor_binding_index]
@@ -3190,7 +3229,7 @@ auto set_debug_object_names(
     font_uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
     u32 font_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::FontRenderUbo]
-            .descriptors_bindings_i_ds[0];
+            .descriptors_bindings_ids[0];
     font_uniform_buffer_object_info.objectHandle =
         (u64)gpu_descriptors
             [DESCRIPTOR_BINDINGS_CONFIG[font_ubo_descriptor_binding_index]
@@ -3207,7 +3246,7 @@ auto set_debug_object_names(
     ui_uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
     u32 ui_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::UI]
-            .descriptors_bindings_i_ds[0];
+            .descriptors_bindings_ids[0];
     ui_uniform_buffer_object_info.objectHandle =
         (u64)gpu_descriptors
             [DESCRIPTOR_BINDINGS_CONFIG[ui_ubo_descriptor_binding_index]
@@ -3224,7 +3263,7 @@ auto set_debug_object_names(
     ui_icons_uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
     u32 ui_icons_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::UiIcons]
-            .descriptors_bindings_i_ds[0];
+            .descriptors_bindings_ids[0];
     ui_icons_uniform_buffer_object_info.objectHandle =
         (u64)gpu_descriptors
             [DESCRIPTOR_BINDINGS_CONFIG[ui_icons_ubo_descriptor_binding_index]
@@ -3246,7 +3285,7 @@ auto set_debug_object_names(
         VK_OBJECT_TYPE_BUFFER;
     u32 shadow_map_directional_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ShadowMapDirectionalLight]
-            .descriptors_bindings_i_ds[0];
+            .descriptors_bindings_ids[0];
     directional_light_uniform_buffer_object_info.objectHandle =
         (u64)gpu_descriptors
             [DESCRIPTOR_BINDINGS_CONFIG
@@ -3266,7 +3305,7 @@ auto set_debug_object_names(
     point_light_uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
     u32 shadow_map_point_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ShadowMapPointLight]
-            .descriptors_bindings_i_ds[0];
+            .descriptors_bindings_ids[0];
     point_light_uniform_buffer_object_info.objectHandle =
         (u64)
             gpu_descriptors[DESCRIPTOR_BINDINGS_CONFIG
@@ -3286,7 +3325,7 @@ auto set_debug_object_names(
     spot_light_uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
     u32 shadow_map_spot_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ShadowMapSpotLight]
-            .descriptors_bindings_i_ds[0];
+            .descriptors_bindings_ids[0];
     spot_light_uniform_buffer_object_info.objectHandle =
         (u64)gpu_descriptors[DESCRIPTOR_BINDINGS_CONFIG
                                  [shadow_map_spot_light_descriptor_binding_index]
@@ -3370,7 +3409,7 @@ auto set_debug_object_names(
     light_data_uniform_buffer_object_info.objectType = VK_OBJECT_TYPE_BUFFER;
     u32 light_data_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
-            .descriptors_bindings_i_ds[0];
+            .descriptors_bindings_ids[0];
     light_data_uniform_buffer_object_info.objectHandle =
         (u64)gpu_descriptors
             [DESCRIPTOR_BINDINGS_CONFIG[light_data_ubo_descriptor_binding_index]
@@ -3383,7 +3422,7 @@ auto set_debug_object_names(
 namespace glvm {
 namespace {
 // 16k verts, shared line + quad buffer.
-constexpr auto K_MAX_DEBUG_VERTICES = 1 << 14;
+constexpr auto MAX_DEBUG_VERTICES = 1 << 14;
 
 auto push_line(
     Vec<DebugVertex>& out,
@@ -3428,7 +3467,7 @@ auto from_vec4(const Vector<f32, 4>& v) -> Vector<f32, 3> {
 }
 } // namespace
 
-ImGuiOverlay::ImGuiOverlay(CVulkanRenderer& renderer) : renderer(renderer) {
+ImGuiOverlay::ImGuiOverlay(Renderer& renderer) : renderer(renderer) {
 }
 
 auto ImGuiOverlay::wants_mouse() const -> bool {
@@ -3545,12 +3584,12 @@ auto ImGuiOverlay::new_frame() -> void {
     // No OS cursor plumbing yet: let ImGui draw its own cursor.
     io.MouseDrawCursor = true;
     io.AddMousePosEvent(
-        G_E_EVENT.mouse_pointer_position.offset_x,
-        G_E_EVENT.mouse_pointer_position.offset_y
+        global_event.mouse_pointer_position.offset_x,
+        global_event.mouse_pointer_position.offset_y
     );
     io.AddMouseButtonEvent(
         ImGuiMouseButton_Left,
-        !G_E_EVENT.is_left_mouse_button_released
+        !global_event.is_left_mouse_button_released
     );
 #endif
     ImGui_ImplVulkan_NewFrame();
@@ -3666,7 +3705,7 @@ auto ImGuiOverlay::build_panel() -> void {
 
 auto ImGuiOverlay::build_debug_vertices() -> void {
     Vec<DebugVertex> vertices;
-    vertices.reserve(K_MAX_DEBUG_VERTICES);
+    vertices.reserve(MAX_DEBUG_VERTICES);
     line_vertex_count = 0;
     if (show_actor_bounds) {
         const Vector<f32, 3> green = {0.0f, 1.0f, 0.0f};
@@ -3677,13 +3716,13 @@ auto ImGuiOverlay::build_debug_vertices() -> void {
         maxs.reserve(renderer.actors.size());
         for (usize i = 0; i < renderer.actors.size(); ++i) {
             RenderActor actor = renderer.actors[i];
-            if (actor.mesh_id >= ALL_MESH_MAX_ABSOLUTE_VALUES.size()) {
+            if (actor.mesh_id >= all_mesh_max_absolute_values.size()) {
                 mins.push_back({0, 0, 0});
                 maxs.push_back({0, 0, 0});
                 continue;
             }
             const MeshAxisMaxAbsoluteValues& bounds =
-                ALL_MESH_MAX_ABSOLUTE_VALUES[actor.mesh_id];
+                all_mesh_max_absolute_values[actor.mesh_id];
             const Vector<f32, 3> center = {
                 bounds.origin_offset_x,
                 bounds.origin_offset_y,
@@ -3732,11 +3771,11 @@ auto ImGuiOverlay::build_debug_vertices() -> void {
         }
         for (usize i = 0; i < renderer.actors.size(); ++i) {
             if (renderer.actors[i].mesh_id
-                >= ALL_MESH_MAX_ABSOLUTE_VALUES.size()) {
+                >= all_mesh_max_absolute_values.size()) {
                 continue;
             }
             const MeshAxisMaxAbsoluteValues& bounds =
-                ALL_MESH_MAX_ABSOLUTE_VALUES[renderer.actors[i].mesh_id];
+                all_mesh_max_absolute_values[renderer.actors[i].mesh_id];
             const Vector<f32, 3> center = {
                 bounds.origin_offset_x,
                 bounds.origin_offset_y,
@@ -3797,7 +3836,7 @@ auto ImGuiOverlay::build_debug_vertices() -> void {
     }
 
     if (show_spatial_grid) {
-        const auto& grid = glvm::WORLD.spatial_grid;
+        const auto& grid = glvm::world.spatial_grid;
         const auto half_chunk = grid.grid[0][0][0].SIZE * 0.5f;
         const auto cross = 1.5f;
         for (u32 z = 0; z < grid.depth; ++z) {
@@ -3842,7 +3881,7 @@ auto ImGuiOverlay::build_debug_vertices() -> void {
 
     if (!vertices.empty() && vertex_buffer_mapped) {
         const auto bytes = vertices.size() * sizeof(DebugVertex);
-        const auto capacity = K_MAX_DEBUG_VERTICES * sizeof(DebugVertex);
+        const auto capacity = MAX_DEBUG_VERTICES * sizeof(DebugVertex);
         memcpy(vertex_buffer_mapped, vertices.data(), std::min(bytes, capacity));
     }
 }
@@ -4087,7 +4126,7 @@ auto ImGuiOverlay::create_line_pipeline() -> void {
 }
 
 auto ImGuiOverlay::create_vertex_buffer() -> void {
-    const VkDeviceSize buffer_size = K_MAX_DEBUG_VERTICES * sizeof(DebugVertex);
+    const VkDeviceSize buffer_size = MAX_DEBUG_VERTICES * sizeof(DebugVertex);
     renderer.create_buffer(
         buffer_size,
         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
@@ -4112,47 +4151,47 @@ auto ImGuiOverlay::create_vertex_buffer() -> void {
 #endif
 
 namespace glvm {
-CVulkanRenderer::CVulkanRenderer() {
+Renderer::Renderer() {
     imgui_overlay = new ImGuiOverlay(*this);
 }
 
-CVulkanRenderer::~CVulkanRenderer() {
+Renderer::~Renderer() {
     cleanup();
     delete imgui_overlay;
     imgui_overlay = nullptr;
 }
 
-auto CVulkanRenderer::draw() -> void {
+auto Renderer::draw() -> void {
     imgui_overlay->new_frame();
     main_render_draw_frame();
 }
 
-auto CVulkanRenderer::set_view_matrix(Matrix<f32, 4> new_view_matrix) -> void {
+auto Renderer::set_view_matrix(Matrix<f32, 4> new_view_matrix) -> void {
     view_matrix = new_view_matrix;
 }
 
-auto CVulkanRenderer::set_projection_matrix(Matrix<f32, 4> new_projection_matrix)
+auto Renderer::set_projection_matrix(Matrix<f32, 4> new_projection_matrix)
     -> void {
     projection_matrix = new_projection_matrix;
 }
 
-auto CVulkanRenderer::create_texture_image() -> void {
+auto Renderer::create_texture_image() -> void {
     u32 tex_width, tex_height;
     u32 tex_channels;
 
     u32 readable_texture_descriptor_binding_index =
-        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::RidableTextures]
-            .descriptors_bindings_i_ds[0];
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ReadableTextures]
+            .descriptors_bindings_ids[0];
     for (u32 i = 0; i < initialize_texture_data.size(); ++i) {
         VkDeviceSize image_size {};
         u8* pixels;
         const char* path_to_stb_image = nullptr;
 
 #ifndef STB_IMAGE_IMPLEMENTATION
-        image_size = initialize_texture_data[i].dat_length;
-        pixels = initialize_texture_data[i].u_i_data;
-        tex_width = initialize_texture_data[i].i_width;
-        tex_height = initialize_texture_data[i].i_height;
+        image_size = initialize_texture_data[i].data_length;
+        pixels = initialize_texture_data[i].data;
+        tex_width = initialize_texture_data[i].width;
+        tex_height = initialize_texture_data[i].height;
 #endif
 
 #ifdef STB_IMAGE_IMPLEMENTATION
@@ -4231,7 +4270,7 @@ auto CVulkanRenderer::create_texture_image() -> void {
     }
 }
 
-auto CVulkanRenderer::recreate_swap_chain() -> void {
+auto Renderer::recreate_swap_chain() -> void {
     vkDeviceWaitIdle(device);
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
@@ -4244,7 +4283,7 @@ auto CVulkanRenderer::recreate_swap_chain() -> void {
     create_swap_chain();
     window->width = swap_chain_extent.width;
     window->height = swap_chain_extent.height;
-    aspect_rate = (f32)window->width / (f32)window->height;
+    aspect_ratio = (f32)window->width / (f32)window->height;
     create_image_views();
     create_depth_resources();
     create_directional_light_shadow_map_depth_resources();
@@ -4255,10 +4294,8 @@ auto CVulkanRenderer::recreate_swap_chain() -> void {
     imgui_overlay->create_swap_chain_resources();
 }
 
-auto CVulkanRenderer::set_mesh_data(
-    Vec<const char*> paths,
-    Vec<const char*> paths_gltf
-) -> void {
+auto Renderer::set_mesh_data(Vec<const char*> paths, Vec<const char*> paths_gltf)
+    -> void {
     for (u32 i = 0; i < paths.size(); ++i) {
         paths_array.push_back(paths[i]);
     }
@@ -4268,7 +4305,7 @@ auto CVulkanRenderer::set_mesh_data(
     }
 }
 
-auto CVulkanRenderer::run() -> void {
+auto Renderer::run() -> void {
     vk_config_initializer();
     descriptor_set_builder();
     pipeline_builder();
@@ -4280,12 +4317,12 @@ auto CVulkanRenderer::run() -> void {
     init_vulkan();
 }
 
-auto CVulkanRenderer::init_window() -> void {
+auto Renderer::init_window() -> void {
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
     window = initialize_wayland_window();
     create_wayland_surface_info.display = window->display;
     create_wayland_surface_info.surface = window->wl_surface;
-    aspect_rate = (f32)window->width / (f32)window->height;
+    aspect_ratio = (f32)window->width / (f32)window->height;
     create_wayland_surface_info.sType =
         VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
     create_wayland_surface_info.pNext = nullptr;
@@ -4294,31 +4331,32 @@ auto CVulkanRenderer::init_window() -> void {
 
 #ifdef VK_USE_PLATFORM_XLIB_KHR
     window = new glvm::WindowXVulkan();
-    createXlibSurfaceInfo.dpy = window->get_display();
-    createXlibSurfaceInfo.window = window->get_window();
-    aspect_rate = (f32)window->width / (f32)window->height;
+    create_xlib_surface_info.dpy = window->get_display();
+    create_xlib_surface_info.window = window->get_window();
+    aspect_ratio = (f32)window->width / (f32)window->height;
 
-    createXlibSurfaceInfo.sType =
+    create_xlib_surface_info.sType =
         VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
-    createXlibSurfaceInfo.pNext = nullptr;
-    createXlibSurfaceInfo.flags = 0;
+    create_xlib_surface_info.pNext = nullptr;
+    create_xlib_surface_info.flags = 0;
 #endif
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
     window = new glvm::WindowXCBVulkan();
-    createXcbSurfaceInfo.window = window->get_window();
-    createXcbSurfaceInfo.connection = window->get_connection();
-    aspect_rate = (f32)window->width / (f32)window->height;
+    create_xcb_surface_info.window = window->get_window();
+    create_xcb_surface_info.connection = window->get_connection();
+    aspect_ratio = (f32)window->width / (f32)window->height;
 
-    createXcbSurfaceInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-    createXcbSurfaceInfo.pNext = nullptr;
-    createXcbSurfaceInfo.flags = 0;
+    create_xcb_surface_info.sType =
+        VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+    create_xcb_surface_info.pNext = nullptr;
+    create_xcb_surface_info.flags = 0;
 #endif
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     window = new glvm::WindowWinVulkan();
     create_win32_surface_info.hwnd = window->get_modern_window_hwnd();
-    aspect_rate = (f32)window->width / (f32)window->height;
+    aspect_ratio = (f32)window->width / (f32)window->height;
 
     create_win32_surface_info.sType =
         VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
@@ -4327,10 +4365,10 @@ auto CVulkanRenderer::init_window() -> void {
 #endif
 }
 
-auto CVulkanRenderer::initialize_game_level_vertices() -> void {
+auto Renderer::initialize_game_level_vertices() -> void {
     for (u32 m = 0; m < level_generated_vertices.size(); ++m) {
-        a_vertices.push_back(level_generated_vertices[m]);
-        a_indices.push_back(level_generated_indices[m]);
+        vertices.push_back(level_generated_vertices[m]);
+        indices.push_back(level_generated_indices[m]);
         joint_matrices_per_mesh.push_back({});
         frames.push_back({});
         for (i32 i = 0; i < 64; ++i) {
@@ -4358,20 +4396,20 @@ auto CVulkanRenderer::initialize_game_level_vertices() -> void {
         create_vertex_buffer(
             vertex_buffer_container[next_index_gltf],
             vertex_buffer_memory_container[next_index_gltf],
-            a_vertices[next_index_gltf]
+            vertices[next_index_gltf]
         );
 
         index_buffer_container.emplace_back();
-        index_buffer_memory_contaner.emplace_back();
+        index_buffer_memory_container.emplace_back();
         create_index_buffer(
             index_buffer_container[next_index_gltf],
-            index_buffer_memory_contaner[next_index_gltf],
-            a_indices[next_index_gltf]
+            index_buffer_memory_container[next_index_gltf],
+            indices[next_index_gltf]
         );
     }
 }
 
-auto CVulkanRenderer::init_vulkan() -> void {
+auto Renderer::init_vulkan() -> void {
     create_instance();
     setup_debug_messenger();
     create_surface();
@@ -4448,50 +4486,57 @@ auto CVulkanRenderer::init_vulkan() -> void {
     );
 }
 
-auto CVulkanRenderer::initialize_vertex_buffers_with_wavefront_data() -> void {
+auto Renderer::initialize_vertex_buffers_with_wavefront_data() -> void {
     for (u32 m = 0; m < paths_array.size(); ++m) {
         vertex_buffer_container.emplace_back();
         vertex_buffer_memory_container.emplace_back();
         create_vertex_buffer(
             vertex_buffer_container[m],
             vertex_buffer_memory_container[m],
-            a_vertices[m]
+            vertices[m]
         );
 
         index_buffer_container.emplace_back();
-        index_buffer_memory_contaner.emplace_back();
+        index_buffer_memory_container.emplace_back();
         create_index_buffer(
             index_buffer_container[m],
-            index_buffer_memory_contaner[m],
-            a_indices[m]
+            index_buffer_memory_container[m],
+            indices[m]
         );
         ++wavefront_obj_counter;
     }
 }
 
-auto CVulkanRenderer::initialize_vertex_buffers_with_gltf_data() -> void {
+auto Renderer::initialize_vertex_buffers_with_gltf_data() -> void {
     for (u32 m = 0; m < paths_gltf.size(); ++m) {
         u32 next_index_gltf = wavefront_obj_counter + m;
+        glvm_log::info(
+            "glvm",
+            "gltf upload {}: vertices={} indices={}",
+            paths_gltf[m],
+            vertices[next_index_gltf].size(),
+            indices[next_index_gltf].size()
+        );
         vertex_buffer_container.emplace_back();
         vertex_buffer_memory_container.emplace_back();
         create_vertex_buffer(
             vertex_buffer_container[next_index_gltf],
             vertex_buffer_memory_container[next_index_gltf],
-            a_vertices[next_index_gltf]
+            vertices[next_index_gltf]
         );
 
         index_buffer_container.emplace_back();
-        index_buffer_memory_contaner.emplace_back();
+        index_buffer_memory_container.emplace_back();
         create_index_buffer(
             index_buffer_container[next_index_gltf],
-            index_buffer_memory_contaner[next_index_gltf],
-            a_indices[next_index_gltf]
+            index_buffer_memory_container[next_index_gltf],
+            indices[next_index_gltf]
         );
         ++gltf_counter;
     }
 }
 
-auto CVulkanRenderer::initialize_vertex_buffers_with_font_data() -> void {
+auto Renderer::initialize_vertex_buffers_with_font_data() -> void {
     for (u32 i = 0; i < symbol_g_vertices_container.size(); ++i) {
         const auto next_buffer_index = font_indices_container[i];
         Vec<Vertex> symbol_g_vertices = symbol_g_vertices_container[i];
@@ -4503,13 +4548,13 @@ auto CVulkanRenderer::initialize_vertex_buffers_with_font_data() -> void {
         );
         create_index_buffer(
             font_index_buffer_container[next_buffer_index],
-            font_index_buffer_memory_contaner[next_buffer_index],
+            font_index_buffer_memory_container[next_buffer_index],
             symbol_g_indices
         );
     }
 }
 
-auto CVulkanRenderer::clear_vk_image(GpuImage* texture_images) -> void {
+auto Renderer::clear_vk_image(GpuImage* texture_images) -> void {
     vkDestroySampler(device, texture_images->sampler, nullptr);
     for (u32 j = 0; j < texture_images->views.size(); ++j) {
         vkDestroyImageView(device, texture_images->views[j], nullptr);
@@ -4521,7 +4566,7 @@ auto CVulkanRenderer::clear_vk_image(GpuImage* texture_images) -> void {
     vkFreeMemory(device, texture_images->device_memory, nullptr);
 }
 
-auto CVulkanRenderer::cleanup_swap_chain() -> void {
+auto Renderer::cleanup_swap_chain() -> void {
     vkDeviceWaitIdle(device);
     vkDestroyImageView(device, main_depth_image_view, nullptr);
     vkDestroyImage(device, main_depth_pipeline_image, nullptr);
@@ -4554,9 +4599,12 @@ auto CVulkanRenderer::cleanup_swap_chain() -> void {
     vkDestroySwapchainKHR(device, swap_chain, nullptr);
 }
 
-auto CVulkanRenderer::cleanup() -> void {
+auto Renderer::cleanup() -> void {
+    glvm_log::info("glvm", "cleanup start");
     cleanup_swap_chain();
+    glvm_log::info("glvm", "cleanup: swap chain done");
     imgui_overlay->shutdown();
+    glvm_log::info("glvm", "cleanup: imgui done");
 
     for (u32 i = 0, j = 0; i < GPU_DESCRIPTORS.size(); ++j) {
         if (DESCRIPTOR_BINDINGS_CONFIG[j].vk_type
@@ -4640,7 +4688,7 @@ auto CVulkanRenderer::cleanup() -> void {
     }
     for (usize j = 0; j < index_buffer_container.size(); ++j) {
         vkDestroyBuffer(device, index_buffer_container[j], nullptr);
-        vkFreeMemory(device, index_buffer_memory_contaner[j], nullptr);
+        vkFreeMemory(device, index_buffer_memory_container[j], nullptr);
     }
     for (usize j = 0; j < font_indices_container.size(); ++j) {
         vkDestroyBuffer(
@@ -4662,7 +4710,7 @@ auto CVulkanRenderer::cleanup() -> void {
         );
         vkFreeMemory(
             device,
-            font_index_buffer_memory_contaner[font_indices_container[j]],
+            font_index_buffer_memory_container[font_indices_container[j]],
             nullptr
         );
     }
@@ -4670,6 +4718,7 @@ auto CVulkanRenderer::cleanup() -> void {
     vkFreeMemory(device, model_matrix_uniform_buffers_memory, nullptr);
     vkDestroyBuffer(device, light_data_uniform_buffer, nullptr);
     vkFreeMemory(device, light_data_uniform_buffers_memory, nullptr);
+    glvm_log::info("glvm", "cleanup: descriptors and uniform buffers done");
 
     vkDeviceWaitIdle(device);
 
@@ -4742,10 +4791,11 @@ auto CVulkanRenderer::cleanup() -> void {
 
     vkDestroySurfaceKHR(instance, surface, nullptr);
     vkDestroyInstance(instance, nullptr);
+    glvm_log::info("glvm", "cleanup done, closing window");
     window->close();
 }
 
-auto CVulkanRenderer::create_instance() -> void {
+auto Renderer::create_instance() -> void {
     if (ENABLE_VALIDATION_LAYERS && !check_validation_layer_support()) {
         throw std::runtime_error(
             "validation layers requested, but not available!"
@@ -4789,7 +4839,7 @@ auto CVulkanRenderer::create_instance() -> void {
     }
 }
 
-auto CVulkanRenderer::populate_debug_messenger_create_info(
+auto Renderer::populate_debug_messenger_create_info(
     VkDebugUtilsMessengerCreateInfoEXT& create_info
 ) -> void {
     create_info = {};
@@ -4804,7 +4854,7 @@ auto CVulkanRenderer::populate_debug_messenger_create_info(
     create_info.pfnUserCallback = debug_callback;
 }
 
-auto CVulkanRenderer::setup_debug_messenger() -> void {
+auto Renderer::setup_debug_messenger() -> void {
     if (!ENABLE_VALIDATION_LAYERS) {
         return;
     }
@@ -4823,7 +4873,7 @@ auto CVulkanRenderer::setup_debug_messenger() -> void {
     }
 }
 
-auto CVulkanRenderer::create_surface() -> void {
+auto Renderer::create_surface() -> void {
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
     if (vkCreateWaylandSurfaceKHR(
             instance,
@@ -4839,7 +4889,7 @@ auto CVulkanRenderer::create_surface() -> void {
 #ifdef VK_USE_PLATFORM_XLIB_KHR
     if (vkCreateXlibSurfaceKHR(
             instance,
-            &createXlibSurfaceInfo,
+            &create_xlib_surface_info,
             nullptr,
             &surface
         )
@@ -4849,7 +4899,12 @@ auto CVulkanRenderer::create_surface() -> void {
 #endif
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
-    if (vkCreateXcbSurfaceKHR(instance, &createXcbSurfaceInfo, nullptr, &surface)
+    if (vkCreateXcbSurfaceKHR(
+            instance,
+            &create_xcb_surface_info,
+            nullptr,
+            &surface
+        )
         != VK_SUCCESS) {
         throw std::runtime_error("failed to create window surface!");
     }
@@ -4868,7 +4923,7 @@ auto CVulkanRenderer::create_surface() -> void {
 #endif
 }
 
-auto CVulkanRenderer::pick_physical_device() -> void {
+auto Renderer::pick_physical_device() -> void {
     u32 device_count = 0;
     vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
 
@@ -4894,7 +4949,7 @@ auto CVulkanRenderer::pick_physical_device() -> void {
     }
 }
 
-auto CVulkanRenderer::create_logical_device() -> void {
+auto Renderer::create_logical_device() -> void {
     QueueFamilyIndices indices = find_queue_families(physical_device);
 
     Vec<VkDeviceQueueCreateInfo> queue_create_infos;
@@ -4953,7 +5008,7 @@ auto CVulkanRenderer::create_logical_device() -> void {
     vkGetDeviceQueue(device, indices.present_family.value(), 0, &present_queue);
 }
 
-auto CVulkanRenderer::create_swap_chain() -> void {
+auto Renderer::create_swap_chain() -> void {
     SwapChainSupportDetails swap_chain_support =
         query_swap_chain_support(physical_device);
     VkSurfaceFormatKHR surface_format =
@@ -5009,7 +5064,7 @@ auto CVulkanRenderer::create_swap_chain() -> void {
     window->height = swap_chain_extent.height;
 }
 
-auto CVulkanRenderer::create_image_views() -> void {
+auto Renderer::create_image_views() -> void {
     swap_chain_image_views.resize(swap_chain_images.size());
     for (u32 i = 0; i < swap_chain_images.size(); i++) {
         GpuImage swap_chain_image = {
@@ -5029,7 +5084,7 @@ auto CVulkanRenderer::create_image_views() -> void {
     }
 }
 
-auto CVulkanRenderer::create_main_render_pass() -> void {
+auto Renderer::create_main_render_pass() -> void {
     for (u32 j = 0; j < SpecificPipeline::PipelinesNumber; ++j) {
         for (u32 i = 0;
              i < RENDER_PASS_CONFIGS[j].actual_attachment_description_number;
@@ -5088,7 +5143,7 @@ auto CVulkanRenderer::create_main_render_pass() -> void {
     }
 }
 
-auto CVulkanRenderer::create_descriptor_set_layout() -> void {
+auto Renderer::create_descriptor_set_layout() -> void {
     for (i32 descriptor_set_counter = 0;
          descriptor_set_counter < DescriptorSetDataLink::DescriptorChunksNumber;
          ++descriptor_set_counter) {
@@ -5099,7 +5154,7 @@ auto CVulkanRenderer::create_descriptor_set_layout() -> void {
              j < descriptor_set.actual_linked_descriptor_bindings_number;
              ++j) {
             u32 current_descriptor_binding_id =
-                descriptor_set.descriptors_bindings_i_ds[j];
+                descriptor_set.descriptors_bindings_ids[j];
             VkDescriptorSetLayoutBinding model_matrix_ubo_layout {};
             model_matrix_ubo_layout.binding =
                 DESCRIPTOR_BINDINGS_CONFIG[current_descriptor_binding_id]
@@ -5134,7 +5189,7 @@ auto CVulkanRenderer::create_descriptor_set_layout() -> void {
     }
 }
 
-auto CVulkanRenderer::create_graphics_pipeline() -> void {
+auto Renderer::create_graphics_pipeline() -> void {
     for (i32 graphics_pipeline_counter = 0;
          graphics_pipeline_counter < SpecificPipeline::PipelinesNumber;
          ++graphics_pipeline_counter) {
@@ -5253,14 +5308,15 @@ auto CVulkanRenderer::create_graphics_pipeline() -> void {
         dynamic_state.dynamicStateCount =
             static_cast<u32>(dynamic_states.size());
         dynamic_state.pDynamicStates = dynamic_states.data();
-        // Need to access inside pipeline and take ID for specific descriptor
-        // set, then with that ID we got descriptor set and take it's layout.
+        // Need to access inside the pipeline and take the ID of a specific
+        // descriptor set, then with that ID we get the descriptor set and take
+        // its layout.
         u32 descriptor_layouts_number =
             pipeline.actual_linked_descriptor_sets_number;
         Vec<VkDescriptorSetLayout> descriptor_set_layouts;
         for (u32 i = 0; i < descriptor_layouts_number; ++i) {
             descriptor_set_layouts.push_back(
-                DESCRIPTOR_SETS_CONFIG[pipeline.linked_descriptor_set_i_ds[i]]
+                DESCRIPTOR_SETS_CONFIG[pipeline.linked_descriptor_set_ids[i]]
                     .set_layout
             );
         }
@@ -5314,8 +5370,8 @@ auto CVulkanRenderer::create_graphics_pipeline() -> void {
     }
 }
 
-auto CVulkanRenderer::create_framebuffers() -> void {
-    // Main renderer frame buffers initialization.
+auto Renderer::create_framebuffers() -> void {
+    // Main renderer framebuffers initialization.
     swap_chain_framebuffers.resize(swap_chain_image_views.size());
     for (usize i = 0; i < swap_chain_image_views.size(); ++i) {
         Vec<VkImageView> main_render_attachments;
@@ -5329,10 +5385,10 @@ auto CVulkanRenderer::create_framebuffers() -> void {
             swap_chain_extent.height
         );
     }
-    // Directional lights shadow map renderer frame buffers initialization.
+    // Directional lights shadow map renderer framebuffers initialization.
     u32 directional_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
-            .descriptors_bindings_i_ds[1];
+            .descriptors_bindings_ids[1];
     directional_light_shadow_map_frame_buffers.resize(DIRECTIONAL_LIGHTS_NUMBER);
     for (usize i = 0; i < DIRECTIONAL_LIGHTS_NUMBER; ++i) {
         Vec<VkImageView> directional_lights_render_attachments;
@@ -5356,7 +5412,7 @@ auto CVulkanRenderer::create_framebuffers() -> void {
     // Spot lights shadow map renderer frame buffers initialization.
     u32 spot_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
-            .descriptors_bindings_i_ds[3];
+            .descriptors_bindings_ids[3];
     spot_light_shadow_map_frame_buffers.resize(SPOT_LIGHTS_NUMBER);
     for (usize i = 0; i < SPOT_LIGHTS_NUMBER; ++i) {
         Vec<VkImageView> spot_lights_render_attachments;
@@ -5379,7 +5435,7 @@ auto CVulkanRenderer::create_framebuffers() -> void {
     // Point lights shadow map renderer frame buffers initialization.
     u32 descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
-            .descriptors_bindings_i_ds[2];
+            .descriptors_bindings_ids[2];
     point_light_shadow_map_frame_buffers.resize(POINT_LIGHTS_NUMBER);
     for (usize j = 0; j < POINT_LIGHTS_NUMBER; ++j) {
         for (usize m = 0; m < 6; ++m) {
@@ -5404,7 +5460,7 @@ auto CVulkanRenderer::create_framebuffers() -> void {
     }
 }
 
-auto CVulkanRenderer::create_render_pass_framebuffers(
+auto Renderer::create_render_pass_framebuffers(
     Vec<VkImageView>& attachments,
     VkRenderPass& render_pass,
     VkFramebuffer& swap_chain_framebuffer,
@@ -5431,8 +5487,7 @@ auto CVulkanRenderer::create_render_pass_framebuffers(
     }
 }
 
-auto CVulkanRenderer::create_command_pool(VkCommandPool& command_pools)
-    -> void {
+auto Renderer::create_command_pool(VkCommandPool& command_pools) -> void {
     QueueFamilyIndices queue_family_indices =
         find_queue_families(physical_device);
 
@@ -5447,7 +5502,7 @@ auto CVulkanRenderer::create_command_pool(VkCommandPool& command_pools)
     }
 }
 
-auto CVulkanRenderer::create_depth_resources() -> void {
+auto Renderer::create_depth_resources() -> void {
     VkFormat depth_format = find_depth_format();
 
     GpuImage depth_image = {
@@ -5472,11 +5527,10 @@ auto CVulkanRenderer::create_depth_resources() -> void {
     main_depth_image_view = create_image_view(depth_image, 0, 1);
 }
 
-auto CVulkanRenderer::create_directional_light_shadow_map_depth_resources()
-    -> void {
+auto Renderer::create_directional_light_shadow_map_depth_resources() -> void {
     u32 directional_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
-            .descriptors_bindings_i_ds[1];
+            .descriptors_bindings_ids[1];
     for (u32 i = 0; i < DIRECTIONAL_LIGHTS_NUMBER; ++i) {
         GpuImage depth_image = {
             .image = VkImage {},
@@ -5546,10 +5600,10 @@ auto CVulkanRenderer::create_directional_light_shadow_map_depth_resources()
     }
 }
 
-auto CVulkanRenderer::create_spot_light_shadow_map_depth_resources() -> void {
+auto Renderer::create_spot_light_shadow_map_depth_resources() -> void {
     u32 spot_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
-            .descriptors_bindings_i_ds[3];
+            .descriptors_bindings_ids[3];
     for (u32 i = 0; i < SPOT_LIGHTS_NUMBER; ++i) {
         GpuImage depth_image = {
             .image = VkImage {},
@@ -5619,10 +5673,10 @@ auto CVulkanRenderer::create_spot_light_shadow_map_depth_resources() -> void {
     }
 }
 
-auto CVulkanRenderer::create_point_light_shadow_map_depth_resources() -> void {
+auto Renderer::create_point_light_shadow_map_depth_resources() -> void {
     u32 descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
-            .descriptors_bindings_i_ds[2];
+            .descriptors_bindings_ids[2];
     for (u32 i = 0; i < POINT_LIGHTS_NUMBER; ++i) {
         GpuImage depth_image = {
             .image = VkImage {},
@@ -5686,7 +5740,7 @@ auto CVulkanRenderer::create_point_light_shadow_map_depth_resources() -> void {
             depth_image.views.push_back(create_image_view(depth_image, j, 1));
         }
 
-        set_image_debug_object_name(device, depth_image, "point light laryer");
+        set_image_debug_object_name(device, depth_image, "point light layer");
         *GPU_DESCRIPTORS
              [DESCRIPTOR_BINDINGS_CONFIG[descriptor_binding_index]
                   .global_descriptor_offset
@@ -5728,7 +5782,7 @@ auto CVulkanRenderer::create_point_light_shadow_map_depth_resources() -> void {
     }
 }
 
-auto CVulkanRenderer::find_supported_format(
+auto Renderer::find_supported_format(
     const Vec<VkFormat>& candidates,
     VkImageTiling tiling,
     VkFormatFeatureFlags features
@@ -5751,7 +5805,7 @@ auto CVulkanRenderer::find_supported_format(
     throw std::runtime_error("failed to find supported format!");
 }
 
-auto CVulkanRenderer::find_depth_format() -> VkFormat {
+auto Renderer::find_depth_format() -> VkFormat {
     return find_supported_format(
         {VK_FORMAT_D32_SFLOAT,
          VK_FORMAT_D32_SFLOAT_S8_UINT,
@@ -5761,15 +5815,15 @@ auto CVulkanRenderer::find_depth_format() -> VkFormat {
     );
 }
 
-auto CVulkanRenderer::has_stencil_component(VkFormat format) -> bool {
+auto Renderer::has_stencil_component(VkFormat format) -> bool {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT
         || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-auto CVulkanRenderer::create_texture_image_view() -> void {
+auto Renderer::create_texture_image_view() -> void {
     u32 readable_texture_descriptor_binding_index =
-        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::RidableTextures]
-            .descriptors_bindings_i_ds[0];
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ReadableTextures]
+            .descriptors_bindings_ids[0];
     for (u32 i = 0; i < initialize_texture_data.size(); ++i) {
         GpuImage* image = GPU_DESCRIPTORS
                               [DESCRIPTOR_BINDINGS_CONFIG
@@ -5781,7 +5835,7 @@ auto CVulkanRenderer::create_texture_image_view() -> void {
     }
 }
 
-auto CVulkanRenderer::create_texture_sampler() -> void {
+auto Renderer::create_texture_sampler() -> void {
     VkPhysicalDeviceProperties properties {};
     vkGetPhysicalDeviceProperties(physical_device, &properties);
 
@@ -5800,14 +5854,14 @@ auto CVulkanRenderer::create_texture_sampler() -> void {
     sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;
     sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
-    texture_sampler = {}; /// TODO: Is it realy need here?
+    texture_sampler = {}; /// TODO: Is it really need here?
     if (vkCreateSampler(device, &sampler_info, nullptr, &texture_sampler)
         != VK_SUCCESS) {
         throw std::runtime_error("failed to create texture sampler!");
     }
 }
 
-auto CVulkanRenderer::create_shadow_map_sampler() -> void {
+auto Renderer::create_shadow_map_sampler() -> void {
     VkSamplerCreateInfo sampler_info {};
     sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     sampler_info.magFilter = VK_FILTER_LINEAR;
@@ -5827,7 +5881,7 @@ auto CVulkanRenderer::create_shadow_map_sampler() -> void {
     }
 }
 
-auto CVulkanRenderer::create_image_view(
+auto Renderer::create_image_view(
     GpuImage image,
     u32 base_array_layers,
     u32 layer_count
@@ -5856,7 +5910,7 @@ auto CVulkanRenderer::create_image_view(
     return image_view;
 }
 
-auto CVulkanRenderer::create_image(GpuImage& image) -> void {
+auto Renderer::create_image(GpuImage& image) -> void {
     VkImageCreateInfo image_info {};
     image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     image_info.imageType = VK_IMAGE_TYPE_2D;
@@ -5895,7 +5949,7 @@ auto CVulkanRenderer::create_image(GpuImage& image) -> void {
     vkBindImageMemory(device, image.image, image.device_memory, 0);
 }
 
-auto CVulkanRenderer::transition_image_layout(
+auto Renderer::transition_image_layout(
     VkImage image,
     VkImageLayout old_layout,
     VkImageLayout new_layout
@@ -5955,7 +6009,7 @@ auto CVulkanRenderer::transition_image_layout(
     end_single_time_commands(main_render_command_pool, command_buffer);
 }
 
-auto CVulkanRenderer::transition_shadow_map_image_layout(
+auto Renderer::transition_shadow_map_image_layout(
     VkImage image,
     VkImageLayout old_layout,
     VkImageLayout new_layout
@@ -6015,7 +6069,7 @@ auto CVulkanRenderer::transition_shadow_map_image_layout(
     end_single_time_commands(directional_light_command_pool, command_buffer);
 }
 
-auto CVulkanRenderer::copy_buffer_to_image(
+auto Renderer::copy_buffer_to_image(
     VkBuffer& buffer,
     VkImage image,
     u32 width,
@@ -6047,7 +6101,7 @@ auto CVulkanRenderer::copy_buffer_to_image(
     end_single_time_commands(main_render_command_pool, command_buffer);
 }
 
-auto CVulkanRenderer::create_vertex_buffer(
+auto Renderer::create_vertex_buffer(
     VkBuffer& dst_vertex_buffer,
     VkDeviceMemory& dst_vertex_buffer_memory,
     Vec<Vertex>& vertex_data
@@ -6089,7 +6143,7 @@ auto CVulkanRenderer::create_vertex_buffer(
     vkFreeMemory(device, staging_buffer_memory, nullptr);
 }
 
-auto CVulkanRenderer::create_index_buffer(
+auto Renderer::create_index_buffer(
     VkBuffer& dst_index_buffer,
     VkDeviceMemory& dst_index_buffer_memory,
     const Vec<u32>& index_data
@@ -6131,7 +6185,7 @@ auto CVulkanRenderer::create_index_buffer(
     vkFreeMemory(device, staging_buffer_memory, nullptr);
 }
 
-auto CVulkanRenderer::create_main_render_uniform_buffers() -> void {
+auto Renderer::create_main_render_uniform_buffers() -> void {
     for (u32 descriptor_set_config_counter = 0; descriptor_set_config_counter
          < DescriptorSetDataLink::DescriptorChunksNumber;
          ++descriptor_set_config_counter) {
@@ -6141,7 +6195,7 @@ auto CVulkanRenderer::create_main_render_uniform_buffers() -> void {
              ++j) {
             u32 descriptor_binding_index =
                 DESCRIPTOR_SETS_CONFIG[descriptor_set_config_counter]
-                    .descriptors_bindings_i_ds[j];
+                    .descriptors_bindings_ids[j];
             VkDescriptorType descriptor_type =
                 DESCRIPTOR_BINDINGS_CONFIG[descriptor_binding_index].vk_type;
             if (descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
@@ -6171,7 +6225,7 @@ auto CVulkanRenderer::create_main_render_uniform_buffers() -> void {
     }
 }
 
-auto CVulkanRenderer::create_main_render_descriptor_pool() -> void {
+auto Renderer::create_main_render_descriptor_pool() -> void {
     Array<VkDescriptorPoolSize, 2> pool_sizes {};
 
     u32 descriptor_count = 10000;
@@ -6192,7 +6246,7 @@ auto CVulkanRenderer::create_main_render_descriptor_pool() -> void {
     }
 }
 
-auto CVulkanRenderer::allocate_descriptor_sets(
+auto Renderer::allocate_descriptor_sets(
     Vec<VkDescriptorSet>& descriptor_sets,
     VkDescriptorSetLayout set_layout,
     const u32 descriptor_sets_number,
@@ -6217,7 +6271,7 @@ auto CVulkanRenderer::allocate_descriptor_sets(
     }
 }
 
-auto CVulkanRenderer::update_descriptor_sets_ubo(
+auto Renderer::update_descriptor_sets_ubo(
     VkBuffer ubo,
     const VkDeviceSize& ubo_struct_size,
     const u32& ubo_descriptors_number,
@@ -6249,22 +6303,22 @@ auto CVulkanRenderer::update_descriptor_sets_ubo(
     }
 }
 
-auto CVulkanRenderer::update_light_data_descriptor_sets(
+auto Renderer::update_light_data_descriptor_sets(
     const DescriptorSet& current_descriptor_set1
 ) -> void {
     const auto linked_descriptor_set_bindings_number =
         current_descriptor_set1.actual_linked_descriptor_bindings_number;
     Vec<u32> shader_bindings;
     Vec<u32> descriptor_number_per_binding;
-    Vec<u32> bindings_i_ds;
+    Vec<u32> bindings_ids;
     for (usize j = 0; j < linked_descriptor_set_bindings_number; ++j) {
         shader_bindings.push_back(
             DESCRIPTOR_BINDINGS_CONFIG[current_descriptor_set1
-                                           .descriptors_bindings_i_ds[j]]
+                                           .descriptors_bindings_ids[j]]
                 .binding
         );
-        bindings_i_ds.push_back(
-            current_descriptor_set1.descriptors_bindings_i_ds[j]
+        bindings_ids.push_back(
+            current_descriptor_set1.descriptors_bindings_ids[j]
         );
     }
 
@@ -6274,20 +6328,20 @@ auto CVulkanRenderer::update_light_data_descriptor_sets(
         Vec<VkDescriptorBufferInfo> descriptor_buffer_infos;
         Vec<Vec<VkDescriptorImageInfo>> descriptor_image_infos;
         for (usize j = 0; j < shader_bindings.size(); ++j) {
-            if (DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]].vk_type
+            if (DESCRIPTOR_BINDINGS_CONFIG[bindings_ids[j]].vk_type
                 == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
                 descriptor_buffer_infos.push_back({});
 
                 for (usize m = 0;
-                     m < DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]]
+                     m < DESCRIPTOR_BINDINGS_CONFIG[bindings_ids[j]]
                              .shader_descriptors_number;
                      ++m) {
                     descriptor_buffer_infos[j] = create_descriptor_buffer_info(
                         GPU_DESCRIPTORS
-                            [DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]]
+                            [DESCRIPTOR_BINDINGS_CONFIG[bindings_ids[j]]
                                  .global_descriptor_offset]
                                 .gpu_buffer->buffer,
-                        DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]]
+                        DESCRIPTOR_BINDINGS_CONFIG[bindings_ids[j]]
                             .ubo_chunk_size,
                         i
                     );
@@ -6295,18 +6349,18 @@ auto CVulkanRenderer::update_light_data_descriptor_sets(
                 descriptor_writes[j].pBufferInfo =
                     descriptor_buffer_infos.data();
             } else if (
-                DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]].vk_type
+                DESCRIPTOR_BINDINGS_CONFIG[bindings_ids[j]].vk_type
                 == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
             ) {
                 descriptor_image_infos.push_back({});
 
                 for (usize m = 0;
-                     m < DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]]
+                     m < DESCRIPTOR_BINDINGS_CONFIG[bindings_ids[j]]
                              .shader_descriptors_number;
                      ++m) {
                     u32 image_view_index =
                         GPU_DESCRIPTORS
-                            [DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]]
+                            [DESCRIPTOR_BINDINGS_CONFIG[bindings_ids[j]]
                                  .global_descriptor_offset
                              + m]
                                 .gpu_image->views.size()
@@ -6317,7 +6371,7 @@ auto CVulkanRenderer::update_light_data_descriptor_sets(
                     descriptor_image_infos[descriptor_image_infos.size() - 1][m] =
                         create_descriptor_image_info(
                             *GPU_DESCRIPTORS
-                                 [DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]]
+                                 [DESCRIPTOR_BINDINGS_CONFIG[bindings_ids[j]]
                                       .global_descriptor_offset
                                   + m]
                                      .gpu_image,
@@ -6337,9 +6391,9 @@ auto CVulkanRenderer::update_light_data_descriptor_sets(
             descriptor_writes[j].dstBinding = shader_bindings[j];
             descriptor_writes[j].dstArrayElement = 0;
             descriptor_writes[j].descriptorType =
-                DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]].vk_type;
+                DESCRIPTOR_BINDINGS_CONFIG[bindings_ids[j]].vk_type;
             descriptor_writes[j].descriptorCount =
-                DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]]
+                DESCRIPTOR_BINDINGS_CONFIG[bindings_ids[j]]
                     .shader_descriptors_number;
         }
 
@@ -6353,19 +6407,19 @@ auto CVulkanRenderer::update_light_data_descriptor_sets(
     }
 }
 
-auto CVulkanRenderer::update_descriptor_sets_combined_image_sampler(
+auto Renderer::update_descriptor_sets_combined_image_sampler(
     const DescriptorSet& descriptor_set
 ) -> void {
-    Vec<u32> bindings_i_ds;
+    Vec<u32> bindings_ids;
     for (usize j = 0;
          j < descriptor_set.actual_linked_descriptor_bindings_number;
          ++j) {
-        bindings_i_ds.push_back(descriptor_set.descriptors_bindings_i_ds[j]);
+        bindings_ids.push_back(descriptor_set.descriptors_bindings_ids[j]);
     }
 
     u32 readable_texture_descriptor_binding_index =
-        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::RidableTextures]
-            .descriptors_bindings_i_ds[0];
+        DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ReadableTextures]
+            .descriptors_bindings_ids[0];
     for (usize i = 0; i < descriptor_set.host_descriptor_number; ++i) {
         const auto texture_index = i / 2;
         constexpr auto TEXTURE_VIEW_INDEX = 0;
@@ -6382,7 +6436,7 @@ auto CVulkanRenderer::update_descriptor_sets_combined_image_sampler(
         );
         Vec<VkWriteDescriptorSet> descriptor_writes {};
 
-        for (u32 j = 0; j < bindings_i_ds.size(); ++j) {
+        for (u32 j = 0; j < bindings_ids.size(); ++j) {
             descriptor_writes.push_back({});
             const auto last_element = descriptor_writes.size() - 1;
             descriptor_writes[last_element].sType =
@@ -6391,7 +6445,7 @@ auto CVulkanRenderer::update_descriptor_sets_combined_image_sampler(
                 *(DESCRIPTOR_SETS_CHUNKS.data()
                   + descriptor_set.descriptor_set_offset + i);
             descriptor_writes[last_element].dstBinding =
-                DESCRIPTOR_BINDINGS_CONFIG[bindings_i_ds[j]].binding;
+                DESCRIPTOR_BINDINGS_CONFIG[bindings_ids[j]].binding;
             descriptor_writes[last_element].dstArrayElement = 0;
             descriptor_writes[last_element].descriptorType =
                 VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -6408,7 +6462,7 @@ auto CVulkanRenderer::update_descriptor_sets_combined_image_sampler(
     }
 }
 
-auto CVulkanRenderer::create_descriptor_image_info(
+auto Renderer::create_descriptor_image_info(
     const u32 descriptor_number,
     VkImageLayout image_layout,
     Vec<GpuImage>& texture_images,
@@ -6424,7 +6478,7 @@ auto CVulkanRenderer::create_descriptor_image_info(
     }
 }
 
-auto CVulkanRenderer::create_main_render_descriptor_sets() -> void {
+auto Renderer::create_main_render_descriptor_sets() -> void {
     vkResetDescriptorPool(device, descriptor_pool, 0);
     for (u32 pipeline_counter = 0;
          pipeline_counter < SpecificPipeline::PipelinesNumber;
@@ -6435,7 +6489,7 @@ auto CVulkanRenderer::create_main_render_descriptor_sets() -> void {
              ++descriptor_set_counter) {
             const auto linked_descriptor_set_matrix_ubo_id =
                 PIPELINE_CONFIGS[pipeline_counter]
-                    .linked_descriptor_set_i_ds[descriptor_set_counter];
+                    .linked_descriptor_set_ids[descriptor_set_counter];
             const DescriptorSet& current_descriptor_set0 =
                 DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_matrix_ubo_id];
             allocate_descriptor_sets(
@@ -6455,7 +6509,7 @@ auto CVulkanRenderer::create_main_render_descriptor_sets() -> void {
     }
 }
 
-auto CVulkanRenderer::create_buffer(
+auto Renderer::create_buffer(
     VkDeviceSize size,
     VkBufferUsageFlags usage,
     VkMemoryPropertyFlags properties,
@@ -6492,7 +6546,7 @@ auto CVulkanRenderer::create_buffer(
     vkBindBufferMemory(device, buffer, buffer_memory, 0);
 }
 
-auto CVulkanRenderer::begin_single_time_commands(VkCommandPool& command_pool)
+auto Renderer::begin_single_time_commands(VkCommandPool& command_pool)
     -> VkCommandBuffer {
     VkCommandBufferAllocateInfo alloc_info {};
     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -6512,7 +6566,7 @@ auto CVulkanRenderer::begin_single_time_commands(VkCommandPool& command_pool)
     return command_buffer;
 }
 
-auto CVulkanRenderer::end_single_time_commands(
+auto Renderer::end_single_time_commands(
     VkCommandPool& command_pool,
     VkCommandBuffer& command_buffer
 ) -> void {
@@ -6529,7 +6583,7 @@ auto CVulkanRenderer::end_single_time_commands(
     vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
 }
 
-auto CVulkanRenderer::copy_buffer(
+auto Renderer::copy_buffer(
     VkBuffer& src_buffer,
     VkBuffer& dst_buffer,
     VkDeviceSize size
@@ -6544,7 +6598,7 @@ auto CVulkanRenderer::copy_buffer(
     end_single_time_commands(main_render_command_pool, command_buffer);
 }
 
-auto CVulkanRenderer::find_memory_type(
+auto Renderer::find_memory_type(
     u32 type_filter,
     VkMemoryPropertyFlags properties
 ) -> u32 {
@@ -6562,7 +6616,7 @@ auto CVulkanRenderer::find_memory_type(
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
-auto CVulkanRenderer::create_command_buffers(
+auto Renderer::create_command_buffers(
     VkCommandPool& command_pool,
     Vec<VkCommandBuffer>& command_buffers,
     u32 command_buffers_number,
@@ -6582,7 +6636,7 @@ auto CVulkanRenderer::create_command_buffers(
     }
 }
 
-auto CVulkanRenderer::execute_secondary_command_buffer(
+auto Renderer::execute_secondary_command_buffer(
     VkRenderPass render_pass,
     VkFramebuffer frame_buffer,
     VkExtent2D extent,
@@ -6615,9 +6669,9 @@ auto CVulkanRenderer::execute_secondary_command_buffer(
     vkCmdEndRenderPass(primary_command_buffer);
 }
 
-auto CVulkanRenderer::update_hud_ubo(
+auto Renderer::update_hud_ubo(
     u32 offset,
-    bool is_hud_exists,
+    bool hud_exists,
     f32 highest_y,
     u32 health_counter
 ) -> void {
@@ -6626,7 +6680,7 @@ auto CVulkanRenderer::update_hud_ubo(
     hud_ubo.view = view_matrix;
     hud_ubo.proj = projection_matrix;
 
-    hud_ubo.is_hud_exists = is_hud_exists;
+    hud_ubo.hud_exists = hud_exists;
     hud_ubo.current_hp = health_bars[health_counter].current_health;
     hud_ubo.max_hp = health_bars[health_counter].max_health;
     hud_ubo.entity_position = health_bars[health_counter].position;
@@ -6635,7 +6689,7 @@ auto CVulkanRenderer::update_hud_ubo(
     void* hud_matrix_data;
     u32 hud_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::HUD]
-            .descriptors_bindings_i_ds[0];
+            .descriptors_bindings_ids[0];
     vkMapMemory(
         device,
         GPU_DESCRIPTORS
@@ -6657,14 +6711,14 @@ auto CVulkanRenderer::update_hud_ubo(
     );
 }
 
-auto CVulkanRenderer::update_hud_screen_ubo(u32 offset, u32 crosshair) -> void {
+auto Renderer::update_hud_screen_ubo(u32 offset, u32 crosshair) -> void {
     HudScreenUbo hud_ubo {};
     hud_ubo.model = crosshairs[crosshair].model;
 
     void* hud_matrix_data;
     u32 hud_screen_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::HudScreen]
-            .descriptors_bindings_i_ds[0];
+            .descriptors_bindings_ids[0];
     vkMapMemory(
         device,
         GPU_DESCRIPTORS
@@ -6686,7 +6740,7 @@ auto CVulkanRenderer::update_hud_screen_ubo(u32 offset, u32 crosshair) -> void {
     );
 }
 
-auto CVulkanRenderer::update_sdf_ubo(u32 offset, u32 crosshair) -> void {
+auto Renderer::update_sdf_ubo(u32 offset, u32 crosshair) -> void {
     SdfUbo hud_ubo {};
     hud_ubo.model = crosshairs[crosshair].model;
 
@@ -6695,12 +6749,12 @@ auto CVulkanRenderer::update_sdf_ubo(u32 offset, u32 crosshair) -> void {
                        )
                            .count()
         * 0.001f;
-    hud_ubo.i_time = current_time;
+    hud_ubo.time = current_time;
 
     void* hud_matrix_data;
     u32 hud_screen_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::SdfData]
-            .descriptors_bindings_i_ds[0];
+            .descriptors_bindings_ids[0];
     vkMapMemory(
         device,
         GPU_DESCRIPTORS
@@ -6722,7 +6776,7 @@ auto CVulkanRenderer::update_sdf_ubo(u32 offset, u32 crosshair) -> void {
     );
 }
 
-auto CVulkanRenderer::update_ubo_ui(
+auto Renderer::update_ubo_ui(
     const u32 current_inventory_row,
     const u32 current_inventory_column,
     const u32 inventory,
@@ -6743,7 +6797,7 @@ auto CVulkanRenderer::update_ubo_ui(
     void* hud_matrix_data;
     u32 ui_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::UI]
-            .descriptors_bindings_i_ds[0];
+            .descriptors_bindings_ids[0];
     vkMapMemory(
         device,
         GPU_DESCRIPTORS[DESCRIPTOR_BINDINGS_CONFIG[ui_ubo_descriptor_binding_index]
@@ -6763,14 +6817,14 @@ auto CVulkanRenderer::update_ubo_ui(
     );
 }
 
-auto CVulkanRenderer::update_ubo_icons_ui(u32 offset, u32 item) -> void {
+auto Renderer::update_ubo_icons_ui(u32 offset, u32 item) -> void {
     UiUbo hud_ubo {};
     hud_ubo.model = items[item].model;
 
     void* hud_matrix_data;
     u32 ui_icons_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::UiIcons]
-            .descriptors_bindings_i_ds[0];
+            .descriptors_bindings_ids[0];
     vkMapMemory(
         device,
         GPU_DESCRIPTORS
@@ -6792,7 +6846,7 @@ auto CVulkanRenderer::update_ubo_icons_ui(u32 offset, u32 item) -> void {
     );
 }
 
-auto CVulkanRenderer::hud_record_command_buffer(
+auto Renderer::hud_record_command_buffer(
     VkCommandBuffer& command_buffer,
     u32 image_index
 ) -> void {
@@ -6845,7 +6899,7 @@ auto CVulkanRenderer::hud_record_command_buffer(
         update_hud_ubo(ubo_index, true, highest_gltf_y[ui_vertex_id], i);
         const auto linked_descriptor_set_id =
             PIPELINE_CONFIGS[SpecificPipeline::HudPipeline]
-                .linked_descriptor_set_i_ds[0];
+                .linked_descriptor_set_ids[0];
         const DescriptorSet& current_descriptor_set =
             DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id];
         vkCmdBindDescriptorSets(
@@ -6871,7 +6925,7 @@ auto CVulkanRenderer::hud_record_command_buffer(
             VK_INDEX_TYPE_UINT32
         );
 
-        u32 indices_container_size = a_indices[ui_vertex_id].size();
+        u32 indices_container_size = indices[ui_vertex_id].size();
 
         vkCmdDrawIndexed(
             command_buffer,
@@ -6886,7 +6940,7 @@ auto CVulkanRenderer::hud_record_command_buffer(
     vkCmdEndRenderPass(command_buffer);
 }
 
-auto CVulkanRenderer::ui_record_command_buffer(
+auto Renderer::ui_record_command_buffer(
     VkCommandBuffer& command_buffer,
     u32 image_index
 ) -> void {
@@ -6944,7 +6998,7 @@ auto CVulkanRenderer::ui_record_command_buffer(
                 update_ubo_ui(j, m, i, ubo_index);
                 const auto linked_descriptor_set_id =
                     PIPELINE_CONFIGS[SpecificPipeline::UiPipeline]
-                        .linked_descriptor_set_i_ds[0];
+                        .linked_descriptor_set_ids[0];
                 const DescriptorSet& current_descriptor_set =
                     DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id];
                 vkCmdBindDescriptorSets(
@@ -6961,11 +7015,11 @@ auto CVulkanRenderer::ui_record_command_buffer(
                     nullptr
                 );
 
-                const auto linked_descriptor_set_i_d1 =
+                const auto linked_descriptor_set_id1 =
                     PIPELINE_CONFIGS[SpecificPipeline::UiPipeline]
-                        .linked_descriptor_set_i_ds[1];
+                        .linked_descriptor_set_ids[1];
                 const DescriptorSet& current_descriptor_set1 =
-                    DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_i_d1];
+                    DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id1];
                 vkCmdBindDescriptorSets(
                     command_buffer,
                     VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -7000,7 +7054,7 @@ auto CVulkanRenderer::ui_record_command_buffer(
                     VK_INDEX_TYPE_UINT32
                 );
 
-                u32 indices_container_size = a_indices[ui_vertex_id].size();
+                u32 indices_container_size = indices[ui_vertex_id].size();
 
                 vkCmdDrawIndexed(
                     command_buffer,
@@ -7017,7 +7071,7 @@ auto CVulkanRenderer::ui_record_command_buffer(
     vkCmdEndRenderPass(command_buffer);
 }
 
-auto CVulkanRenderer::ui_icons_record_command_buffer(
+auto Renderer::ui_icons_record_command_buffer(
     VkCommandBuffer& command_buffer,
     u32 image_index
 ) -> void {
@@ -7074,7 +7128,7 @@ auto CVulkanRenderer::ui_icons_record_command_buffer(
         update_ubo_icons_ui(ubo_index, i);
         const auto linked_descriptor_set_id =
             PIPELINE_CONFIGS[SpecificPipeline::UiIconsPipeline]
-                .linked_descriptor_set_i_ds[0];
+                .linked_descriptor_set_ids[0];
         const DescriptorSet& current_descriptor_set =
             DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id];
         vkCmdBindDescriptorSets(
@@ -7089,11 +7143,11 @@ auto CVulkanRenderer::ui_icons_record_command_buffer(
             nullptr
         );
 
-        const auto linked_descriptor_set_i_d1 =
+        const auto linked_descriptor_set_id1 =
             PIPELINE_CONFIGS[SpecificPipeline::UiIconsPipeline]
-                .linked_descriptor_set_i_ds[1];
+                .linked_descriptor_set_ids[1];
         const DescriptorSet& current_descriptor_set1 =
-            DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_i_d1];
+            DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id1];
         vkCmdBindDescriptorSets(
             command_buffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -7118,7 +7172,7 @@ auto CVulkanRenderer::ui_icons_record_command_buffer(
             VK_INDEX_TYPE_UINT32
         );
 
-        u32 indices_container_size = a_indices[ui_vertex_id].size();
+        u32 indices_container_size = indices[ui_vertex_id].size();
 
         vkCmdDrawIndexed(
             command_buffer,
@@ -7133,7 +7187,7 @@ auto CVulkanRenderer::ui_icons_record_command_buffer(
     vkCmdEndRenderPass(command_buffer);
 }
 
-auto CVulkanRenderer::hud_screen_record_command_buffer(
+auto Renderer::hud_screen_record_command_buffer(
     VkCommandBuffer& command_buffer,
     u32 image_index
 ) -> void {
@@ -7190,7 +7244,7 @@ auto CVulkanRenderer::hud_screen_record_command_buffer(
         update_hud_screen_ubo(ubo_index, i);
         const auto linked_descriptor_set_id =
             PIPELINE_CONFIGS[SpecificPipeline::HudScreenPipeline]
-                .linked_descriptor_set_i_ds[0];
+                .linked_descriptor_set_ids[0];
         const DescriptorSet& current_descriptor_set =
             DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id];
         vkCmdBindDescriptorSets(
@@ -7217,7 +7271,7 @@ auto CVulkanRenderer::hud_screen_record_command_buffer(
             VK_INDEX_TYPE_UINT32
         );
 
-        u32 indices_container_size = a_indices[ui_vertex_id].size();
+        u32 indices_container_size = indices[ui_vertex_id].size();
 
         vkCmdDrawIndexed(
             command_buffer,
@@ -7236,7 +7290,7 @@ auto CVulkanRenderer::hud_screen_record_command_buffer(
     }
 }
 
-auto CVulkanRenderer::sdf_record_command_buffer(
+auto Renderer::sdf_record_command_buffer(
     VkCommandBuffer& command_buffer,
     u32 image_index
 ) -> void {
@@ -7291,7 +7345,7 @@ auto CVulkanRenderer::sdf_record_command_buffer(
         update_sdf_ubo(ubo_index, i);
         const auto linked_descriptor_set_id =
             PIPELINE_CONFIGS[SpecificPipeline::SdfPipeline]
-                .linked_descriptor_set_i_ds[0];
+                .linked_descriptor_set_ids[0];
         const DescriptorSet& current_descriptor_set =
             DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id];
         vkCmdBindDescriptorSets(
@@ -7326,7 +7380,7 @@ auto CVulkanRenderer::sdf_record_command_buffer(
     }
 }
 
-auto CVulkanRenderer::font_record_command_buffer(
+auto Renderer::font_record_command_buffer(
     VkCommandBuffer& command_buffer,
     u32 image_index
 ) -> void {
@@ -7379,9 +7433,9 @@ auto CVulkanRenderer::font_record_command_buffer(
         current_frame * font_ubo_descriptor_number;
     for (u32 i = 0; i < fonts.size(); ++i) {
         RenderFont font = fonts[i];
-        Vector<f32, 3> player_traget_direction =
+        Vector<f32, 3> player_target_direction =
             font.position - player.position;
-        f32 dot_product = dot(player_traget_direction, player.forward);
+        f32 dot_product = dot(player_target_direction, player.forward);
         if (dot_product <= 0) {
             continue;
         }
@@ -7430,13 +7484,13 @@ auto CVulkanRenderer::font_record_command_buffer(
 
             font_ubo.scale = 0.3f;
             ndc_position[0] += (f32)j * 0.17f * font_ubo.scale;
-            ndc_position[1] -= font.life_time / 5.0f;
+            ndc_position[1] -= font.lifetime / 5.0f;
             font_ubo.position = ndc_position;
 
             void* model_matrix_data;
             u32 font_ubo_descriptor_binding_index =
                 DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::FontRenderUbo]
-                    .descriptors_bindings_i_ds[0];
+                    .descriptors_bindings_ids[0];
             vkMapMemory(
                 device,
                 GPU_DESCRIPTORS[DESCRIPTOR_BINDINGS_CONFIG
@@ -7459,7 +7513,7 @@ auto CVulkanRenderer::font_record_command_buffer(
 
             const auto linked_descriptor_set_id =
                 PIPELINE_CONFIGS[SpecificPipeline::FontPipeline]
-                    .linked_descriptor_set_i_ds[0];
+                    .linked_descriptor_set_ids[0];
             const DescriptorSet& current_descriptor_set =
                 DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id];
             vkCmdBindDescriptorSets(
@@ -7474,12 +7528,12 @@ auto CVulkanRenderer::font_record_command_buffer(
                 0,
                 nullptr
             );
-            const auto linked_descriptor_set_i_d1 =
+            const auto linked_descriptor_set_id1 =
                 PIPELINE_CONFIGS[SpecificPipeline::FontPipeline]
-                    .linked_descriptor_set_i_ds[1];
+                    .linked_descriptor_set_ids[1];
             const auto font_atlas_texture_id = 6;
             const DescriptorSet& current_descriptor_set1 =
-                DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_i_d1];
+                DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id1];
             vkCmdBindDescriptorSets(
                 command_buffer,
                 VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -7508,7 +7562,7 @@ auto CVulkanRenderer::font_record_command_buffer(
     vkCmdEndRenderPass(command_buffer);
 }
 
-auto CVulkanRenderer::record_command_buffer(
+auto Renderer::record_command_buffer(
     VkCommandBuffer& command_buffer,
     u32 image_index
 ) -> void {
@@ -7573,7 +7627,7 @@ auto CVulkanRenderer::record_command_buffer(
         update_matrix_uniform_buffer(ubo_index, i);
         const auto linked_descriptor_set_id =
             PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline]
-                .linked_descriptor_set_i_ds[0];
+                .linked_descriptor_set_ids[0];
         const DescriptorSet& current_descriptor_set =
             DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id];
         vkCmdBindDescriptorSets(
@@ -7589,11 +7643,11 @@ auto CVulkanRenderer::record_command_buffer(
             nullptr
         );
 
-        const auto linked_descriptor_set_i_d1 =
+        const auto linked_descriptor_set_id1 =
             PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline]
-                .linked_descriptor_set_i_ds[1];
+                .linked_descriptor_set_ids[1];
         const DescriptorSet& current_descriptor_set1 =
-            DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_i_d1];
+            DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id1];
         vkCmdBindDescriptorSets(
             command_buffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -7619,13 +7673,13 @@ auto CVulkanRenderer::record_command_buffer(
             VK_INDEX_TYPE_UINT32
         );
 
-        u32 indices_container_size = a_indices[ui_vertex_id].size();
+        u32 indices_container_size = indices[ui_vertex_id].size();
 
-        const auto linked_descriptor_set_i_d2 =
+        const auto linked_descriptor_set_id2 =
             PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline]
-                .linked_descriptor_set_i_ds[2];
+                .linked_descriptor_set_ids[2];
         const DescriptorSet& current_descriptor_set2 =
-            DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_i_d2];
+            DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id2];
         vkCmdBindDescriptorSets(
             command_buffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -7640,11 +7694,11 @@ auto CVulkanRenderer::record_command_buffer(
             0,
             nullptr
         );
-        const auto linked_descriptor_set_i_d3 =
+        const auto linked_descriptor_set_id3 =
             PIPELINE_CONFIGS[SpecificPipeline::MainRenderPipeline]
-                .linked_descriptor_set_i_ds[3];
+                .linked_descriptor_set_ids[3];
         const DescriptorSet& current_descriptor_set3 =
-            DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_i_d3];
+            DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id3];
         vkCmdBindDescriptorSets(
             command_buffer,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -7672,7 +7726,7 @@ auto CVulkanRenderer::record_command_buffer(
     vkCmdEndRenderPass(command_buffer);
 }
 
-auto CVulkanRenderer::create_sync_objects(
+auto Renderer::create_sync_objects(
     Vec<VkSemaphore>& image_available_semaphores,
     Vec<VkSemaphore>& render_finished_semaphores,
     Vec<VkFence>& in_flight_fences
@@ -7718,7 +7772,7 @@ auto CVulkanRenderer::create_sync_objects(
     }
 }
 
-auto CVulkanRenderer::update_directional_light_shadow_map_matrix_ubo(
+auto Renderer::update_directional_light_shadow_map_matrix_ubo(
     u32 current_image,
     u32 current_light,
     u32 actor
@@ -7735,7 +7789,7 @@ auto CVulkanRenderer::update_directional_light_shadow_map_matrix_ubo(
     void* model_matrix_data = nullptr;
     u32 shadow_map_directional_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ShadowMapDirectionalLight]
-            .descriptors_bindings_i_ds[0];
+            .descriptors_bindings_ids[0];
     vkMapMemory(
         device,
         GPU_DESCRIPTORS[DESCRIPTOR_BINDINGS_CONFIG
@@ -7757,7 +7811,7 @@ auto CVulkanRenderer::update_directional_light_shadow_map_matrix_ubo(
     );
 }
 
-auto CVulkanRenderer::update_spot_light_shadow_map_matrix_ubo(
+auto Renderer::update_spot_light_shadow_map_matrix_ubo(
     u32 current_image,
     u32 current_light,
     u32 actor
@@ -7775,7 +7829,7 @@ auto CVulkanRenderer::update_spot_light_shadow_map_matrix_ubo(
     void* model_matrix_data;
     u32 shadow_map_spot_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ShadowMapSpotLight]
-            .descriptors_bindings_i_ds[0];
+            .descriptors_bindings_ids[0];
     vkMapMemory(
         device,
         GPU_DESCRIPTORS[DESCRIPTOR_BINDINGS_CONFIG
@@ -7797,7 +7851,7 @@ auto CVulkanRenderer::update_spot_light_shadow_map_matrix_ubo(
     );
 }
 
-auto CVulkanRenderer::update_point_light_shadow_map_matrix_ubo(
+auto Renderer::update_point_light_shadow_map_matrix_ubo(
     u32 current_image,
     u32 current_light,
     u32 layer,
@@ -7819,7 +7873,7 @@ auto CVulkanRenderer::update_point_light_shadow_map_matrix_ubo(
     void* model_matrix_data;
     u32 shadow_map_point_light_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::ShadowMapPointLight]
-            .descriptors_bindings_i_ds[0];
+            .descriptors_bindings_ids[0];
     vkMapMemory(
         device,
         GPU_DESCRIPTORS[DESCRIPTOR_BINDINGS_CONFIG
@@ -7841,8 +7895,7 @@ auto CVulkanRenderer::update_point_light_shadow_map_matrix_ubo(
     );
 }
 
-auto CVulkanRenderer::update_matrix_uniform_buffer(u32 offset, u32 actor)
-    -> void {
+auto Renderer::update_matrix_uniform_buffer(u32 offset, u32 actor) -> void {
     ModelMatrixUBO model_matrix_ubo {};
 
     model_matrix_ubo.model = actors[actor].model_matrix;
@@ -7886,10 +7939,8 @@ auto CVulkanRenderer::update_matrix_uniform_buffer(u32 offset, u32 actor)
     );
 }
 
-auto CVulkanRenderer::update_view_position_uniform_buffer(
-    u32 current_image,
-    u32 player
-) -> void {
+auto Renderer::update_view_position_uniform_buffer(u32 current_image, u32 player)
+    -> void {
     LightData light_data_ubo {};
     light_data_ubo.view_position = players[player].position;
 
@@ -7976,7 +8027,7 @@ auto CVulkanRenderer::update_view_position_uniform_buffer(
     print = false;
     light_data_ubo.tileset_tiles_count =
         Vector<f32, 2>(TILESET_ROW, TILESET_COLUMN);
-    light_data_ubo.tiles_raw = 8;
+    light_data_ubo.tiles_row = 8;
     light_data_ubo.tiles_column = 8;
     light_data_ubo.debug_shadow_mode = imgui_overlay->show_shadow_maps
         ? (imgui_overlay->shadow_map_mode + 1)
@@ -7992,7 +8043,7 @@ auto CVulkanRenderer::update_view_position_uniform_buffer(
     void* data;
     u32 light_data_ubo_descriptor_binding_index =
         DESCRIPTOR_SETS_CONFIG[DescriptorSetDataLink::MainRenderLightDataUbo]
-            .descriptors_bindings_i_ds[0];
+            .descriptors_bindings_ids[0];
     vkMapMemory(
         device,
         GPU_DESCRIPTORS
@@ -8014,7 +8065,7 @@ auto CVulkanRenderer::update_view_position_uniform_buffer(
     );
 }
 
-auto CVulkanRenderer::main_render_draw_frame() -> void {
+auto Renderer::main_render_draw_frame() -> void {
     vkWaitForFences(
         device,
         1,
@@ -8024,9 +8075,9 @@ auto CVulkanRenderer::main_render_draw_frame() -> void {
     );
 
     u32 image_index;
-    // vkAcquireNextImageKHR give index of image that WILL BE SOON available for
-    // rendering and signal imageAvailablesemaphore when its so. GraphicsQueue
-    // waint for this semaphore bacause we pass it in submitInfo.
+    // vkAcquireNextImageKHR gives the index of the image that WILL SOON be
+    // available for rendering and signals imageAvailableSemaphore when it is so.
+    // GraphicsQueue waits for this semaphore because we pass it in submitInfo.
     VkResult result = vkAcquireNextImageKHR(
         device,
         swap_chain,
@@ -8050,7 +8101,7 @@ auto CVulkanRenderer::main_render_draw_frame() -> void {
     );
 
     auto future1 = render_thread_pool->enqueue([this]() -> void {
-        directional_light_record_coomand_buffer(
+        directional_light_record_command_buffer(
             directional_light_secondary_command_buffers,
             this->current_frame
         );
@@ -8171,7 +8222,7 @@ auto CVulkanRenderer::main_render_draw_frame() -> void {
 
     VkSubmitInfo submit_info {};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    // GraphicsQueue wait for swapchain image when its become available.
+    // GraphicsQueue waits for the swapchain image when it becomes available.
     VkSemaphore wait_semaphores[] = {image_available_semaphores[current_frame]};
     VkPipelineStageFlags wait_stages[] = {
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
@@ -8226,7 +8277,7 @@ auto CVulkanRenderer::main_render_draw_frame() -> void {
     current_frame = (current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-auto CVulkanRenderer::directional_light_shadow_map_draw_frame() -> void {
+auto Renderer::directional_light_shadow_map_draw_frame() -> void {
     vkWaitForFences(
         device,
         1,
@@ -8270,7 +8321,7 @@ auto CVulkanRenderer::directional_light_shadow_map_draw_frame() -> void {
         (directional_light_current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-auto CVulkanRenderer::spot_light_shadow_map_draw_frame() -> void {
+auto Renderer::spot_light_shadow_map_draw_frame() -> void {
     vkWaitForFences(
         device,
         1,
@@ -8312,7 +8363,7 @@ auto CVulkanRenderer::spot_light_shadow_map_draw_frame() -> void {
         (spot_light_current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-auto CVulkanRenderer::point_light_shadow_map_draw_frame() -> void {
+auto Renderer::point_light_shadow_map_draw_frame() -> void {
     vkWaitForFences(
         device,
         1,
@@ -8354,7 +8405,7 @@ auto CVulkanRenderer::point_light_shadow_map_draw_frame() -> void {
         (point_light_current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-auto CVulkanRenderer::directional_light_record_coomand_buffer(
+auto Renderer::directional_light_record_command_buffer(
     Vec<VkCommandBuffer>& command_buffers,
     u32 current_frame
 ) -> void {
@@ -8425,7 +8476,7 @@ auto CVulkanRenderer::directional_light_record_coomand_buffer(
             );
             const auto linked_descriptor_set_id =
                 PIPELINE_CONFIGS[SpecificPipeline::DirectionalLightPipeline]
-                    .linked_descriptor_set_i_ds[0];
+                    .linked_descriptor_set_ids[0];
             const DescriptorSet& current_descriptor_set =
                 DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id];
             vkCmdBindDescriptorSets(
@@ -8459,7 +8510,7 @@ auto CVulkanRenderer::directional_light_record_coomand_buffer(
                 VK_INDEX_TYPE_UINT32
             );
 
-            u32 indices_container_size = a_indices[mesh_id].size();
+            u32 indices_container_size = indices[mesh_id].size();
             vkCmdDrawIndexed(
                 command_buffer,
                 static_cast<u32>(indices_container_size),
@@ -8476,7 +8527,7 @@ auto CVulkanRenderer::directional_light_record_coomand_buffer(
     }
 }
 
-auto CVulkanRenderer::spot_light_record_command_buffer(
+auto Renderer::spot_light_record_command_buffer(
     Vec<VkCommandBuffer>& command_buffers,
     u32 current_frame
 ) -> void {
@@ -8527,7 +8578,7 @@ auto CVulkanRenderer::spot_light_record_command_buffer(
         );
 
         spot_light_space_matrix[spot_light_counter] =
-            spot_lights[spot_light_counter].spot_ligth_space_matrix;
+            spot_lights[spot_light_counter].spot_light_space_matrix;
         u32 actors_number = actors.size();
         for (u32 actors_counter = 0; actors_counter < actors_number;
              ++actors_counter) {
@@ -8544,7 +8595,7 @@ auto CVulkanRenderer::spot_light_record_command_buffer(
             );
             const auto linked_descriptor_set_id =
                 PIPELINE_CONFIGS[SpecificPipeline::SpotLightPipeline]
-                    .linked_descriptor_set_i_ds[0];
+                    .linked_descriptor_set_ids[0];
             const DescriptorSet& current_descriptor_set =
                 DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id];
             vkCmdBindDescriptorSets(
@@ -8577,7 +8628,7 @@ auto CVulkanRenderer::spot_light_record_command_buffer(
                 VK_INDEX_TYPE_UINT32
             );
 
-            u32 indices_container_size = a_indices[mesh_id].size();
+            u32 indices_container_size = indices[mesh_id].size();
             vkCmdDrawIndexed(
                 command_buffer,
                 static_cast<u32>(indices_container_size),
@@ -8594,7 +8645,7 @@ auto CVulkanRenderer::spot_light_record_command_buffer(
     }
 }
 
-auto CVulkanRenderer::point_light_record_command_buffer(
+auto Renderer::point_light_record_command_buffer(
     Vec<VkCommandBuffer>& command_buffers,
     u32 current_frame
 ) -> void {
@@ -8683,7 +8734,7 @@ auto CVulkanRenderer::point_light_record_command_buffer(
                 );
                 const auto linked_descriptor_set_id =
                     PIPELINE_CONFIGS[SpecificPipeline::PointLightPipeline]
-                        .linked_descriptor_set_i_ds[0];
+                        .linked_descriptor_set_ids[0];
                 const DescriptorSet& current_descriptor_set =
                     DESCRIPTOR_SETS_CONFIG[linked_descriptor_set_id];
                 vkCmdBindDescriptorSets(
@@ -8717,7 +8768,7 @@ auto CVulkanRenderer::point_light_record_command_buffer(
                     VK_INDEX_TYPE_UINT32
                 );
 
-                u32 indices_container_size = a_indices[mesh_id].size();
+                u32 indices_container_size = indices[mesh_id].size();
                 vkCmdDrawIndexed(
                     command_buffer,
                     static_cast<u32>(indices_container_size),
@@ -8735,8 +8786,7 @@ auto CVulkanRenderer::point_light_record_command_buffer(
     }
 }
 
-auto CVulkanRenderer::create_shader_module(const Vec<char>& code)
-    -> VkShaderModule {
+auto Renderer::create_shader_module(const Vec<char>& code) -> VkShaderModule {
     VkShaderModuleCreateInfo create_info {};
     create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     create_info.codeSize = code.size();
@@ -8751,7 +8801,7 @@ auto CVulkanRenderer::create_shader_module(const Vec<char>& code)
     return shader_module;
 }
 
-auto CVulkanRenderer::choose_swap_surface_format(
+auto Renderer::choose_swap_surface_format(
     const Vec<VkSurfaceFormatKHR>& available_formats
 ) -> VkSurfaceFormatKHR {
     for (const auto& available_format : available_formats) {
@@ -8765,7 +8815,7 @@ auto CVulkanRenderer::choose_swap_surface_format(
     return available_formats[0];
 }
 
-auto CVulkanRenderer::choose_swap_present_mode(
+auto Renderer::choose_swap_present_mode(
     const Vec<VkPresentModeKHR>& available_present_modes
 ) -> VkPresentModeKHR {
     for (const auto& available_present_mode : available_present_modes) {
@@ -8778,9 +8828,8 @@ auto CVulkanRenderer::choose_swap_present_mode(
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-auto CVulkanRenderer::choose_swap_extent(
-    const VkSurfaceCapabilitiesKHR& capabilities
-) -> VkExtent2D {
+auto Renderer::choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities)
+    -> VkExtent2D {
     if (capabilities.currentExtent.width != std::numeric_limits<u32>::max()) {
         return capabilities.currentExtent;
     } else {
@@ -8803,7 +8852,7 @@ auto CVulkanRenderer::choose_swap_extent(
     }
 }
 
-auto CVulkanRenderer::query_swap_chain_support(VkPhysicalDevice device)
+auto Renderer::query_swap_chain_support(VkPhysicalDevice device)
     -> SwapChainSupportDetails {
     SwapChainSupportDetails details;
 
@@ -8858,7 +8907,7 @@ auto CVulkanRenderer::query_swap_chain_support(VkPhysicalDevice device)
     return details;
 }
 
-auto CVulkanRenderer::is_device_suitable(VkPhysicalDevice device) -> bool {
+auto Renderer::is_device_suitable(VkPhysicalDevice device) -> bool {
     QueueFamilyIndices indices = find_queue_families(device);
 
     bool extensions_supported = check_device_extension_support(device);
@@ -8879,8 +8928,7 @@ auto CVulkanRenderer::is_device_suitable(VkPhysicalDevice device) -> bool {
         && supported_features.fillModeNonSolid;
 }
 
-auto CVulkanRenderer::check_device_extension_support(VkPhysicalDevice device)
-    -> bool {
+auto Renderer::check_device_extension_support(VkPhysicalDevice device) -> bool {
     u32 extension_count;
     vkEnumerateDeviceExtensionProperties(
         device,
@@ -8909,7 +8957,7 @@ auto CVulkanRenderer::check_device_extension_support(VkPhysicalDevice device)
     return required_extensions.empty();
 }
 
-auto CVulkanRenderer::find_queue_families(VkPhysicalDevice device)
+auto Renderer::find_queue_families(VkPhysicalDevice device)
     -> QueueFamilyIndices {
     QueueFamilyIndices indices;
 
@@ -8955,9 +9003,9 @@ auto CVulkanRenderer::find_queue_families(VkPhysicalDevice device)
     return indices;
 }
 
-auto CVulkanRenderer::get_required_extensions() -> Vec<const char*> {
+auto Renderer::get_required_extensions() -> Vec<const char*> {
 #ifdef VK_USE_PLATFORM_XLIB_KHR
-    Vec<const char*> p_required_extensions = {
+    Vec<const char*> required_extensions = {
         "VK_KHR_xlib_surface",
         "VK_EXT_acquire_xlib_display",
         "VK_KHR_display",
@@ -8966,7 +9014,7 @@ auto CVulkanRenderer::get_required_extensions() -> Vec<const char*> {
     };
 #endif
 #ifdef VK_USE_PLATFORM_XCB_KHR
-    Vec<const char*> p_required_extensions = {
+    Vec<const char*> required_extensions = {
         "VK_KHR_xcb_surface",
         "VK_KHR_display",
         "VK_KHR_surface",
@@ -8974,13 +9022,13 @@ auto CVulkanRenderer::get_required_extensions() -> Vec<const char*> {
     };
 #endif
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    Vec<const char*> p_required_extensions = {
+    Vec<const char*> required_extensions = {
         "VK_KHR_win32_surface",
         "VK_KHR_surface"
     };
 #endif
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-    Vec<const char*> p_required_extensions = {
+    Vec<const char*> required_extensions = {
         "VK_KHR_wayland_surface",
         "VK_KHR_display",
         "VK_EXT_direct_mode_display",
@@ -8988,12 +9036,12 @@ auto CVulkanRenderer::get_required_extensions() -> Vec<const char*> {
     };
 #endif
     if (ENABLE_VALIDATION_LAYERS) {
-        p_required_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        required_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
-    return p_required_extensions;
+    return required_extensions;
 }
 
-auto CVulkanRenderer::check_validation_layer_support() -> bool {
+auto Renderer::check_validation_layer_support() -> bool {
     u32 layer_count;
     vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
     Vec<VkLayerProperties> available_layers(layer_count);
@@ -9013,7 +9061,7 @@ auto CVulkanRenderer::check_validation_layer_support() -> bool {
     return true;
 }
 
-auto CVulkanRenderer::create_descriptor_buffer_info(
+auto Renderer::create_descriptor_buffer_info(
     VkBuffer ubo,
     const VkDeviceSize& ubo_struct_size,
     const VkDeviceSize& offset_step
@@ -9025,7 +9073,7 @@ auto CVulkanRenderer::create_descriptor_buffer_info(
     return ubo_buffer_info;
 }
 
-auto CVulkanRenderer::create_descriptor_image_info(
+auto Renderer::create_descriptor_image_info(
     const GpuImage& texture_image,
     VkImageLayout layout,
     u32 texture_view_index,
@@ -9038,7 +9086,7 @@ auto CVulkanRenderer::create_descriptor_image_info(
     return image_info;
 }
 
-auto CVulkanRenderer::read_file(const String& filename) -> Vec<char> {
+auto Renderer::read_file(const String& filename) -> Vec<char> {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
     if (!file.is_open()) {
         throw std::runtime_error("failed to open file!");
@@ -9051,11 +9099,11 @@ auto CVulkanRenderer::read_file(const String& filename) -> Vec<char> {
     return buffer;
 }
 
-VKAPI_ATTR auto VKAPI_CALL CVulkanRenderer::debug_callback(
+VKAPI_ATTR auto VKAPI_CALL Renderer::debug_callback(
     VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
     VkDebugUtilsMessageTypeFlagsEXT message_type,
-    const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data,
-    void* p_user_data
+    const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
+    void* user_data
 ) -> VkBool32 {
     return VK_FALSE;
 }
@@ -9063,7 +9111,7 @@ VKAPI_ATTR auto VKAPI_CALL CVulkanRenderer::debug_callback(
 
 namespace glvm {
 
-auto CJsonParser::read_file(const char* file_path) -> void {
+auto JsonParser::read_file(const char* file_path) -> void {
     std::ifstream json_file_input_stream;
     std::stringstream json_file_output_stream;
 
@@ -9071,30 +9119,30 @@ auto CJsonParser::read_file(const char* file_path) -> void {
     if (json_file_input_stream.good()) {
         json_file_output_stream << json_file_input_stream.rdbuf();
         json_file_input_stream.close();
-        s_json_file_data = json_file_output_stream.str();
+        json_file_data = json_file_output_stream.str();
     } else {
         return;
     }
 
-    p_json_file_data = s_json_file_data.c_str();
+    json_file_data_ptr = json_file_data.c_str();
 }
 
-auto CJsonParser::parse() -> void {
-    current_char = p_json_file_data[global_file_counter];
+auto JsonParser::parse() -> void {
+    current_char = json_file_data_ptr[file_counter];
 
     while (current_char != '\0') {
-        current_char = p_json_file_data[global_file_counter];
+        current_char = json_file_data_ptr[file_counter];
 
         if (current_char == '"' && key_flag) {
-            last_key = string_parse();
+            last_key = parse_string();
             while (current_char == ' ' || current_char == ':') {
-                ++global_file_counter;
-                current_char = p_json_file_data[global_file_counter];
+                ++file_counter;
+                current_char = json_file_data_ptr[file_counter];
             }
         }
 
         if (current_char == '"') {
-            buffer_string = string_parse();
+            buffer_string = parse_string();
 
             if (key_flag) {
                 JsonValue json_string(buffer_string);
@@ -9108,32 +9156,32 @@ auto CJsonParser::parse() -> void {
             (current_char >= '0' && current_char <= '9') || current_char == '+'
             || current_char == '-'
         ) {
-            buffer_string = number_as_string_parse();
+            buffer_string = parse_number_as_string();
             Vec<char> vector = string_to_vector_of_chars(buffer_string);
-            f64 f_number = 0.0f;
-            i32 i_number = 0;
-            if (is_contain_char(buffer_string, '.')) {
-                f_number = parse_floating(vector);
+            f64 float_number = 0.0f;
+            i32 int_number = 0;
+            if (contains_char(buffer_string, '.')) {
+                float_number = parse_float(vector);
 
                 if (key_flag) {
-                    JsonValue json_float(f_number);
+                    JsonValue json_float(float_number);
                     (*stack_of_json_values.back()->value.object)[last_key] =
                         json_float;
                 } else {
-                    JsonValue json_float(f_number);
+                    JsonValue json_float(float_number);
                     stack_of_json_values.back()->value.array->push_back(
                         json_float
                     );
                 }
             } else {
-                i_number = parse_integer(vector);
+                int_number = parse_integer(vector);
 
                 if (key_flag) {
-                    JsonValue json_int(i_number);
+                    JsonValue json_int(int_number);
                     (*stack_of_json_values.back()->value.object)[last_key] =
                         json_int;
                 } else {
-                    JsonValue json_int(i_number);
+                    JsonValue json_int(int_number);
                     stack_of_json_values.back()->value.array->push_back(
                         json_int
                     );
@@ -9143,7 +9191,7 @@ auto CJsonParser::parse() -> void {
         } else if (
             current_char == 't' || current_char == 'f' || current_char == 'n'
         ) {
-            String bool_or_null_string = bool_or_null_parse();
+            String bool_or_null_string = parse_bool_or_null();
 
             if (bool_or_null_string == "true") {
                 if (key_flag) {
@@ -9244,38 +9292,38 @@ auto CJsonParser::parse() -> void {
             }
         }
 
-        ++global_file_counter;
+        ++file_counter;
     }
 }
 
-auto CJsonParser::create_json_hash_map() -> JsonValue {
+auto JsonParser::create_json_hash_map() -> JsonValue {
     JsonValue json_object;
     json_object.type = JsonObject;
     json_object.value.object = new HashMap<String, JsonValue>;
     return json_object;
 }
 
-auto CJsonParser::create_json_array() -> JsonValue {
+auto JsonParser::create_json_array() -> JsonValue {
     JsonValue json_array;
     json_array.type = JsonArray;
     json_array.value.array = new Vec<JsonValue>;
     return json_array;
 }
 
-auto CJsonParser::bool_or_null_parse() -> String {
+auto JsonParser::parse_bool_or_null() -> String {
     String bool_or_null_string = "";
     while (1) {
-        current_char = p_json_file_data[global_file_counter];
+        current_char = json_file_data_ptr[file_counter];
         if (current_char >= 'a' && current_char <= 'z') {
             bool_or_null_string.push_back(current_char);
-            ++global_file_counter;
+            ++file_counter;
         } else {
             return bool_or_null_string;
         }
     }
 }
 
-auto CJsonParser::is_contain_char(String text, char character) -> bool {
+auto JsonParser::contains_char(String text, char character) -> bool {
     for (u32 i = 0; i < text.size(); ++i) {
         if (text[i] == character) {
             return true;
@@ -9285,40 +9333,40 @@ auto CJsonParser::is_contain_char(String text, char character) -> bool {
     return false;
 }
 
-auto CJsonParser::number_as_string_parse() -> String {
+auto JsonParser::parse_number_as_string() -> String {
     String number_as_string = "";
     while (1) {
-        current_char = p_json_file_data[global_file_counter];
+        current_char = json_file_data_ptr[file_counter];
         if ((current_char >= '0' && current_char <= '9') || current_char == '+'
             || current_char == '-' || current_char == 'e') {
             number_as_string.push_back(current_char);
-            ++global_file_counter;
+            ++file_counter;
         } else if (current_char == '.') {
             number_as_string.push_back(current_char);
-            ++global_file_counter;
+            ++file_counter;
         } else {
             return number_as_string;
         }
     }
 }
 
-auto CJsonParser::string_parse() -> String {
-    ++global_file_counter;
+auto JsonParser::parse_string() -> String {
+    ++file_counter;
     String local_buffer = "";
     while (1) {
-        current_char = p_json_file_data[global_file_counter];
+        current_char = json_file_data_ptr[file_counter];
         if (current_char == '"') {
-            ++global_file_counter;
-            current_char = p_json_file_data[global_file_counter];
+            ++file_counter;
+            current_char = json_file_data_ptr[file_counter];
             return local_buffer;
         } else {
             local_buffer.push_back(current_char);
-            ++global_file_counter;
+            ++file_counter;
         }
     }
 }
 
-auto CJsonParser::string_to_vector_of_chars(String text) -> Vec<char> {
+auto JsonParser::string_to_vector_of_chars(String text) -> Vec<char> {
     Vec<char> vector_with_chars;
     for (u32 i = 0; i < text.size(); ++i) {
         vector_with_chars.push_back(text[i]);
@@ -9327,14 +9375,14 @@ auto CJsonParser::string_to_vector_of_chars(String text) -> Vec<char> {
     return vector_with_chars;
 }
 
-auto CJsonParser::parse_integer(Vec<char> digits) -> i32 {
+auto JsonParser::parse_integer(Vec<char> digits) -> i32 {
     Vec<i32> base_container;
 
     for (u32 i = 0; i < digits.size(); ++i) {
         base_container.push_back(digits[i] - 48);
     }
 
-    i32 i_result = 0;
+    i32 result = 0;
     bool negate_flag = false;
 
     u32 base_container_size = base_container.size();
@@ -9346,18 +9394,18 @@ auto CJsonParser::parse_integer(Vec<char> digits) -> i32 {
             continue;
         }
 
-        i_result +=
+        result +=
             base_container[i] * std::pow(10, (base_container_size - 1) - i);
     }
 
     if (negate_flag) {
-        i_result *= -1;
+        result *= -1;
     }
 
-    return i_result;
+    return result;
 }
 
-auto CJsonParser::parse_floating(Vec<char> digits) -> f64 {
+auto JsonParser::parse_float(Vec<char> digits) -> f64 {
     Vec<i32> base_container;
 
     for (u32 i = 0; i < digits.size(); ++i) {
@@ -9366,15 +9414,15 @@ auto CJsonParser::parse_floating(Vec<char> digits) -> f64 {
 
     i32 integer_part = 0;
     f64 floating_part = 0;
-    i32 e_number = 0;
+    i32 exponent = 0;
     Vec<i32> integer_part_container;
     Vec<i32> floating_part_container;
-    Vec<i32> e_part_container;
+    Vec<i32> exponent_digits;
     bool dot_flag = false;
     bool negate_flag = false;
-    bool e_flag = false;
+    bool has_exponent = false;
     // False value equal "+" sign.
-    bool e_sign = false;
+    bool exponent_negative = false;
     u32 base_container_size = base_container.size();
 
     if (base_container[0] == -3) {
@@ -9390,19 +9438,19 @@ auto CJsonParser::parse_floating(Vec<char> digits) -> f64 {
             dot_flag = true;
             continue;
         } else if (base_container[i] == 53) {
-            e_flag = true;
+            has_exponent = true;
             continue;
         }
 
-        if (e_flag) {
+        if (has_exponent) {
             if (base_container[i] == -5) {
                 continue;
             } else if (base_container[i] == -3) {
-                e_sign = true;
+                exponent_negative = true;
                 continue;
             }
 
-            e_part_container.push_back(base_container[i]);
+            exponent_digits.push_back(base_container[i]);
             continue;
         }
 
@@ -9417,10 +9465,10 @@ auto CJsonParser::parse_floating(Vec<char> digits) -> f64 {
         }
     }
 
-    u32 e_part_container_size = e_part_container.size();
-    for (u32 i = 0; i < e_part_container_size; ++i) {
-        e_number +=
-            e_part_container[i] * std::pow(10, (e_part_container_size - 1) - i);
+    u32 exponent_digit_count = exponent_digits.size();
+    for (u32 i = 0; i < exponent_digit_count; ++i) {
+        exponent +=
+            exponent_digits[i] * std::pow(10, (exponent_digit_count - 1) - i);
     }
 
     u32 integer_part_container_size = integer_part_container.size();
@@ -9437,11 +9485,11 @@ auto CJsonParser::parse_floating(Vec<char> digits) -> f64 {
     f64 result = 0;
     result = (f64)(integer_part + floating_part);
 
-    if (e_flag) {
-        if (e_sign) {
-            result /= std::pow(10, e_number);
+    if (has_exponent) {
+        if (exponent_negative) {
+            result /= std::pow(10, exponent);
         } else {
-            result *= std::pow(10, e_number);
+            result *= std::pow(10, exponent);
         }
     }
 
@@ -9452,7 +9500,7 @@ auto CJsonParser::parse_floating(Vec<char> digits) -> f64 {
     return result;
 }
 
-auto CJsonParser::search_in_json_array(
+auto JsonParser::search_in_json_array(
     Vec<JsonValue>* array_value,
     const char* key,
     Vec<JsonValue>& result_vector
@@ -9476,7 +9524,7 @@ auto CJsonParser::search_in_json_array(
     }
 }
 
-auto CJsonParser::search_in_json_object(
+auto JsonParser::search_in_json_object(
     HashMap<String, JsonValue>* map_value,
     const char* key,
     Vec<JsonValue>& result_vector
@@ -9500,7 +9548,7 @@ auto CJsonParser::search_in_json_object(
     }
 }
 
-auto CJsonParser::search(const char* key) const -> Vec<JsonValue> {
+auto JsonParser::search(const char* key) const -> Vec<JsonValue> {
     Vec<JsonValue> result_vector;
     search_in_json_object(root->value.object, key, result_vector);
     return result_vector;
@@ -9531,39 +9579,55 @@ auto get_element_index(const T element, const Vec<T>& array) -> T {
 auto calculate_elements_memory_size(
     const u32 indices_elements_count,
     String* indices_element_type,
-    const u32 indices_componet_type,
+    const u32 indices_component_type,
     u32* indices_buffer_view_byte_length
 ) -> void {
     if (*indices_element_type == "VEC2") {
-        if (indices_componet_type == 5120 || indices_componet_type == 5121) {
+        if (indices_component_type == 5120 || indices_component_type == 5121) {
             *indices_buffer_view_byte_length = indices_elements_count * 2;
-        } else if (indices_componet_type == 5122 || indices_componet_type == 5123) {
+        } else if (
+            indices_component_type == 5122 || indices_component_type == 5123
+        ) {
             *indices_buffer_view_byte_length = indices_elements_count * 4;
-        } else if (indices_componet_type == 5125 || indices_componet_type == 5126) {
+        } else if (
+            indices_component_type == 5125 || indices_component_type == 5126
+        ) {
             *indices_buffer_view_byte_length = indices_elements_count * 8;
         }
     } else if (*indices_element_type == "VEC3") {
-        if (indices_componet_type == 5120 || indices_componet_type == 5121) {
+        if (indices_component_type == 5120 || indices_component_type == 5121) {
             *indices_buffer_view_byte_length = indices_elements_count * 3;
-        } else if (indices_componet_type == 5122 || indices_componet_type == 5123) {
+        } else if (
+            indices_component_type == 5122 || indices_component_type == 5123
+        ) {
             *indices_buffer_view_byte_length = indices_elements_count * 6;
-        } else if (indices_componet_type == 5125 || indices_componet_type == 5126) {
+        } else if (
+            indices_component_type == 5125 || indices_component_type == 5126
+        ) {
             *indices_buffer_view_byte_length = indices_elements_count * 12;
         }
     } else if (*indices_element_type == "VEC4") {
-        if (indices_componet_type == 5120 || indices_componet_type == 5121) {
+        if (indices_component_type == 5120 || indices_component_type == 5121) {
             *indices_buffer_view_byte_length = indices_elements_count * 4;
-        } else if (indices_componet_type == 5122 || indices_componet_type == 5123) {
+        } else if (
+            indices_component_type == 5122 || indices_component_type == 5123
+        ) {
             *indices_buffer_view_byte_length = indices_elements_count * 8;
-        } else if (indices_componet_type == 5125 || indices_componet_type == 5126) {
+        } else if (
+            indices_component_type == 5125 || indices_component_type == 5126
+        ) {
             *indices_buffer_view_byte_length = indices_elements_count * 16;
         }
     } else if (*indices_element_type == "SCALAR") {
-        if (indices_componet_type == 5120 || indices_componet_type == 5121) {
+        if (indices_component_type == 5120 || indices_component_type == 5121) {
             *indices_buffer_view_byte_length = indices_elements_count;
-        } else if (indices_componet_type == 5122 || indices_componet_type == 5123) {
+        } else if (
+            indices_component_type == 5122 || indices_component_type == 5123
+        ) {
             *indices_buffer_view_byte_length = indices_elements_count * 2;
-        } else if (indices_componet_type == 5125 || indices_componet_type == 5126) {
+        } else if (
+            indices_component_type == 5125 || indices_component_type == 5126
+        ) {
             *indices_buffer_view_byte_length = indices_elements_count * 4;
         }
     } else if (*indices_element_type == "MAT4") {
@@ -9582,18 +9646,18 @@ struct ComponentType {
     };
 };
 
-auto calculate_byte_step(u32 componet_type, u32* byte_step) -> void {
-    if (componet_type == ComponentType::I8
-        || componet_type == ComponentType::U8) {
+auto calculate_byte_step(u32 component_type, u32* byte_step) -> void {
+    if (component_type == ComponentType::I8
+        || component_type == ComponentType::U8) {
         *byte_step = 1;
     } else if (
-        componet_type == ComponentType::I16
-        || componet_type == ComponentType::U16
+        component_type == ComponentType::I16
+        || component_type == ComponentType::U16
     ) {
         *byte_step = 2;
     } else if (
-        componet_type == ComponentType::U32
-        || componet_type == ComponentType::F32
+        component_type == ComponentType::U32
+        || component_type == ComponentType::F32
     ) {
         *byte_step = 4;
     }
@@ -9619,13 +9683,13 @@ struct BufferViewMetaData {
 ) -> AccessorMetaData {
     AccessorMetaData buffer_meta_data;
     buffer_meta_data.buffer_view =
-        (*gltf)["accessors"][accessor_index]["bufferView"].value.i_number;
+        (*gltf)["accessors"][accessor_index]["bufferView"].value.int_number;
     buffer_meta_data.count =
-        (*gltf)["accessors"][accessor_index]["count"].value.i_number;
+        (*gltf)["accessors"][accessor_index]["count"].value.int_number;
     buffer_meta_data.type =
         *(*gltf)["accessors"][accessor_index]["type"].value.string;
     buffer_meta_data.component_type =
-        (*gltf)["accessors"][accessor_index]["componentType"].value.i_number;
+        (*gltf)["accessors"][accessor_index]["componentType"].value.int_number;
 
     buffer_meta_data.byte_offset = 0;
     if ((*gltf)["accessors"][accessor_index].is_object() == JsonObject) {
@@ -9634,7 +9698,7 @@ struct BufferViewMetaData {
         if (ptr->contains("byteOffset")) {
             buffer_meta_data.byte_offset =
                 (*gltf)["accessors"][accessor_index]["byteOffset"]
-                    .value.i_number;
+                    .value.int_number;
         }
     }
 
@@ -9647,7 +9711,7 @@ struct BufferViewMetaData {
 ) -> BufferViewMetaData {
     BufferViewMetaData buffer_view_meta_data;
     buffer_view_meta_data.byte_length =
-        (*gltf)["bufferViews"][buffer_view_index]["byteLength"].value.i_number;
+        (*gltf)["bufferViews"][buffer_view_index]["byteLength"].value.int_number;
     buffer_view_meta_data.byte_offset = 0;
     if ((*gltf)["bufferViews"][buffer_view_index].is_object() == JsonObject) {
         HashMap<String, JsonValue>* ptr =
@@ -9655,7 +9719,7 @@ struct BufferViewMetaData {
         if (ptr->contains("byteOffset")) {
             buffer_view_meta_data.byte_offset =
                 (*gltf)["bufferViews"][buffer_view_index]["byteOffset"]
-                    .value.i_number;
+                    .value.int_number;
         }
     }
 
@@ -9701,10 +9765,10 @@ auto read_binary_buffer_data(
     }
 }
 
-auto CJsonParser::load_gltf(
+auto JsonParser::load_gltf(
     const char* paths_gltf,
-    Vec<f32>& a_vertexes,
-    Vec<u32>& a_indices,
+    Vec<f32>& vertices,
+    Vec<u32>& indices,
     Vec<Vec<Matrix<f32, 4>>>& joint_matrices_per_mesh,
     Vec<f32>& frames,
     bool& no_animations,
@@ -9714,7 +9778,7 @@ auto CJsonParser::load_gltf(
     parse();
     JsonValue* gltf = get_root();
     String binary_path = *(*gltf)["buffers"][0]["uri"].value.string;
-    i32 full_byte_size = (*gltf)["buffers"][0]["byteLength"].value.i_number;
+    i32 full_byte_size = (*gltf)["buffers"][0]["byteLength"].value.int_number;
     usize last_separator = String(paths_gltf).find_last_of("/\\");
     String binary_full_path = last_separator == String::npos
         ? binary_path
@@ -9730,21 +9794,21 @@ auto CJsonParser::load_gltf(
     in_stream.read(buffer, full_byte_size);
     in_stream.close();
     const auto indices_accessor_index =
-        (*gltf)["meshes"][0]["primitives"][0]["indices"].value.i_number;
+        (*gltf)["meshes"][0]["primitives"][0]["indices"].value.int_number;
     AccessorMetaData indices_accessor_meta_data =
         read_accessor_meta_data(gltf, indices_accessor_index);
     BufferViewMetaData indices_buffer_view_meta_data =
         read_buffer_view_meta_data(gltf, indices_accessor_meta_data.buffer_view);
-    Vec<u32> indices;
+    Vec<u32> mesh_indices;
     read_binary_buffer_data(
         buffer,
         indices_accessor_meta_data,
         indices_buffer_view_meta_data,
-        indices
+        mesh_indices
     );
     const auto vertices_position_accessor_index =
         (*gltf)["meshes"][0]["primitives"][0]["attributes"]["POSITION"]
-            .value.i_number;
+            .value.int_number;
     AccessorMetaData vertices_position_accessor_meta_data =
         read_accessor_meta_data(gltf, vertices_position_accessor_index);
     BufferViewMetaData vertices_position_buffer_view_meta_data =
@@ -9761,7 +9825,7 @@ auto CJsonParser::load_gltf(
     );
     const auto texture_coordinates_accessor_index =
         (*gltf)["meshes"][0]["primitives"][0]["attributes"]["TEXCOORD_0"]
-            .value.i_number;
+            .value.int_number;
     AccessorMetaData texture_coordinates_accessor_meta_data =
         read_accessor_meta_data(gltf, texture_coordinates_accessor_index);
     BufferViewMetaData texture_coordinates_buffer_view_meta_data =
@@ -9778,7 +9842,7 @@ auto CJsonParser::load_gltf(
     );
     const auto normals_accessor_index =
         (*gltf)["meshes"][0]["primitives"][0]["attributes"]["NORMAL"]
-            .value.i_number;
+            .value.int_number;
     AccessorMetaData normals_accessor_meta_data =
         read_accessor_meta_data(gltf, normals_accessor_index);
     BufferViewMetaData normals_buffer_view_meta_data =
@@ -9805,7 +9869,7 @@ auto CJsonParser::load_gltf(
         // Loop on joints.
         for (u32 i = 0; i < joints.value.array->size(); ++i) {
             u32 joint_index_map_to_node =
-                (*joints.value.array)[i].value.i_number;
+                (*joints.value.array)[i].value.int_number;
             JsonValue node = nodes[joint_index_map_to_node];
             Quaternion rotation_quaternion;
             Matrix<f32, 4> rotation(1.0f);
@@ -9816,35 +9880,39 @@ auto CJsonParser::load_gltf(
                 for (u32 i = 0; i < array.value.array->size(); ++i) {
                     switch (i) {
                         case 0:
-                            if (array[i].is_interger()) {
-                                rotation_quaternion.x = array[i].value.i_number;
+                            if (array[i].is_integer()) {
+                                rotation_quaternion.x =
+                                    array[i].value.int_number;
                             } else if (array[i].is_float()) {
                                 rotation_quaternion.x =
-                                    as<f32>(array[i].value.f_number);
+                                    as<f32>(array[i].value.float_number);
                             }
                             break;
                         case 1:
-                            if (array[i].is_interger()) {
-                                rotation_quaternion.y = array[i].value.i_number;
+                            if (array[i].is_integer()) {
+                                rotation_quaternion.y =
+                                    array[i].value.int_number;
                             } else if (array[i].is_float()) {
                                 rotation_quaternion.y =
-                                    as<f32>(array[i].value.f_number);
+                                    as<f32>(array[i].value.float_number);
                             }
                             break;
                         case 2:
-                            if (array[i].is_interger()) {
-                                rotation_quaternion.z = array[i].value.i_number;
+                            if (array[i].is_integer()) {
+                                rotation_quaternion.z =
+                                    array[i].value.int_number;
                             } else if (array[i].is_float()) {
                                 rotation_quaternion.z =
-                                    as<f32>(array[i].value.f_number);
+                                    as<f32>(array[i].value.float_number);
                             }
                             break;
                         case 3:
-                            if (array[i].is_interger()) {
-                                rotation_quaternion.w = array[i].value.i_number;
+                            if (array[i].is_integer()) {
+                                rotation_quaternion.w =
+                                    array[i].value.int_number;
                             } else if (array[i].is_float()) {
                                 rotation_quaternion.w =
-                                    as<f32>(array[i].value.f_number);
+                                    as<f32>(array[i].value.float_number);
                             }
                             break;
                     }
@@ -9857,32 +9925,33 @@ auto CJsonParser::load_gltf(
             if (node.value.object->contains("children")) {
                 JsonValue array = (*node.value.object)["children"];
                 for (u32 i = 0; i < array.value.array->size(); ++i) {
-                    local_children.push_back(array[i].value.i_number);
+                    local_children.push_back(array[i].value.int_number);
                 }
-                // Linearly put all children to every root joint.
+                // Linearly append all children to every root joint.
                 children.push_back(local_children);
             } else {
                 Vec<i32> empty_children;
-                // Put empty pack of children if can find a one.
+                // Put an empty set of children if none can be found.
                 children.push_back(empty_children);
             }
             if (node.value.object->contains("scale")) {
                 JsonValue array = (*node.value.object)["scale"];
                 for (u32 i = 0; i < array.value.array->size(); ++i) {
-                    if (array[i].is_interger()) {
-                        scale[i][i] = array[i].value.i_number;
+                    if (array[i].is_integer()) {
+                        scale[i][i] = array[i].value.int_number;
                     } else if (array[i].is_float()) {
-                        scale[i][i] = as<f32>(array[i].value.f_number);
+                        scale[i][i] = as<f32>(array[i].value.float_number);
                     }
                 }
             }
             if (node.value.object->contains("translation")) {
                 JsonValue array = (*node.value.object)["translation"];
                 for (u32 i = 0; i < array.value.array->size(); ++i) {
-                    if (array[i].is_interger()) {
-                        translation[3][i] = array[i].value.i_number;
+                    if (array[i].is_integer()) {
+                        translation[3][i] = array[i].value.int_number;
                     } else if (array[i].is_float()) {
-                        translation[3][i] = as<f32>(array[i].value.f_number);
+                        translation[3][i] =
+                            as<f32>(array[i].value.float_number);
                     }
                 }
             }
@@ -9892,10 +9961,10 @@ auto CJsonParser::load_gltf(
         }
         // Get the inverse bind matrices accessor index.
         const auto inverse_bind_matrices_accessor_index =
-            (*gltf)["skins"][0]["inverseBindMatrices"].value.i_number;
+            (*gltf)["skins"][0]["inverseBindMatrices"].value.int_number;
         AccessorMetaData inverse_bind_matrices_accessor_meta_data =
             read_accessor_meta_data(gltf, inverse_bind_matrices_accessor_index);
-        BufferViewMetaData inveres_bind_matrices_buffer_view_meta_data =
+        BufferViewMetaData inverse_bind_matrices_buffer_view_meta_data =
             read_buffer_view_meta_data(
                 gltf,
                 inverse_bind_matrices_accessor_meta_data.buffer_view
@@ -9904,14 +9973,14 @@ auto CJsonParser::load_gltf(
         read_binary_buffer_data(
             buffer,
             inverse_bind_matrices_accessor_meta_data,
-            inveres_bind_matrices_buffer_view_meta_data,
+            inverse_bind_matrices_buffer_view_meta_data,
             inverse_bind_matrices_data
         );
         Matrix<f32, 4> inverse_bind_matrix(0.0f);
         for (u32 n = 0; n < joints.value.array->size(); ++n) {
             for (u32 g = 0; g < 4; ++g) {
                 for (u32 j = 0; j < 4; ++j) {
-                    // Put row f32 data into mat4.
+                    // Put row-major f32 data into mat4.
                     inverse_bind_matrix[g][j] =
                         inverse_bind_matrices_data[n * 16 + g * 4 + j];
                 }
@@ -9920,7 +9989,7 @@ auto CJsonParser::load_gltf(
         }
         const auto joints_accessor_index =
             (*gltf)["meshes"][0]["primitives"][0]["attributes"]["JOINTS_0"]
-                .value.i_number;
+                .value.int_number;
         AccessorMetaData joints_accessor_meta_data =
             read_accessor_meta_data(gltf, joints_accessor_index);
         BufferViewMetaData joints_buffer_view_meta_data =
@@ -9936,7 +10005,7 @@ auto CJsonParser::load_gltf(
         );
         u32 weights_accessor_index =
             (*gltf)["meshes"][0]["primitives"][0]["attributes"]["WEIGHTS_0"]
-                .value.i_number;
+                .value.int_number;
         AccessorMetaData weights_accessor_meta_data =
             read_accessor_meta_data(gltf, weights_accessor_index);
         BufferViewMetaData weights_buffer_view_meta_data =
@@ -9977,19 +10046,21 @@ auto CJsonParser::load_gltf(
         for (u32 i = 0; i < sampler_indices.size(); ++i) {
             if (*target_paths[i].value.string == "translation") {
                 translation_sampler_indices.push_back(
-                    sampler_indices[i].value.i_number
+                    sampler_indices[i].value.int_number
                 );
-                nodes_map_translations.push_back(target_nodes[i].value.i_number);
+                nodes_map_translations.push_back(
+                    target_nodes[i].value.int_number
+                );
             } else if (*target_paths[i].value.string == "rotation") {
                 rotation_sampler_indices.push_back(
-                    sampler_indices[i].value.i_number
+                    sampler_indices[i].value.int_number
                 );
-                nodes_map_rotations.push_back(target_nodes[i].value.i_number);
+                nodes_map_rotations.push_back(target_nodes[i].value.int_number);
             } else if (*target_paths[i].value.string == "scale") {
                 scale_sampler_indices.push_back(
-                    sampler_indices[i].value.i_number
+                    sampler_indices[i].value.int_number
                 );
-                nodes_map_scales.push_back(target_nodes[i].value.i_number);
+                nodes_map_scales.push_back(target_nodes[i].value.int_number);
             }
         }
         JsonValue samplers = (*gltf)["animations"][0]["samplers"];
@@ -9997,12 +10068,13 @@ auto CJsonParser::load_gltf(
         Vec<u32> translation_outputs;
         for (u32 i = 0; i < translation_sampler_indices.size(); ++i) {
             translation_inputs.push_back(
-                samplers[translation_sampler_indices[i]]["input"].value.i_number
+                samplers[translation_sampler_indices[i]]["input"].value.int_number
             );
         }
         for (u32 i = 0; i < translation_sampler_indices.size(); ++i) {
             translation_outputs.push_back(
-                samplers[translation_sampler_indices[i]]["output"].value.i_number
+                samplers[translation_sampler_indices[i]]["output"]
+                    .value.int_number
             );
         }
         Vec<Vec<f32>> frame_inputs_translation;
@@ -10045,12 +10117,12 @@ auto CJsonParser::load_gltf(
         Vec<u32> rotation_outputs;
         for (u32 i = 0; i < rotation_sampler_indices.size(); ++i) {
             rotation_inputs.push_back(
-                samplers[rotation_sampler_indices[i]]["input"].value.i_number
+                samplers[rotation_sampler_indices[i]]["input"].value.int_number
             );
         }
         for (u32 i = 0; i < rotation_sampler_indices.size(); ++i) {
             rotation_outputs.push_back(
-                samplers[rotation_sampler_indices[i]]["output"].value.i_number
+                samplers[rotation_sampler_indices[i]]["output"].value.int_number
             );
         }
         Vec<Vec<f32>> frame_inputs_rotation;
@@ -10093,12 +10165,12 @@ auto CJsonParser::load_gltf(
         Vec<u32> scale_outputs;
         for (u32 i = 0; i < scale_sampler_indices.size(); ++i) {
             scale_inputs.push_back(
-                samplers[scale_sampler_indices[i]]["input"].value.i_number
+                samplers[scale_sampler_indices[i]]["input"].value.int_number
             );
         }
         for (u32 i = 0; i < scale_sampler_indices.size(); ++i) {
             scale_outputs.push_back(
-                samplers[scale_sampler_indices[i]]["output"].value.i_number
+                samplers[scale_sampler_indices[i]]["output"].value.int_number
             );
         }
         Vec<Vec<f32>> frame_inputs_scale;
@@ -10137,10 +10209,10 @@ auto CJsonParser::load_gltf(
             );
             scales.push_back(temp);
         }
-        // Searching for root joins.
+        // Searching for root joints.
         Vec<i32> root_nodes;
         for (u32 s = 0; s < joints.value.array->size(); ++s) {
-            i32 current_joint = (*joints.value.array)[s].value.i_number;
+            i32 current_joint = (*joints.value.array)[s].value.int_number;
             for (u32 w = 0; w < children.size(); ++w) {
                 for (u32 q = 0; q < children[w].size(); ++q) {
                     if (children[w][q] == current_joint) {
@@ -10148,9 +10220,9 @@ auto CJsonParser::load_gltf(
                     }
                 }
             }
-            // If we execute this line then this joint index ectualy the root.
+            // If this line executes, then this joint index is actually the root.
             root_nodes.push_back(current_joint);
-        most_scary_operator_of_all_time: // Not so scary at all. Am i right?
+        most_scary_operator_of_all_time: // Not so scary at all. Am I right?
             continue;
         }
         Vec<Vec<u32>> nodes_hierarchy;
@@ -10161,12 +10233,12 @@ auto CJsonParser::load_gltf(
             Vec<u32> node_stack;
             // Start from root joint.
             node_stack.push_back(current_root);
-            Vec<u32> deepness_stack;
-            traversal_bones(
+            Vec<u32> depth_stack;
+            traverse_bones(
                 children,
                 joints,
                 node_stack,
-                deepness_stack,
+                depth_stack,
                 nodes_bones
             );
             for (u32 e = 0; e < nodes_bones.size(); ++e) {
@@ -10230,120 +10302,127 @@ auto CJsonParser::load_gltf(
             joint_to_scale_ch.push_back(-1);
         }
         for (u32 k = 0; k < nodes_map_translations.size(); ++k) {
-            u32 j_idx = get_joint_index(joints, (i32)nodes_map_translations[k]);
-            if (j_idx != UINT32_MAX) {
-                joint_to_translation_ch[j_idx] = (i32)k;
+            u32 joint_idx =
+                get_joint_index(joints, (i32)nodes_map_translations[k]);
+            if (joint_idx != UINT32_MAX) {
+                joint_to_translation_ch[joint_idx] = (i32)k;
             }
         }
         for (u32 k = 0; k < nodes_map_rotations.size(); ++k) {
-            u32 j_idx = get_joint_index(joints, (i32)nodes_map_rotations[k]);
-            if (j_idx != UINT32_MAX) {
-                joint_to_rotation_ch[j_idx] = (i32)k;
+            u32 joint_idx =
+                get_joint_index(joints, (i32)nodes_map_rotations[k]);
+            if (joint_idx != UINT32_MAX) {
+                joint_to_rotation_ch[joint_idx] = (i32)k;
             }
         }
         for (u32 k = 0; k < nodes_map_scales.size(); ++k) {
-            u32 j_idx = get_joint_index(joints, (i32)nodes_map_scales[k]);
-            if (j_idx != UINT32_MAX) {
-                joint_to_scale_ch[j_idx] = (i32)k;
+            u32 joint_idx = get_joint_index(joints, (i32)nodes_map_scales[k]);
+            if (joint_idx != UINT32_MAX) {
+                joint_to_scale_ch[joint_idx] = (i32)k;
             }
         }
-        // Build animatedNodesMatricesAccumulator indexed by joint-index
+        // Build animated_nodes_matrices_accumulator indexed by joint-index
         // (0..numJoints - 1).
         Vec<Vec<Matrix<f32, 4>>> animated_nodes_matrices_accumulator;
         for (u32 j = 0; j < num_joints; ++j) {
-            i32 t_idx = joint_to_translation_ch[j];
-            i32 r_idx = joint_to_rotation_ch[j];
-            i32 s_idx = joint_to_scale_ch[j];
-            // Local defaults fresh on every joint, for not make possible to
-            // collect data from previous iterations.
+            i32 translation_idx = joint_to_translation_ch[j];
+            i32 rotation_idx = joint_to_rotation_ch[j];
+            i32 scale_idx = joint_to_scale_ch[j];
+            // Local defaults fresh on every joint, so as not to make it
+            // possible to collect data from previous iterations.
             Vec<f32> default_translations;
             Vec<f32> default_rotations;
             Vec<f32> default_scales;
-            // Static TRS from node. Using if channel not exists.
-            i32 node_idx = (i32)(*joints.value.array)[j].value.i_number;
-            f32 s_tx = 0.f, s_ty = 0.f, s_tz = 0.f;
-            f32 s_rx = 0.f, s_ry = 0.f, s_rz = 0.f, s_rw = 1.f;
-            f32 s_sx = 1.f, s_sy = 1.f, s_sz = 1.f;
+            // Static TRS from node. Used if the channel does not exist.
+            i32 node_idx = (i32)(*joints.value.array)[j].value.int_number;
+            f32 static_tx = 0.f, static_ty = 0.f, static_tz = 0.f;
+            f32 static_rx = 0.f, static_ry = 0.f, static_rz = 0.f,
+                static_rw = 1.f;
+            f32 static_sx = 1.f, static_sy = 1.f, static_sz = 1.f;
             if ((*gltf)["nodes"][node_idx].is_object() == JsonObject) {
                 auto* nd = (*gltf)["nodes"][node_idx].value.object;
                 if (nd->contains("translation")) {
-                    s_tx = as<f32>((*gltf)["nodes"][node_idx]["translation"][0]
-                                       .value.f_number);
-                    s_ty = as<f32>((*gltf)["nodes"][node_idx]["translation"][1]
-                                       .value.f_number);
-                    s_tz = as<f32>((*gltf)["nodes"][node_idx]["translation"][2]
-                                       .value.f_number);
+                    static_tx =
+                        as<f32>((*gltf)["nodes"][node_idx]["translation"][0]
+                                    .value.float_number);
+                    static_ty =
+                        as<f32>((*gltf)["nodes"][node_idx]["translation"][1]
+                                    .value.float_number);
+                    static_tz =
+                        as<f32>((*gltf)["nodes"][node_idx]["translation"][2]
+                                    .value.float_number);
                 }
                 if (nd->contains("rotation")) {
-                    s_rx = as<f32>(
-                        (*gltf)["nodes"][node_idx]["rotation"][0].value.f_number
-                    );
-                    s_ry = as<f32>(
-                        (*gltf)["nodes"][node_idx]["rotation"][1].value.f_number
-                    );
-                    s_rz = as<f32>(
-                        (*gltf)["nodes"][node_idx]["rotation"][2].value.f_number
-                    );
-                    s_rw = as<f32>(
-                        (*gltf)["nodes"][node_idx]["rotation"][3].value.f_number
-                    );
+                    static_rx =
+                        as<f32>((*gltf)["nodes"][node_idx]["rotation"][0]
+                                    .value.float_number);
+                    static_ry =
+                        as<f32>((*gltf)["nodes"][node_idx]["rotation"][1]
+                                    .value.float_number);
+                    static_rz =
+                        as<f32>((*gltf)["nodes"][node_idx]["rotation"][2]
+                                    .value.float_number);
+                    static_rw =
+                        as<f32>((*gltf)["nodes"][node_idx]["rotation"][3]
+                                    .value.float_number);
                 }
                 if (nd->contains("scale")) {
-                    s_sx = as<f32>(
-                        (*gltf)["nodes"][node_idx]["scale"][0].value.f_number
-                    );
-                    s_sy = as<f32>(
-                        (*gltf)["nodes"][node_idx]["scale"][1].value.f_number
-                    );
-                    s_sz = as<f32>(
-                        (*gltf)["nodes"][node_idx]["scale"][2].value.f_number
-                    );
+                    static_sx = as<f32>((*gltf)["nodes"][node_idx]["scale"][0]
+                                            .value.float_number);
+                    static_sy = as<f32>((*gltf)["nodes"][node_idx]["scale"][1]
+                                            .value.float_number);
+                    static_sz = as<f32>((*gltf)["nodes"][node_idx]["scale"][2]
+                                            .value.float_number);
                 }
             }
-            if (t_idx < 0) {
+            if (translation_idx < 0) {
                 for (u32 f = 0; f < frames_max; ++f) {
-                    default_translations.push_back(s_tx);
-                    default_translations.push_back(s_ty);
-                    default_translations.push_back(s_tz);
+                    default_translations.push_back(static_tx);
+                    default_translations.push_back(static_ty);
+                    default_translations.push_back(static_tz);
                 }
             }
-            if (r_idx < 0) {
+            if (rotation_idx < 0) {
                 for (u32 f = 0; f < frames_max; ++f) {
-                    default_rotations.push_back(s_rx);
-                    default_rotations.push_back(s_ry);
-                    default_rotations.push_back(s_rz);
-                    default_rotations.push_back(s_rw);
+                    default_rotations.push_back(static_rx);
+                    default_rotations.push_back(static_ry);
+                    default_rotations.push_back(static_rz);
+                    default_rotations.push_back(static_rw);
                 }
             }
-            if (s_idx < 0) {
+            if (scale_idx < 0) {
                 for (u32 f = 0; f < frames_max; ++f) {
-                    default_scales.push_back(s_sx);
-                    default_scales.push_back(s_sy);
-                    default_scales.push_back(s_sz);
+                    default_scales.push_back(static_sx);
+                    default_scales.push_back(static_sy);
+                    default_scales.push_back(static_sz);
                 }
             }
-            Vec<f32>& bone_t =
-                (t_idx >= 0) ? translations[t_idx] : default_translations;
-            Vec<f32>& bone_r =
-                (r_idx >= 0) ? rotations[r_idx] : default_rotations;
-            Vec<f32>& bone_s = (s_idx >= 0) ? scales[s_idx] : default_scales;
-            // Chennels can has verious number of frames; framesMax - gloabal
-            // maximum. Clamp index to last valid chennel frame, for not run out
-            // after vectors bounds.
-            const auto t_frames = bone_t.size() / 3;
-            const auto r_frames = bone_r.size() / 4;
-            const auto s_frames = bone_s.size() / 3;
+            Vec<f32>& bone_t = (translation_idx >= 0)
+                ? translations[translation_idx]
+                : default_translations;
+            Vec<f32>& bone_r = (rotation_idx >= 0) ? rotations[rotation_idx]
+                                                   : default_rotations;
+            Vec<f32>& bone_s =
+                (scale_idx >= 0) ? scales[scale_idx] : default_scales;
+            // Channels can have various numbers of frames; frames_max - global
+            // maximum. Clamp the index to the last valid channel frame, so as
+            // not to run out of the vectors' bounds.
+            const auto translation_frames = bone_t.size() / 3;
+            const auto rotation_frames = bone_r.size() / 4;
+            const auto scale_frames = bone_s.size() / 3;
             Vec<Matrix<f32, 4>> per_frame_matrices;
             for (u32 i = 0; i < frames_max; ++i) {
-                if (t_frames == 0 || r_frames == 0 || s_frames == 0) {
+                if (translation_frames == 0 || rotation_frames == 0
+                    || scale_frames == 0) {
                     // Malformed data; skip joint.
                     Vec<Matrix<f32, 4>> empty;
                     animated_nodes_matrices_accumulator.push_back(empty);
                     continue;
                 }
-                const auto ti = (i < t_frames) ? i : t_frames - 1;
-                const auto ri = (i < r_frames) ? i : r_frames - 1;
-                const auto si = (i < s_frames) ? i : s_frames - 1;
+                const auto ti =
+                    (i < translation_frames) ? i : translation_frames - 1;
+                const auto ri = (i < rotation_frames) ? i : rotation_frames - 1;
+                const auto si = (i < scale_frames) ? i : scale_frames - 1;
                 Matrix<f32, 4> frame_translation(1.0f);
                 Matrix<f32, 4> frame_scale(1.0f);
                 for (u32 q = 0; q < 3; ++q) {
@@ -10365,9 +10444,9 @@ auto CJsonParser::load_gltf(
             }
             animated_nodes_matrices_accumulator.push_back(per_frame_matrices);
         }
-        // Final comstruction of joint-matrices. Both arrays indexed by
-        // joint-index now, that's why nodesHierarchy[j][b] address accumulator
-        // correctly.
+        // Final construction of joint-matrices. Both arrays indexed by
+        // joint-index now, that's why nodes_hierarchy[j][b] addresses the
+        // accumulator correctly.
         for (u32 j = 0; j < num_joints; ++j) {
             Vec<Matrix<f32, 4>> global_all_frame_node_matrix;
             for (u32 i = 0; i < frames_max; ++i) {
@@ -10387,9 +10466,9 @@ auto CJsonParser::load_gltf(
     }
     joint_matrices_per_mesh = joint_matrices;
     top_y = -999.999f;
-    for (u32 i = 0; i < indices.size(); ++i) {
-        a_indices.push_back(i);
-        u32 index = indices[i] * 3;
+    for (u32 i = 0; i < mesh_indices.size(); ++i) {
+        indices.push_back(i);
+        u32 index = mesh_indices[i] * 3;
         if (index + 2 < vertices_position.size()) {
             Vector<f32, 3> position = {
                 vertices_position[index],
@@ -10399,45 +10478,45 @@ auto CJsonParser::load_gltf(
             if (position[1] > top_y) {
                 top_y = position[1];
             }
-            a_vertexes.push_back(position[0]);
-            a_vertexes.push_back(position[1]);
-            a_vertexes.push_back(position[2]);
+            vertices.push_back(position[0]);
+            vertices.push_back(position[1]);
+            vertices.push_back(position[2]);
         }
         if (index + 2 < normals.size()) {
             Vector<f32, 3> normal =
                 {normals[index], normals[index + 1], normals[index + 2]};
-            a_vertexes.push_back(normal[0]);
-            a_vertexes.push_back(normal[1]);
-            a_vertexes.push_back(normal[2]);
+            vertices.push_back(normal[0]);
+            vertices.push_back(normal[1]);
+            vertices.push_back(normal[2]);
         }
-        index = indices[i] * 2;
+        index = mesh_indices[i] * 2;
         if (index + 1 < texture_coordinates.size()) {
-            a_vertexes.push_back(texture_coordinates[index]);
-            a_vertexes.push_back(texture_coordinates[index + 1]);
+            vertices.push_back(texture_coordinates[index]);
+            vertices.push_back(texture_coordinates[index + 1]);
         }
-        index = indices[i] * 4;
+        index = mesh_indices[i] * 4;
         if (index + 3 < joints_indices.size()) {
-            a_vertexes.push_back(joints_indices[index]);
-            a_vertexes.push_back(joints_indices[index + 1]);
-            a_vertexes.push_back(joints_indices[index + 2]);
-            a_vertexes.push_back(joints_indices[index + 3]);
+            vertices.push_back(joints_indices[index]);
+            vertices.push_back(joints_indices[index + 1]);
+            vertices.push_back(joints_indices[index + 2]);
+            vertices.push_back(joints_indices[index + 3]);
         }
         if (index + 3 < weights_container.size()) {
-            a_vertexes.push_back(weights_container[index]);
-            a_vertexes.push_back(weights_container[index + 1]);
-            a_vertexes.push_back(weights_container[index + 2]);
-            a_vertexes.push_back(weights_container[index + 3]);
+            vertices.push_back(weights_container[index]);
+            vertices.push_back(weights_container[index + 1]);
+            vertices.push_back(weights_container[index + 2]);
+            vertices.push_back(weights_container[index + 3]);
         }
     }
     delete[] buffer;
     buffer = nullptr;
 }
 
-auto CJsonParser::traversal_bones(
+auto JsonParser::traverse_bones(
     Vec<Vec<i32>> children,
     JsonValue joints,
     Vec<u32> node_stack,
-    Vec<u32> deepness_stack,
+    Vec<u32> depth_stack,
     Vec<Vec<u32>>& result
 ) -> void {
     u32 top_joint_index = 0;
@@ -10446,13 +10525,13 @@ auto CJsonParser::traversal_bones(
         // joint in array.
         top_joint_index = get_joint_index(joints, node_stack.back());
     }
-    if (node_stack.size() > deepness_stack.size()) {
+    if (node_stack.size() > depth_stack.size()) {
         // First 0 level start from.
         u32 first_child = 0;
-        deepness_stack.push_back(first_child);
+        depth_stack.push_back(first_child);
     }
     // Main exit check.
-    if (deepness_stack.empty()) {
+    if (depth_stack.empty()) {
         return;
     }
     u32 next_node_index = 0;
@@ -10460,55 +10539,39 @@ auto CJsonParser::traversal_bones(
     // root joint array index.
     if (top_joint_index != UINT32_MAX && !children[top_joint_index].empty()) {
         // Check if on last child level.
-        if (deepness_stack.back() > 0
-            && deepness_stack.back() == children[top_joint_index].size()) {
-            deepness_stack.pop_back();
+        if (depth_stack.back() > 0
+            && depth_stack.back() == children[top_joint_index].size()) {
+            depth_stack.pop_back();
             node_stack.pop_back();
-            traversal_bones(
-                children,
-                joints,
-                node_stack,
-                deepness_stack,
-                result
-            );
+            traverse_bones(children, joints, node_stack, depth_stack, result);
             return;
         }
         // Check if not on last child level.
-        if (deepness_stack.back() > 0
-            && deepness_stack.back() < children[top_joint_index].size()) {
-            next_node_index = children[top_joint_index][deepness_stack.back()];
+        if (depth_stack.back() > 0
+            && depth_stack.back() < children[top_joint_index].size()) {
+            next_node_index = children[top_joint_index][depth_stack.back()];
             node_stack.push_back(next_node_index);
             Vec<u32> current_node_indices;
             for (u32 i = 0; i < node_stack.size(); ++i) {
-                u32 current_join_index = get_joint_index(joints, node_stack[i]);
-                current_node_indices.push_back(current_join_index);
+                u32 current_joint_index =
+                    get_joint_index(joints, node_stack[i]);
+                current_node_indices.push_back(current_joint_index);
             }
-            ++deepness_stack.back();
-            traversal_bones(
-                children,
-                joints,
-                node_stack,
-                deepness_stack,
-                result
-            );
+            ++depth_stack.back();
+            traverse_bones(children, joints, node_stack, depth_stack, result);
             return;
         } else {
             Vec<u32> current_node_indices;
             for (u32 i = 0; i < node_stack.size(); ++i) {
-                u32 current_join_index = get_joint_index(joints, node_stack[i]);
-                current_node_indices.push_back(current_join_index);
+                u32 current_joint_index =
+                    get_joint_index(joints, node_stack[i]);
+                current_node_indices.push_back(current_joint_index);
             }
             result.push_back(current_node_indices);
-            next_node_index = children[top_joint_index][deepness_stack.back()];
+            next_node_index = children[top_joint_index][depth_stack.back()];
             node_stack.push_back(next_node_index);
-            ++deepness_stack.back();
-            traversal_bones(
-                children,
-                joints,
-                node_stack,
-                deepness_stack,
-                result
-            );
+            ++depth_stack.back();
+            traverse_bones(children, joints, node_stack, depth_stack, result);
             return;
         }
     } else {
@@ -10519,18 +10582,18 @@ auto CJsonParser::traversal_bones(
             return;
         }
         for (u32 i = 0; i < node_stack.size(); ++i) {
-            u32 current_join_index = get_joint_index(joints, node_stack[i]);
-            current_node_indices.push_back(current_join_index);
+            u32 current_joint_index = get_joint_index(joints, node_stack[i]);
+            current_node_indices.push_back(current_joint_index);
         }
         result.push_back(current_node_indices);
-        deepness_stack.pop_back();
+        depth_stack.pop_back();
         node_stack.pop_back();
-        traversal_bones(children, joints, node_stack, deepness_stack, result);
+        traverse_bones(children, joints, node_stack, depth_stack, result);
         return;
     }
 }
 
-auto CJsonParser::make_render_joints_indices(Vec<Vec<u32>>& input)
+auto JsonParser::make_render_joints_indices(Vec<Vec<u32>>& input)
     -> Vec<Vec<u32>> {
     Vec<Vec<u32>> result;
     bool accumulator_flag = false;
@@ -10560,7 +10623,7 @@ auto CJsonParser::make_render_joints_indices(Vec<Vec<u32>>& input)
     return result;
 }
 
-auto CJsonParser::contains_element(Vec<Vec<u32>> container, u32 element)
+auto JsonParser::contains_element(Vec<Vec<u32>> container, u32 element)
     -> bool {
     bool flag = false;
     for (u32 i = 0; i < container.size(); ++i) {
@@ -10573,10 +10636,9 @@ auto CJsonParser::contains_element(Vec<Vec<u32>> container, u32 element)
     return flag;
 }
 
-auto CJsonParser::get_joint_index(JsonValue joints, i32 searching_index)
-    -> u32 {
+auto JsonParser::get_joint_index(JsonValue joints, i32 searching_index) -> u32 {
     for (u32 i = 0; i < joints.value.array->size(); ++i) {
-        i32 current_joint_index = (*joints.value.array)[i].value.i_number;
+        i32 current_joint_index = (*joints.value.array)[i].value.int_number;
         if (current_joint_index == searching_index) {
             return i;
         }
@@ -10584,13 +10646,13 @@ auto CJsonParser::get_joint_index(JsonValue joints, i32 searching_index)
     return -1;
 }
 
-CJsonParser::~CJsonParser() {
+JsonParser::~JsonParser() {
     delete root;
 }
 } // namespace glvm
 
 namespace glvm {
-MeshManager* MeshManager::p_instance = nullptr;
+MeshManager* MeshManager::instance = nullptr;
 Mutex MeshManager::mutex;
 
 MeshManager::MeshManager() {
@@ -10609,10 +10671,10 @@ auto MeshManager::set_mesh_gltf(const char* path_to_mesh) -> void {
 
 auto MeshManager::get_instance() -> MeshManager* {
     MutexGuard<Mutex> lock(mutex);
-    if (p_instance == nullptr) {
-        p_instance = new MeshManager();
+    if (instance == nullptr) {
+        instance = new MeshManager();
     }
-    return p_instance;
+    return instance;
 }
 } // namespace glvm
 
@@ -10625,7 +10687,7 @@ auto ProceduralLevelGeneratingSystem::update() -> void {
     ArchetypeEntityManager* arch_entity_manager =
         ArchetypeEntityManager::get_instance();
 
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         player_required_mask,
         &arch_view.cached_player_arch,
         cached_player_arch_number
@@ -10634,13 +10696,13 @@ auto ProceduralLevelGeneratingSystem::update() -> void {
         (Transform*)arch_view.cached_player_arch
             ->components[ComponentsIndices::TransformComponent];
 
-    while (level_nubmer < 5) {
+    while (level_number < 5) {
         Vec<Vertex> next_level;
         Vec<u32> indices;
         Vec<Vertex> transition_bridge_vertices;
         Vec<u32> transition_bridge_indices;
 
-        if (level_nubmer < 5) {
+        if (level_number < 5) {
             std::random_device rd;
             std::mt19937 mersenne(rd());
             std::uniform_int_distribution<i32> dist_current_level_y(1, 1);
@@ -10654,7 +10716,7 @@ auto ProceduralLevelGeneratingSystem::update() -> void {
             constexpr auto TRANSITION_BRIDGE_HALF_HEIGHT = 1.0f;
             // On first iteration we dont need to define where locate current
             // level depends on previousTransitionBridge.
-            if (level_nubmer != 0) {
+            if (level_number != 0) {
                 generate_level(
                     level_half_x,
                     level_half_y,
@@ -10707,18 +10769,18 @@ auto ProceduralLevelGeneratingSystem::update() -> void {
 
             cached_level_chunk_arch_number = 0;
             // Search and cache one time for LevelChunkArch.
-            WORLD.search_cache_archetypes(
+            world.search_cache_archetypes(
                 required_mask,
                 &arch_view.cached_level_chunk_arch,
                 cached_level_chunk_arch_number
             );
 
-            WORLD.add_entity_to_archetype(
+            world.add_entity_to_archetype(
                 game_level_chunk_entity,
                 arch_view.cached_level_chunk_arch
             );
             EntityLocation game_level_chunk_location =
-                WORLD.entity_locations[get_id(game_level_chunk_entity)];
+                world.entity_locations[get_id(game_level_chunk_entity)];
 
             LevelChunkArchetype* level_chunk_arch =
                 static_cast<LevelChunkArchetype*>(
@@ -10726,7 +10788,7 @@ auto ProceduralLevelGeneratingSystem::update() -> void {
                 );
             const auto game_level_chunk_index = game_level_chunk_location.index;
             TextureHandle game_level_texture = texture_handlers[2];
-            if (level_nubmer == 0) {
+            if (level_number == 0) {
                 // Set up current level position to player position.
                 components_view.player_transforms->position = Vector<f32, 3>(
                     current_level_position[0],
@@ -10777,13 +10839,13 @@ auto ProceduralLevelGeneratingSystem::update() -> void {
 
             MeshHandle transition_bridge_mesh_handle = glvm->load_mesh();
             u64 transition_bridge_entity = arch_entity_manager->create_entity();
-            WORLD.add_entity_to_archetype(
+            world.add_entity_to_archetype(
                 transition_bridge_entity,
                 arch_view.cached_level_chunk_arch
             );
 
             EntityLocation transition_bridge_location =
-                WORLD.entity_locations[get_id(transition_bridge_entity)];
+                world.entity_locations[get_id(transition_bridge_entity)];
 
             LevelChunkArchetype* transition_bridge_arch =
                 static_cast<LevelChunkArchetype*>(
@@ -10805,15 +10867,13 @@ auto ProceduralLevelGeneratingSystem::update() -> void {
             transition_bridge_arch->meshes[transition_bridge_index].handle =
                 transition_bridge_mesh_handle;
 
-            ++level_nubmer;
+            ++level_number;
         }
         level_generated_vertices.push_back(next_level);
         level_generated_indices.push_back(indices);
 
         level_generated_vertices.push_back(transition_bridge_vertices);
         level_generated_indices.push_back(transition_bridge_indices);
-
-        bredo_flag = true;
     }
 }
 
@@ -10944,7 +11004,7 @@ auto ProceduralLevelGeneratingSystem::generate_transition_bridge(
         1,
         4
     );
-    // Randomly chose direction in where next level will appeared.
+    // Randomly choose the direction where the next level will appear.
     next_level_transition_direction =
         dist_next_level_transition_direction(mersenne);
     u32 transition_bridge_anchor_point = 0;
@@ -10960,8 +11020,8 @@ auto ProceduralLevelGeneratingSystem::generate_transition_bridge(
                 dist_transition_bridge_anchor_point(0, level_half_x * 2 - 1);
             transition_bridge_anchor_point =
                 dist_transition_bridge_anchor_point(mersenne);
-            // Summarize most left position with random value of point where
-            // transition bridge will be insert.
+            // Sum the leftmost position with the random value of the point
+            // where the transition bridge will be inserted.
             transition_bridge_offset_x =
                 -(f32)level_half_x + (f32)transition_bridge_anchor_point;
             if (next_level_transition_direction == 1) {
@@ -10995,8 +11055,8 @@ auto ProceduralLevelGeneratingSystem::generate_transition_bridge(
                 dist_transition_bridge_anchor_point(0, level_half_z * 2 - 1);
             transition_bridge_anchor_point =
                 dist_transition_bridge_anchor_point(mersenne);
-            // Summarize forward most position with random value of point where
-            // transition bridge will be insert.
+            // Sum the foremost position with the random value of the point
+            // where the transition bridge will be inserted.
             transition_bridge_offset_z =
                 -(f32)level_half_z + (f32)transition_bridge_anchor_point;
             if (next_level_transition_direction == 2) {
@@ -11024,8 +11084,8 @@ auto ProceduralLevelGeneratingSystem::generate_transition_bridge(
 
         f32 width = 0;
         f32 height = 0;
-        // Chose transitionBridgeHalfWidth as X and transitionBridgeHalfHeight
-        // as Z.
+        // Choose transition_bridge_half_width as X and
+        // transition_bridge_half_height as Z.
         set_half_extents_from_direction(
             width,
             height,
@@ -11061,7 +11121,7 @@ auto ProceduralLevelGeneratingSystem::generate_transition_bridge(
 }
 
 auto ProceduralLevelGeneratingSystem::make_cube_object_vertices(
-    Vector<f32, 4> join_indices,
+    Vector<f32, 4> joint_indices,
     Vector<f32, 4> weights,
     f32 half_x,
     f32 half_y,
@@ -11070,7 +11130,7 @@ auto ProceduralLevelGeneratingSystem::make_cube_object_vertices(
 ) -> void {
     u32 cube_vertices = 8;
     for (u32 i = 0; i < cube_vertices; ++i) {
-        SVertex vertex;
+        Position vertex;
 
         switch (i) {
             case 0:
@@ -11118,11 +11178,11 @@ auto ProceduralLevelGeneratingSystem::make_cube_object_vertices(
         mesh_axis_limiting_values
             .compare_per_direction_and_set_to_maximum_value_by_module(vertex);
 
-        SVertex normal;
+        Position normal;
         normal[0] = 0;
         normal[1] = 1;
         normal[2] = 0;
-        SVertex texture;
+        Position texture;
         texture[0] = 0;
         texture[1] = 1;
 
@@ -11130,10 +11190,10 @@ auto ProceduralLevelGeneratingSystem::make_cube_object_vertices(
             {{vertex[0], vertex[1], vertex[2]},
              {normal[0], normal[1], normal[2]},
              {texture[0], texture[1]},
-             {join_indices[0],
-              join_indices[1],
-              join_indices[2],
-              join_indices[3]},
+             {joint_indices[0],
+              joint_indices[1],
+              joint_indices[2],
+              joint_indices[3]},
              {weights[0], weights[1], weights[2], weights[3]}}
         );
     }
@@ -11168,40 +11228,40 @@ auto ProceduralLevelGeneratingSystem::
 #endif
 
 namespace glvm {
-auto CSoundEngineFactory::create_sound_engine() -> ISoundEngine* {
+auto SoundEngineFactory::create_sound_engine() -> SoundEngine* {
 #ifdef __linux__
-    return new CSoundEngineAlsa;
+    return new SoundEngineAlsa;
 #endif
 
 #ifdef _WIN32
-    return new CSoundEngineWaveform;
+    return new SoundEngineWaveform;
 #endif
 }
 #ifdef __linux__
-CSoundEngineAlsa::~CSoundEngineAlsa() {
+SoundEngineAlsa::~SoundEngineAlsa() {
     for (u32 i = 0; i < sound_container.size(); ++i) {
         delete sound_container[i];
         sound_container[i] = nullptr;
     }
 }
 
-auto CSoundEngineAlsa::open_device(const char* device) -> void {
-    snd_pcm_open(&pcm_, device, SND_PCM_STREAM_PLAYBACK, 0);
+auto SoundEngineAlsa::open_device(const char* device) -> void {
+    snd_pcm_open(&pcm, device, SND_PCM_STREAM_PLAYBACK, 0);
 }
 
-auto CSoundEngineAlsa::close_device() -> void {
-    snd_pcm_drain(pcm_);
-    snd_pcm_close(pcm_);
+auto SoundEngineAlsa::close_device() -> void {
+    snd_pcm_drain(pcm);
+    snd_pcm_close(pcm);
 }
 
-auto CSoundEngineAlsa::sound_stream() -> void {
+auto SoundEngineAlsa::sound_stream() -> void {
     for (u32 i = 0; i < sound_container.size(); ++i) {
         playback_sound_sample(*sound_container[i]);
         sound_container.erase(sound_container.begin() + i);
     }
 }
 
-auto CSoundEngineAlsa::playback_sound_sample(CSoundSample& sample) -> void {
+auto SoundEngineAlsa::playback_sound_sample(SoundSample& sample) -> void {
     const snd_pcm_format_t format = SND_PCM_FORMAT_S16_LE;
     const snd_pcm_access_t access = SND_PCM_ACCESS_RW_INTERLEAVED;
     constexpr auto channels = 2;
@@ -11220,7 +11280,7 @@ auto CSoundEngineAlsa::playback_sound_sample(CSoundSample& sample) -> void {
         latency
     );
 
-    FILE* file_descriptor = fopen(sample.k_path_to_file, "r");
+    FILE* file_descriptor = fopen(sample.path_to_file, "r");
     if (file_descriptor == nullptr) {
         return;
     }
@@ -11241,7 +11301,7 @@ auto CSoundEngineAlsa::playback_sound_sample(CSoundSample& sample) -> void {
 
         char* data = buffer;
         while (rest > 0) {
-            frames = snd_pcm_writei(pcm_, data, rest);
+            frames = snd_pcm_writei(pcm, data, rest);
             if (frames <= 0) {
                 break;
             }
@@ -11253,7 +11313,7 @@ auto CSoundEngineAlsa::playback_sound_sample(CSoundSample& sample) -> void {
     fclose(file_descriptor);
 }
 
-auto CSoundEngineAlsa::set_master_volume(long volume_percent) -> void {
+auto SoundEngineAlsa::set_master_volume(long volume_percent) -> void {
     long min_volume = 0;
     long max_volume = 0;
     snd_mixer_t* mixer = nullptr;
@@ -11280,71 +11340,71 @@ auto CSoundEngineAlsa::set_master_volume(long volume_percent) -> void {
     snd_mixer_close(mixer);
 }
 
-auto CSoundEngineAlsa::get_sound_container() -> Vec<CSoundSample*>& {
+auto SoundEngineAlsa::get_sound_container() -> Vec<SoundSample*>& {
     return sound_container;
 }
 
-auto CSoundEngineAlsa::create_sound_sample(
+auto SoundEngineAlsa::create_sound_sample(
     const char* file_path,
     u32 duration,
     u32 rate,
     f32 volume
 ) -> void {
     sound_container.push_back(
-        new CSoundSample {file_path, duration, rate, volume}
+        new SoundSample {file_path, duration, rate, volume}
     );
 }
 #endif // __linux__
 
 #ifdef _WIN32
-auto CSoundEngineWaveform::open_device(const char* /* device */) -> void {
+auto SoundEngineWaveform::open_device(const char* /* device */) -> void {
 }
 
-auto CSoundEngineWaveform::close_device() -> void {
+auto SoundEngineWaveform::close_device() -> void {
 }
 
-auto CSoundEngineWaveform::create_sound_sample(
+auto SoundEngineWaveform::create_sound_sample(
     const char* file_path,
     u32 duration,
     u32 rate,
     f32 volume
 ) -> void {
-    CSoundSample* sample = new CSoundSample {file_path, duration, rate, volume};
-    t_sound_container.push_back(sample);
+    SoundSample* sample = new SoundSample {file_path, duration, rate, volume};
+    sound_container.push_back(sample);
 }
 #endif // _WIN32
 } // namespace glvm
 
 namespace glvm {
-CSystemManager* CSystemManager::p_instance = nullptr;
-Mutex CSystemManager::mutex;
+SystemManager* SystemManager::instance = nullptr;
+Mutex SystemManager::mutex;
 
-CSystemManager::CSystemManager() {
+SystemManager::SystemManager() {
 }
 
-CSystemManager::~CSystemManager() {
-    delete p_instance;
-    p_instance = nullptr;
+SystemManager::~SystemManager() {
+    delete instance;
+    instance = nullptr;
 }
 
-auto CSystemManager::get_instance() -> CSystemManager* {
+auto SystemManager::get_instance() -> SystemManager* {
     MutexGuard<Mutex> lock(mutex);
-    if (p_instance == nullptr) {
-        p_instance = new CSystemManager();
+    if (instance == nullptr) {
+        instance = new SystemManager();
     }
-    return p_instance;
+    return instance;
 }
 
-auto CSystemManager::activate_system(ISystem* system) -> void {
-    t_system_container.push_back(system);
-    ++s_i_system_id;
+auto SystemManager::activate_system(System* system) -> void {
+    system_container.push_back(system);
+    ++system_count;
 }
 
-auto CSystemManager::deactivate_system(DeactivatedSystems system) -> void {
+auto SystemManager::deactivate_system(DeactivatedSystems system) -> void {
     deactivated_systems.push_back(system);
 }
 
-auto CSystemManager::return_system_to_activated_state(DeactivatedSystems system)
+auto SystemManager::return_system_to_activated_state(DeactivatedSystems system)
     -> void {
     for (u32 i = 0; i < deactivated_systems.size(); ++i) {
         if (system == deactivated_systems[i]) {
@@ -11354,9 +11414,9 @@ auto CSystemManager::return_system_to_activated_state(DeactivatedSystems system)
     }
 }
 
-auto CSystemManager::update() -> void {
+auto SystemManager::update() -> void {
     bool removed_system_flag = false;
-    for (u32 i = 0; i < s_i_system_id; ++i) {
+    for (u32 i = 0; i < system_count; ++i) {
         for (u32 j = 0; j < deactivated_systems.size(); ++j) {
             if ((u32)deactivated_systems[j] == i) {
                 removed_system_flag = true;
@@ -11368,16 +11428,16 @@ auto CSystemManager::update() -> void {
             removed_system_flag = false;
             continue;
         } else {
-            t_system_container[i]->update();
+            system_container[i]->update();
         }
     }
 }
 } // namespace glvm
 
 namespace glvm {
-auto CCollisionSystem::update() -> void {
-    // Spatial grid common data.
-    const SpatialGrid& spatial_grid = WORLD.spatial_grid;
+auto CollisionSystem::update() -> void {
+    // Common spatial grid data.
+    const SpatialGrid& spatial_grid = world.spatial_grid;
     assert(
         spatial_grid.width > 0 && spatial_grid.height > 0
         && spatial_grid.depth > 0
@@ -11389,14 +11449,14 @@ auto CCollisionSystem::update() -> void {
     const auto chunk_half_depth = spatial_grid.depth * chunk_size * 0.5f;
 
     cached_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         required_mask,
         cached_archetypes,
         cached_archetypes_number
     );
 
-    const auto camera_speed = 5.5f * f_delta_time;
-    // Outer cycle on every archetype.
+    const auto camera_speed = 5.5f * delta_time;
+    // Outer loop over every archetype.
     for (u32 x = 0; x < cached_archetypes_number; ++x) {
         Archetype* arch = cached_archetypes[x];
         view.backtracking_transforms =
@@ -11410,20 +11470,20 @@ auto CCollisionSystem::update() -> void {
             (Mesh*)arch->components[ComponentsIndices::MeshComponent];
 
         for (u32 i = 0; i < arch->entity_count; ++i) {
-            // Count on every entity in current outer archetype.
+            // Iterate over every entity in the current outer archetype.
             u32 backtracking_entity_id = arch->entities[i];
 
-            u8 groud_collision_turn_off_mask =
+            u8 ground_collision_turn_off_mask =
                 (1u << 0) | (0u << 1) | (1u << 2) | (1u << 3);
             if (view.backtracking_collider_flags && view.backtracking_colliders
                 && view.backtracking_meshes && view.backtracking_transforms) {
                 view.backtracking_collider_flags[i].flags =
                     view.backtracking_collider_flags[i].flags
-                    & groud_collision_turn_off_mask;
+                    & ground_collision_turn_off_mask;
                 view.backtracking_colliders[i].colliders.clear();
-                Mesh backtrackin_entity_mesh = view.backtracking_meshes[i];
+                Mesh backtracking_entity_mesh = view.backtracking_meshes[i];
                 MeshHandle backtracking_entity_mesh_handle =
-                    backtrackin_entity_mesh.handle;
+                    backtracking_entity_mesh.handle;
                 Transform* backtracking_transform_component =
                     &view.backtracking_transforms[i];
                 Vector<f32, 3> backtracking_transform =
@@ -11433,7 +11493,7 @@ auto CCollisionSystem::update() -> void {
 
                 u64 move_required_mask =
                     (1ul << ComponentsIndices::MoveComponent);
-                // Check if outer current archetype has move component.
+                // Check if the outer (current) archetype has a move component.
                 if (matches_required_mask(arch->mask, move_required_mask)) {
                     view.backtracking_move =
                         (Move*)
@@ -11446,7 +11506,7 @@ auto CCollisionSystem::update() -> void {
 
                 // Collect entities from grid chunks.
                 MeshAxisMaxAbsoluteValues entity_chunk_bounds =
-                    ALL_MESH_MAX_ABSOLUTE_VALUES[backtracking_entity_mesh_handle
+                    all_mesh_max_absolute_values[backtracking_entity_mesh_handle
                                                      .id];
                 Vec<Vector<f32, 3>> entity_box_corner_bound_points =
                     compute_box_corner_bound_points(
@@ -11455,10 +11515,11 @@ auto CCollisionSystem::update() -> void {
                         backtracking_transform_component->scale
                     );
 
-                // Result array with collected entities.
+                // Destination array for collected entities.
                 Vec<u32> collected_entities;
-                // Need only left bottom back corner point and right upper front
-                // corner point to obtain all box bounds
+                // Only the left-bottom-back corner point and the
+                // right-upper-front corner point are needed to obtain all box
+                // bounds.
                 const Vector<f32, 3> min_entity_position =
                     entity_box_corner_bound_points[0];
                 const Vector<f32, 3> max_entity_position =
@@ -11514,17 +11575,17 @@ auto CCollisionSystem::update() -> void {
                     }
                 }
 
-                // Inner cycle on every archetype.
-                // Count on every entity in current inner archetype.
+                // Inner loop over every archetype.
+                // Iterate over every entity in the current inner archetype.
                 for (u32 j = 0; j < collected_entities.size(); ++j) {
-                    // Check for same entityID and iteration.
+                    // Check for the same entity ID and iteration.
                     u32 compared_entity_id = collected_entities[j];
                     if (backtracking_entity_id == compared_entity_id) {
                         continue;
                     }
 
                     EntityLocation compared_entity_location =
-                        WORLD.entity_locations[get_id(compared_entity_id)];
+                        world.entity_locations[get_id(compared_entity_id)];
                     const auto compared_entity_index =
                         compared_entity_location.index;
 
@@ -11588,14 +11649,14 @@ auto CCollisionSystem::update() -> void {
 
                     MeshAxisMaxAbsoluteValues
                         backtracking_mesh_axis_max_absolute_values =
-                            ALL_MESH_MAX_ABSOLUTE_VALUES
+                            all_mesh_max_absolute_values
                                 [backtracking_entity_mesh_handle.id];
                     MeshAxisMaxAbsoluteValues
                         compared_mesh_axis_max_absolute_values = {};
                     if (compared_entity_mesh_handle.id
-                        < ALL_MESH_MAX_ABSOLUTE_VALUES.size()) {
+                        < all_mesh_max_absolute_values.size()) {
                         compared_mesh_axis_max_absolute_values =
-                            ALL_MESH_MAX_ABSOLUTE_VALUES
+                            all_mesh_max_absolute_values
                                 [compared_entity_mesh_handle.id];
                     }
 
@@ -11620,11 +11681,11 @@ auto CCollisionSystem::update() -> void {
                     }
 
                     if (upper_actor_check_flag && box_collider_flag) {
-                        u8 groud_collision_turn_on_mask =
+                        u8 ground_collision_turn_on_mask =
                             (0u << 0) | (1u << 1) | (0u << 2) | (0u << 3);
                         view.backtracking_collider_flags[i].flags =
                             view.backtracking_collider_flags[i].flags
-                            | groud_collision_turn_on_mask;
+                            | ground_collision_turn_on_mask;
                         view.backtracking_colliders[i].colliders.push_back(
                             compared_entity_id
                         );
@@ -11651,7 +11712,7 @@ auto CCollisionSystem::update() -> void {
     cached_archetypes_number = 0;
 }
 
-auto CCollisionSystem::upper_actor_check(
+auto CollisionSystem::upper_actor_check(
     Vector<f32, 3> backtracking_position,
     Vector<f32, 3> compared_position,
     f32 backtracking_scale,
@@ -11660,10 +11721,10 @@ auto CCollisionSystem::upper_actor_check(
     MeshHandle compared_mesh_handle
 ) -> bool {
     MeshAxisMaxAbsoluteValues backtracking_mesh_axis_max_absolute_values =
-        ALL_MESH_MAX_ABSOLUTE_VALUES[backtracking_mesh_handle.id];
+        all_mesh_max_absolute_values[backtracking_mesh_handle.id];
 
     MeshAxisMaxAbsoluteValues compared_mesh_axis_max_absolute_values =
-        ALL_MESH_MAX_ABSOLUTE_VALUES[compared_mesh_handle.id];
+        all_mesh_max_absolute_values[compared_mesh_handle.id];
 
     constexpr auto EPSILON = 0.15f;
     return backtracking_position[1]
@@ -11682,7 +11743,7 @@ auto CCollisionSystem::upper_actor_check(
 namespace glvm {
 auto DamageSystem::update() -> void {
     cached_attackable_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         attackable_required_mask,
         arch_view.cached_attackable_archetypes,
         cached_attackable_archetypes_number
@@ -11697,7 +11758,8 @@ auto DamageSystem::update() -> void {
         components_view.attackable_fonts =
             (Font*)arch->components[ComponentsIndices::FontComponent];
 
-        for (u32 i = 0; i < arch->entity_count; ++i) {
+        u32 i = 0;
+        while (i < arch->entity_count) {
             u64 entity = arch->entities[i];
             if (&components_view.attackable_health[i] != nullptr
                 && &components_view.attackable_attacks[i] != nullptr) {
@@ -11711,21 +11773,25 @@ auto DamageSystem::update() -> void {
                     ArchetypeEntityManager* arch_entity_manager =
                         ArchetypeEntityManager::get_instance();
                     arch_entity_manager->remove_entity(entity);
-                    WORLD.remove_entity(entity);
+                    world.remove_entity(entity);
+                    // Removal swap-moves the last entity into index i;
+                    // reprocess it instead of touching the stale index.
+                    continue;
                 }
 
                 Font& font_component = components_view.attackable_fonts[i];
                 font_component.font_string.clear();
                 font_component.font_string.push_back('4');
                 font_component.font_string.push_back('0');
-                font_component.life_time = 0;
-                font_component.removeble = true;
+                font_component.lifetime = 0;
+                font_component.removable = true;
             }
+            ++i;
         }
     }
 
     cached_font_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         font_required_mask,
         arch_view.cached_font_archetypes,
         cached_font_archetypes_number
@@ -11739,10 +11805,10 @@ auto DamageSystem::update() -> void {
         for (u32 i = 0; i < arch->entity_count; ++i) {
             if (components_view.fonts) {
                 Font& font_component = components_view.fonts[i];
-                if (font_component.removeble) {
-                    font_component.life_time += delta_time;
+                if (font_component.removable) {
+                    font_component.lifetime += delta_time;
                 }
-                if (font_component.life_time >= 1.5f) {
+                if (font_component.lifetime >= 1.5f) {
                 }
             }
         }
@@ -11753,7 +11819,7 @@ auto DamageSystem::update() -> void {
 namespace glvm {
 auto EnemySystem::update() -> void {
     player_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         player_required_mask,
         &arch_view.player_cached_archetype,
         player_archetypes_number
@@ -11763,7 +11829,7 @@ auto EnemySystem::update() -> void {
             ->components[ComponentsIndices::TransformComponent];
 
     enemy_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         enemy_required_mask,
         &arch_view.enemy_cached_archetype,
         enemy_archetypes_number
@@ -11779,7 +11845,7 @@ auto EnemySystem::update() -> void {
             ->components[ComponentsIndices::EnemyComponent];
 
     projectile_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         projectile_required_mask,
         &arch_view.projectile_archetype,
         projectile_archetypes_number
@@ -11816,8 +11882,8 @@ auto EnemySystem::update() -> void {
                 if (projectile_cooldown <= 0) {
                     MeshHandle mesh_handle {};
                     const auto sphere_mesh_handle_index = 2;
-                    if (mesh_handlers.size() > 2) {
-                        mesh_handle = mesh_handlers[sphere_mesh_handle_index];
+                    if (mesh_handles.size() > 2) {
+                        mesh_handle = mesh_handles[sphere_mesh_handle_index];
                     }
 
                     TextureHandle texture_handle {};
@@ -11844,12 +11910,12 @@ auto EnemySystem::update() -> void {
                         ArchetypeEntityManager::get_instance();
                     u64 projectile_entity =
                         arch_entity_manager->create_entity();
-                    WORLD.add_entity_to_archetype(
+                    world.add_entity_to_archetype(
                         projectile_entity,
                         arch_view.projectile_archetype
                     );
                     EntityLocation projectile_location =
-                        WORLD.entity_locations[get_id(projectile_entity)];
+                        world.entity_locations[get_id(projectile_entity)];
 
                     create_projectile(
                         enemy_transform_component->position,
@@ -11881,7 +11947,7 @@ namespace glvm {
 auto InventorySystem::update() -> void {
     if (is_inventory_opened) {
         crosshair_archetypes_number = 0;
-        WORLD.search_cache_archetypes(
+        world.search_cache_archetypes(
             crosshair_required_mask,
             &arch_view.crosshair_cached_archetype,
             crosshair_archetypes_number
@@ -11891,7 +11957,7 @@ auto InventorySystem::update() -> void {
                 ->components[ComponentsIndices::TransformComponent];
 
         inventory_archetypes_number = 0;
-        WORLD.search_cache_archetypes(
+        world.search_cache_archetypes(
             inventory_required_mask,
             &arch_view.inventory_cached_archetype,
             inventory_archetypes_number
@@ -11929,7 +11995,7 @@ auto InventorySystem::update() -> void {
                 : inventory_component->slot_scale * 0.5f;
 
             // Take an item from inventory.
-            if (*is_item_draged < 0 && is_left_mouse_button_pressed
+            if (*is_item_dragged < 0 && is_left_mouse_button_pressed
                 && *is_left_mouse_button_released) {
                 if (check_crosshair_inventory_intersection(
                         crosshair_transform_component,
@@ -11951,7 +12017,7 @@ auto InventorySystem::update() -> void {
                     // Check slot is not empty and hold an item.
                     if (entity != UINT_MAX && entity >= 0) {
                         EntityLocation item_location =
-                            WORLD.entity_locations[get_id(entity)];
+                            world.entity_locations[get_id(entity)];
                         ItemArchetype* item_arch =
                             static_cast<ItemArchetype*>(item_location.arch);
                         const auto item_index = item_location.index;
@@ -11973,13 +12039,13 @@ auto InventorySystem::update() -> void {
                             }
                         }
                         // Set currently dragged item entity.
-                        *is_item_draged = entity;
+                        *is_item_dragged = entity;
                     }
                 }
                 *is_left_mouse_button_released = false;
             }
 
-            if (*is_item_draged >= 0) {
+            if (*is_item_dragged >= 0) {
                 if (check_crosshair_inventory_intersection(
                         crosshair_transform_component,
                         inventory_transform_component,
@@ -11996,15 +12062,15 @@ auto InventorySystem::update() -> void {
                         );
 
                     EntityLocation item_location =
-                        WORLD.entity_locations[get_id(*is_item_draged)];
+                        world.entity_locations[get_id(*is_item_dragged)];
                     ItemArchetype* item_arch =
                         static_cast<ItemArchetype*>(item_location.arch);
                     const auto item_index = item_location.index;
                     Item* item_component = &item_arch->items[item_index];
 
                     Vec<u32> potential_occupied_slots;
-                    i32 is_swapable = 0;
-                    is_swapable = determine_swappable_status_and_slots(
+                    i32 is_swappable = 0;
+                    is_swappable = determine_swappable_status_and_slots(
                         item_component,
                         inventory_transform_component,
                         potential_occupied_slots,
@@ -12017,16 +12083,16 @@ auto InventorySystem::update() -> void {
                     inventory_component->highlighted_slots =
                         potential_occupied_slots;
                     inventory_component->is_available_highlighted_slots =
-                        is_swapable == -1 || is_swapable >= 0;
+                        is_swappable == -1 || is_swappable >= 0;
                 } else {
                     inventory_component->highlighted_slots.clear();
                 }
             }
 
             // Item drop to inventory, swapped or we just can't place.
-            if (*is_item_draged >= 0 && is_left_mouse_button_pressed
+            if (*is_item_dragged >= 0 && is_left_mouse_button_pressed
                 && *is_left_mouse_button_released) {
-                i32 is_swapable = 0;
+                i32 is_swappable = 0;
                 if (check_crosshair_inventory_intersection(
                         crosshair_transform_component,
                         inventory_transform_component,
@@ -12043,14 +12109,14 @@ auto InventorySystem::update() -> void {
                         );
 
                     EntityLocation item_location =
-                        WORLD.entity_locations[get_id(*is_item_draged)];
+                        world.entity_locations[get_id(*is_item_dragged)];
                     ItemArchetype* item_arch =
                         static_cast<ItemArchetype*>(item_location.arch);
                     const auto item_index = item_location.index;
                     Item* item_component = &item_arch->items[item_index];
 
                     Vec<u32> potential_occupied_slots;
-                    is_swapable = determine_swappable_status_and_slots(
+                    is_swappable = determine_swappable_status_and_slots(
                         item_component,
                         inventory_transform_component,
                         potential_occupied_slots,
@@ -12066,7 +12132,7 @@ auto InventorySystem::update() -> void {
                         item_component->item_slot_type.height;
 
                     // Default value. Just drop item to all empty slots.
-                    if (is_swapable == -1) {
+                    if (is_swappable == -1) {
                         item_component->occupied_slots =
                             potential_occupied_slots;
                         fill_inventory_slots(
@@ -12074,80 +12140,85 @@ auto InventorySystem::update() -> void {
                             item_width,
                             item_height,
                             inventory_component,
-                            *is_item_draged
+                            *is_item_dragged
                         );
                         // Swap one item that we dragging to another one in
                         // inventory.
-                    } else if (is_swapable > 0) {
+                    } else if (is_swappable > 0) {
                         EntityLocation item_location =
-                            WORLD.entity_locations[get_id(is_swapable)];
+                            world.entity_locations[get_id(is_swappable)];
                         ItemArchetype* item_arch =
                             static_cast<ItemArchetype*>(item_location.arch);
                         const auto item_index = item_location.index;
-                        Item* swaped_item_component =
+                        Item* swapped_item_component =
                             &item_arch->items[item_index];
 
                         item_component->occupied_slots =
                             potential_occupied_slots;
                         fill_inventory_slots(
-                            swaped_item_component,
-                            swaped_item_component->item_slot_type.width,
-                            swaped_item_component->item_slot_type.height,
+                            swapped_item_component,
+                            swapped_item_component->item_slot_type.width,
+                            swapped_item_component->item_slot_type.height,
                             inventory_component,
                             UINT_MAX
                         );
 
-                        swaped_item_component->occupied_slots.clear();
+                        swapped_item_component->occupied_slots.clear();
                         fill_inventory_slots(
                             item_component,
                             item_width,
                             item_height,
                             inventory_component,
-                            *is_item_draged
+                            *is_item_dragged
                         );
                     }
 
-                    if (is_swapable == -1) {
+                    if (is_swappable == -1) {
                         *is_left_mouse_button_released = false;
-                        *is_item_draged = -1;
+                        *is_item_dragged = -1;
                         // Already have 2 or more items in potential inventory
                         // slots.
-                    } else if (is_swapable == -2) {
+                    } else if (is_swappable == -2) {
                         *is_left_mouse_button_released = false;
                     } else {
                         *is_left_mouse_button_released = false;
-                        *is_item_draged = is_swapable;
+                        *is_item_dragged = is_swappable;
                     }
-                    // Item drop to the ground.
+                    // Dropping the item to the ground.
                 } else {
                     EntityLocation item_location =
-                        WORLD.entity_locations[get_id(*is_item_draged)];
+                        world.entity_locations[get_id(*is_item_dragged)];
                     ItemArchetype* item_arch =
                         static_cast<ItemArchetype*>(item_location.arch);
                     const auto item_index = item_location.index;
-                    item_arch->rigid_bodies[item_index] = {.f_mass = 2.0f};
+                    item_arch->rigid_bodies[item_index] = {.mass = 2.0f};
                     Transform* item_transform =
                         &item_arch->transforms[item_index];
                     Item* item = &item_arch->items[item_index];
                     item->is_actor = true;
-                    // Remove this cringe.
+                    // TODO: Remove this workaround.
                     const auto player = 0;
                     EntityLocation player_location =
-                        WORLD.entity_locations[get_id(player)];
-                    PlayerArchetype* player_arch =
-                        static_cast<PlayerArchetype*>(player_location.arch);
-                    const auto player_index = player_location.index;
-                    Transform* player_transform =
-                        &player_arch->transforms[player_index];
-                    item_transform->position = player_transform->position;
-                    Vector<f32, 3> normalized_forward =
-                        normalize(player_transform->forward);
-                    item_transform->position[0] += normalized_forward[0] * 2.5f;
-                    item_transform->position[1] += normalized_forward[1] * 2.5f;
-                    item_transform->position[2] += normalized_forward[2] * 2.5f;
-                    item_transform->scale = 0.05f;
+                        world.entity_locations[get_id(player)];
+                    if (player_location.arch != nullptr) {
+                        PlayerArchetype* player_arch =
+                            static_cast<PlayerArchetype*>(player_location.arch);
+                        const auto player_index = player_location.index;
+                        Transform* player_transform =
+                            &player_arch->transforms[player_index];
+                        item_transform->position = player_transform->position;
+                        Vector<f32, 3> normalized_forward =
+                            normalize(player_transform->forward);
+                        item_transform->position[0] +=
+                            normalized_forward[0] * 2.5f;
+                        item_transform->position[1] +=
+                            normalized_forward[1] * 2.5f;
+                        item_transform->position[2] +=
+                            normalized_forward[2] * 2.5f;
+                        item_transform->scale = 0.05f;
+                    }
 
-                    *is_item_draged = -1;
+                    *is_item_dragged = -1;
                     *is_left_mouse_button_released = false;
                 }
             }
@@ -12192,7 +12263,7 @@ auto InventorySystem::determine_swappable_status_and_slots(
             inventory_transform_component->position[1],
             crosshair_transform_component->position[1],
             row,
-            inventory_slot_scale * aspect_rate
+            inventory_slot_scale * aspect_ratio
         );
 
         i32 pivot_row = row - row_basic_offset;
@@ -12219,7 +12290,7 @@ auto InventorySystem::determine_swappable_status_and_slots(
             potential_occupied_slots
         );
     } else {
-        // Return -3 as error code means itemComponent is nullptr.
+        // Return -3 as an error code, which means item_component is nullptr.
         return -3;
     }
 }
@@ -12257,24 +12328,24 @@ auto InventorySystem::determine_swappable_field(
     item_component->occupied_slots.clear();
     // -1: default value. -2: found two entities in potential slots. Any other
     // value: swappable.
-    i32 is_swapable = -1;
+    i32 is_swappable = -1;
     for (i32 i = 0; i < item_height; ++i) {
         for (i32 j = 0; j < item_width; ++j) {
             const auto final_row = pivot_row + i;
             const auto final_column = pivot_column + j;
-            if (is_swapable == -1
+            if (is_swappable == -1
                 && inventory_component->slots[final_row][final_column]
                     != UINT_MAX) {
-                is_swapable =
+                is_swappable =
                     inventory_component->slots[final_row][final_column];
             } else if (
-                is_swapable > 0
+                is_swappable > 0
                 && inventory_component->slots[final_row][final_column]
                     != UINT_MAX
                 && (i32)inventory_component->slots[final_row][final_column]
-                    != is_swapable
+                    != is_swappable
             ) {
-                is_swapable = -2;
+                is_swappable = -2;
             }
 
             potential_occupied_slots.push_back(
@@ -12283,7 +12354,7 @@ auto InventorySystem::determine_swappable_field(
         }
     }
 
-    return is_swapable;
+    return is_swappable;
 }
 
 auto InventorySystem::calculate_basic_offset(
@@ -12318,11 +12389,11 @@ auto InventorySystem::check_crosshair_inventory_intersection(
             + inventory_slot_scale * inventory_component->col
         && crosshair_transform_component->position[1]
         > inventory_transform_component->position[1]
-            - inventory_slot_half_scale * aspect_rate
+            - inventory_slot_half_scale * aspect_ratio
         && crosshair_transform_component->position[1]
         < inventory_transform_component->position[1]
-            - inventory_slot_half_scale * aspect_rate
-            + inventory_slot_scale * inventory_component->row * aspect_rate;
+            - inventory_slot_half_scale * aspect_ratio
+            + inventory_slot_scale * inventory_component->row * aspect_ratio;
 }
 
 auto InventorySystem::determine_actual_intersection_slot(
@@ -12336,25 +12407,25 @@ auto InventorySystem::determine_actual_intersection_slot(
         + inventory_slot_half_scale;
     f32 y_delta = crosshair_transform_component->position[1]
         - inventory_transform_component->position[1]
-        + inventory_slot_half_scale * aspect_rate;
+        + inventory_slot_half_scale * aspect_ratio;
 
     return Point2D<i32> {
         (i32)(x_delta / inventory_slot_scale),
-        (i32)(y_delta / (inventory_slot_scale * aspect_rate))
+        (i32)(y_delta / (inventory_slot_scale * aspect_ratio))
     };
 }
 } // namespace glvm
 
 namespace glvm {
-// This method is trying to search for suitable slots for the given specific
-// type item. It returns true if it finds them and false otherwise.
+// This method tries to find suitable slots for the given specific item type.
+// It returns true if it finds them and false otherwise.
 auto ItemSystem::put_item2x2(Inventory* inventory_component, u32 item_entity)
     -> bool {
     bool is_slot_found = false;
     u32 row = inventory_component->row;
     u32 col = inventory_component->col;
 
-    EntityLocation item_location = WORLD.entity_locations[get_id(item_entity)];
+    EntityLocation item_location = world.entity_locations[get_id(item_entity)];
     ItemArchetype* item_arch = static_cast<ItemArchetype*>(item_location.arch);
     const auto item_index = item_location.index;
     Item* item_component = &item_arch->items[item_index];
@@ -12363,11 +12434,11 @@ auto ItemSystem::put_item2x2(Inventory* inventory_component, u32 item_entity)
     u32 item_height = item_component->item_slot_type.height;
     for (u32 i = 0; i < row - item_height + 1; ++i) {
         for (u32 j = 0; j < col - item_width + 1; ++j) {
-            Vec<u32> maybe_availabe_slots;
+            Vec<u32> maybe_available_slots;
             Vec<u32> indices_of_maybe_available_slots;
             for (u32 m = i; m < i + item_height; ++m) {
                 for (u32 n = j; n < j + item_width; ++n) {
-                    maybe_availabe_slots.push_back(
+                    maybe_available_slots.push_back(
                         inventory_component->slots[m][n]
                     );
                     indices_of_maybe_available_slots.push_back(m * col + n);
@@ -12375,15 +12446,15 @@ auto ItemSystem::put_item2x2(Inventory* inventory_component, u32 item_entity)
             }
 
             u32 is_all_slots_available = 0;
-            for (u32 v = 0; v < maybe_availabe_slots.size(); ++v) {
-                if (maybe_availabe_slots[v] == UINT_MAX) {
+            for (u32 v = 0; v < maybe_available_slots.size(); ++v) {
+                if (maybe_available_slots[v] == UINT_MAX) {
                     ++is_all_slots_available;
                 } else {
                     --is_all_slots_available;
                 }
             }
-            if (maybe_availabe_slots.size() == is_all_slots_available) {
-                for (u32 w = 0; w < maybe_availabe_slots.size(); ++w) {
+            if (maybe_available_slots.size() == is_all_slots_available) {
+                for (u32 w = 0; w < maybe_available_slots.size(); ++w) {
                     u32 row_index = indices_of_maybe_available_slots[w] / row;
                     u32 col_index = indices_of_maybe_available_slots[w] % col;
                     inventory_component->slots[row_index][col_index] =
@@ -12405,7 +12476,7 @@ auto ItemSystem::put_item2x2(Inventory* inventory_component, u32 item_entity)
 auto ItemSystem::update() -> void {
     if (!is_inventory_opened) {
         inventory_archetypes_number = 0;
-        WORLD.search_cache_archetypes(
+        world.search_cache_archetypes(
             inventory_required_mask,
             &arch_view.inventory_cached_archetype,
             inventory_archetypes_number
@@ -12415,7 +12486,7 @@ auto ItemSystem::update() -> void {
                 ->components[ComponentsIndices::InventoryComponent];
 
         item_archetypes_number = 0;
-        WORLD.search_cache_archetypes(
+        world.search_cache_archetypes(
             item_required_mask,
             &arch_view.item_archetype,
             item_archetypes_number
@@ -12453,7 +12524,7 @@ auto ItemSystem::update() -> void {
 
     if (is_inventory_opened) {
         crosshair_archetypes_number = 0;
-        WORLD.search_cache_archetypes(
+        world.search_cache_archetypes(
             crosshair_required_mask,
             &arch_view.crosshair_archetype,
             crosshair_archetypes_number
@@ -12463,7 +12534,7 @@ auto ItemSystem::update() -> void {
                 ->components[ComponentsIndices::TransformComponent];
 
         item_archetypes_number = 0;
-        WORLD.search_cache_archetypes(
+        world.search_cache_archetypes(
             item_required_mask,
             &arch_view.item_archetype,
             item_archetypes_number
@@ -12490,12 +12561,12 @@ auto ItemSystem::update() -> void {
 } // namespace glvm
 
 namespace glvm {
-CMovementSystem::CMovementSystem(CStack& input_stack) :
+MovementSystem::MovementSystem(EventStack& input_stack) :
     input_stack(input_stack) {
 }
 
-auto CMovementSystem::update() -> void {
-    WORLD.search_cache_archetypes(
+auto MovementSystem::update() -> void {
+    world.search_cache_archetypes(
         player_required_mask,
         &arch_view.player_cached_archetype,
         player_archetypes_number
@@ -12517,7 +12588,7 @@ auto CMovementSystem::update() -> void {
     for (u32 i = 0; i < arch_view.player_cached_archetype->entity_count; ++i) {
         const auto entity = arch_view.player_cached_archetype->entities[i];
         EntityLocation& entity_location =
-            WORLD.entity_locations[get_id(entity)];
+            world.entity_locations[get_id(entity)];
         Beholder* player_view = &components_view.player_views[i];
         Move* player_move = &components_view.player_moves[i];
         ColliderFlags* player_collider_flags =
@@ -12527,32 +12598,32 @@ auto CMovementSystem::update() -> void {
             Vector<f32, 3> right;
             Vector<f32, 3> forward;
             switch (input_stack[n]) {
-                case EEvents::EMoveLeft:
+                case EventKind::MoveLeft:
                     right = calculate_vector_rl(*player_view);
                     player_move->frame_movement -= right * camera_speed;
                     entity_location.is_dirty = true;
                     break;
-                case EEvents::EMoveRight:
+                case EventKind::MoveRight:
                     right = calculate_vector_rl(*player_view);
                     player_move->frame_movement += right * camera_speed;
                     entity_location.is_dirty = true;
                     break;
-                case EEvents::EMoveBackward:
-                    forward = calculate_vector_fb(*player_view, G_E_EVENT);
+                case EventKind::MoveBackward:
+                    forward = calculate_vector_fb(*player_view, global_event);
                     player_move->frame_movement -= forward * camera_speed;
                     entity_location.is_dirty = true;
                     break;
-                case EEvents::EMoveForward:
-                    forward = calculate_vector_fb(*player_view, G_E_EVENT);
+                case EventKind::MoveForward:
+                    forward = calculate_vector_fb(*player_view, global_event);
                     player_move->frame_movement += forward * camera_speed;
                     entity_location.is_dirty = true;
                     break;
-                case EEvents::EJump: {
+                case EventKind::Jump: {
                     entity_location.is_dirty = true;
-                    u8 is_groud_collision_mask =
+                    u8 is_ground_collision_mask =
                         (0u << 0) | (1u << 1) | (0u << 2) | (0u << 3);
                     if (player_collider_flags->flags
-                        & is_groud_collision_mask) {
+                        & is_ground_collision_mask) {
                         player_rigid_body->jump_accumulator = 1.5f;
                     }
                 } break;
@@ -12563,7 +12634,7 @@ auto CMovementSystem::update() -> void {
     }
 
     rigid_body_contained_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         rigid_body_required_mask,
         arch_view.rigid_body_contained_archetypes_cache,
         rigid_body_contained_archetypes_number
@@ -12586,20 +12657,19 @@ auto CMovementSystem::update() -> void {
         for (u32 i1 = 0; i1 < current_arch->entity_count; ++i1) {
             const auto entity = current_arch->entities[i1];
             EntityLocation& entity_location =
-                WORLD.entity_locations[get_id(entity)];
+                world.entity_locations[get_id(entity)];
             entity_location.is_dirty = true;
 
             if (components_view.items && !components_view.items[i1].is_actor) {
                 continue;
             }
 
-            Transform* r_transform_component = &components_view.transforms[i1];
-            RigidBody* rigid_body_componennt =
-                &components_view.rigid_bodies[i1];
+            Transform* transform_component = &components_view.transforms[i1];
+            RigidBody* rigid_body_component = &components_view.rigid_bodies[i1];
             Move* move_component = &components_view.moves[i1];
-            r_transform_component->gravity_accumulator += delta_frame_time;
-            f32 gravity = 9.8f * r_transform_component->gravity_accumulator
-                * rigid_body_componennt->f_mass * 0.0005f;
+            transform_component->gravity_accumulator += delta_frame_time;
+            f32 gravity = 9.8f * transform_component->gravity_accumulator
+                * rigid_body_component->mass * 0.0005f;
             if (gravity > 0.2f) {
                 gravity = 0.2f;
             }
@@ -12609,17 +12679,16 @@ auto CMovementSystem::update() -> void {
     }
 }
 
-auto CMovementSystem::calculate_vector_rl(Beholder& beholder)
-    -> Vector<f32, 3> {
+auto MovementSystem::calculate_vector_rl(Beholder& beholder) -> Vector<f32, 3> {
     Vector<f32, 3> normalized_vector =
         normalize(cross(beholder.forward, Vector<f32, 3> {0.0f, -1.0f, 0.0f}));
     return normalized_vector;
 }
 
-auto CMovementSystem::calculate_vector_fb(Beholder& beholder, CEvent& event)
+auto MovementSystem::calculate_vector_fb(Beholder& beholder, Event& event)
     -> Vector<f32, 3> {
     Vector<f32, 3> forward(0.0f);
-    current_x = (f32)G_E_EVENT.mouse_pointer_position.offset_x;
+    current_x = (f32)global_event.mouse_pointer_position.offset_x;
     f32 delta_x = current_x - prev_x;
     const Vector<f32, 3> rotate_axis = {0.0f, -1.0f, 0.0f};
     f32 rotation_angle = delta_x;
@@ -12647,7 +12716,7 @@ auto CMovementSystem::calculate_vector_fb(Beholder& beholder, CEvent& event)
     forward[0] = applied_rotation_quat.x;
     forward[1] = 0.0f;
     forward[2] = applied_rotation_quat.z;
-    prev_x = (f32)G_E_EVENT.mouse_pointer_position.offset_x;
+    prev_x = (f32)global_event.mouse_pointer_position.offset_x;
     forward = normalize(forward);
     return forward;
 }
@@ -12656,61 +12725,62 @@ auto CMovementSystem::calculate_vector_fb(Beholder& beholder, CEvent& event)
 namespace glvm {
 namespace {
 auto aabb_overlap(
-    const Vector<f32, 3>& a_position,
-    const MeshAxisMaxAbsoluteValues& a_bounds,
-    f32 a_scale,
-    const Vector<f32, 3>& b_position,
-    const MeshAxisMaxAbsoluteValues& b_bounds,
-    f32 b_scale
+    const Vector<f32, 3>& first_position,
+    const MeshAxisMaxAbsoluteValues& first_bounds,
+    f32 first_scale,
+    const Vector<f32, 3>& second_position,
+    const MeshAxisMaxAbsoluteValues& second_bounds,
+    f32 second_scale
 ) -> bool {
-    return a_position[0] + a_bounds.origin_offset_x * a_scale
-            + a_bounds.absolute_x * a_scale
-        > b_position[0] + b_bounds.origin_offset_x * b_scale
-            - b_bounds.absolute_x * b_scale
-        && a_position[0] + a_bounds.origin_offset_x * a_scale
-            - a_bounds.absolute_x * a_scale
-        < b_position[0] + b_bounds.origin_offset_x * b_scale
-            + b_bounds.absolute_x * b_scale
-        && a_position[1] + a_bounds.origin_offset_y * a_scale
-            + a_bounds.absolute_y * a_scale
-        > b_position[1] + b_bounds.origin_offset_y * b_scale
-            - b_bounds.absolute_y * b_scale
-        && a_position[1] + a_bounds.origin_offset_y * a_scale
-            - a_bounds.absolute_y * a_scale
-        < b_position[1] + b_bounds.origin_offset_y * b_scale
-            + b_bounds.absolute_y * b_scale
-        && a_position[2] + a_bounds.origin_offset_z * a_scale
-            + a_bounds.absolute_z * a_scale
-        > b_position[2] + b_bounds.origin_offset_z * b_scale
-            - b_bounds.absolute_z * b_scale
-        && a_position[2] + a_bounds.origin_offset_z * a_scale
-            - a_bounds.absolute_z * a_scale
-        < b_position[2] + b_bounds.origin_offset_z * b_scale
-            + b_bounds.absolute_z * b_scale;
+    return first_position[0] + first_bounds.origin_offset_x * first_scale
+            + first_bounds.absolute_x * first_scale
+        > second_position[0] + second_bounds.origin_offset_x * second_scale
+            - second_bounds.absolute_x * second_scale
+        && first_position[0] + first_bounds.origin_offset_x * first_scale
+            - first_bounds.absolute_x * first_scale
+        < second_position[0] + second_bounds.origin_offset_x * second_scale
+            + second_bounds.absolute_x * second_scale
+        && first_position[1] + first_bounds.origin_offset_y * first_scale
+            + first_bounds.absolute_y * first_scale
+        > second_position[1] + second_bounds.origin_offset_y * second_scale
+            - second_bounds.absolute_y * second_scale
+        && first_position[1] + first_bounds.origin_offset_y * first_scale
+            - first_bounds.absolute_y * first_scale
+        < second_position[1] + second_bounds.origin_offset_y * second_scale
+            + second_bounds.absolute_y * second_scale
+        && first_position[2] + first_bounds.origin_offset_z * first_scale
+            + first_bounds.absolute_z * first_scale
+        > second_position[2] + second_bounds.origin_offset_z * second_scale
+            - second_bounds.absolute_z * second_scale
+        && first_position[2] + first_bounds.origin_offset_z * first_scale
+            - first_bounds.absolute_z * first_scale
+        < second_position[2] + second_bounds.origin_offset_z * second_scale
+            + second_bounds.absolute_z * second_scale;
 }
 
 auto is_above(
-    const Vector<f32, 3>& a_position,
-    const MeshAxisMaxAbsoluteValues& a_bounds,
-    f32 a_scale,
-    const Vector<f32, 3>& b_position,
-    const MeshAxisMaxAbsoluteValues& b_bounds,
-    f32 b_scale
+    const Vector<f32, 3>& first_position,
+    const MeshAxisMaxAbsoluteValues& first_bounds,
+    f32 first_scale,
+    const Vector<f32, 3>& second_position,
+    const MeshAxisMaxAbsoluteValues& second_bounds,
+    f32 second_scale
 ) -> bool {
     constexpr auto EPSILON = 0.15f;
-    return a_position[1] + a_bounds.origin_offset_y * a_scale
-        - a_bounds.absolute_y * a_scale + EPSILON
-        > b_position[1] + b_bounds.origin_offset_y * b_scale
-        + b_bounds.absolute_y * b_scale;
+    return first_position[1] + first_bounds.origin_offset_y * first_scale
+        - first_bounds.absolute_y * first_scale + EPSILON
+        > second_position[1] + second_bounds.origin_offset_y * second_scale
+        + second_bounds.absolute_y * second_scale;
 }
 } // namespace
 
-// This update searching for referring to colliders entities and check their
-// transform components for collision, and if collision detected check if
-// backtracking entity had gravity component for call Gravity function.
-auto CPhysicsSystem::update() -> void {
+// This update searches for entities referring to colliders and checks their
+// transform components for collisions; if a collision is detected, it checks
+// whether the backtracking entity has a gravity component to call the gravity
+// function.
+auto PhysicsSystem::update() -> void {
     cached_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         required_mask,
         arch_view.cached_archetypes,
         cached_archetypes_number
@@ -12738,7 +12808,7 @@ auto CPhysicsSystem::update() -> void {
             (Mesh*)arch_view.cached_archetypes[x]
                 ->components[ComponentsIndices::MeshComponent];
 
-        f32 delta_time = 5.5f * f_delta_time;
+        f32 frame_step = 5.5f * delta_time;
         for (u32 i = 0; i < arch->entity_count; ++i) {
             if (components_view.transforms_view
                 && components_view.collider_flags_view
@@ -12749,9 +12819,9 @@ auto CPhysicsSystem::update() -> void {
                 Move& move = components_view.moves_view[i];
                 ColliderFlags& collider_flags =
                     components_view.collider_flags_view[i];
-                u8 is_groud_collision_mask =
+                u8 is_ground_collision_mask =
                     (0u << 0) | (1u << 1) | (0u << 2) | (0u << 3);
-                if (collider_flags.flags & is_groud_collision_mask) {
+                if (collider_flags.flags & is_ground_collision_mask) {
                     move.gravity = 0;
                     transform_component.gravity_accumulator = 0.0f;
                 }
@@ -12766,7 +12836,7 @@ auto CPhysicsSystem::update() -> void {
                     if (colliders && meshes
                         && colliders[i].colliders.size() > 0) {
                         const MeshAxisMaxAbsoluteValues player_bounds =
-                            ALL_MESH_MAX_ABSOLUTE_VALUES[meshes[i].handle.id];
+                            all_mesh_max_absolute_values[meshes[i].handle.id];
                         const Vector<f32, 3> player_position =
                             transform_component.position;
                         for (u32 c = 0; c < colliders[i].colliders.size();
@@ -12774,7 +12844,7 @@ auto CPhysicsSystem::update() -> void {
                             const auto collided_entity =
                                 colliders[i].colliders[c];
                             EntityLocation& collided_location =
-                                WORLD.entity_locations[get_id(collided_entity)];
+                                world.entity_locations[get_id(collided_entity)];
                             Archetype* collided_arch = collided_location.arch;
                             if (collided_arch == nullptr) {
                                 // Entity was removed this frame (e.g. by
@@ -12794,7 +12864,7 @@ auto CPhysicsSystem::update() -> void {
                             collided_transform += collided_index;
                             collided_mesh += collided_index;
                             const MeshAxisMaxAbsoluteValues collided_bounds =
-                                ALL_MESH_MAX_ABSOLUTE_VALUES[collided_mesh
+                                all_mesh_max_absolute_values[collided_mesh
                                                                  ->handle.id];
                             const Vector<f32, 3> collided_position =
                                 collided_transform->position;
@@ -12839,9 +12909,9 @@ auto CPhysicsSystem::update() -> void {
                 move.frame_movement = 0.0f;
                 RigidBody& rigid_body = components_view.rigid_bodies_view[i];
                 if (rigid_body.jump_accumulator > 0.0f) {
-                    rigid_body.jump_accumulator -= delta_time;
+                    rigid_body.jump_accumulator -= frame_step;
                     Vector<f32, 3> jump =
-                        Vector<f32, 3> {0.0f, 5.0f, 0.0f} * delta_time;
+                        Vector<f32, 3> {0.0f, 5.0f, 0.0f} * frame_step;
                     transform_component.position += jump;
                 }
             }
@@ -12851,15 +12921,15 @@ auto CPhysicsSystem::update() -> void {
 } // namespace glvm
 
 namespace glvm {
-CProjectileSystem::CProjectileSystem(CStack& input_stack) :
+ProjectileSystem::ProjectileSystem(EventStack& input_stack) :
     input_stack(input_stack) {
 }
 
-auto CProjectileSystem::update() -> void {
+auto ProjectileSystem::update() -> void {
     f32 camera_speed = 5.5f * delta_frame_time;
 
     player_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         player_required_mask,
         &arch_view.player_cached_archetype,
         player_archetypes_number
@@ -12872,7 +12942,7 @@ auto CProjectileSystem::update() -> void {
             ->components[ComponentsIndices::ViewComponent];
 
     projectile_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         projectile_required_mask,
         &arch_view.projectile_archetype,
         projectile_archetypes_number
@@ -12890,13 +12960,13 @@ auto CProjectileSystem::update() -> void {
         const auto max_event_number = 6;
         for (u32 n = 0; n < max_event_number; ++n) {
             if (!is_inventory_opened
-                && input_stack.search_element(EEvents::EMouseLeftButton)
-                    == EEvents::EMouseLeftButton) {
+                && input_stack.search_element(EventKind::MouseLeftButton)
+                    == EventKind::MouseLeftButton) {
                 if (projectile_cooldown <= 0) {
                     MeshHandle mesh_handle {};
                     const auto sphere_mesh_handle_index = 2;
-                    if (mesh_handlers.size() > 2) {
-                        mesh_handle = mesh_handlers[sphere_mesh_handle_index];
+                    if (mesh_handles.size() > 2) {
+                        mesh_handle = mesh_handles[sphere_mesh_handle_index];
                     }
 
                     TextureHandle texture_handle {};
@@ -12923,12 +12993,12 @@ auto CProjectileSystem::update() -> void {
                         ArchetypeEntityManager::get_instance();
                     u64 projectile_entity =
                         arch_entity_manager->create_entity();
-                    WORLD.add_entity_to_archetype(
+                    world.add_entity_to_archetype(
                         projectile_entity,
                         arch_view.projectile_archetype
                     );
                     EntityLocation projectile_location =
-                        WORLD.entity_locations[get_id(projectile_entity)];
+                        world.entity_locations[get_id(projectile_entity)];
 
                     create_projectile(
                         player_transform->position,
@@ -12952,7 +13022,7 @@ auto CProjectileSystem::update() -> void {
     }
 
     projectile_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         projectile_required_mask,
         &arch_view.projectile_archetype,
         projectile_archetypes_number
@@ -12992,9 +13062,9 @@ auto CProjectileSystem::update() -> void {
         Health* projectile_health = &components_view.projectile_health[i];
         Attack* projectile_attack = &components_view.projectile_attacks[i];
         const auto wall_collision_bit = 1;
-        const auto ground_collistion_bit = (1 << 1);
+        const auto ground_collision_bit = (1 << 1);
         if ((projectile_collider_flags->flags & wall_collision_bit)
-            || (projectile_collider_flags->flags & ground_collistion_bit)) {
+            || (projectile_collider_flags->flags & ground_collision_bit)) {
             Damage* projectile_damage =
                 &components_view.projectile_bundles[i].damage;
             Collider* projectile_collider =
@@ -13003,7 +13073,7 @@ auto CProjectileSystem::update() -> void {
                 u32 collided_entity = projectile_collider->colliders[j];
 
                 EntityLocation collided_entity_location =
-                    WORLD.entity_locations[get_id(collided_entity)];
+                    world.entity_locations[get_id(collided_entity)];
                 u64 required_mask = (1ul << ComponentsIndices::HealthComponent)
                     | (1ul << ComponentsIndices::AttackComponent);
 
@@ -13025,7 +13095,7 @@ auto CProjectileSystem::update() -> void {
 
 namespace glvm {
 auto SpatialGridSystem::update() -> void {
-    SpatialGrid& spatial_grid = WORLD.spatial_grid;
+    SpatialGrid& spatial_grid = world.spatial_grid;
     assert(
         spatial_grid.width > 0 && spatial_grid.height > 0
         && spatial_grid.depth > 0
@@ -13037,7 +13107,7 @@ auto SpatialGridSystem::update() -> void {
     const auto half_depth = spatial_grid.depth * chunk_size * 0.5f;
 
     cached_archetypes_number = 0;
-    WORLD.search_cache_archetypes(
+    world.search_cache_archetypes(
         required_mask,
         cached_archetypes,
         cached_archetypes_number
@@ -13052,16 +13122,16 @@ auto SpatialGridSystem::update() -> void {
         for (u32 i1 = 0; i1 < arch->entity_count; ++i1) {
             const auto entity = arch->entities[i1];
             EntityLocation& entity_location =
-                WORLD.entity_locations[get_id(entity)];
+                world.entity_locations[get_id(entity)];
             if (!entity_location.is_dirty && is_initialized) {
                 continue;
             }
 
             if (entity_location.grid_cell_counter > 0) {
                 for (u32 i2 = 0; i2 < entity_location.grid_cell_counter; ++i2) {
-                    u32 z = entity_location.grid_cell_indicies[i2][0];
-                    u32 y = entity_location.grid_cell_indicies[i2][1];
-                    u32 x = entity_location.grid_cell_indicies[i2][2];
+                    u32 z = entity_location.grid_cell_indices[i2][0];
+                    u32 y = entity_location.grid_cell_indices[i2][1];
+                    u32 x = entity_location.grid_cell_indices[i2][2];
                     Vec<u32>& chunk_entities =
                         spatial_grid.grid[z][y][x].entities;
                     // Remove by value: the recorded index can be stale after
@@ -13081,7 +13151,7 @@ auto SpatialGridSystem::update() -> void {
 
             MeshHandle entity_mesh_handle = mesh.handle;
             MeshAxisMaxAbsoluteValues entity_chunk_bounds =
-                ALL_MESH_MAX_ABSOLUTE_VALUES[entity_mesh_handle.id];
+                all_mesh_max_absolute_values[entity_mesh_handle.id];
             Vec<Vector<f32, 3>> entity_box_corner_bound_points =
                 compute_box_corner_bound_points(
                     entity_chunk_bounds,
@@ -13089,8 +13159,8 @@ auto SpatialGridSystem::update() -> void {
                     transform.scale
                 );
 
-            // Need only left bottom back corner point and right upper front
-            // corner point to obtain all box bounds.
+            // Only the left-bottom-back corner point and the right-upper-front
+            // corner point are needed to obtain all box bounds.
             const Vector<f32, 3> min_entity_position =
                 entity_box_corner_bound_points[0];
             const Vector<f32, 3> max_entity_position =
@@ -13143,7 +13213,7 @@ auto SpatialGridSystem::update() -> void {
                                 entity_location.grid_cell_counter;
                             assert(current_grid_cell < 32);
                             entity_location
-                                .grid_cell_indicies[current_grid_cell] =
+                                .grid_cell_indices[current_grid_cell] =
                                 Vector<f32, 3>(i2, i3, i4);
                             entity_location
                                 .cell_entity_indices[current_grid_cell] =
@@ -13164,23 +13234,23 @@ auto SpatialGridSystem::update() -> void {
 }; // namespace glvm
 
 namespace glvm {
-TextureManager* TextureManager::p_instance = nullptr;
+TextureManager* TextureManager::instance = nullptr;
 Mutex TextureManager::mutex;
 
 TextureManager::TextureManager() = default;
 
 auto TextureManager::bind_texture(u32 entity_id, u32 texture_id) -> void {
-    texture_vector[texture_id].entities_owns_this_type_of_texture.push_back(
+    texture_vector[texture_id].entities_own_this_type_of_texture.push_back(
         entity_id
     );
 }
 
 auto TextureManager::get_instance() -> TextureManager* {
     MutexGuard<Mutex> lock(mutex);
-    if (p_instance == nullptr) {
-        p_instance = new TextureManager();
+    if (instance == nullptr) {
+        instance = new TextureManager();
     }
-    return p_instance;
+    return instance;
 }
 
 auto TextureManager::set_texture_vector(Vec<Texture> textures) -> void {
@@ -13230,21 +13300,21 @@ ThreadPool::~ThreadPool() {
 #ifdef __linux__
 
 namespace glvm {
-CTimerX::CTimerX() {
+TimerX::TimerX() {
     init_frequency();
     reset();
 }
 
-auto CTimerX::init_frequency() -> f64 {
+auto TimerX::init_frequency() -> f64 {
     return frequency_ = 1e+9;
 }
 
-auto CTimerX::reset() -> f64 {
+auto TimerX::reset() -> f64 {
     clock_gettime(CLOCK_MONOTONIC, &start_);
     return start_.tv_sec + start_.tv_nsec;
 }
 
-auto CTimerX::get_elapsed() -> f64 {
+auto TimerX::get_elapsed() -> f64 {
     clock_gettime(CLOCK_MONOTONIC, &now_);
     seconds_ = now_.tv_sec - start_.tv_sec;
     nanoseconds_ = now_.tv_nsec - start_.tv_nsec;
@@ -13253,13 +13323,13 @@ auto CTimerX::get_elapsed() -> f64 {
 } // namespace glvm
 #endif
 namespace glvm {
-auto CTimerCreator::create() -> IChrono* {
+auto TimerCreator::create() -> Chrono* {
 #ifdef __linux__
-    return new CTimerX;
+    return new TimerX;
 #endif
 
 #ifdef _WIN32
-    return new CTimerWin;
+    return new TimerWin;
 #endif
 }
 } // namespace glvm
@@ -13267,22 +13337,22 @@ auto CTimerCreator::create() -> IChrono* {
 #ifdef _WIN32
 
 namespace glvm {
-CTimerWin::CTimerWin() {
+TimerWin::TimerWin() {
     init_frequency();
     reset();
 }
 
-auto CTimerWin::init_frequency() -> f64 {
+auto TimerWin::init_frequency() -> f64 {
     QueryPerformanceFrequency((PLARGE_INTEGER)&i64_freq);
     return (f64)i64_freq;
 }
 
-auto CTimerWin::reset() -> f64 {
+auto TimerWin::reset() -> f64 {
     QueryPerformanceCounter((PLARGE_INTEGER)&i64_start);
     return (f64)i64_start;
 }
 
-auto CTimerWin::get_elapsed() -> f64 {
+auto TimerWin::get_elapsed() -> f64 {
     QueryPerformanceCounter((PLARGE_INTEGER)&i64_now);
     return (f64)(i64_now - i64_start) / i64_freq;
 }
@@ -13292,39 +13362,39 @@ auto CTimerWin::get_elapsed() -> f64 {
 #ifdef _WIN32
 
 namespace glvm {
-auto CSoundEngineWaveform::sound_stream() -> void {
-    for (u32 i = 0; i < t_sound_container.size(); ++i) {
-        playback_sound_sample(*t_sound_container[i]);
-        t_sound_container.erase(t_sound_container.begin() + i);
+auto SoundEngineWaveform::sound_stream() -> void {
+    for (u32 i = 0; i < sound_container.size(); ++i) {
+        playback_sound_sample(*sound_container[i]);
+        sound_container.erase(sound_container.begin() + i);
     }
 }
 
-auto CSoundEngineWaveform::playback_sound_sample(CSoundSample& sample) -> void {
-    HWAVEOUT h_wave_out;
+auto SoundEngineWaveform::playback_sound_sample(SoundSample& sample) -> void {
+    HWAVEOUT wave_out;
     WAVEHDR lp_wave_hdr {};
     WAVEFORMATEX format;
     format.wFormatTag = WAVE_FORMAT_PCM;
     format.nChannels = 2;
     format.nSamplesPerSec = sample.ui_rate;
     format.nAvgBytesPerSec = format.nSamplesPerSec * format.nChannels * 2;
-    // Change this field first if got any problems.
+    // Change this field first if there are any problems.
     format.nBlockAlign = 4;
     format.wBitsPerSample = 16;
     format.cbSize = 0;
-    // Open a waveform device for output using window callback.
+    // Open a waveform device for output using a window callback.
     u32 rc = 0;
-    rc = waveOutOpen(&h_wave_out, WAVE_MAPPER, &format, 0L, 0L, 0L);
+    rc = waveOutOpen(&wave_out, WAVE_MAPPER, &format, 0L, 0L, 0L);
     if (rc != MMSYSERR_NOERROR) {
         std::cerr << "waveOutOpen: " << "error code: " << rc << std::endl;
         std::exit(-1);
     }
 
     std::ifstream file(
-        sample.k_path_to_file,
+        sample.path_to_file,
         std::ios_base::binary | std::ios_base::in
     );
     if (!file) {
-        std::cerr << "Fail to open file." << std::endl;
+        std::cerr << "Failed to open file." << std::endl;
         std::exit(-1);
     }
 
@@ -13339,23 +13409,23 @@ auto CSoundEngineWaveform::playback_sound_sample(CSoundSample& sample) -> void {
         lp_wave_hdr.dwBufferLength = file.gcount();
         lp_wave_hdr.dwFlags = 0L;
         lp_wave_hdr.dwLoops = 0L;
-        waveOutPrepareHeader(h_wave_out, &lp_wave_hdr, sizeof(WAVEHDR));
-        waveOutWrite(h_wave_out, &lp_wave_hdr, sizeof(WAVEHDR));
+        waveOutPrepareHeader(wave_out, &lp_wave_hdr, sizeof(WAVEHDR));
+        waveOutWrite(wave_out, &lp_wave_hdr, sizeof(WAVEHDR));
         Sleep(
             (lp_wave_hdr.dwBufferLength * 1000) / (format.nAvgBytesPerSec * 2)
         );
-        waveOutUnprepareHeader(h_wave_out, &lp_wave_hdr, sizeof(WAVEHDR));
+        waveOutUnprepareHeader(wave_out, &lp_wave_hdr, sizeof(WAVEHDR));
     }
 
     free(buf);
-    waveOutClose(h_wave_out);
+    waveOutClose(wave_out);
 }
 
-auto CSoundEngineWaveform::set_master_volume(long /* l_volume */) -> void {
+auto SoundEngineWaveform::set_master_volume(long /* volume */) -> void {
 }
 
-auto CSoundEngineWaveform::get_sound_container() -> Vec<CSoundSample*>& {
-    return t_sound_container;
+auto SoundEngineWaveform::get_sound_container() -> Vec<SoundSample*>& {
+    return sound_container;
 }
 } // namespace glvm
 #endif // _WIN32
@@ -13377,7 +13447,7 @@ WindowWinVulkan::WindowWinVulkan() {
     instance = this;
     const char* title = "Game";
     i32 window_width = width / 2, window_height = height / 2;
-    // Register the window struct for the main window.
+    // Register the window class for the main window.
     window_class.style = 0;
     window_class.lpfnWndProc = main_wnd_proc;
     window_class.cbClsExtra = 0;
@@ -13401,7 +13471,7 @@ WindowWinVulkan::WindowWinVulkan() {
     i32 window_y = (height - (rect.bottom - rect.top)) / 2;
 
     // Create the main window.
-    p_modern_window = CreateWindowA(
+    modern_window = CreateWindowA(
         "Game",
         title,
         style,
@@ -13416,8 +13486,8 @@ WindowWinVulkan::WindowWinVulkan() {
     );
 
     // Show the window and paint its contents.
-    ShowWindow(p_modern_window, SW_SHOWDEFAULT);
-    UpdateWindow(p_modern_window);
+    ShowWindow(modern_window, SW_SHOWDEFAULT);
+    UpdateWindow(modern_window);
 }
 
 auto WindowWinVulkan::swap_buffers() -> void {
@@ -13426,11 +13496,11 @@ auto WindowWinVulkan::swap_buffers() -> void {
 auto WindowWinVulkan::clear_display() -> void {
 }
 
-auto WindowWinVulkan::handle_event(CEvent& event) -> bool {
-    // Create message struct object.
+auto WindowWinVulkan::handle_event(Event& event) -> bool {
+    // Create a message struct object.
     MSG msg;
 
-    SetWindowLongPtrW(p_modern_window, GWLP_USERDATA, (LONG_PTR)&event);
+    SetWindowLongPtrW(modern_window, GWLP_USERDATA, (LONG_PTR)&event);
     while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
@@ -13439,22 +13509,22 @@ auto WindowWinVulkan::handle_event(CEvent& event) -> bool {
         // over from TranslateMessage, or WM_KEYUP for an unhandled key). The
         // stale value would otherwise be re-pushed by ControlInput on the next
         // message/frame and toggle the cursor a second time.
-        event.set_event(EEvents::EDefault);
+        event.set_event(EventKind::Default);
     }
     return false;
 }
 
 auto WindowWinVulkan::close() -> void {
-    DestroyWindow(p_modern_window);
+    DestroyWindow(modern_window);
     PostQuitMessage(0);
 }
 
 auto WindowWinVulkan::get_classic_window_hwnd() -> HWND {
-    return p_classic_window;
+    return classic_window;
 }
 
 auto WindowWinVulkan::get_modern_window_hwnd() -> HWND {
-    return p_modern_window;
+    return modern_window;
 }
 
 auto WindowWinVulkan::cursor_lock(
@@ -13464,19 +13534,19 @@ auto WindowWinVulkan::cursor_lock(
     i32* out_offset_y
 ) -> void {
     RECT client_rect;
-    GetClientRect(p_modern_window, &client_rect);
+    GetClientRect(modern_window, &client_rect);
     const auto center_x = client_rect.right / 2;
     const auto center_y = client_rect.bottom / 2;
     POINT point_position {center_x, center_y};
-    ClientToScreen(p_modern_window, &point_position);
-    // Solve a problem with endlessly growing numbers in the start game run.
+    ClientToScreen(modern_window, &point_position);
+    // Solve a problem with endlessly growing numbers on the first game run.
     if (pointer_x > client_rect.right || pointer_x < 0
         || pointer_y > client_rect.bottom || pointer_y < 0) {
         return;
     }
-    i32 i_offset_x = 0, i_offset_y = 0;
-    i_offset_x = pointer_x - previous_x;
-    i_offset_y = pointer_y - previous_y;
+    i32 offset_x = 0, offset_y = 0;
+    offset_x = pointer_x - previous_x;
+    offset_y = pointer_y - previous_y;
     previous_x = pointer_x;
     previous_y = pointer_y;
 
@@ -13489,11 +13559,11 @@ auto WindowWinVulkan::cursor_lock(
     // refocus, stale sample after the warp, and the first sample after the
     // inventory closes - the cursor was free while the inventory was open).
     // Discard the sample, just re-warp to the center.
-    if (i_offset_x > 250 || i_offset_x < -250 || i_offset_y > 250
-        || i_offset_y < -250) {
+    if (offset_x > 250 || offset_x < -250 || offset_y > 250
+        || offset_y < -250) {
     } else {
-        *out_offset_x += i_offset_x;
-        *out_offset_y -= i_offset_y;
+        *out_offset_x += offset_x;
+        *out_offset_y -= offset_y;
     }
     // Pitch is limited by angle in Engine::SetViewMatrix(), so this offset may
     // accumulate freely; no pixel clamp here (resolution-independent).
@@ -13503,12 +13573,12 @@ auto WindowWinVulkan::cursor_lock(
     // warp (matches what the next WM_MOUSEMOVE will report).
     POINT actual_position;
     GetCursorPos(&actual_position);
-    ScreenToClient(p_modern_window, &actual_position);
+    ScreenToClient(modern_window, &actual_position);
     previous_x = actual_position.x;
     previous_y = actual_position.y;
 }
 
-// Callback method for events handling.
+// Callback method for handling events.
 auto WindowWinVulkan::main_wnd_proc(
     HWND hwnd,
     UINT msg,
@@ -13516,11 +13586,11 @@ auto WindowWinVulkan::main_wnd_proc(
     LPARAM l_param
 ) -> LRESULT {
     ImGui_ImplWin32_WndProcHandler(hwnd, msg, w_param, l_param);
-    CEvent* p_event = (CEvent*)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
+    Event* event = (Event*)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
 
-    if (msg == WM_KEYDOWN && w_param == VK_ESCAPE && p_event != nullptr
+    if (msg == WM_KEYDOWN && w_param == VK_ESCAPE && event != nullptr
         && (l_param & (1 << 30)) == 0) {
-        p_event->set_event(EEvents::ECursorReleased);
+        event->set_event(EventKind::CursorReleased);
         return 0;
     }
 
@@ -13538,17 +13608,17 @@ auto WindowWinVulkan::main_wnd_proc(
         }
     }
 
-    if (p_event == nullptr) {
+    if (event == nullptr) {
         return DefWindowProcA(hwnd, msg, w_param, l_param);
     }
-    i32 i_mouse_position_x, i_mouse_position_y;
+    i32 mouse_position_x, mouse_position_y;
     switch (msg) {
         case WM_CREATE:
             return 0;
         case WM_SIZE:
             return 0;
         case WM_LBUTTONDOWN:
-            p_event->set_event(EEvents::EMouseLeftButton);
+            event->set_event(EventKind::MouseLeftButton);
             return 0;
 
         case WM_SETFOCUS:
@@ -13562,15 +13632,15 @@ auto WindowWinVulkan::main_wnd_proc(
             }
             return 0;
         case WM_LBUTTONUP:
-            p_event->set_event(EEvents::EMouseLeftButtonRelease);
-            p_event->is_left_mouse_button_released = true;
+            event->set_event(EventKind::MouseLeftButtonRelease);
+            event->is_left_mouse_button_released = true;
             return 0;
         case WM_MOUSEMOVE:
-            i_mouse_position_x = GET_X_LPARAM(l_param);
-            i_mouse_position_y = GET_Y_LPARAM(l_param);
-            p_event->set_event(EEvents::EMousePointerPosition);
-            p_event->mouse_pointer_position.position_x = i_mouse_position_x;
-            p_event->mouse_pointer_position.position_y = i_mouse_position_y;
+            mouse_position_x = GET_X_LPARAM(l_param);
+            mouse_position_y = GET_Y_LPARAM(l_param);
+            event->set_event(EventKind::MouseMoved);
+            event->mouse_pointer_position.position_x = mouse_position_x;
+            event->mouse_pointer_position.position_y = mouse_position_y;
             return 0;
         case WM_KEYDOWN:
             switch (w_param) {
@@ -13581,22 +13651,22 @@ auto WindowWinVulkan::main_wnd_proc(
                 case VK_ESCAPE:
                     break;
                 case VK_W:
-                    p_event->set_event(EEvents::EMoveForward);
+                    event->set_event(EventKind::MoveForward);
                     break;
                 case VK_S:
-                    p_event->set_event(EEvents::EMoveBackward);
+                    event->set_event(EventKind::MoveBackward);
                     break;
                 case VK_A:
-                    p_event->set_event(EEvents::EMoveLeft);
+                    event->set_event(EventKind::MoveLeft);
                     break;
                 case VK_D:
-                    p_event->set_event(EEvents::EMoveRight);
+                    event->set_event(EventKind::MoveRight);
                     break;
                 case VK_SPACE:
-                    p_event->set_event(EEvents::EJump);
+                    event->set_event(EventKind::Jump);
                     break;
                 case VK_I:
-                    p_event->set_event(EEvents::EInventory);
+                    event->set_event(EventKind::InventoryToggle);
                     break;
                 case VK_UP:
                     break;
@@ -13623,22 +13693,22 @@ auto WindowWinVulkan::main_wnd_proc(
                 case VK_RIGHT:
                     break;
                 case VK_W:
-                    p_event->set_event(EEvents::EKeyreleaseW);
+                    event->set_event(EventKind::KeyReleaseW);
                     break;
                 case VK_S:
-                    p_event->set_event(EEvents::EKeyreleaseS);
+                    event->set_event(EventKind::KeyReleaseS);
                     break;
                 case VK_A:
-                    p_event->set_event(EEvents::EKeyreleaseA);
+                    event->set_event(EventKind::KeyReleaseA);
                     break;
                 case VK_D:
-                    p_event->set_event(EEvents::EKeyreleaseD);
+                    event->set_event(EventKind::KeyReleaseD);
                     break;
                 case VK_SPACE:
-                    p_event->set_event(EEvents::EKeyreleaseJump);
+                    event->set_event(EventKind::KeyReleaseJump);
                     break;
                 case VK_I:
-                    p_event->set_event(EEvents::EInventoryRelease);
+                    event->set_event(EventKind::InventoryRelease);
                     break;
                 case VK_UP:
                     break;
@@ -13659,7 +13729,7 @@ auto WindowWinVulkan::main_wnd_proc(
             }
             break;
         case WM_CLOSE:
-            p_event->set_event(EEvents::EGameLoopKill);
+            event->set_event(EventKind::GameLoopKill);
             return 0;
         case WM_DESTROY:
             PostQuitMessage(0);
@@ -13673,62 +13743,25 @@ auto WindowWinVulkan::main_wnd_proc(
 } // namespace glvm
 #endif // _WIN32
 
-const auto K_VERTEX_SIZE = 9;
-constexpr auto K_WIDTH_OFFSET = 1.0f / 3;
-
-f32 A_VERTICES[K_VERTEX_SIZE] = {
-    -0.5f,
-    -0.5f,
-    0.5f, // Left vertex.
-    -0.5f,
-    0.5f,
-    0.0f, // Right vertex.
-    0.0f,
-    0.0f,
-    0.0f // Upper vertex.
-};
-
-f32 A_VERTICES2[K_VERTEX_SIZE] = {
-    0.5f,
-    -0.5f,
-    // Left vertex.
-    -0.5f,
-    0.5f,
-    0.5f,
-    // Right vertex.
-    0.5f,
-    0.0f,
-    0.0f,
-    // Upper vertex.
-    -1.0f
-};
-
-f32 A_VERTICES_STATIC_OBJECT[] = {
-    // Coordinates.
-    0.5f,  0.5f,  0.0f, 1.0f, 1.0f, // Up right vertex.
-    0.5f,  -0.5f, 0.0f, 1.0f, 0.0f, // Bottom right vertex.
-    -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, // Bottom left vertex.
-    -0.5f, 0.5f,  0.0f, 0.0f, 1.0f, // Up left vertex.
-    0.5f,  0.5f,  0.0f, 1.0f, 1.0f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f
-};
+constexpr auto WIDTH_OFFSET = 1.0f / 3;
 
 f32 VERTICES[] = {
     // Coordinates.
-    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 1.0f, // Up right vertex.
-    0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET, 0.75f, // Bottom right vertex.
-    -0.5f, -0.5f, 0.0f, 0.0f,           0.75f, // Bottom left vertex.
-    -0.5f, 0.5f,  0.0f, 0.0f,           1.0f, // Up left vertex.
-    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 1.0f,  -0.5f, -0.5f, 0.0f, 0.0f, 0.75f
+    0.5f,  0.5f,  0.0f, WIDTH_OFFSET, 1.0f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, WIDTH_OFFSET, 0.75f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, 0.0f,         0.75f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, 0.0f,         1.0f, // Up left vertex.
+    0.5f,  0.5f,  0.0f, WIDTH_OFFSET, 1.0f,  -0.5f, -0.5f, 0.0f, 0.0f, 0.75f
 };
 
 f32 VERTICES2[] = {
     // Coordinates.
-    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET * 2, 1.0f, // Up right vertex.
-    0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET * 2, 0.75f, // Bottom right vertex.
-    -0.5f, -0.5f, 0.0f, K_WIDTH_OFFSET,     0.75f, // Bottom left vertex.
-    -0.5f, 0.5f,  0.0f, K_WIDTH_OFFSET,     1.0f, // Up left vertex.
-    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET * 2, 1.0f,
-    -0.5f, -0.5f, 0.0f, K_WIDTH_OFFSET,     0.75f
+    0.5f,  0.5f,  0.0f, WIDTH_OFFSET * 2, 1.0f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, WIDTH_OFFSET * 2, 0.75f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, WIDTH_OFFSET,     0.75f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, WIDTH_OFFSET,     1.0f, // Up left vertex.
+    0.5f,  0.5f,  0.0f, WIDTH_OFFSET * 2, 1.0f,
+    -0.5f, -0.5f, 0.0f, WIDTH_OFFSET,     0.75f
 };
 
 f32 VERTICES3[] = {
@@ -13746,12 +13779,12 @@ f32 VERTICES3[] = {
     -0.5f,
     -0.5f,
     0.0f,
-    K_WIDTH_OFFSET * 2,
+    WIDTH_OFFSET * 2,
     0.75f, // Bottom left vertex.
     -0.5f,
     0.5f,
     0.0f,
-    K_WIDTH_OFFSET * 2,
+    WIDTH_OFFSET * 2,
     1.0f, // Up left vertex.
     0.5f,
     0.5f,
@@ -13761,27 +13794,27 @@ f32 VERTICES3[] = {
     -0.5f,
     -0.5f,
     0.0f,
-    K_WIDTH_OFFSET * 2,
+    WIDTH_OFFSET * 2,
     0.75f
 };
 
 f32 VERTICES4[] = {
     // Coordinates.
-    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 0.75f, // Up right vertex.
-    0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET, 0.5f, // Bottom right vertex.
-    -0.5f, -0.5f, 0.0f, 0.0f,           0.5f, // Bottom left vertex.
-    -0.5f, 0.5f,  0.0f, 0.0f,           0.75f, // Up left vertex.
-    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 0.75f, -0.5f, -0.5f, 0.0f, 0.0f, 0.5f
+    0.5f,  0.5f,  0.0f, WIDTH_OFFSET, 0.75f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, WIDTH_OFFSET, 0.5f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, 0.0f,         0.5f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, 0.0f,         0.75f, // Up left vertex.
+    0.5f,  0.5f,  0.0f, WIDTH_OFFSET, 0.75f, -0.5f, -0.5f, 0.0f, 0.0f, 0.5f
 };
 
 f32 VERTICES5[] = {
     // Coordinates.
-    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET * 2, 0.75f, // Up right vertex.
-    0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET * 2, 0.5f, // Bottom right vertex.
-    -0.5f, -0.5f, 0.0f, K_WIDTH_OFFSET,     0.5f, // Bottom left vertex.
-    -0.5f, 0.5f,  0.0f, K_WIDTH_OFFSET,     0.75f, // Up left vertex.
-    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET * 2, 0.75f,
-    -0.5f, -0.5f, 0.0f, K_WIDTH_OFFSET,     0.5f
+    0.5f,  0.5f,  0.0f, WIDTH_OFFSET * 2, 0.75f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, WIDTH_OFFSET * 2, 0.5f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, WIDTH_OFFSET,     0.5f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, WIDTH_OFFSET,     0.75f, // Up left vertex.
+    0.5f,  0.5f,  0.0f, WIDTH_OFFSET * 2, 0.75f,
+    -0.5f, -0.5f, 0.0f, WIDTH_OFFSET,     0.5f
 };
 
 f32 VERTICES6[] = {
@@ -13799,12 +13832,12 @@ f32 VERTICES6[] = {
     -0.5f,
     -0.5f,
     0.0f,
-    K_WIDTH_OFFSET * 2,
+    WIDTH_OFFSET * 2,
     0.5f, // Bottom left vertex.
     -0.5f,
     0.5f,
     0.0f,
-    K_WIDTH_OFFSET * 2,
+    WIDTH_OFFSET * 2,
     0.75f, // Up left vertex.
     0.5f,
     0.5f,
@@ -13814,27 +13847,27 @@ f32 VERTICES6[] = {
     -0.5f,
     -0.5f,
     0.0f,
-    K_WIDTH_OFFSET * 2,
+    WIDTH_OFFSET * 2,
     0.5f
 };
 
 f32 VERTICES7[] = {
     // Coordinates.
-    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 0.5f, // Up right vertex.
-    0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET, 0.25f, // Bottom right vertex.
-    -0.5f, -0.5f, 0.0f, 0.0f,           0.25f, // Bottom left vertex.
-    -0.5f, 0.5f,  0.0f, 0.0f,           0.5f, // Up left vertex.
-    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 0.5f,  -0.5f, -0.5f, 0.0f, 0.0f, 0.25f
+    0.5f,  0.5f,  0.0f, WIDTH_OFFSET, 0.5f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, WIDTH_OFFSET, 0.25f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, 0.0f,         0.25f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, 0.0f,         0.5f, // Up left vertex.
+    0.5f,  0.5f,  0.0f, WIDTH_OFFSET, 0.5f,  -0.5f, -0.5f, 0.0f, 0.0f, 0.25f
 };
 
 f32 VERTICES8[] = {
     // Coordinates.
-    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET * 2, 0.5f, // Up right vertex.
-    0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET * 2, 0.25f, // Bottom right vertex.
-    -0.5f, -0.5f, 0.0f, K_WIDTH_OFFSET,     0.25f, // Bottom left vertex.
-    -0.5f, 0.5f,  0.0f, K_WIDTH_OFFSET,     0.5f, // Up left vertex.
-    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET * 2, 0.5f,
-    -0.5f, -0.5f, 0.0f, K_WIDTH_OFFSET,     0.25f
+    0.5f,  0.5f,  0.0f, WIDTH_OFFSET * 2, 0.5f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, WIDTH_OFFSET * 2, 0.25f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, WIDTH_OFFSET,     0.25f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, WIDTH_OFFSET,     0.5f, // Up left vertex.
+    0.5f,  0.5f,  0.0f, WIDTH_OFFSET * 2, 0.5f,
+    -0.5f, -0.5f, 0.0f, WIDTH_OFFSET,     0.25f
 };
 
 f32 VERTICES9[] = {
@@ -13852,12 +13885,12 @@ f32 VERTICES9[] = {
     -0.5f,
     -0.5f,
     0.0f,
-    K_WIDTH_OFFSET * 2,
+    WIDTH_OFFSET * 2,
     0.25f, // Bottom left vertex.
     -0.5f,
     0.5f,
     0.0f,
-    K_WIDTH_OFFSET * 2,
+    WIDTH_OFFSET * 2,
     0.5f, // Up left vertex.
     0.5f,
     0.5f,
@@ -13867,27 +13900,27 @@ f32 VERTICES9[] = {
     -0.5f,
     -0.5f,
     0.0f,
-    K_WIDTH_OFFSET * 2,
+    WIDTH_OFFSET * 2,
     0.25f
 };
 
 f32 VERTICES10[] = {
     // Coordinates.
-    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 0.25f, // Up right vertex.
-    0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET, 0.0f, // Bottom right vertex.
-    -0.5f, -0.5f, 0.0f, 0.0f,           0.0f, // Bottom left vertex.
-    -0.5f, 0.5f,  0.0f, 0.0f,           0.25f, // Up left vertex.
-    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET, 0.25f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f
+    0.5f,  0.5f,  0.0f, WIDTH_OFFSET, 0.25f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, WIDTH_OFFSET, 0.0f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, 0.0f,         0.0f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, 0.0f,         0.25f, // Up left vertex.
+    0.5f,  0.5f,  0.0f, WIDTH_OFFSET, 0.25f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f
 };
 
 f32 VERTICES11[] = {
     // Coordinates.
-    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET * 2, 0.25f, // Up right vertex.
-    0.5f,  -0.5f, 0.0f, K_WIDTH_OFFSET * 2, 0.0f, // Bottom right vertex.
-    -0.5f, -0.5f, 0.0f, K_WIDTH_OFFSET,     0.0f, // Bottom left vertex.
-    -0.5f, 0.5f,  0.0f, K_WIDTH_OFFSET,     0.25f, // Up left vertex.
-    0.5f,  0.5f,  0.0f, K_WIDTH_OFFSET * 2, 0.25f,
-    -0.5f, -0.5f, 0.0f, K_WIDTH_OFFSET,     0.0f
+    0.5f,  0.5f,  0.0f, WIDTH_OFFSET * 2, 0.25f, // Up right vertex.
+    0.5f,  -0.5f, 0.0f, WIDTH_OFFSET * 2, 0.0f, // Bottom right vertex.
+    -0.5f, -0.5f, 0.0f, WIDTH_OFFSET,     0.0f, // Bottom left vertex.
+    -0.5f, 0.5f,  0.0f, WIDTH_OFFSET,     0.25f, // Up left vertex.
+    0.5f,  0.5f,  0.0f, WIDTH_OFFSET * 2, 0.25f,
+    -0.5f, -0.5f, 0.0f, WIDTH_OFFSET,     0.0f
 };
 
 f32 VERTICES12[] = {
@@ -13905,12 +13938,12 @@ f32 VERTICES12[] = {
     -0.5f,
     -0.5f,
     0.0f,
-    K_WIDTH_OFFSET * 2,
+    WIDTH_OFFSET * 2,
     0.0f, // Bottom left vertex.
     -0.5f,
     0.5f,
     0.0f,
-    K_WIDTH_OFFSET * 2,
+    WIDTH_OFFSET * 2,
     0.25f, // Up left vertex.
     0.5f,
     0.5f,
@@ -13920,7 +13953,7 @@ f32 VERTICES12[] = {
     -0.5f,
     -0.5f,
     0.0f,
-    K_WIDTH_OFFSET * 2,
+    WIDTH_OFFSET * 2,
     0.0f
 };
 
@@ -13931,27 +13964,27 @@ static auto equals_c_str(const Vec<char>& v, const char* s) -> bool {
     return strcmp(v.data(), s) == 0;
 }
 
-CWaveFrontObjParser::CWaveFrontObjParser() {
+WavefrontObjParser::WavefrontObjParser() {
 }
 
-auto CWaveFrontObjParser::get_coordinate_vertices() const
-    -> const Vec<SVertex>& {
+auto WavefrontObjParser::get_coordinate_vertices() const
+    -> const Vec<Position>& {
     return coordinate_vertices;
 }
 
-auto CWaveFrontObjParser::get_texture_vertices() const -> const Vec<SVertex>& {
+auto WavefrontObjParser::get_texture_vertices() const -> const Vec<Position>& {
     return texture_vertices;
 }
 
-auto CWaveFrontObjParser::get_normals() const -> const Vec<SVertex>& {
+auto WavefrontObjParser::get_normals() const -> const Vec<Position>& {
     return normals;
 }
 
-auto CWaveFrontObjParser::get_faces() const -> const Vec<SFace>& {
+auto WavefrontObjParser::get_faces() const -> const Vec<Face>& {
     return faces;
 }
 
-auto CWaveFrontObjParser::read_file(const char* file_path) -> void {
+auto WavefrontObjParser::read_file(const char* file_path) -> void {
     std::ifstream wavefront_obj_file_input_stream;
     std::stringstream wavefront_obj_file_output_stream;
 
@@ -13960,38 +13993,38 @@ auto CWaveFrontObjParser::read_file(const char* file_path) -> void {
         wavefront_obj_file_output_stream
             << wavefront_obj_file_input_stream.rdbuf();
         wavefront_obj_file_input_stream.close();
-        s_wavefront_obj_file_data = wavefront_obj_file_output_stream.str();
+        wavefront_obj_file_data = wavefront_obj_file_output_stream.str();
     } else {
         return;
     }
 
-    p_wavefront_obj_file_data = s_wavefront_obj_file_data.c_str();
+    wavefront_obj_file_data_ptr = wavefront_obj_file_data.c_str();
 }
 
-auto CWaveFrontObjParser::parse_file() -> void {
-    while (p_wavefront_obj_file_data[ui_counter] != '\0') {
+auto WavefrontObjParser::parse_file() -> void {
+    while (wavefront_obj_file_data_ptr[cursor] != '\0') {
         Vec<Vec<char>> line =
-            split(p_wavefront_obj_file_data, ' ', '\n', ui_counter);
+            split(wavefront_obj_file_data_ptr, ' ', '\n', cursor);
         if (equals_c_str(line[0], "v")) {
-            SVertex vertex = parse_vertices(line);
+            Position vertex = parse_vertices(line);
             coordinate_vertices.push_back(vertex);
         }
         if (equals_c_str(line[0], "vt")) {
-            SVertex vertex = parse_vertices(line);
+            Position vertex = parse_vertices(line);
             texture_vertices.push_back(vertex);
         }
         if (equals_c_str(line[0], "vn")) {
-            SVertex vertex = parse_vertices(line);
+            Position vertex = parse_vertices(line);
             normals.push_back(vertex);
         }
         if (equals_c_str(line[0], "f")) {
-            SFace face = parse_faces(line);
+            Face face = parse_faces(line);
             faces.push_back(face);
         }
     }
 }
 
-auto CWaveFrontObjParser::split(
+auto WavefrontObjParser::split(
     const char* data,
     const char separator,
     const char exit_symbol,
@@ -14023,21 +14056,21 @@ auto CWaveFrontObjParser::split(
     }
 }
 
-auto CWaveFrontObjParser::parse_vertices(Vec<Vec<char>> words) -> SVertex {
-    SVertex vertex;
+auto WavefrontObjParser::parse_vertices(Vec<Vec<char>> words) -> Position {
+    Position vertex;
     u32 ui_vertex_index = 0;
 
     u32 ui_words_container_size = words.size();
     for (u32 i = 1; i < ui_words_container_size; ++i) {
-        f32 float_number = parse_floating(words[i]);
+        f32 float_number = parse_float(words[i]);
         vertex[ui_vertex_index++] = float_number;
     }
 
     return vertex;
 }
 
-auto CWaveFrontObjParser::parse_faces(Vec<Vec<char>> words) -> SFace {
-    SFace face;
+auto WavefrontObjParser::parse_faces(Vec<Vec<char>> words) -> Face {
+    Face face;
     Vec<Vec<char>> words_inner_container;
     Vec<char> word;
 
@@ -14049,22 +14082,22 @@ auto CWaveFrontObjParser::parse_faces(Vec<Vec<char>> words) -> SFace {
 
         for (u32 j = 0; j < words_inner_container.size(); ++j) {
             word = words_inner_container[j];
-            i32 i_value = parse_integer(word);
+            i32 value = parse_integer(word);
 
-            face[j].push_back(i_value);
+            face[j].push_back(value);
         }
     }
     return face;
 }
 
-auto CWaveFrontObjParser::parse_integer(Vec<char> digits) -> i32 {
+auto WavefrontObjParser::parse_integer(Vec<char> digits) -> i32 {
     Vec<i32> base_container;
 
     for (u32 i = 0; i < digits.size() - 1; ++i) {
         base_container.push_back(digits[i] - 48);
     }
 
-    i32 i_result = 0;
+    i32 result = 0;
     bool negate_flag = false;
 
     u32 base_container_size = base_container.size();
@@ -14075,14 +14108,14 @@ auto CWaveFrontObjParser::parse_integer(Vec<char> digits) -> i32 {
             continue;
         }
 
-        i_result +=
+        result +=
             base_container[i] * std::pow(10, (base_container_size - 1) - i);
     }
 
-    return i_result;
+    return result;
 }
 
-auto CWaveFrontObjParser::parse_floating(Vec<char> digits) -> f32 {
+auto WavefrontObjParser::parse_float(Vec<char> digits) -> f32 {
     Vec<i32> base_container;
 
     for (u32 i = 0; i < digits.size() - 1; ++i) {
@@ -14168,13 +14201,13 @@ auto xdg_surface_configure(
 
 auto new_frame_callback(
     void* data,
-    struct wl_callback* frame_call_back,
+    struct wl_callback* frame_callback,
     u32 callback_data
 ) -> void {
-    wl_callback_destroy(frame_call_back);
-    frame_call_back = wl_surface_frame(wayland_window.wl_surface);
+    wl_callback_destroy(frame_callback);
+    frame_callback = wl_surface_frame(wayland_window.wl_surface);
     wl_callback_add_listener(
-        frame_call_back,
+        frame_callback,
         &wayland_window.callback_listener,
         data
     );
@@ -14214,9 +14247,9 @@ auto keyboard_leave(
     wayland_window_data->is_focused = false;
 }
 
-auto push_event(EEvents event_type) -> void {
-    G_E_EVENT.set_event(event_type);
-    INPUT_STACK.control_input(G_E_EVENT);
+auto push_event(EventKind event_type) -> void {
+    global_event.set_event(event_type);
+    global_input_stack.control_input(global_event);
 }
 
 auto keyboard_key(
@@ -14229,46 +14262,46 @@ auto keyboard_key(
 ) -> void {
     if (state == WL_KEYBOARD_KEY_STATE_PRESSED) {
         if (key == 1) {
-            push_event(EEvents::EGameLoopKill);
+            push_event(EventKind::GameLoopKill);
         }
         if (key == 17) {
-            push_event(EEvents::EMoveForward);
+            push_event(EventKind::MoveForward);
         }
         if (key == 31) {
-            push_event(EEvents::EMoveBackward);
+            push_event(EventKind::MoveBackward);
         }
         if (key == 30) {
-            push_event(EEvents::EMoveLeft);
+            push_event(EventKind::MoveLeft);
         }
         if (key == 32) {
-            push_event(EEvents::EMoveRight);
+            push_event(EventKind::MoveRight);
         }
         if (key == 57) {
-            push_event(EEvents::EJump);
+            push_event(EventKind::Jump);
         }
         if (key == 23) {
-            push_event(EEvents::EInventory);
+            push_event(EventKind::InventoryToggle);
         }
     }
 
     if (state == WL_KEYBOARD_KEY_STATE_RELEASED) {
         if (key == 17) {
-            push_event(EEvents::EKeyreleaseW);
+            push_event(EventKind::KeyReleaseW);
         }
         if (key == 31) {
-            push_event(EEvents::EKeyreleaseS);
+            push_event(EventKind::KeyReleaseS);
         }
         if (key == 30) {
-            push_event(EEvents::EKeyreleaseA);
+            push_event(EventKind::KeyReleaseA);
         }
         if (key == 32) {
-            push_event(EEvents::EKeyreleaseD);
+            push_event(EventKind::KeyReleaseD);
         }
         if (key == 57) {
-            push_event(EEvents::EKeyreleaseJump);
+            push_event(EventKind::KeyReleaseJump);
         }
         if (key == 23) {
-            push_event(EEvents::EInventoryRelease);
+            push_event(EventKind::InventoryRelease);
         }
     }
 }
@@ -14337,15 +14370,15 @@ auto pointer_button(
     u32 state
 ) -> void {
     if (state == WL_POINTER_BUTTON_STATE_PRESSED && button == 272) {
-        push_event(EEvents::EMouseLeftButton);
+        push_event(EventKind::MouseLeftButton);
     }
     if (state == WL_POINTER_BUTTON_STATE_RELEASED && button == 272) {
-        push_event(EEvents::EMouseLeftButtonRelease);
-        G_E_EVENT.is_left_mouse_button_released = true;
+        push_event(EventKind::MouseLeftButtonRelease);
+        global_event.is_left_mouse_button_released = true;
     }
     // Hide the cursor on first opportunity.
-    if (!wayland_window.hideAndLockPointer) {
-        wayland_window.hideAndLockPointer = true;
+    if (!wayland_window.hide_and_lock_pointer) {
+        wayland_window.hide_and_lock_pointer = true;
         struct wl_buffer* transparent =
             wayland_window.create_transparent_cursor(
                 wayland_window.pointer_shared_memory
@@ -14398,8 +14431,8 @@ auto handle_relative_motion(
     wl_fixed_t dx_unaccel,
     wl_fixed_t dy_unaccel
 ) -> void {
-    X_POINTER = wl_fixed_to_int(dx);
-    Y_POINTER = wl_fixed_to_int(dy);
+    global_pointer_x = wl_fixed_to_int(dx);
+    global_pointer_y = wl_fixed_to_int(dy);
 }
 
 auto seat_capabilities(void* data, struct wl_seat* seat, u32 capabilities)
@@ -14512,7 +14545,7 @@ auto registry_global(
             (wl_seat*)wl_registry_bind(registry, name, &wl_seat_interface, 1);
         wl_seat_add_listener(
             wayland_window.seat,
-            &wayland_window.seat_lintener,
+            &wayland_window.seat_listener,
             data
         );
     } else if (!strcmp(interface, wl_output_interface.name)) {
@@ -14526,7 +14559,7 @@ auto registry_global_remove(void* data, struct wl_registry* registry, u32 name)
     -> void {
 }
 
-auto alocate_shared_memory(u64 size) -> i32 {
+auto allocate_shared_memory(u64 size) -> i32 {
     char name[8];
     name[0] = '/';
     name[7] = 0;
@@ -14554,7 +14587,7 @@ auto xdg_toplevel_configure(
     struct xdg_toplevel* xdg_toplevel,
     i32 new_width,
     i32 new_height,
-    struct wl_array* atate
+    struct wl_array* state
 ) -> void {
     if (!new_width && !new_height) {
         return;
@@ -14606,21 +14639,21 @@ auto WindowWaylandVulkan::init() -> void {
         &xdg_surface_listener,
         (void*)(&wayland_window)
     );
-    xdg_topLevel = xdg_surface_get_toplevel(xdg_surface);
+    xdg_toplevel = xdg_surface_get_toplevel(xdg_surface);
     xdg_toplevel_add_listener(
-        xdg_topLevel,
+        xdg_toplevel,
         &xdg_toplevel_listener,
         (void*)(&wayland_window)
     );
-    xdg_toplevel_set_title(xdg_topLevel, "wayland glvm client");
+    xdg_toplevel_set_title(xdg_toplevel, "wayland glvm client");
     wl_surface_commit(wl_surface);
 }
 
-auto WindowWaylandVulkan::handle_event(CEvent& event) -> bool {
-    event.mouse_pointer_position.position_x = X_POINTER;
-    event.mouse_pointer_position.position_y = Y_POINTER;
-    X_POINTER = 0;
-    Y_POINTER = 0;
+auto WindowWaylandVulkan::handle_event(Event& event) -> bool {
+    event.mouse_pointer_position.position_x = global_pointer_x;
+    event.mouse_pointer_position.position_y = global_pointer_y;
+    global_pointer_x = 0;
+    global_pointer_y = 0;
     wl_display_dispatch(display);
     return close_xdg_toplevel != 0;
 }
@@ -14629,7 +14662,7 @@ auto WindowWaylandVulkan::handle_event(CEvent& event) -> bool {
 auto WindowWaylandVulkan::create_transparent_cursor(struct wl_shm* shm)
     -> struct wl_buffer* {
     i32 size = 4 * 64 * 64; // 64x64 RGBA cursor (common size).
-    i32 file_descriptor = alocate_shared_memory(size);
+    i32 file_descriptor = allocate_shared_memory(size);
     void* data =
         mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, file_descriptor, 0);
 
@@ -14687,7 +14720,7 @@ auto WindowWaylandVulkan::close() -> void {
     if (buffer) {
         wl_buffer_destroy(buffer);
     }
-    xdg_toplevel_destroy(xdg_topLevel);
+    xdg_toplevel_destroy(xdg_toplevel);
     xdg_surface_destroy(xdg_surface);
     wl_surface_destroy(wl_surface);
     wl_display_disconnect(display);
@@ -14733,7 +14766,7 @@ auto initialize_wayland_window() -> WindowWaylandVulkan* {
         .axis_value120 = nullptr,
         .axis_relative_direction = nullptr
     };
-    wayland_window.seat_lintener = {
+    wayland_window.seat_listener = {
         .capabilities = seat_capabilities,
         .name = seat_name
     };
@@ -14847,7 +14880,7 @@ auto WindowXVulkan::swap_buffers() -> void {
 auto WindowXVulkan::clear_display() -> void {
 }
 
-auto WindowXVulkan::handle_event(CEvent& event) -> bool {
+auto WindowXVulkan::handle_event(Event& event) -> bool {
     XEvent x_event;
 
     while (XPending(display)) {
@@ -14860,7 +14893,7 @@ auto WindowXVulkan::handle_event(CEvent& event) -> bool {
             case MotionNotify:
                 motion = x_event.xmotion;
 
-                event.set_event(EEvents::EMousePointerPosition);
+                event.set_event(EventKind::MouseMoved);
                 event.mouse_pointer_position.position_x = motion.x;
                 event.mouse_pointer_position.position_y = motion.y;
                 [[fallthrough]];
@@ -14899,7 +14932,7 @@ auto WindowXVulkan::handle_event(CEvent& event) -> bool {
                 mouse_button = x_event.xbutton.button;
                 switch (mouse_button) {
                     case 1:
-                        event.set_event(EEvents::EMouseLeftButton);
+                        event.set_event(EventKind::MouseLeftButton);
                         break;
                 }
                 break;
@@ -14908,7 +14941,7 @@ auto WindowXVulkan::handle_event(CEvent& event) -> bool {
                 mouse_button = x_event.xbutton.button;
                 switch (mouse_button) {
                     case 1:
-                        event.set_event(EEvents::EMouseLeftButtonRelease);
+                        event.set_event(EventKind::MouseLeftButtonRelease);
                         event.is_left_mouse_button_released = true;
                         break;
                 }
@@ -14918,25 +14951,25 @@ auto WindowXVulkan::handle_event(CEvent& event) -> bool {
                 key = XLookupKeysym(&x_event.xkey, 0);
                 switch (key) {
                     case XKEY_I:
-                        event.set_event(EEvents::EInventory);
+                        event.set_event(EventKind::InventoryToggle);
                         break;
                     case XKEY_ESCAPE:
-                        event.set_event(EEvents::EGameLoopKill);
+                        event.set_event(EventKind::GameLoopKill);
                         break;
                     case XKEY_A:
-                        event.set_event(EEvents::EMoveLeft);
+                        event.set_event(EventKind::MoveLeft);
                         break;
                     case XKEY_D:
-                        event.set_event(EEvents::EMoveRight);
+                        event.set_event(EventKind::MoveRight);
                         break;
                     case XKEY_S:
-                        event.set_event(EEvents::EMoveBackward);
+                        event.set_event(EventKind::MoveBackward);
                         break;
                     case XKEY_W:
-                        event.set_event(EEvents::EMoveForward);
+                        event.set_event(EventKind::MoveForward);
                         break;
                     case XKEY_SPACE:
-                        event.set_event(EEvents::EJump);
+                        event.set_event(EventKind::Jump);
                         break;
                 }
                 break;
@@ -14957,28 +14990,28 @@ auto WindowXVulkan::handle_event(CEvent& event) -> bool {
                 key = XLookupKeysym(&x_event.xkey, 0);
                 switch (key) {
                     case XKEY_I:
-                        event.set_event(EEvents::EInventoryRelease);
+                        event.set_event(EventKind::InventoryRelease);
                         break;
                     case XKEY_A:
-                        event.set_event(EEvents::EKeyreleaseA);
+                        event.set_event(EventKind::KeyReleaseA);
                         break;
                     case XKEY_D:
-                        event.set_event(EEvents::EKeyreleaseD);
+                        event.set_event(EventKind::KeyReleaseD);
                         break;
                     case XKEY_S:
-                        event.set_event(EEvents::EKeyreleaseS);
+                        event.set_event(EventKind::KeyReleaseS);
                         break;
                     case XKEY_W:
-                        event.set_event(EEvents::EKeyreleaseW);
+                        event.set_event(EventKind::KeyReleaseW);
                         break;
                     case XKEY_SPACE:
-                        event.set_event(EEvents::EKeyreleaseJump);
+                        event.set_event(EventKind::KeyReleaseJump);
                         break;
                 }
                 break;
         }
 
-        INPUT_STACK.control_input(event);
+        global_input_stack.control_input(event);
     }
     return false;
 }
@@ -15157,7 +15190,7 @@ auto WindowXCBVulkan::swap_buffers() -> void {
 auto WindowXCBVulkan::clear_display() -> void {
 }
 
-auto WindowXCBVulkan::handle_event([[maybe_unused]] CEvent& event) -> bool {
+auto WindowXCBVulkan::handle_event([[maybe_unused]] Event& event) -> bool {
     xcb_generic_event_t* generic_event;
     bool next_generic_event_flag = false;
     while (next_generic_event_flag
@@ -15180,10 +15213,10 @@ auto WindowXCBVulkan::handle_event([[maybe_unused]] CEvent& event) -> bool {
                     (xcb_button_press_event_t*)generic_event;
                 switch (expose_event->detail) {
                     case 1:
-                        event.set_event(EEvents::EMouseLeftButton);
+                        event.set_event(EventKind::MouseLeftButton);
                         break;
                     case 3:
-                        event.set_event(EEvents::EMouseRightButton);
+                        event.set_event(EventKind::MouseRightButton);
                         break;
                     case 4:
                         break;
@@ -15198,11 +15231,11 @@ auto WindowXCBVulkan::handle_event([[maybe_unused]] CEvent& event) -> bool {
                     (xcb_button_release_event_t*)generic_event;
                 switch (expose_event->detail) {
                     case 1:
-                        event.set_event(EEvents::EMouseLeftButtonRelease);
+                        event.set_event(EventKind::MouseLeftButtonRelease);
                         event.is_left_mouse_button_released = true;
                         break;
                     case 3:
-                        event.set_event(EEvents::EMouseRightButtonRelease);
+                        event.set_event(EventKind::MouseRightButtonRelease);
                         break;
                 }
 
@@ -15212,7 +15245,7 @@ auto WindowXCBVulkan::handle_event([[maybe_unused]] CEvent& event) -> bool {
                 xcb_motion_notify_event_t* expose_event =
                     (xcb_motion_notify_event_t*)generic_event;
 
-                event.set_event(EEvents::EMousePointerPosition);
+                event.set_event(EventKind::MouseMoved);
                 event.mouse_pointer_position.position_x = expose_event->event_x;
                 event.mouse_pointer_position.position_y = expose_event->event_y;
                 [[fallthrough]];
@@ -15269,25 +15302,25 @@ auto WindowXCBVulkan::handle_event([[maybe_unused]] CEvent& event) -> bool {
                     xcb_key_press_lookup_keysym(key_symbols, expose_event, 0);
                 switch (keysym) {
                     case 65307:
-                        event.set_event(EEvents::EGameLoopKill);
+                        event.set_event(EventKind::GameLoopKill);
                         break;
                     case 105:
-                        event.set_event(EEvents::EInventory);
+                        event.set_event(EventKind::InventoryToggle);
                         break;
                     case 97:
-                        event.set_event(EEvents::EMoveLeft);
+                        event.set_event(EventKind::MoveLeft);
                         break;
                     case 100:
-                        event.set_event(EEvents::EMoveRight);
+                        event.set_event(EventKind::MoveRight);
                         break;
                     case 115:
-                        event.set_event(EEvents::EMoveBackward);
+                        event.set_event(EventKind::MoveBackward);
                         break;
                     case 119:
-                        event.set_event(EEvents::EMoveForward);
+                        event.set_event(EventKind::MoveForward);
                         break;
                     case 32:
-                        event.set_event(EEvents::EJump);
+                        event.set_event(EventKind::Jump);
                         break;
                 }
 
@@ -15331,22 +15364,22 @@ auto WindowXCBVulkan::handle_event([[maybe_unused]] CEvent& event) -> bool {
                 );
                 switch (release_keysym) {
                     case 105:
-                        event.set_event(EEvents::EInventoryRelease);
+                        event.set_event(EventKind::InventoryRelease);
                         break;
                     case 97:
-                        event.set_event(EEvents::EKeyreleaseA);
+                        event.set_event(EventKind::KeyReleaseA);
                         break;
                     case 100:
-                        event.set_event(EEvents::EKeyreleaseD);
+                        event.set_event(EventKind::KeyReleaseD);
                         break;
                     case 115:
-                        event.set_event(EEvents::EKeyreleaseS);
+                        event.set_event(EventKind::KeyReleaseS);
                         break;
                     case 119:
-                        event.set_event(EEvents::EKeyreleaseW);
+                        event.set_event(EventKind::KeyReleaseW);
                         break;
                     case 32:
-                        event.set_event(EEvents::EKeyreleaseJump);
+                        event.set_event(EventKind::KeyReleaseJump);
                         break;
                 }
 
@@ -15360,7 +15393,7 @@ auto WindowXCBVulkan::handle_event([[maybe_unused]] CEvent& event) -> bool {
         } else {
             free(generic_event);
         }
-        INPUT_STACK.control_input(event);
+        global_input_stack.control_input(event);
     }
     is_window_resize_read = false;
     return false;

@@ -2,5 +2,5 @@
 
 using namespace rusty::prelude;
 
-extern u8 crosshair_dat[];
-extern u32 crosshair_dat_len;
+extern u8 font_atlas_dat[];
+extern u32 font_atlas_dat_len;

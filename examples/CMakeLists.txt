@@ -1,13 +1,13 @@
 function(glvm_add_example NAME)
   add_executable(${NAME}
     "${CMAKE_CURRENT_SOURCE_DIR}/${NAME}.cpp"
-    assets/textures/chelik.cpp
+    assets/textures/human.cpp
     assets/textures/container2_specular.cpp
     assets/textures/container2.cpp
     assets/textures/crosshair.cpp
-    assets/textures/fontAtlas.cpp
+    assets/textures/font_atlas.cpp
     assets/textures/gray.cpp
-    assets/textures/inventorySlot.cpp
+    assets/textures/inventory_slot.cpp
     assets/textures/tileset.cpp
     assets/textures/witch.cpp
   )

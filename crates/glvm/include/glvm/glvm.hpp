@@ -109,7 +109,7 @@ constexpr auto MIPMAP_LEVEL = 0;
 constexpr auto NUMBER_OF_CREATING_TEXTURE_OBJECT_1 = 1;
 constexpr auto NUMBER_OF_CREATING_VAO_OBJECT_1 = 1;
 constexpr auto NUMBER_OF_CREATING_VBO_OBJECT_1 = 1;
-constexpr auto NUMBER_OF_DROWING_VERTEXES = 36;
+constexpr auto NUMBER_OF_DRAWING_VERTICES = 36;
 constexpr auto NUMBER_OF_MATRICES = 1;
 constexpr auto PI = std::numbers::pi_v<f32>;
 constexpr auto POINT_LIGHTS_NUMBER = 32;
@@ -329,7 +329,7 @@ public:
 namespace glvm {
 struct ColliderFlags {
     // 0001 = wallCollision; 0010 = groundCollision; 0100 = roofCollision; 1000
-    // = itemDrag.
+    // = itemDragging.
     i32 flags : 4;
 };
 }; // namespace glvm
@@ -362,8 +362,8 @@ struct Enemy {
 namespace glvm {
 struct Font {
     Vec<char> font_string;
-    f32 life_time;
-    bool removeble;
+    f32 lifetime;
+    bool removable;
 };
 } // namespace glvm
 
@@ -398,7 +398,7 @@ struct ItemSlotType {
 };
 
 struct Item {
-    // Array that contain entities with inventorySlotComponent.
+    // Array that contains entities with InventorySlotComponent.
     Vec<u32> occupied_slots;
     ItemSlotType item_slot_type;
     bool is_actor;
@@ -415,11 +415,7 @@ namespace glvm {
 struct Projectile {
 public:
     u32 owner;
-    bool b_collision_status = false;
-    f32 f_damage;
-    f32 f_speed;
-    f32 f_flying_range;
-    f32 damage;
+    bool collision_status = false;
 };
 } // namespace glvm
 
@@ -447,8 +443,7 @@ struct Mesh {
 };
 } // namespace glvm
 
-constexpr auto K_I_UINT_MAX = 4000000000;
-constexpr auto K_I_NULL = 0;
+constexpr auto INVALID_ENTITY_ID = 4000000000;
 constexpr i32 BOX_INDICES_FOR_INDEX_BUFFER[36] = {0, 1, 2, 3, 0, 2, 4, 0, 3,
                                                   7, 4, 3, 4, 5, 1, 0, 4, 1,
                                                   1, 5, 6, 2, 1, 6, 5, 4, 7,
@@ -456,41 +451,41 @@ constexpr i32 BOX_INDICES_FOR_INDEX_BUFFER[36] = {0, 1, 2, 3, 0, 2, 4, 0, 3,
 
 namespace glvm {
 
-struct CStack;
+struct EventStack;
 
-enum EEvents {
-    EDefault,
-    EKeyreleaseA,
-    EKeyreleaseD,
-    EKeyreleaseS,
-    EKeyreleaseW,
-    EKeyreleaseJump,
-    EGravityCollisionFlag,
-    ERender,
-    EAtack,
-    ESpawn,
-    EJump,
-    EInventory,
-    EInventoryRelease,
-    EMoveForward,
-    EMoveBackward,
-    EMoveLeft,
-    EMoveRight,
-    EMoveDiagonalFb,
-    EMoveDiagonalFl,
-    EMoveDiagonalLb,
-    EMoveDiagonalBr,
-    EMousePointerPosition,
-    EMouseLeftButtonRelease,
-    EMouseLeftButton,
-    EMouseRightButtonRelease,
-    EMouseRightButton,
-    ECursorReleased,
-    EGameLoopKill,
-    EEmpty,
+enum EventKind {
+    Default,
+    KeyReleaseA,
+    KeyReleaseD,
+    KeyReleaseS,
+    KeyReleaseW,
+    KeyReleaseJump,
+    GravityCollisionFlag,
+    Render,
+    AttackEvent,
+    Spawn,
+    Jump,
+    InventoryToggle,
+    InventoryRelease,
+    MoveForward,
+    MoveBackward,
+    MoveLeft,
+    MoveRight,
+    MoveDiagonalFb,
+    MoveDiagonalFl,
+    MoveDiagonalLb,
+    MoveDiagonalBr,
+    MouseMoved,
+    MouseLeftButtonRelease,
+    MouseLeftButton,
+    MouseRightButtonRelease,
+    MouseRightButton,
+    CursorReleased,
+    GameLoopKill,
+    Empty,
 };
 
-struct SMousePointerPosition {
+struct MousePointerPosition {
     i32 position_x;
     i32 position_y;
     i32 offset_x = 0;
@@ -499,21 +494,21 @@ struct SMousePointerPosition {
     f32 yaw;
 };
 
-struct CEvent {
+struct Event {
 private:
-    EEvents e_event;
-    EEvents next_event;
+    EventKind event;
+    EventKind next_event;
 
 public:
-    SMousePointerPosition mouse_pointer_position;
+    MousePointerPosition mouse_pointer_position;
     bool next_event_flag = false;
 
-    CEvent();
-    auto get_event() -> EEvents&;
-    auto set_event(EEvents new_event) -> void;
-    auto set_next_event(EEvents new_event) -> void;
-    auto get_next_event() -> EEvents;
-    auto set_last_event(CStack stack) -> void;
+    Event();
+    auto get_event() -> EventKind&;
+    auto set_event(EventKind new_event) -> void;
+    auto set_next_event(EventKind new_event) -> void;
+    auto get_next_event() -> EventKind;
+    auto set_last_event(EventStack stack) -> void;
 
     bool is_left_mouse_button_released = true;
 };
@@ -521,9 +516,9 @@ public:
 } // namespace glvm
 
 namespace glvm {
-struct IChrono {
+struct Chrono {
 public:
-    virtual ~IChrono() {
+    virtual ~Chrono() {
     }
 
     virtual auto init_frequency() -> f64 = 0;
@@ -559,13 +554,13 @@ struct Line {
     f32 iz;
 };
 
-struct Rline {
+struct RLine {
     f32 rx;
     f32 ry;
     f32 rz;
 };
 
-struct Iline {
+struct ILine {
     f32 ix;
     f32 iy;
     f32 iz;
@@ -697,7 +692,7 @@ inline auto operator~(const Scalar& scalar) -> Scalar {
     return scalar;
 }
 
-inline auto operator~(const Rline& rline) -> Rline {
+inline auto operator~(const RLine& rline) -> RLine {
     return rline;
 }
 
@@ -711,17 +706,17 @@ inline auto operator|(const Plane& plane0, const Plane& plane1) -> f32 {
 // This gives the oriented distance from the point to the plane (if normalized).
 inline auto operator|(const Plane& plane, const Point& point) -> Line {
     return {
-        // e2 ^ e3.f
+        // e2 ^ e3.
         .rx = plane.x * point.w,
-        // e3 ^ e1.f
+        // e3 ^ e1.
         .ry = plane.y * point.w,
-        // e1 ^ e2.f
+        // e1 ^ e2.
         .rz = plane.z * point.w,
-        // e0 ^ e1.f
+        // e0 ^ e1.
         .ix = plane.z * point.y - plane.y * point.z,
-        // e0 ^ e2.f
+        // e0 ^ e2.
         .iy = plane.x * point.z - plane.z * point.x,
-        // e0 ^ e3.f
+        // e0 ^ e3.
         .iz = plane.y * point.x - plane.x * point.y
     };
 }
@@ -730,13 +725,13 @@ inline auto operator|(const Plane& plane, const Point& point) -> Line {
 // infinite point.
 inline auto operator|(const Plane& plane, const Line& line) -> Point {
     return {
-        // e1.f
+        // e1.
         .x = -plane.y * line.rz + plane.z * line.ry,
-        // e2.f
+        // e2.
         .y = plane.x * line.rz - plane.z * line.rx,
-        // e3.f
+        // e3.
         .z = -plane.x * line.ry + plane.y * line.rx,
-        // e0.f
+        // e0.
         .w = -plane.x * line.ix - plane.y * line.iy - plane.z * line.iz
     };
 }
@@ -747,7 +742,7 @@ inline auto operator|(const Line& line0, const Line& line1) -> f32 {
     return -line0.rx * line1.rx - line0.ry * line1.ry - line0.rz * line1.rz;
 }
 
-// A line through a point defines a plane. the form is similar to plane ⋅ line,
+// A line through a point defines a plane. The form is similar to plane ⋅ line,
 // but semantically it is a plane containing l and pt
 inline auto operator|(const Line& line, const Point& point) -> Plane {
     return {
@@ -766,21 +761,21 @@ inline auto operator|(const Point& point0, const Point& point1) -> Scalar {
 
 // Outer product.
 
-// plane ^ plane -> line (those intersection).
+// plane ^ plane -> line (their intersection).
 inline auto operator^(const Plane& plane0, const Plane& plane1) -> Line {
     return {
-        // Real part (moment): e23, e31, e12.f
+        // Real part (moment): e23, e31, e12.
         .rx = plane0.y * plane1.z - plane0.z * plane1.y,
         .ry = plane0.z * plane1.x - plane0.x * plane1.z,
         .rz = plane0.x * plane1.y - plane0.y * plane1.x,
-        // Ideal part (direction): e01, e02, e03.f
+        // Ideal part (direction): e01, e02, e03.
         .ix = plane0.w * plane1.x - plane0.x * plane1.w,
         .iy = plane0.w * plane1.y - plane0.y * plane1.w,
         .iz = plane0.w * plane1.z - plane0.z * plane1.w
     };
 }
 
-// plane ∧ point -> line passing through a point on a plane.
+// plane ∧ point -> pseudoscalar (signed distance scaled by the plane norm).
 inline auto operator^(const Plane& plane, const Point& point) -> PseudoScalar {
     return {
         .w = plane.x * point.x + plane.y * point.y + plane.z * point.z
@@ -788,12 +783,12 @@ inline auto operator^(const Plane& plane, const Point& point) -> PseudoScalar {
     };
 }
 
-// line ^ point -> plane.
+// line ^ point -> f32 (stub, always zero).
 inline auto operator^(const Line& line, const Point& point) -> f32 {
     return 0.0f;
 }
 
-// point ∧ point → line (through two points).
+// point ∧ point → f32 (stub, always zero).
 inline auto operator^(const Point& point0, const Point& point1) -> f32 {
     return 0.0f;
 }
@@ -801,7 +796,7 @@ inline auto operator^(const Point& point0, const Point& point1) -> f32 {
 // line ∧ line → point (if intersecting). If w == 0, then the lines do not
 // intersect (the result is a point at infinity).
 inline auto operator^(const Line& line0, const Line& line1) -> PseudoScalar {
-    /// e0 ^ (e1 ^ (e2 ^ e3)).
+    // e0 ^ (e1 ^ (e2 ^ e3)).
     return {
         .w = line0.rx * line1.ix + line0.ry * line1.iy + line0.rz * line1.iz
             + line0.ix * line1.rx + line0.iy * line1.ry + line0.iz * line1.rz
@@ -813,8 +808,8 @@ inline auto operator^(const Line& line0, const Line& line1) -> PseudoScalar {
 // will be at infinity (w = 0). This is the same formula as inner(plane, line) -
 // in PGA 3D the result of plane ∧ line and plane | line have the same component
 // form, but semantically they are different operations:
-// 1.f inner - orthogonal projection.
-// 2.f outer - geometric "generating" subspace.
+// 1. inner - orthogonal projection.
+// 2. outer - geometric "generating" subspace.
 inline auto operator^(const Plane& plane, const Line& line) -> Point {
     return {
         .x = plane.y * line.iz - plane.z * line.iy - plane.w * line.rx,
@@ -843,7 +838,7 @@ inline auto operator&(Plane plane0, Plane plane1) -> f32 {
 }
 
 inline auto operator&(Plane plane, Point point) -> Scalar {
-    // Plane below link with dual point from outer product and point below link
+    // Plane linked with dual point from outer product and point linked
     // with dual plane from outer product.
     return {
         .value = -plane.x * point.x + -plane.y * point.y + -plane.z * point.z
@@ -852,7 +847,7 @@ inline auto operator&(Plane plane, Point point) -> Scalar {
 }
 
 inline auto operator&(Point point, Plane plane) -> Scalar {
-    // Plane below link with dual point from outer product and point below link
+    // Plane linked with dual point from outer product and point linked
     // with dual plane from outer product.
     return {
         .value = plane.x * point.x + plane.y * point.y + plane.z * point.z
@@ -861,7 +856,7 @@ inline auto operator&(Point point, Plane plane) -> Scalar {
 }
 
 inline auto operator&(Point point, Line line) -> Plane {
-    // Point below link with dual plane from outer product and line below link
+    // Point linked with dual plane from outer product and line linked
     // with dual line from outer product.
     return {
         .x = point.y * line.rz - point.z * line.ry - point.w * line.ix,
@@ -872,7 +867,7 @@ inline auto operator&(Point point, Line line) -> Plane {
 }
 
 inline auto operator&(Line line, Point point) -> Plane {
-    // Point below link with dual plane from outer product and line below link
+    // Point linked with dual plane from outer product and line linked
     // with dual line from outer product.
     return {
         .x = -line.ix * point.w - line.ry * point.z + line.rz * point.y,
@@ -883,14 +878,14 @@ inline auto operator&(Line line, Point point) -> Plane {
 }
 
 inline auto operator&(Point point0, Point point1) -> Line {
-    // point0 below link with dual plane0 from outer product and point1 below
+    // point0 linked with dual plane0 from outer product and point1 below
     // link with dual plane1 from outer product.
     return {
-        // Real part (moment): e23, e31, e12.f
+        // Real part (moment): e23, e31, e12.
         .rx = point0.w * point1.x - point0.x * point1.w,
         .ry = point0.w * point1.y - point0.y * point1.w,
         .rz = point0.w * point1.z - point0.z * point1.w,
-        // Ideal part (direction): e01, e02, e03.f
+        // Ideal part (direction): e01, e02, e03.
         .ix = point0.y * point1.z - point0.z * point1.y,
         .iy = point0.z * point1.x - point0.x * point1.z,
         .iz = point0.x * point1.y - point0.y * point1.x
@@ -916,13 +911,13 @@ inline auto operator&(Line line, Plane plane) -> f32 {
 
 inline auto operator*(Plane plane0, Plane plane1) -> Motor {
     return {
-        // Real part (moment): e23, e31, e12.f
+        // Real part (moment): e23, e31, e12.
         .rx = plane0.y * plane1.z - plane0.z * plane1.y,
         .ry = plane0.z * plane1.x - plane0.x * plane1.z,
         .rz = plane0.x * plane1.y - plane0.y * plane1.x,
         // Scalar.
         .rw = plane0.x * plane1.x + plane0.y * plane1.y + plane0.z * plane1.z,
-        // Ideal part (direction): e01, e02, e03.f
+        // Ideal part (direction): e01, e02, e03.
         .ix = plane0.w * plane1.x - plane0.x * plane1.w,
         .iy = plane0.w * plane1.y - plane0.y * plane1.w,
         .iz = plane0.w * plane1.z - plane0.z * plane1.w,
@@ -933,13 +928,13 @@ inline auto operator*(Plane plane0, Plane plane1) -> Motor {
 
 inline auto operator*(Line line0, Line line1) -> Motor {
     return {
-        // Real part (moment): e23, e31, e12.f
+        // Real part (moment): e23, e31, e12.
         .rx = -line0.ry * line1.rz + line0.rz * line1.ry,
         .ry = line0.rx * line1.rz - line0.rz * line1.rx,
         .rz = -line0.rx * line1.ry + line0.ry * line1.rx,
         // Scalar.
         .rw = -line0.rx * line1.rx - line0.ry * line1.ry - line0.rz * line1.rz,
-        // Ideal part (direction): e01, e02, e03.f
+        // Ideal part (direction): e01, e02, e03.
         .ix = -line0.ry * line1.iz + line0.rz * line1.iy - line0.iy * line1.rz
             + line0.iz * line1.ry,
         .iy = line0.rx * line1.iz - line0.rz * line1.ix + line0.ix * line1.rz
@@ -952,9 +947,9 @@ inline auto operator*(Line line0, Line line1) -> Motor {
     };
 }
 
-inline auto operator*(Rline rline0, Rline rline1) -> Rotor {
+inline auto operator*(RLine rline0, RLine rline1) -> Rotor {
     return {
-        // Real part (moment): e23, e31, e12.f
+        // Real part (moment): e23, e31, e12.
         .rx = -rline0.ry * rline1.rz + rline0.rz * rline1.ry,
         .ry = rline0.rx * rline1.rz - rline0.rz * rline1.rx,
         .rz = -rline0.rx * rline1.ry + rline0.ry * rline1.rx,
@@ -973,7 +968,7 @@ inline auto operator*(Point point0, Point point1) -> Translator {
     };
 }
 
-inline auto exp(f32 theta, Rline rline) -> Rotor {
+inline auto exp(f32 theta, RLine rline) -> Rotor {
     f32 sin = std::sin(theta / 2.0f);
     return {
         .rx = rline.rx * sin,
@@ -983,7 +978,7 @@ inline auto exp(f32 theta, Rline rline) -> Rotor {
     };
 }
 
-inline auto exp(f32 distance, Iline iline) -> Translator {
+inline auto exp(f32 distance, ILine iline) -> Translator {
     f32 half = distance / 2.0f;
     return {
         .ix = iline.ix * half,
@@ -1026,7 +1021,7 @@ enum States : u8 { IDLE, ATTACK, ROAMING };
 } // namespace glvm
 
 namespace glvm {
-struct CrossHairTagComponent {};
+struct CrosshairTagComponent {};
 }; // namespace glvm
 
 namespace glvm {
@@ -1051,17 +1046,17 @@ struct TextureHandle {
 };
 
 struct Texture {
-    // This field using to choose specific instance of texture image in Vulkan.
+    // This field is used to choose specific instance of texture image in Vulkan.
     u32 vk_available_inner_id = 0;
     u32 vk_inner_id_limit = 10;
 
     const char* path_to_image = "";
-    Vec<u32> entities_owns_this_type_of_texture = {};
+    Vec<u32> entities_own_this_type_of_texture = {};
     u32 id = 0;
-    u32 i_width = 0;
-    u32 i_height = 0;
-    u32 dat_length = 0;
-    u8* u_i_data = 0;
+    u32 width = 0;
+    u32 height = 0;
+    u32 data_length = 0;
+    u8* data = 0;
 };
 } // namespace glvm
 
@@ -1145,12 +1140,12 @@ struct Vector;
 template<typename T, i32 Var>
 struct Matrix {
 private:
-    T m_matrix[Var][Var] {};
+    T elements[Var][Var] {};
 
 public:
     Matrix(T arg = 0) {
         for (i32 i = 0; i < Var; ++i) {
-            m_matrix[i][i] = arg;
+            elements[i][i] = arg;
         }
     }
 
@@ -1160,37 +1155,37 @@ public:
         Vector<T, Var> row2,
         Vector<T, Var> row3
     ) {
-        m_matrix[0][0] = row0[0];
-        m_matrix[0][1] = row0[1];
-        m_matrix[0][2] = row0[2];
-        m_matrix[0][3] = row0[3];
+        elements[0][0] = row0[0];
+        elements[0][1] = row0[1];
+        elements[0][2] = row0[2];
+        elements[0][3] = row0[3];
 
-        m_matrix[1][0] = row1[0];
-        m_matrix[1][1] = row1[1];
-        m_matrix[1][2] = row1[2];
-        m_matrix[1][3] = row1[3];
+        elements[1][0] = row1[0];
+        elements[1][1] = row1[1];
+        elements[1][2] = row1[2];
+        elements[1][3] = row1[3];
 
-        m_matrix[2][0] = row2[0];
-        m_matrix[2][1] = row2[1];
-        m_matrix[2][2] = row2[2];
-        m_matrix[2][3] = row2[3];
+        elements[2][0] = row2[0];
+        elements[2][1] = row2[1];
+        elements[2][2] = row2[2];
+        elements[2][3] = row2[3];
 
-        m_matrix[3][0] = row3[0];
-        m_matrix[3][1] = row3[1];
-        m_matrix[3][2] = row3[2];
-        m_matrix[3][3] = row3[3];
+        elements[3][0] = row3[0];
+        elements[3][1] = row3[1];
+        elements[3][2] = row3[2];
+        elements[3][3] = row3[3];
     }
 
     auto self_tensor_transpose() -> void {
         T temp_matrix[Var][Var];
         for (i32 p = 0; p < Var; ++p) {
             for (i32 u = 0; u < Var; ++u) {
-                temp_matrix[p][u] = m_matrix[u][p];
+                temp_matrix[p][u] = elements[u][p];
             }
         }
         for (i32 j = 0; j < Var; ++j) {
             for (i32 z = 0; z < Var; ++z) {
-                this->m_matrix[j][z] = temp_matrix[j][z];
+                this->elements[j][z] = temp_matrix[j][z];
             }
         }
     }
@@ -1199,9 +1194,9 @@ public:
         for (i32 i = 0; i < Var; ++i) {
             for (i32 j = 0; j < Var; ++j) {
                 if (i == j) {
-                    this->m_matrix[i][j] = 1.0f;
+                    this->elements[i][j] = 1.0f;
                 } else {
-                    this->m_matrix[i][j] = 0.0f;
+                    this->elements[i][j] = 0.0f;
                 }
             }
         }
@@ -1221,7 +1216,7 @@ auto Matrix<T, Var>::operator+(const Matrix& matrix) -> Matrix<T, Var> {
     Matrix<T, Var> temp_matrix;
     for (i32 i = 0; i < Var; ++i) {
         for (i32 j = 0; j < Var; ++j) {
-            temp_matrix[i][j] = this->m_matrix[i][j] + matrix.m_matrix[i][j];
+            temp_matrix[i][j] = this->elements[i][j] + matrix.elements[i][j];
         }
     }
 
@@ -1233,7 +1228,7 @@ auto Matrix<T, Var>::operator*(const T scalar) -> Matrix<T, Var> {
     Matrix<T, Var> temp_matrix;
     for (i32 i = 0; i < Var; ++i) {
         for (i32 j = 0; j < Var; ++j) {
-            temp_matrix[i][j] = this->m_matrix[i][j] * scalar;
+            temp_matrix[i][j] = this->elements[i][j] * scalar;
         }
     }
 
@@ -1246,8 +1241,8 @@ auto Matrix<T, Var>::operator*(const Matrix& matrix) -> Matrix<T, Var> {
     for (i32 i = 0; i < Var; ++i) {
         for (i32 j = 0; j < Var; ++j) {
             for (i32 n = 0; n < Var; ++n) {
-                temp_matrix.m_matrix[i][j] +=
-                    m_matrix[i][n] * matrix.m_matrix[n][j];
+                temp_matrix.elements[i][j] +=
+                    elements[i][n] * matrix.elements[n][j];
             }
         }
     }
@@ -1256,12 +1251,12 @@ auto Matrix<T, Var>::operator*(const Matrix& matrix) -> Matrix<T, Var> {
 
 template<typename T, i32 Var>
 auto Matrix<T, Var>::operator[](const i32 index) -> T* {
-    return m_matrix[index];
+    return elements[index];
 }
 
 template<typename T, i32 Var>
 auto Matrix<T, Var>::operator[](const i32 index) const -> const T* {
-    return m_matrix[index];
+    return elements[index];
 }
 
 template<typename T, i32 Var>
@@ -1272,7 +1267,7 @@ auto Matrix<T, Var>::operator*(const Vector<T2, Var2>& vector)
     Vector<T2, Var2> temp_vector;
     for (i32 i = 0; i < Var2; ++i) {
         for (i32 j = 0; j < Var; ++j) {
-            temp_vector[i] += m_matrix[i][j] * vector[j];
+            temp_vector[i] += elements[i][j] * vector[j];
         }
     }
     return temp_vector;
@@ -1281,13 +1276,13 @@ auto Matrix<T, Var>::operator*(const Vector<T2, Var2>& vector)
 template<typename T2, i32 Dim>
 struct Vector {
 public:
-    T2 m_vector[Dim] {};
+    T2 elements[Dim] {};
 
 public:
     Vector(T2 x = 0, T2 y = 0, T2 z = 0, T2 w = 0) {
         T2 array[4] = {x, y, z, w};
         for (i32 i = 0; i < Dim; ++i) {
-            m_vector[i] = array[i];
+            elements[i] = array[i];
         }
     }
 
@@ -1309,8 +1304,8 @@ public:
 template<typename T2, i32 Var2>
 auto Vector<T2, Var2>::length() const -> T2 {
     return std::sqrt(
-        m_vector[0] * m_vector[0] + m_vector[1] * m_vector[1]
-        + m_vector[2] * m_vector[2]
+        elements[0] * elements[0] + elements[1] * elements[1]
+        + elements[2] * elements[2]
     );
 }
 
@@ -1318,7 +1313,7 @@ template<typename T2, i32 Var2>
 auto Vector<T2, Var2>::operator-() -> Vector<T2, Var2> {
     Vector<T2, Var2> temp_vector;
     for (i32 i = 0; i < Var2; ++i) {
-        temp_vector[i] = -m_vector[i];
+        temp_vector[i] = -elements[i];
     }
 
     return temp_vector;
@@ -1326,12 +1321,12 @@ auto Vector<T2, Var2>::operator-() -> Vector<T2, Var2> {
 
 template<typename T2, i32 Var2>
 auto Vector<T2, Var2>::operator[](const i32 index) -> T2& {
-    return m_vector[index];
+    return elements[index];
 }
 
 template<typename T2, i32 Var2>
 auto Vector<T2, Var2>::operator[](const i32 index) const -> const T2& {
-    return m_vector[index];
+    return elements[index];
 }
 
 template<typename T2, i32 Var2>
@@ -1342,7 +1337,7 @@ auto Vector<T2, Var2>::operator*(const Matrix<T, Var>& matrix)
     Vector<T2, Var2> temp_vector;
     for (i32 i = 0; i < Var2; ++i) {
         for (i32 j = 0; j < Var; ++j) {
-            temp_vector[i] += m_vector[j] * matrix[j][i];
+            temp_vector[i] += elements[j] * matrix[j][i];
         }
     }
     return temp_vector;
@@ -1353,7 +1348,7 @@ auto Vector<T2, Var2>::operator*(const Vector<T2, Var2>& other)
     -> Vector<T2, Var2> {
     Vector<T2, Var2> temp_vector;
     for (i32 i = 0; i < 3; ++i) {
-        temp_vector[i] = m_vector[i] * other[i];
+        temp_vector[i] = elements[i] * other[i];
     }
 
     return temp_vector;
@@ -1364,7 +1359,7 @@ auto Vector<T2, Var2>::operator*=(const Vector<T2, Var2>& other)
     -> Vector<T2, Var2> {
     Vector<T2, Var2> temp_vector;
     for (i32 i = 0; i < 3; ++i) {
-        temp_vector[i] = m_vector[i] * other[i];
+        temp_vector[i] = elements[i] * other[i];
     }
 
     return temp_vector;
@@ -1375,9 +1370,9 @@ auto Vector<T2, Var2>::operator-(const Vector<T2, Var2>& other) const
     -> Vector<T2, Var2> {
     Vector<T2, Var2> temp_vector(1);
 
-    temp_vector[0] = m_vector[0] - other[0];
-    temp_vector[1] = m_vector[1] - other[1];
-    temp_vector[2] = m_vector[2] - other[2];
+    temp_vector[0] = elements[0] - other[0];
+    temp_vector[1] = elements[1] - other[1];
+    temp_vector[2] = elements[2] - other[2];
 
     return temp_vector;
 }
@@ -1387,25 +1382,25 @@ auto Vector<T2, Var2>::operator+(const Vector<T2, Var2>& other) const
     -> Vector<T2, Var2> {
     Vector<T2, Var2> temp_vector(1);
 
-    temp_vector[0] = m_vector[0] + other[0];
-    temp_vector[1] = m_vector[1] + other[1];
-    temp_vector[2] = m_vector[2] + other[2];
+    temp_vector[0] = elements[0] + other[0];
+    temp_vector[1] = elements[1] + other[1];
+    temp_vector[2] = elements[2] + other[2];
 
     return temp_vector;
 }
 
 template<typename T2, i32 Var2>
 auto Vector<T2, Var2>::operator-=(const Vector<T2, Var2>& other) -> void {
-    m_vector[0] = m_vector[0] - other[0];
-    m_vector[1] = m_vector[1] - other[1];
-    m_vector[2] = m_vector[2] - other[2];
+    elements[0] = elements[0] - other[0];
+    elements[1] = elements[1] - other[1];
+    elements[2] = elements[2] - other[2];
 }
 
 template<typename T2, i32 Var2>
 auto Vector<T2, Var2>::operator+=(const Vector<T2, Var2>& other) -> void {
-    m_vector[0] = m_vector[0] + other[0];
-    m_vector[1] = m_vector[1] + other[1];
-    m_vector[2] = m_vector[2] + other[2];
+    elements[0] = elements[0] + other[0];
+    elements[1] = elements[1] + other[1];
+    elements[2] = elements[2] + other[2];
 }
 
 template<typename T2, i32 Var2>
@@ -1413,7 +1408,7 @@ auto Vector<T2, Var2>::operator*(const T2& multiplier) -> Vector<T2, Var2> {
     Vector<T2, Var2> temp_vec(1.0f);
 
     for (i32 i = 0; i < Var2; ++i) {
-        temp_vec[i] = m_vector[i] * multiplier;
+        temp_vec[i] = elements[i] * multiplier;
     }
 
     return temp_vec;
@@ -1845,11 +1840,11 @@ auto look_at_main(Vector<T, 3> eye, Vector<T, 3> center, Vector<T, 3> up)
 }
 
 template<typename T>
-auto fp_sview(Vector<T, 3> eye, Vector<T, 3> center, Vector<T, 3> up)
+auto fps_view(Vector<T, 3> eye, Vector<T, 3> center, Vector<T, 3> up)
     -> Matrix<T, 4> {
-    Vector<T, 3> f(Normalize(center - eye));
-    Vector<T, 3> s(Normalize(Cross(f, up)));
-    Vector<T, 3> u(Cross(s, f));
+    Vector<T, 3> f(normalize(center - eye));
+    Vector<T, 3> s(normalize(cross(f, up)));
+    Vector<T, 3> u(cross(s, f));
     Matrix<T, 4> result(1.0f);
     result[0][0] = s[0];
     result[1][0] = s[1];
@@ -1860,9 +1855,9 @@ auto fp_sview(Vector<T, 3> eye, Vector<T, 3> center, Vector<T, 3> up)
     result[0][2] = -f[0];
     result[1][2] = -f[1];
     result[2][2] = -f[2];
-    result[3][0] = -Dot(s, eye);
-    result[3][1] = -Dot(u, eye);
-    result[3][2] = Dot(f, eye);
+    result[3][0] = -dot(s, eye);
+    result[3][1] = -dot(u, eye);
+    result[3][2] = dot(f, eye);
     return result;
 }
 
@@ -1876,28 +1871,20 @@ template<typename T>
 auto fps_view_rh(Vector<T, 3> eye, f32 pitch_deg, f32 yaw_deg) -> Matrix<T, 4> {
     pitch_deg *= PI / 180;
     yaw_deg *= PI / 180;
-    f32 f_cos_pitch = std::cos(pitch_deg);
-    f32 f_sin_pitch = std::sin(pitch_deg);
-    f32 f_cos_yaw = std::cos(yaw_deg);
-    f32 f_sin_yaw = std::sin(yaw_deg);
-    Vector<T, 3> x_axis(f_cos_yaw, 0, -f_sin_yaw);
-    Vector<T, 3> y_axis(
-        f_sin_yaw * f_sin_pitch,
-        f_cos_pitch,
-        f_cos_yaw * f_sin_pitch
-    );
-    Vector<T, 3> z_axis(
-        f_sin_yaw * f_cos_pitch,
-        -f_sin_pitch,
-        f_cos_pitch * f_cos_yaw
-    );
-    Matrix<T, 4> t_view(
+    f32 cos_pitch = std::cos(pitch_deg);
+    f32 sin_pitch = std::sin(pitch_deg);
+    f32 cos_yaw = std::cos(yaw_deg);
+    f32 sin_yaw = std::sin(yaw_deg);
+    Vector<T, 3> x_axis(cos_yaw, 0, -sin_yaw);
+    Vector<T, 3> y_axis(sin_yaw * sin_pitch, cos_pitch, cos_yaw * sin_pitch);
+    Vector<T, 3> z_axis(sin_yaw * cos_pitch, -sin_pitch, cos_pitch * cos_yaw);
+    Matrix<T, 4> view(
         Vector<T, 4>(x_axis[0], y_axis[0], z_axis[0], 0),
         Vector<T, 4>(x_axis[1], y_axis[1], z_axis[1], 0),
         Vector<T, 4>(x_axis[2], y_axis[2], z_axis[2], 0),
         Vector<T, 4>(-dot(x_axis, eye), -dot(y_axis, eye), -dot(z_axis, eye), 1)
     );
-    return t_view;
+    return view;
 }
 
 template<typename T, i32 Var, i32 VecSize>
@@ -2125,7 +2112,7 @@ auto rotate_quaternion(Quaternion quaternion) -> Matrix<T, Var> {
 }
 
 namespace glvm {
-struct SVertex {
+struct Position {
 private:
     f32 x;
     f32 y;
@@ -2133,7 +2120,7 @@ private:
 
 public:
     auto operator[](const u32 index) -> f32& {
-        assert(index < 3 && index >= 0 && "Wrong index");
+        assert(index < 3 && index >= 0 && "wrong index");
         switch (index) {
             default:
             case 0:
@@ -2146,7 +2133,7 @@ public:
     }
 };
 
-struct SFace {
+struct Face {
 private:
     Vec<i32> vertex_index;
     Vec<i32> texture_index;
@@ -2154,7 +2141,7 @@ private:
 
 public:
     auto operator[](const u32 index) -> Vec<i32>& {
-        assert(index < 3 && index >= 0 && "Wrong index");
+        assert(index < 3 && index >= 0 && "wrong index");
         switch (index) {
             default:
             case 0:
@@ -2167,7 +2154,7 @@ public:
     }
 
     auto operator[](const u32 index) const -> const Vec<i32>& {
-        assert(index < 3 && index >= 0 && "Wrong index");
+        assert(index < 3 && index >= 0 && "wrong index");
         switch (index) {
             default:
             case 0:
@@ -2180,24 +2167,24 @@ public:
     }
 };
 
-struct CWaveFrontObjParser {
+struct WavefrontObjParser {
 private:
-    Vec<SVertex> coordinate_vertices;
-    Vec<SVertex> texture_vertices;
-    Vec<SVertex> normals;
-    Vec<SFace> faces;
+    Vec<Position> coordinate_vertices;
+    Vec<Position> texture_vertices;
+    Vec<Position> normals;
+    Vec<Face> faces;
 
-    String s_wavefront_obj_file_data;
-    const char* p_wavefront_obj_file_data;
-    u32 ui_counter = 0;
+    String wavefront_obj_file_data;
+    const char* wavefront_obj_file_data_ptr;
+    u32 cursor = 0;
 
 public:
-    CWaveFrontObjParser();
+    WavefrontObjParser();
 
-    [[nodiscard]] auto get_coordinate_vertices() const -> const Vec<SVertex>&;
-    [[nodiscard]] auto get_texture_vertices() const -> const Vec<SVertex>&;
-    [[nodiscard]] auto get_normals() const -> const Vec<SVertex>&;
-    [[nodiscard]] auto get_faces() const -> const Vec<SFace>&;
+    [[nodiscard]] auto get_coordinate_vertices() const -> const Vec<Position>&;
+    [[nodiscard]] auto get_texture_vertices() const -> const Vec<Position>&;
+    [[nodiscard]] auto get_normals() const -> const Vec<Position>&;
+    [[nodiscard]] auto get_faces() const -> const Vec<Face>&;
 
     auto read_file(const char* file_path) -> void;
     auto parse_file() -> void;
@@ -2207,10 +2194,10 @@ public:
         const char exit_symbol,
         u32& position
     ) -> Vec<Vec<char>>;
-    auto parse_vertices(Vec<Vec<char>> words) -> SVertex;
-    auto parse_faces(Vec<Vec<char>> words) -> SFace;
+    auto parse_vertices(Vec<Vec<char>> words) -> Position;
+    auto parse_faces(Vec<Vec<char>> words) -> Face;
     auto parse_integer(Vec<char> digits) -> i32;
-    auto parse_floating(Vec<char> digits) -> f32;
+    auto parse_float(Vec<char> digits) -> f32;
 };
 } // namespace glvm
 
@@ -2256,7 +2243,7 @@ public:
 
     u32 row = 8;
     u32 col = 8;
-    // Array with entities contained inventorySlotComponents.
+    // Array with entities containing InventorySlotComponents.
     u32** slots = new u32*[row];
     u32 entity_owner = UINT_MAX;
     Vec<u32> highlighted_slots;
@@ -2269,7 +2256,7 @@ public:
 namespace glvm {
 struct MeshManager {
 private:
-    static MeshManager* p_instance;
+    static MeshManager* instance;
     static Mutex mutex;
 
     MeshManager();
@@ -2279,7 +2266,7 @@ public:
     Vec<const char*> paths_array;
     Vec<const char*> paths_gltf;
 
-    // It possibly to get only one instance of this struct with this method.
+    // It is possible to get only one instance of this struct with this method.
     static auto get_instance() -> MeshManager*;
     auto set_mesh(const char* mesh_path) -> void;
     auto set_mesh_gltf(const char* path_to_mesh) -> void;
@@ -2287,136 +2274,136 @@ public:
 } // namespace glvm
 
 namespace glvm {
-struct CStack {
+struct EventStack {
 private:
-    i32 i_head = 0;
-    static const auto i_stack_range = 6;
-    EEvents a_stack[i_stack_range] = {};
+    i32 head = 0;
+    static const auto STACK_RANGE = 6;
+    EventKind stack[STACK_RANGE] = {};
 
 public:
-    auto push(const EEvents& event) -> void {
-        for (i32 i = 0; i < i_head; ++i) {
-            if (a_stack[i] == event) {
+    auto push(const EventKind& event) -> void {
+        for (i32 i = 0; i < head; ++i) {
+            if (stack[i] == event) {
                 return;
             }
         }
 
-        if (i_head == i_stack_range) {
+        if (head == STACK_RANGE) {
             return;
         }
 
-        a_stack[i_head] = event;
+        stack[head] = event;
 
-        ++i_head;
+        ++head;
     }
 
-    auto pop() -> EEvents& {
-        if (i_head == 0) {
-            return a_stack[0];
+    auto pop() -> EventKind& {
+        if (head == 0) {
+            return stack[0];
         }
-        return a_stack[i_head - 1];
+        return stack[head - 1];
     }
 
-    auto remove(const EEvents& event) -> void {
-        EEvents a_temp_stack[i_stack_range] = {};
+    auto remove(const EventKind& event) -> void {
+        EventKind temp_stack[STACK_RANGE] = {};
         bool remove_flag = false;
         i32 n = 0;
 
-        for (i32 j = 0; j < i_stack_range; ++j) {
-            a_temp_stack[j] = a_stack[j];
+        for (i32 j = 0; j < STACK_RANGE; ++j) {
+            temp_stack[j] = stack[j];
         }
 
-        for (i32 i = 0; i < i_head; ++i) {
-            if (event == a_temp_stack[i]) {
+        for (i32 i = 0; i < head; ++i) {
+            if (event == temp_stack[i]) {
                 remove_flag = true;
                 continue;
             }
 
-            a_stack[n] = a_temp_stack[i];
+            stack[n] = temp_stack[i];
             ++n;
         }
 
         if (remove_flag) {
-            --i_head;
-            a_stack[i_head] = EEvents::EDefault;
+            --head;
+            stack[head] = EventKind::Default;
         }
     }
 
-    auto control_input(CEvent& event) -> void {
-        if (!(search_element(event.get_event()) == EEmpty)) {
+    auto control_input(Event& event) -> void {
+        if (!(search_element(event.get_event()) == Empty)) {
             return;
         }
         switch (event.get_event()) {
-            case EGameLoopKill:
-                push(EGameLoopKill);
+            case GameLoopKill:
+                push(GameLoopKill);
                 break;
-            case EKeyreleaseA:
-                remove(EMoveLeft);
+            case KeyReleaseA:
+                remove(MoveLeft);
                 break;
-            case EKeyreleaseD:
-                remove(EMoveRight);
+            case KeyReleaseD:
+                remove(MoveRight);
                 break;
-            case EKeyreleaseS:
-                remove(EMoveBackward);
+            case KeyReleaseS:
+                remove(MoveBackward);
                 break;
-            case EKeyreleaseW:
-                remove(EMoveForward);
+            case KeyReleaseW:
+                remove(MoveForward);
                 break;
-            case EInventoryRelease:
-                remove(EInventory);
+            case InventoryRelease:
+                remove(InventoryToggle);
                 break;
-            case EKeyreleaseJump:
-                remove(EJump);
+            case KeyReleaseJump:
+                remove(Jump);
                 break;
-            case EMouseLeftButtonRelease:
-                remove(EMouseLeftButton);
+            case MouseLeftButtonRelease:
+                remove(MouseLeftButton);
                 break;
-            case EMoveLeft:
-                push(EMoveLeft);
+            case MoveLeft:
+                push(MoveLeft);
                 break;
-            case EMoveRight:
-                push(EMoveRight);
+            case MoveRight:
+                push(MoveRight);
                 break;
-            case EMoveBackward:
-                push(EMoveBackward);
+            case MoveBackward:
+                push(MoveBackward);
                 break;
-            case EMoveForward:
-                push(EMoveForward);
+            case MoveForward:
+                push(MoveForward);
                 break;
-            case EJump:
-                push(EJump);
+            case Jump:
+                push(Jump);
                 break;
-            case EInventory:
-                push(EInventory);
+            case InventoryToggle:
+                push(InventoryToggle);
                 break;
-            case ECursorReleased:
-                push(ECursorReleased);
+            case CursorReleased:
+                push(CursorReleased);
                 break;
-            case EMouseLeftButton:
-                push(EMouseLeftButton);
+            case MouseLeftButton:
+                push(MouseLeftButton);
                 break;
             default:
                 break;
         }
     }
 
-    auto search_element(EEvents element) -> EEvents {
-        for (i32 i = 0; i < i_head; ++i) {
-            if (a_stack[i] == element) {
+    auto search_element(EventKind element) -> EventKind {
+        for (i32 i = 0; i < head; ++i) {
+            if (stack[i] == element) {
                 return element;
             }
         }
 
-        return EEmpty;
+        return Empty;
     }
 
-    auto operator[](i32 index) -> EEvents& {
-        return a_stack[index];
+    auto operator[](i32 index) -> EventKind& {
+        return stack[index];
     }
 
     auto clear() -> void {
-        for (i32 i = 0; i < i_head; ++i) {
-            a_stack[i] = EEvents::EDefault;
+        for (i32 i = 0; i < head; ++i) {
+            stack[i] = EventKind::Default;
         }
     }
 };
@@ -2424,16 +2411,16 @@ public:
 
 namespace glvm {
 
-struct IWindow {
+struct WindowInterface {
 public:
     // Window keyboard focus, updated by each backend.
     bool is_focused = true;
 
-    virtual ~IWindow() = default;
+    virtual ~WindowInterface() = default;
 
     virtual auto swap_buffers() -> void = 0;
     virtual auto clear_display() -> void = 0;
-    virtual auto handle_event(CEvent& event) -> bool = 0;
+    virtual auto handle_event(Event& event) -> bool = 0;
     virtual auto close() -> void = 0;
     virtual auto cursor_lock(
         i32 pointer_x,
@@ -2446,19 +2433,19 @@ public:
 } // namespace glvm
 
 namespace glvm {
-struct CTimerCreator {
+struct TimerCreator {
 public:
-    ~CTimerCreator() {
+    ~TimerCreator() {
     }
 
-    auto create() -> IChrono*;
+    auto create() -> Chrono*;
 };
 } // namespace glvm
 
 #ifdef __linux__
 
 namespace glvm {
-struct CTimerX: public IChrono {
+struct TimerX: public Chrono {
 private:
     timespec start_;
     timespec now_;
@@ -2467,7 +2454,7 @@ private:
     f64 nanoseconds_;
 
 public:
-    CTimerX();
+    TimerX();
 
     auto init_frequency() -> f64;
     auto reset() -> f64;
@@ -2479,14 +2466,14 @@ public:
 #ifdef _WIN32
 
 namespace glvm {
-struct CTimerWin: public IChrono {
+struct TimerWin: public Chrono {
 private:
     __int64 i64_freq;
     __int64 i64_start;
     __int64 i64_now;
 
 public:
-    CTimerWin();
+    TimerWin();
 
     auto init_frequency() -> f64;
     auto reset() -> f64;
@@ -2502,22 +2489,22 @@ struct State {
 } // namespace glvm
 
 namespace glvm {
-struct CSoundSample {
-    const char* k_path_to_file;
+struct SoundSample {
+    const char* path_to_file;
     u32 ui_duration;
     u32 ui_rate;
     f32 volume;
 };
 
-struct ISoundEngine {
+struct SoundEngine {
 public:
-    virtual ~ISoundEngine() {
+    virtual ~SoundEngine() {
     }
 
     virtual auto open_device(const char* device) -> void = 0;
     virtual auto close_device() -> void = 0;
-    virtual auto get_sound_container() -> Vec<CSoundSample*>& = 0;
-    virtual auto playback_sound_sample(CSoundSample& sample) -> void = 0;
+    virtual auto get_sound_container() -> Vec<SoundSample*>& = 0;
+    virtual auto playback_sound_sample(SoundSample& sample) -> void = 0;
     virtual auto set_master_volume(long volume) -> void = 0;
     virtual auto sound_stream() -> void = 0;
     virtual auto create_sound_sample(
@@ -2551,9 +2538,9 @@ struct EntityLocation {
     u32 index;
     static const auto max_grid_cell_number = 32;
     u8 grid_cell_counter = 0;
-    Vector<f32, 3> grid_cell_indicies[max_grid_cell_number];
+    Vector<f32, 3> grid_cell_indices[max_grid_cell_number];
     u32 cell_entity_indices[max_grid_cell_number];
-    // Is entity has been moved or removed.
+    // Whether the entity has been moved or removed.
     bool is_dirty = false;
 };
 }; // namespace glvm
@@ -2580,7 +2567,7 @@ struct Material {
 
 namespace glvm {
 struct Move {
-    EEvents e_event = EEvents::EDefault;
+    EventKind event = EventKind::Default;
     Vector<f32, 3> frame_movement {0.0f, 0.0f, 0.0f};
     Vector<f32, 3> gravity {0.0f, 0.0f, 0.0f};
 };
@@ -2603,7 +2590,7 @@ struct PointLightComponent {
 namespace glvm {
 struct RigidBody {
 public:
-    f32 f_mass = 0.0f;
+    f32 mass = 0.0f;
     f32 jump_accumulator = 0.0f;
 };
 } // namespace glvm
@@ -2657,8 +2644,8 @@ struct JsonValue;
 
 union JsonVariant {
     String* string;
-    f64 f_number;
-    i32 i_number;
+    f64 float_number;
+    i32 int_number;
     bool boolean;
     void* null;
     Vec<JsonValue>* array;
@@ -2690,12 +2677,12 @@ struct JsonValue {
 
     JsonValue(f64 number) {
         type = JsonFloatNumber;
-        value.f_number = number;
+        value.float_number = number;
     }
 
     JsonValue(i32 number) {
         type = JsonIntegerNumber;
-        value.i_number = number;
+        value.int_number = number;
     }
 
     JsonValue(bool flag) {
@@ -2712,10 +2699,10 @@ struct JsonValue {
                     new HashMap<String, JsonValue>(*other.value.object);
                 break;
             case JsonIntegerNumber:
-                value.i_number = other.value.i_number;
+                value.int_number = other.value.int_number;
                 break;
             case JsonFloatNumber:
-                value.f_number = other.value.f_number;
+                value.float_number = other.value.float_number;
                 break;
             case JsonString:
                 value.string = new String(*other.value.string);
@@ -2788,10 +2775,10 @@ struct JsonValue {
                     new HashMap<String, JsonValue>(*other.value.object);
                 break;
             case JsonIntegerNumber:
-                value.i_number = other.value.i_number;
+                value.int_number = other.value.int_number;
                 break;
             case JsonFloatNumber:
-                value.f_number = other.value.f_number;
+                value.float_number = other.value.float_number;
                 break;
             case JsonString:
                 value.string = new String(*other.value.string);
@@ -2817,7 +2804,7 @@ struct JsonValue {
                 return (*value.object)[lookup_key];
                 break;
             default:
-                throw std::out_of_range("Type is not a json object");
+                throw std::out_of_range("Type is not a JSON object");
                 break;
         }
     }
@@ -2828,7 +2815,7 @@ struct JsonValue {
                 return (*value.array)[index];
                 break;
             default:
-                throw std::out_of_range("Type is not a json array");
+                throw std::out_of_range("Type is not a JSON array");
                 break;
         }
     }
@@ -2845,7 +2832,7 @@ struct JsonValue {
         return type == JsonFloatNumber;
     }
 
-    auto is_interger() -> bool {
+    auto is_integer() -> bool {
         return type == JsonIntegerNumber;
     }
 
@@ -2866,12 +2853,12 @@ struct JsonValue {
     }
 };
 
-struct CJsonParser {
+struct JsonParser {
 private:
-    String s_json_file_data;
-    const char* p_json_file_data;
+    String json_file_data;
+    const char* json_file_data_ptr;
     char current_char;
-    u32 global_file_counter = 0;
+    u32 file_counter = 0;
 
     Vec<JsonValue*> stack_of_json_values;
     JsonValue* root;
@@ -2892,7 +2879,7 @@ public:
         Vec<JsonValue>& result_vector
     ) const -> void;
 
-    ~CJsonParser();
+    ~JsonParser();
 
     auto get_root() -> JsonValue* {
         return root;
@@ -2902,28 +2889,28 @@ public:
     auto parse() -> void;
     auto create_json_hash_map() -> JsonValue;
     auto create_json_array() -> JsonValue;
-    auto bool_or_null_parse() -> String;
-    auto is_contain_char(String text, char character) -> bool;
-    auto number_as_string_parse() -> String;
-    auto string_parse() -> String;
+    auto parse_bool_or_null() -> String;
+    auto contains_char(String text, char character) -> bool;
+    auto parse_number_as_string() -> String;
+    auto parse_string() -> String;
     auto string_to_vector_of_chars(String text) -> Vec<char>;
     auto parse_integer(Vec<char> digits) -> i32;
-    auto parse_floating(Vec<char> digits) -> f64;
+    auto parse_float(Vec<char> digits) -> f64;
     auto search(const char* key) const -> Vec<JsonValue>;
     auto load_gltf(
         const char* paths_gltf,
-        Vec<f32>& a_vertexes,
-        Vec<u32>& a_indices,
+        Vec<f32>& vertices,
+        Vec<u32>& indices,
         Vec<Vec<Matrix<f32, 4>>>& joint_matrices_per_mesh,
         Vec<f32>& frames,
         bool& no_animations,
         f32& top_y
     ) -> void;
-    auto traversal_bones(
+    auto traverse_bones(
         Vec<Vec<i32>> children,
         JsonValue joints,
         Vec<u32> node_stack,
-        Vec<u32> deepness_stack,
+        Vec<u32> depth_stack,
         Vec<Vec<u32>>& result
     ) -> void;
     auto make_render_joints_indices(Vec<Vec<u32>>& input) -> Vec<Vec<u32>>;
@@ -3022,7 +3009,7 @@ struct alignas(16) SpotLight {
 
 struct alignas(64) LightData {
     Vector<f32, 2> tileset_tiles_count;
-    i32 tiles_raw;
+    i32 tiles_row;
     i32 tiles_column;
 
     alignas(16) Vector<f32, 3> view_position;
@@ -3057,7 +3044,7 @@ struct alignas(64) HudUbo {
     Matrix<f32, 4> view;
     Matrix<f32, 4> proj;
     Vector<f32, 3> entity_position;
-    i32 is_hud_exists;
+    i32 hud_exists;
     f32 max_hp;
     f32 current_hp;
     f32 highest_y;
@@ -3083,7 +3070,7 @@ struct alignas(64) VirtualTextureUbo {};
 
 struct alignas(64) SdfUbo {
     Matrix<f32, 4> model;
-    f32 i_time;
+    f32 time;
 };
 
 } // namespace glvm
@@ -3092,16 +3079,16 @@ struct alignas(64) SdfUbo {
 
 namespace glvm {
 
-struct WindowWinVulkan: public IWindow {
+struct WindowWinVulkan: public WindowInterface {
 private:
-    HWND p_classic_window;
-    HDC p_classic_dc;
-    HGLRC p_classic_context;
+    HWND classic_window;
+    HDC classic_dc;
+    HGLRC classic_context;
 
     WNDCLASS window_class;
-    HDC p_modern_dc;
-    HGLRC p_modern_context;
-    HWND p_modern_window;
+    HDC modern_dc;
+    HGLRC modern_context;
+    HWND modern_window;
 
     // Cursor-lock baseline: the cursor's actual position after the last warp
     // (not the computed center).
@@ -3110,14 +3097,14 @@ private:
 
 public:
     static WindowWinVulkan* instance;
-    CStack* input_stack;
+    EventStack* input_stack;
     u32 width = GetSystemMetrics(SM_CXSCREEN);
     u32 height = GetSystemMetrics(SM_CYSCREEN);
     WindowWinVulkan();
 
     auto swap_buffers() -> void override;
     auto clear_display() -> void override;
-    auto handle_event(CEvent& event) -> bool override;
+    auto handle_event(Event& event) -> bool override;
     auto get_classic_window_hwnd() -> HWND;
     auto get_modern_window_hwnd() -> HWND;
     auto close() -> void override;
@@ -3127,12 +3114,12 @@ public:
         i32* out_offset_x,
         i32* out_offset_y
     ) -> void override;
-    // Callback method for events handling.
+    // Callback method for handling events.
     static auto main_wnd_proc(
-        HWND p_hwnd,
-        UINT p_msg,
-        WPARAM p_w_param,
-        LPARAM p_l_param
+        HWND hwnd,
+        UINT message,
+        WPARAM w_param,
+        LPARAM l_param
     ) -> LRESULT;
 };
 } // namespace glvm
@@ -3141,18 +3128,18 @@ public:
 #ifdef __linux__
 
 namespace glvm {
-struct CSoundEngineAlsa: public ISoundEngine {
+struct SoundEngineAlsa: public SoundEngine {
 private:
-    snd_pcm_t* pcm_;
-    Vec<CSoundSample*> sound_container;
+    snd_pcm_t* pcm;
+    Vec<SoundSample*> sound_container;
 
 public:
     auto open_device(const char* device) -> void override;
     auto close_device() -> void override;
     auto sound_stream() -> void override;
-    auto playback_sound_sample(CSoundSample& sample) -> void override;
+    auto playback_sound_sample(SoundSample& sample) -> void override;
     auto set_master_volume(long volume) -> void override;
-    auto get_sound_container() -> Vec<CSoundSample*>& override;
+    auto get_sound_container() -> Vec<SoundSample*>& override;
     auto create_sound_sample(
         const char* file_path,
         u32 duration,
@@ -3160,33 +3147,30 @@ public:
         f32 volume
     ) -> void override;
 
-    ~CSoundEngineAlsa();
+    ~SoundEngineAlsa();
 };
 } // namespace glvm
 #endif // __linux__
 
 namespace glvm {
-struct CSoundEngineFactory {
+struct SoundEngineFactory {
 public:
-    auto create_sound_engine() -> ISoundEngine*;
+    auto create_sound_engine() -> SoundEngine*;
 };
 
 } // namespace glvm
 
 #ifdef _WIN32
 namespace glvm {
-struct CSoundEngineWaveform: public ISoundEngine {
+struct SoundEngineWaveform: public SoundEngine {
 private:
-    HANDLE h_data = NULL;
-    HPSTR lp_data = NULL;
-
-    Vec<CSoundSample*> t_sound_container;
+    Vec<SoundSample*> sound_container;
 
 public:
     auto open_device(const char* device) -> void override;
     auto close_device() -> void override;
     auto sound_stream() -> void override;
-    auto playback_sound_sample(CSoundSample& sample) -> void override;
+    auto playback_sound_sample(SoundSample& sample) -> void override;
     auto set_master_volume(long volume) -> void override;
     auto create_sound_sample(
         const char* file_path,
@@ -3194,7 +3178,7 @@ public:
         u32 rate,
         f32 volume
     ) -> void override;
-    auto get_sound_container() -> Vec<CSoundSample*>& override;
+    auto get_sound_container() -> Vec<SoundSample*>& override;
 };
 } // namespace glvm
 #endif // _WIN32
@@ -3210,7 +3194,7 @@ struct ProjectileBundle {
 namespace glvm {
 struct TextureManager {
 private:
-    static TextureManager* p_instance;
+    static TextureManager* instance;
     static Mutex mutex;
 
     Vec<Texture> texture_vector;
@@ -3219,7 +3203,7 @@ public:
     TextureManager();
 
     auto set_texture_vector(Vec<Texture> textures) -> void;
-    // It possibly to get only one instance of this struct with this method.
+    // It is possible to get only one instance of this struct with this method.
     static auto get_instance() -> TextureManager*;
     static auto get_hud_instance() -> TextureManager*;
     auto bind_texture(u32 entity_id, u32 texture_id) -> void;
@@ -3232,7 +3216,7 @@ public:
 namespace glvm {
 struct ComponentManager {
 private:
-    static ComponentManager* p_instance;
+    static ComponentManager* instance;
     static Mutex mutex;
     u32 number_of_base_components;
 
@@ -3258,7 +3242,7 @@ private:
         world_sparse_entities_map_to_components.push_back(
             sparse_entities_map_to_components
         );
-        // Create ID's component container.
+        // Create dense map from component index to entity.
         Vec<u32>* dense_entities_map_to_components = new Vec<u32>;
         world_dense_components_map_to_entities.push_back(
             dense_entities_map_to_components
@@ -3280,11 +3264,11 @@ public:
     bool is_components_collection_changed = true;
 
     ~ComponentManager();
-    // Don't need to make cope because of singleton property.
+    // No need to make a copy because of singleton property.
     ComponentManager(ComponentManager& component_manager) = delete;
     // Don't need assignment operator because of singleton property.
     void operator=(const ComponentManager& component_manager) = delete;
-    // It possibly to get only one instance of this struct with this method.
+    // It is possible to get only one instance of this struct with this method.
     static auto get_instance() -> ComponentManager*;
 
     template<typename ComponentType>
@@ -3323,11 +3307,11 @@ public:
     auto check_availability(Vec<u32>& sparse, Vec<u32>& dense, u32 entity)
         -> bool;
 
-    // Allow to give a various components to chosen entity.
+    // Allows giving various components to a chosen entity.
     template<typename ComponentType1, typename ComponentType2, typename... Args>
     auto create_component(u32& entity) -> void {
-        CreateComponent<ComponentType2, Args...>(entity);
-        CreateComponent<ComponentType1>(entity);
+        create_component<ComponentType2, Args...>(entity);
+        create_component<ComponentType1>(entity);
     }
 
     template<typename ComponentType, typename... Args>
@@ -3345,7 +3329,7 @@ public:
         }
         Vec<u32> return_vector;
         for (u32 i = 0; i < dense.size(); ++i) {
-            if (multiCheckAvailability<Args...>(dense[i])) {
+            if (multi_check_availability<Args...>(dense[i])) {
                 return_vector.push_back(dense[i]);
             }
         }
@@ -3385,7 +3369,7 @@ public:
 
     template<typename... Args>
     auto multi_check_availability(u32 entity) -> bool {
-        return (multiCheckAvailabilityBase<Args>(entity) && ...);
+        return (multi_check_availability_base<Args>(entity) && ...);
     }
 
     template<typename ComponentType>
@@ -3435,9 +3419,8 @@ public:
         }
     }
 
-    // Don't need to delete real component in this method. Because systems don't
-    // work with component without indices for that component in ordered
-    // container.
+    // No need to delete the real component in this method, because systems
+    // don't work with components lacking indices in the ordered container.
     template<typename ComponentType>
     auto remove_component(u32& entity) -> void {
         u32 local_container_id;
@@ -3455,15 +3438,15 @@ public:
         if (check_availability(sparse, dense, entity)) {
             assert(dense.size() == components.size());
             u32 index_in_dense_of_removable_entity = sparse[entity];
-            u32 index_in_sparse_of_swapable_entity = dense.back();
+            u32 index_in_sparse_of_swappable_entity = dense.back();
             const ComponentType& component_from_last_index = components.back();
             dense[index_in_dense_of_removable_entity] =
-                index_in_sparse_of_swapable_entity;
+                index_in_sparse_of_swappable_entity;
             dense.pop_back();
             components[index_in_dense_of_removable_entity] =
                 component_from_last_index;
             components.pop_back();
-            sparse[index_in_sparse_of_swapable_entity] =
+            sparse[index_in_sparse_of_swappable_entity] =
                 index_in_dense_of_removable_entity;
             is_components_collection_changed = true;
         }
@@ -3564,7 +3547,7 @@ struct MeshAxisLimitingValues {
     }
 
     auto compare_per_direction_and_set_to_maximum_value_by_module(
-        SVertex& vertex
+        Position& vertex
     ) -> void {
         if (vertex[0] < lowest_x) {
             lowest_x = vertex[0];
@@ -3633,7 +3616,7 @@ enum DescriptorSetDataLink {
     MainRenderDiffuseSampler,
     SdfData,
     // Not related to any pipeline values.
-    RidableTextures,
+    ReadableTextures,
     DescriptorChunksNumber
 };
 
@@ -3698,7 +3681,7 @@ struct DescriptorSet {
     u32 host_descriptor_number;
     VkDescriptorSetLayout set_layout;
     static constexpr auto MAXIMUM_LINKED_DESCRIPTOR_BINDINGS_DS = 32;
-    u32 descriptors_bindings_i_ds[MAXIMUM_LINKED_DESCRIPTOR_BINDINGS_DS];
+    u32 descriptors_bindings_ids[MAXIMUM_LINKED_DESCRIPTOR_BINDINGS_DS];
     u32 descriptor_set_offset;
     bool is_texture;
 };
@@ -3712,7 +3695,7 @@ struct Pipeline {
     Array<VkVertexInputAttributeDescription, 5> attribute_descriptions;
     u32 actual_linked_descriptor_sets_number;
     static constexpr auto MAXIMUM_LINKED_DESCRIPTOR_SET_DS = 32;
-    u32 linked_descriptor_set_i_ds[MAXIMUM_LINKED_DESCRIPTOR_SET_DS];
+    u32 linked_descriptor_set_ids[MAXIMUM_LINKED_DESCRIPTOR_SET_DS];
 };
 
 struct GPUBuffer {
@@ -3732,7 +3715,7 @@ struct Vertex {
     Vector<f32, 3> pos;
     Vector<f32, 3> color;
     Vector<f32, 2> tex_coord;
-    Vector<f32, 4> join_indices;
+    Vector<f32, 4> joint_indices;
     Vector<f32, 4> weights;
 
     static auto get_binding_description() -> VkVertexInputBindingDescription {
@@ -3766,7 +3749,7 @@ struct Vertex {
         attribute_descriptions[3].binding = 0;
         attribute_descriptions[3].location = 3;
         attribute_descriptions[3].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-        attribute_descriptions[3].offset = offsetof(Vertex, join_indices);
+        attribute_descriptions[3].offset = offsetof(Vertex, joint_indices);
 
         attribute_descriptions[4].binding = 0;
         attribute_descriptions[4].location = 4;
@@ -3805,7 +3788,7 @@ struct RenderDirectionalLight {
 };
 
 struct RenderSpotLight {
-    Matrix<f32, 4> spot_ligth_space_matrix;
+    Matrix<f32, 4> spot_light_space_matrix;
     Vector<f32, 3> position;
     Vector<f32, 3> direction;
     f32 cut_off;
@@ -3843,7 +3826,7 @@ struct RenderHealth {
 struct RenderFont {
     Vector<f32, 3> position;
     Vec<char> font_string;
-    f32 life_time;
+    f32 lifetime;
 };
 
 struct SlotData {
@@ -3884,11 +3867,11 @@ private:
 
 public: // TODO: Delete this.
     ~EntityManager();
-    // Don't need to make cope because of singleton property.
+    // No need to make a copy because of singleton property.
     EntityManager(EntityManager& entity_manager) = delete;
     // Don't need assignment operator because of singleton property.
     void operator=(const EntityManager& entity_manager) = delete;
-    // It possibly to get only one instance of this struct with this method.
+    // It is possible to get only one instance of this struct with this method.
     static auto get_instance() -> EntityManager*;
     [[nodiscard]] auto create_entity() -> u32;
     auto remove_entity(u32& entity_id, ComponentManager* component_manager)
@@ -3898,23 +3881,23 @@ public: // TODO: Delete this.
 } // namespace glvm
 
 namespace glvm {
-struct ISystem {
-    virtual ~ISystem() {
+struct System {
+    virtual ~System() {
     }
 
     virtual auto update() -> void = 0;
 };
 } // namespace glvm
 
-extern glvm::CEvent G_E_EVENT;
+extern glvm::Event global_event;
 
 // Contains all maximum absolute axis values.
-extern Vec<glvm::MeshAxisMaxAbsoluteValues> ALL_MESH_MAX_ABSOLUTE_VALUES;
+extern Vec<glvm::MeshAxisMaxAbsoluteValues> all_mesh_max_absolute_values;
 
-extern glvm::CStack INPUT_STACK;
+extern glvm::EventStack global_input_stack;
 
-extern i32 X_POINTER;
-extern i32 Y_POINTER;
+extern i32 global_pointer_x;
+extern i32 global_pointer_y;
 extern i32 KEYS_PRESSED[6];
 
 namespace glvm {
@@ -3926,27 +3909,27 @@ extern Vec<Descriptor> GPU_DESCRIPTORS;
 namespace glvm {
 enum DeactivatedSystems { DeactivatedMovementSystem };
 
-struct CSystemManager: public ISystem {
+struct SystemManager: public System {
 private:
-    static CSystemManager* p_instance;
+    static SystemManager* instance;
     static Mutex mutex;
     Vec<DeactivatedSystems> deactivated_systems;
 
-    CSystemManager();
+    SystemManager();
 
 public:
-    ~CSystemManager();
-    // Don't need to make cope because of singleton property.
-    CSystemManager(CSystemManager& other) = delete;
+    ~SystemManager();
+    // No need to make a copy because of singleton property.
+    SystemManager(SystemManager& other) = delete;
     // Don't need assignment operator because of singleton property.
-    void operator=(const CSystemManager& other) = delete;
-    // It possibly to get only one instance of this struct whith this method.
-    static auto get_instance() -> CSystemManager*;
+    void operator=(const SystemManager& other) = delete;
+    // It is possible to get only one instance of this struct with this method.
+    static auto get_instance() -> SystemManager*;
 
-    inline static u32 s_i_system_id = 0;
-    Vec<ISystem*> t_system_container;
+    inline static u32 system_count = 0;
+    Vec<System*> system_container;
 
-    auto activate_system(ISystem* system) -> void;
+    auto activate_system(System* system) -> void;
     auto deactivate_system(DeactivatedSystems system) -> void;
     auto return_system_to_activated_state(DeactivatedSystems system) -> void;
 
@@ -3955,7 +3938,7 @@ public:
 } // namespace glvm
 
 namespace glvm {
-struct DamageSystem: public ISystem {
+struct DamageSystem: public System {
 public:
     auto update() -> void override;
 
@@ -3986,12 +3969,12 @@ public:
 } // namespace glvm
 
 namespace glvm {
-struct CPhysicsSystem: public ISystem {
+struct PhysicsSystem: public System {
 public:
-    f32 f_acceleration_of_gravity;
-    f32 f_delta_time;
+    f32 acceleration_of_gravity;
+    f32 delta_time;
     f32& gravity;
-    CStack& input_stack;
+    EventStack& input_stack;
 
     u32 cached_archetypes_number = 0;
 
@@ -4014,23 +3997,23 @@ public:
         | (1ul << ComponentsIndices::ColliderComponent)
         | (1ul << ComponentsIndices::MeshComponent);
 
-    CPhysicsSystem(f32& initial_gravity, CStack& stack) :
+    PhysicsSystem(f32& initial_gravity, EventStack& stack) :
         gravity(initial_gravity),
         input_stack(stack) {
     }
 
-    // Set Y-axis of transform component of backtracking entity to upper Y-axis
-    // of ground entity.
+    // Sets the backtracking entity's transform Y to the ground entity's upper Y.
 
-    // This update searching for referring to colliders entities and check their
-    // transform components for collision, and if collision detected check if
-    // backtracking entity had gravity component for call Gravity function.
+    // This update searches for entities referring to colliders and checks their
+    // transform components for collisions; if a collision is detected, it
+    // checks whether the backtracking entity has a gravity component to call
+    // the gravity function.
     auto update() -> void override;
     auto repel(
         Transform& transform_component,
         f32& delta_time,
         Beholder& view,
-        CEvent& event
+        Event& event
     ) -> void;
 };
 } // namespace glvm
@@ -4038,13 +4021,13 @@ public:
 namespace glvm {
 constexpr auto CROSSHAIR_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(Transform) + sizeof(Mesh) + sizeof(Material)
-       + sizeof(CrossHairTagComponent));
+       + sizeof(CrosshairTagComponent));
 
 struct CrosshairArchetype: Archetype {
     Transform transforms[CROSSHAIR_ARCH_CHUNK_SIZE];
     Mesh meshes[CROSSHAIR_ARCH_CHUNK_SIZE];
     Material materials[CROSSHAIR_ARCH_CHUNK_SIZE];
-    CrossHairTagComponent crosshair_tag_components[CROSSHAIR_ARCH_CHUNK_SIZE];
+    CrosshairTagComponent crosshair_tag_components[CROSSHAIR_ARCH_CHUNK_SIZE];
 
     CrosshairArchetype() {
         components[ComponentsIndices::TransformComponent] = transforms;
@@ -4180,13 +4163,13 @@ constexpr auto INVENTORY_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
 struct InventoryArchetype: Archetype {
     Transform transforms[INVENTORY_ARCH_CHUNK_SIZE];
     Mesh meshes[INVENTORY_ARCH_CHUNK_SIZE];
-    Inventory invetories[INVENTORY_ARCH_CHUNK_SIZE];
+    Inventory inventories[INVENTORY_ARCH_CHUNK_SIZE];
     Material materials[INVENTORY_ARCH_CHUNK_SIZE];
 
     InventoryArchetype() {
         components[ComponentsIndices::TransformComponent] = transforms;
         components[ComponentsIndices::MeshComponent] = meshes;
-        components[ComponentsIndices::InventoryComponent] = invetories;
+        components[ComponentsIndices::InventoryComponent] = inventories;
         components[ComponentsIndices::MaterialComponent] = materials;
 
         mask = (1ull << ComponentsIndices::TransformComponent)
@@ -4421,7 +4404,7 @@ struct ProjectileArchetype: Archetype {
     ColliderFlags collider_flags[PROJECTILE_ARCH_CHUNK_SIZE];
     Rotation rotations[PROJECTILE_ARCH_CHUNK_SIZE];
     ProjectileBundle projectile_bundles[PROJECTILE_ARCH_CHUNK_SIZE];
-    Health heath[PROJECTILE_ARCH_CHUNK_SIZE];
+    Health health[PROJECTILE_ARCH_CHUNK_SIZE];
     Attack attacks[PROJECTILE_ARCH_CHUNK_SIZE];
     Font fonts[PROJECTILE_ARCH_CHUNK_SIZE];
     ProjectileTagComponent projectile_tag_components[PROJECTILE_ARCH_CHUNK_SIZE];
@@ -4434,7 +4417,7 @@ struct ProjectileArchetype: Archetype {
         components[ComponentsIndices::RotationComponent] = rotations;
         components[ComponentsIndices::ProjectileBundleComponent] =
             projectile_bundles;
-        components[ComponentsIndices::HealthComponent] = heath;
+        components[ComponentsIndices::HealthComponent] = health;
         components[ComponentsIndices::AttackComponent] = attacks;
         components[ComponentsIndices::FontComponent] = fonts;
         components[ComponentsIndices::ProjectileTagComponent] =
@@ -4643,12 +4626,12 @@ struct PhysicsArchetype: Archetype {
 #ifdef __linux__
 
 namespace glvm {
-struct WindowWaylandVulkan: IWindow {
-    CStack* input_stack = nullptr;
+struct WindowWaylandVulkan: WindowInterface {
+    EventStack* input_stack = nullptr;
     WindowWaylandVulkan();
     auto init() -> void;
     auto close() -> void override;
-    auto handle_event(CEvent& event) -> bool override;
+    auto handle_event(Event& event) -> bool override;
     static auto create_anonymous_file(off_t size) -> i32;
     auto create_transparent_cursor(struct wl_shm* shm) -> struct wl_buffer*;
     auto swap_buffers() -> void override;
@@ -4659,7 +4642,7 @@ struct WindowWaylandVulkan: IWindow {
         i32* out_offset_x,
         i32* out_offset_y
     ) -> void override;
-    bool hideAndLockPointer = false;
+    bool hide_and_lock_pointer = false;
     struct xdg_toplevel_listener xdg_toplevel_listener;
     struct xdg_surface_listener xdg_surface_listener;
     struct wl_callback_listener callback_listener;
@@ -4667,13 +4650,13 @@ struct WindowWaylandVulkan: IWindow {
     struct wl_keyboard_listener keyboard_listener;
     struct zwp_relative_pointer_v1_listener relative_pointer_listener;
     struct wl_pointer_listener pointer_listener;
-    struct wl_seat_listener seat_lintener;
+    struct wl_seat_listener seat_listener;
     struct wl_registry_listener registry_listener;
     struct wl_output_listener output_listener;
 
     struct wl_surface* wl_surface;
     struct wl_compositor* compositor;
-    struct xdg_toplevel* xdg_topLevel;
+    struct xdg_toplevel* xdg_toplevel;
     struct xdg_wm_base* xdg_shell;
     struct wl_buffer* buffer;
     struct wl_shm* shared_memory;
@@ -4702,10 +4685,10 @@ auto xdg_toplevel_configure(
     struct xdg_toplevel* xdg_toplevel,
     i32 new_width,
     i32 new_height,
-    struct wl_array* atate
+    struct wl_array* state
 ) -> void;
 auto xdg_toplevel_close(void* data, struct xdg_toplevel* xdg_toplevel) -> void;
-auto alocate_shared_memory(u64 size) -> i32;
+auto allocate_shared_memory(u64 size) -> i32;
 auto resize(void* data) -> void;
 auto draw(void* data) -> void;
 auto xdg_surface_configure(
@@ -4713,11 +4696,8 @@ auto xdg_surface_configure(
     struct xdg_surface* xdg_surface,
     u32 serial
 ) -> void;
-auto new_frame(
-    void* data,
-    struct wl_callback* frame_call_back,
-    u32 callback_data
-) -> void;
+auto new_frame(void* data, struct wl_callback* frame_callback, u32 callback_data)
+    -> void;
 auto shell_ping(void* data, struct xdg_wm_base* shell, u32 serial) -> void;
 auto keyboard_keymap(
     void* data,
@@ -4828,7 +4808,7 @@ auto registry_global_remove(void* data, struct wl_registry* registry, u32 name)
 #ifdef __linux__
 
 namespace glvm {
-struct WindowXVulkan: public IWindow {
+struct WindowXVulkan: public WindowInterface {
 private:
     XWindowAttributes x_window_attributes;
     Window root_window;
@@ -4853,7 +4833,7 @@ public:
     ) -> void override;
     auto swap_buffers() -> void override;
     auto clear_display() -> void override;
-    auto handle_event(CEvent& event) -> bool override;
+    auto handle_event(Event& event) -> bool override;
     auto close() -> void override;
 };
 } // namespace glvm
@@ -4862,7 +4842,7 @@ public:
 #ifdef __linux__
 
 namespace glvm {
-struct WindowXCBVulkan: public IWindow {
+struct WindowXCBVulkan: public WindowInterface {
 private:
     xcb_connection_t* connection;
     xcb_screen_t* screen;
@@ -4885,7 +4865,7 @@ public:
 
     auto swap_buffers() -> void override;
     auto clear_display() -> void override;
-    auto handle_event(CEvent& event) -> bool override;
+    auto handle_event(Event& event) -> bool override;
     auto close() -> void override;
     auto cursor_lock(
         i32 pointer_x,
@@ -4898,7 +4878,7 @@ public:
 #endif // __linux__
 
 namespace glvm {
-struct CVulkanRenderer;
+struct Renderer;
 
 struct DebugVertex {
     f32 x, y, z;
@@ -4907,7 +4887,7 @@ struct DebugVertex {
 
 struct ImGuiOverlay {
 public:
-    explicit ImGuiOverlay(CVulkanRenderer& renderer);
+    explicit ImGuiOverlay(Renderer& renderer);
 
     auto init() -> void;
     auto shutdown() -> void;
@@ -4934,7 +4914,7 @@ public:
     i32 shadow_map_light = 0;
 
 private:
-    CVulkanRenderer& renderer;
+    Renderer& renderer;
     bool initialized = false;
 
     VkRenderPass render_pass = VK_NULL_HANDLE;
@@ -4969,9 +4949,9 @@ inline RenderPass RENDER_PASS_CONFIGS[32];
 constexpr auto MAX_TEXTURES = 18;
 
 inline auto vk_config_initializer() -> void {
-    // Pipelines and its render passes. Put all meta data related to pipeline
-    // here. Also needed to add meta data of descriptor sets and it's bindings
-    // that will be related to specific pipeline
+    // Pipelines and their render passes. Put all metadata related to pipelines
+    // here. Also needed to add metadata of descriptor sets and their bindings
+    // that will be related to a specific pipeline.
 
     DESCRIPTOR_SETS_CONFIG[ShadowMapDirectionalLight]
         .actual_linked_descriptor_bindings_number = 1;
@@ -6108,11 +6088,11 @@ inline auto vk_config_initializer() -> void {
         {};
 
     // Not related to any pipeline descriptor sets and its bindings.
-    DESCRIPTOR_SETS_CONFIG[RidableTextures]
+    DESCRIPTOR_SETS_CONFIG[ReadableTextures]
         .actual_linked_descriptor_bindings_number = 1;
-    DESCRIPTOR_SETS_CONFIG[RidableTextures].host_descriptor_number =
+    DESCRIPTOR_SETS_CONFIG[ReadableTextures].host_descriptor_number =
         MAX_TEXTURES;
-    DESCRIPTOR_SETS_CONFIG[RidableTextures].is_texture = true;
+    DESCRIPTOR_SETS_CONFIG[ReadableTextures].is_texture = true;
 
     DESCRIPTOR_BINDINGS_CONFIG[21].vk_type =
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -6152,9 +6132,9 @@ auto unwrap_archetype(Archetype* arch, u64 mask, void (*func)(T*)) -> void {
 namespace glvm {
 auto create_debug_utils_messenger_ext(
     VkInstance instance,
-    const VkDebugUtilsMessengerCreateInfoEXT* p_create_info,
-    const VkAllocationCallbacks* p_allocator,
-    VkDebugUtilsMessengerEXT* p_debug_messenger
+    const VkDebugUtilsMessengerCreateInfoEXT* create_info,
+    const VkAllocationCallbacks* allocator,
+    VkDebugUtilsMessengerEXT* debug_messenger
 ) -> VkResult;
 auto create_begin_debug_utils_label_ext(
     VkInstance instance,
@@ -6168,7 +6148,7 @@ auto create_end_debug_utils_label_ext(
 auto destroy_debug_utils_messenger_ext(
     VkInstance instance,
     VkDebugUtilsMessengerEXT debug_messenger,
-    const VkAllocationCallbacks* p_allocator
+    const VkAllocationCallbacks* allocator
 ) -> void;
 auto set_debug_object_name(
     VkDevice device,
@@ -6232,7 +6212,7 @@ struct World {
     ) -> void;
 };
 
-extern World WORLD;
+extern World world;
 }; // namespace glvm
 
 namespace glvm {
@@ -6250,7 +6230,7 @@ struct ArchetypeEntityManager {
     auto is_alive(u64 entity) const -> bool;
 
 private:
-    static ArchetypeEntityManager* p_instance;
+    static ArchetypeEntityManager* instance;
     static Mutex mutex;
 
     ~ArchetypeEntityManager();
@@ -6258,7 +6238,7 @@ private:
 }; // namespace glvm
 
 namespace glvm {
-struct InventorySystem: public ISystem {
+struct InventorySystem: public System {
 public:
     u32 crosshair_archetypes_number = 0;
     u32 inventory_archetypes_number = 0;
@@ -6333,14 +6313,14 @@ public:
     ) -> Point2D<i32>;
 
     bool is_inventory_opened;
-    i32* is_item_draged;
+    i32* is_item_dragged;
     bool* is_left_mouse_button_released;
     bool is_left_mouse_button_pressed;
     f32 mouse_offset_x = 0;
     f32 mouse_offset_y = 0;
     // Window aspect ratio, set by engine each frame.
-    f32 aspect_rate = 0.0f;
-    Archetype* cached_crosshair_archetype;
+    f32 aspect_ratio = 0.0f;
+    Archetype* crosshair_cached_archetype;
     Archetype* cached_inventory_archetype;
 };
 } // namespace glvm
@@ -6390,7 +6370,7 @@ const Vec<const char*> DEVICE_EXTENSIONS = {
 };
 
 #ifdef NDEBUG
-const bool enableValidationLayers = false;
+const bool enable_validation_layers = false;
 #else
 const bool ENABLE_VALIDATION_LAYERS = true;
 #endif
@@ -6410,7 +6390,7 @@ struct SwapChainSupportDetails {
     Vec<VkPresentModeKHR> present_modes;
 };
 
-struct CVulkanRenderer {
+struct Renderer {
 public:
     bool print = true;
     Vector<i32, 4> indirect_texture
@@ -6422,12 +6402,12 @@ public:
                         'K',  'L',  'M', 'N', 'O', 'P', 'Q',  'R',  'S', 'T',
                         'U',  'V',  'W', 'X', 'Y', 'Z', 'a',  'b',  'c', 'd',
                         'e',  'f',  'g', 'h', 'i', 'j', 'k',  'l',  'm', 'n',
-                        'o',  'p',  'q', 'r', 's', 't', 'u',  'v',  'y', 'x',
+                        'o',  'p',  'q', 'r', 's', 't', 'u',  'v',  'w', 'x',
                         'y',  'z',  '0', '1', '2', '3', '4',  '5',  '6', '7',
                         '8',  '9',  '.', ',', '"', '"', '\'', '\'', '"', '"',
                         '\'', '\'', '?', '!', '_', '$', '(',  ')',  '+', '-',
                         '/',  ':',  ';', '<', '>', '=', '[',  ']',  '\\'};
-    // FIXME: Some garbage here that needs maybe for align.
+    // FIXME: Padding that may be needed for alignment.
     const Vec<Vertex> padding[128];
     const Vec<u32> symbol_g_indices = {0, 1, 2, 2, 1, 3};
     std::chrono::steady_clock::time_point start_time;
@@ -6438,11 +6418,11 @@ public:
     Vec<Vec<Vertex>> level_generated_vertices;
     Vec<Vec<u32>> level_generated_indices;
 
-    Vec<Vec<Vertex>> a_vertices;
+    Vec<Vec<Vertex>> vertices;
     // Wavefront .obj indices.
-    Vec<Vec<u32>> a_indices;
+    Vec<Vec<u32>> indices;
     // GLTF indices.
-    Vec<Vec<f32>> a_vertexes_temp;
+    Vec<Vec<f32>> vertices_temp;
     // highest GLTF y.
     Vec<f32> highest_gltf_y;
     // Keep axis limiting values for every axis per mesh in current iteration
@@ -6469,14 +6449,14 @@ public:
     Vec<RenderPlayer> players;
     RenderPlayer player;
 
-    f32 f_yaw = -90.0f;
-    f32 f_pitch = 0.0f;
+    f32 yaw = -90.0f;
+    f32 pitch = 0.0f;
     f32 prev_y = 0.0f;
     f32 current_y = 0.0f;
     f32 prev_x = 0.0f;
     f32 current_x = 0.0f;
     // Window aspect ratio, updated on resize.
-    f32 aspect_rate = 0.0f;
+    f32 aspect_ratio = 0.0f;
     i32 dragged_item_entity;
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
@@ -6497,8 +6477,8 @@ public:
 
     ImGuiOverlay* imgui_overlay = nullptr;
 
-    CVulkanRenderer();
-    ~CVulkanRenderer();
+    Renderer();
+    ~Renderer();
 
     auto create_texture_image() -> void;
     auto recreate_swap_chain() -> void;
@@ -6522,11 +6502,11 @@ public:
 #endif
 
 #ifdef VK_USE_PLATFORM_XLIB_KHR
-    VkXlibSurfaceCreateInfoKHR createXlibSurfaceInfo;
+    VkXlibSurfaceCreateInfoKHR create_xlib_surface_info;
 #endif
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
-    VkXcbSurfaceCreateInfoKHR createXcbSurfaceInfo;
+    VkXcbSurfaceCreateInfoKHR create_xcb_surface_info;
 #endif
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
@@ -6558,8 +6538,8 @@ public:
     VkDeviceMemory ui_uniform_buffers_memory;
     VkBuffer ui_icons_uniform_buffer;
     VkDeviceMemory ui_icons_uniform_buffers_memory;
-    Vec<VkDescriptorSet> virtual_textures_ubo_desctiptor_sets;
-    Vec<VkDescriptorSet> virtual_textures_samplers_desctiptor_sets;
+    Vec<VkDescriptorSet> virtual_textures_ubo_descriptor_sets;
+    Vec<VkDescriptorSet> virtual_textures_samplers_descriptor_sets;
     VkBuffer virtual_textures_uniform_buffer;
     VkDeviceMemory virtual_textures_uniform_buffer_memory;
 
@@ -6612,7 +6592,7 @@ public:
     Vec<VkBuffer> vertex_buffer_container;
     Vec<VkDeviceMemory> vertex_buffer_memory_container;
     Vec<VkBuffer> index_buffer_container;
-    Vec<VkDeviceMemory> index_buffer_memory_contaner;
+    Vec<VkDeviceMemory> index_buffer_memory_container;
     u32 wavefront_obj_counter = 0;
     u32 gltf_counter = 0;
 
@@ -6621,7 +6601,7 @@ public:
     Vec<VkBuffer> font_vertex_buffer_container;
     Vec<VkDeviceMemory> font_vertex_buffer_memory_container;
     Vec<VkBuffer> font_index_buffer_container;
-    Vec<VkDeviceMemory> font_index_buffer_memory_contaner;
+    Vec<VkDeviceMemory> font_index_buffer_memory_container;
 
     VkBuffer model_matrix_uniform_buffer;
     VkDeviceMemory model_matrix_uniform_buffers_memory;
@@ -6835,7 +6815,7 @@ public:
     ) -> void;
     auto update_hud_ubo(
         u32 offset,
-        bool is_hud_exists,
+        bool hud_exists,
         f32 highest_y,
         u32 health_counter
     ) -> void;
@@ -6902,7 +6882,7 @@ public:
     auto directional_light_shadow_map_draw_frame() -> void;
     auto spot_light_shadow_map_draw_frame() -> void;
     auto point_light_shadow_map_draw_frame() -> void;
-    auto directional_light_record_coomand_buffer(
+    auto directional_light_record_command_buffer(
         Vec<VkCommandBuffer>& command_buffer,
         u32 current_frame
     ) -> void;
@@ -6945,8 +6925,8 @@ public:
     static auto VKAPI_ATTR VKAPI_CALL debug_callback(
         VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
         VkDebugUtilsMessageTypeFlagsEXT message_type,
-        const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data,
-        void* p_user_data
+        const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
+        void* user_data
     ) -> VkBool32;
     auto compute_model_matrix(Transform* transform) -> Matrix<f32, 4>;
     auto clear_vk_image(GpuImage* texture_images) -> void;
@@ -6955,7 +6935,7 @@ public:
 }; // namespace glvm
 
 namespace glvm {
-struct ItemSystem: public ISystem {
+struct ItemSystem: public System {
     u32 inventory_archetypes_number = 0;
     u32 item_archetypes_number = 0;
     u32 crosshair_archetypes_number = 0;
@@ -6992,7 +6972,7 @@ struct ItemSystem: public ISystem {
     auto update() -> void;
     auto put_item2x2(Inventory* inventory_component, u32 item_entity) -> bool;
 
-    CStack* input_stack;
+    EventStack* input_stack;
     bool is_inventory_opened;
     i32* dragged_item_entity;
     bool* is_left_mouse_button_released;
@@ -7041,11 +7021,11 @@ auto create_projectile(
 }; // namespace glvm
 
 namespace glvm {
-struct CMovementSystem: public ISystem {
+struct MovementSystem: public System {
 public:
     f32 delta_frame_time;
     f32 gravity;
-    CStack& input_stack;
+    EventStack& input_stack;
     f32 prev_delta_x = 0.0f;
     f32 prev_x = 0.0f;
     f32 current_x = 0.0f;
@@ -7078,20 +7058,20 @@ public:
         | (1ul << ComponentsIndices::RigidBodyComponent)
         | (1ul << ComponentsIndices::MoveComponent);
 
-    CMovementSystem(CStack& input_stack);
+    MovementSystem(EventStack& input_stack);
 
     auto update() -> void;
     auto calculate_vector_rl(Beholder& beholder) -> Vector<f32, 3>;
-    auto calculate_vector_fb(Beholder& beholder, CEvent& event)
+    auto calculate_vector_fb(Beholder& beholder, Event& event)
         -> Vector<f32, 3>;
 };
 } // namespace glvm
 
 namespace glvm {
-struct ProceduralLevelGeneratingSystem: public ISystem {
+struct ProceduralLevelGeneratingSystem: public System {
 public:
-    u32 level_nubmer = 0;
-    bool bredo_flag = false;
+    u32 level_number = 0;
+    bool stupid_flag = false;
     u32 previous_half_x_rand = 0;
     u32 previous_half_z_rand = 0;
     Vector<f32, 3> current_level_position = {5.0f, 0.0f, 15.0f};
@@ -7120,7 +7100,7 @@ public:
         | (1ull << ComponentsIndices::ColliderFlagsComponent)
         | (1ull << ComponentsIndices::LevelChunkTagComponent);
 
-    Vec<MeshHandle> mesh_handlers;
+    Vec<MeshHandle> mesh_handles;
     Vec<TextureHandle> texture_handlers;
 
     Vec<Vec<Vertex>> level_generated_vertices;
@@ -7156,7 +7136,7 @@ public:
         const f32 transition_bridge_half_height
     ) -> void;
     auto make_cube_object_vertices(
-        Vector<f32, 4> join_indices,
+        Vector<f32, 4> joint_indices,
         Vector<f32, 4> weights,
         f32 half_x,
         f32 half_y,
@@ -7173,15 +7153,15 @@ public:
 } // namespace glvm
 
 namespace glvm {
-struct CCollisionSystem: public ISystem {
+struct CollisionSystem: public System {
 public:
-    f32 f_delta_time;
+    f32 delta_time;
     f32 gravity;
     bool is_inventory_opened;
-    bool* is_item_draged;
+    bool* is_item_dragged;
     bool is_left_mouse_button_pressed;
     bool* is_left_mouse_button_released;
-    CStack& input_stack;
+    EventStack& input_stack;
     Archetype* cached_archetypes[32];
     u32 cached_archetypes_number = 0;
 
@@ -7201,7 +7181,7 @@ public:
         | (1ul << ComponentsIndices::TransformComponent)
         | (1ul << ComponentsIndices::MeshComponent);
 
-    CCollisionSystem(CStack& stack) : input_stack(stack) {
+    CollisionSystem(EventStack& stack) : input_stack(stack) {
     }
 
     auto update() -> void override;
@@ -7217,7 +7197,7 @@ public:
 } // namespace glvm
 
 namespace glvm {
-struct EnemySystem: public ISystem {
+struct EnemySystem: public System {
 public:
     u32 player_archetypes_number = 0;
     u32 enemy_archetypes_number = 0;
@@ -7247,9 +7227,9 @@ public:
         (1ull << ComponentsIndices::ProjectileTagComponent);
 
     auto update() -> void override;
-    ISoundEngine* sound_engine;
+    SoundEngine* sound_engine;
     Vec<TextureHandle> texture_handlers;
-    Vec<MeshHandle> mesh_handlers;
+    Vec<MeshHandle> mesh_handles;
     f32 projectile_cooldown = 5.0f;
     f32 delta_frame_time;
 };
@@ -7265,15 +7245,15 @@ concept HasAttack = requires(T* t) {
     { t->attacks };
 };
 
-struct CProjectileSystem: public ISystem {
+struct ProjectileSystem: public System {
 public:
-    f32 f_yaw = -90.0f;
-    f32 f_pitch = 0.0f;
-    bool b_first_mouse = true;
-    CStack& input_stack;
+    f32 yaw = -90.0f;
+    f32 pitch = 0.0f;
+    bool first_mouse = true;
+    EventStack& input_stack;
     Vec<TextureHandle> texture_handlers;
-    Vec<MeshHandle> mesh_handlers;
-    ISoundEngine* sound_engine;
+    Vec<MeshHandle> mesh_handles;
+    SoundEngine* sound_engine;
     f32 projectile_cooldown = 2.0f;
     f32 delta_frame_time;
     bool is_inventory_opened;
@@ -7303,7 +7283,7 @@ public:
     u64 projectile_required_mask =
         (1ull << ComponentsIndices::ProjectileTagComponent);
 
-    CProjectileSystem(CStack& input_stack);
+    ProjectileSystem(EventStack& input_stack);
     auto update() -> void override;
     template<typename T>
         requires UnitOrEnemy<T> && HasAttack<T>
@@ -7316,19 +7296,19 @@ public:
 
 template<typename T>
     requires UnitOrEnemy<T> && HasAttack<T>
-auto CProjectileSystem::mark_as_attacked(
+auto ProjectileSystem::mark_as_attacked(
     T* arch,
     Damage* projectile_damage,
-    u32 enitity_index
+    u32 entity_index
 ) -> void {
-    arch->attacks[enitity_index].damage = projectile_damage->maximum_damage;
+    arch->attacks[entity_index].damage = projectile_damage->maximum_damage;
 }
 
 } // namespace glvm
 
 namespace glvm {
 
-struct SpatialGridSystem: public ISystem {
+struct SpatialGridSystem: public System {
 private:
     Archetype* cached_archetypes[32];
     u32 cached_archetypes_number = 0;
@@ -7354,11 +7334,11 @@ enum RendererType { VulkanRenderer };
 
 struct Engine {
 private:
-    static Engine* p_instance;
+    static Engine* instance;
     static Mutex mutex;
 
-    IChrono* chrono;
-    ISoundEngine* sound_engine;
+    Chrono* chrono;
+    SoundEngine* sound_engine;
     std::thread sound_thread;
     AtomicBool running_sound {false};
     f32 delta_frame_time;
@@ -7374,36 +7354,36 @@ private:
     bool is_cursor_hidden = false;
     f32 hud_screen_x = 0.0f;
     f32 hud_screen_y;
-    // If don't have any dragged item then this variable have value of -1.f
+    // If don't have any dragged item then this variable have value of -1.
     i32 dragged_item_entity = -1;
-    f32 f_yaw = -90.0f;
-    f32 f_pitch = 0.0f;
+    f32 yaw = -90.0f;
+    f32 pitch = 0.0f;
     f32 previous_mouse_offset_x = 0.0f;
     f32 previous_mouse_offset_y = 0.0f;
-    CVulkanRenderer* vulkan_renderer;
+    Renderer* vulkan_renderer;
     SpatialGridSystem* spatial_grid_system;
-    CCollisionSystem* collision_system;
-    CMovementSystem* movement_system;
-    CPhysicsSystem* physics_system;
-    CProjectileSystem* projectile_system;
+    CollisionSystem* collision_system;
+    MovementSystem* movement_system;
+    PhysicsSystem* physics_system;
+    ProjectileSystem* projectile_system;
     DamageSystem* damage_system;
-    EnemySystem* enemy_sytem;
+    EnemySystem* enemy_system;
     ItemSystem* item_system;
-    ProceduralLevelGeneratingSystem* procudural_level_generating_system;
+    ProceduralLevelGeneratingSystem* procedural_level_generating_system;
     InventorySystem* inventory_system;
-    Archetype* cached_directional_ligth_archetypes[32];
+    Archetype* cached_directional_light_archetypes[32];
     u32 directional_light_archetypes_number = 0;
     u64 directional_light_required_mask =
         (1ul << ComponentsIndices::DirectionalLightComponent)
         | (1ul << ComponentsIndices::MeshComponent)
         | (1ul << ComponentsIndices::TransformComponent);
-    Archetype* cached_spot_ligth_archetypes[32];
+    Archetype* cached_spot_light_archetypes[32];
     u32 spot_light_archetypes_number = 0;
     u64 spot_light_required_mask =
         (1ul << ComponentsIndices::SpotLightComponent)
         | (1ul << ComponentsIndices::MeshComponent)
         | (1ul << ComponentsIndices::TransformComponent);
-    Archetype* cached_point_ligth_archetypes[32];
+    Archetype* cached_point_light_archetypes[32];
     u32 point_light_archetypes_number = 0;
     u64 point_light_required_mask =
         (1ul << ComponentsIndices::PointLightComponent)
@@ -7494,17 +7474,17 @@ private:
     Engine();
 
 public:
-    Vec<MeshHandle> mesh_handlers;
+    Vec<MeshHandle> mesh_handles;
     Vec<TextureHandle> texture_handlers;
     u32 wavefront_obj_counter = 0;
 
     ~Engine();
 
-    // Don't need to make copy because of singleton property.
+    // No need to make copy because of singleton property.
     Engine(Engine& other) = delete;
     // Don't need assignment operator because of singleton property.
     void operator=(const Engine& other) = delete;
-    // It possibly to get only one instance of this struct with this method.
+    // It is possible to get only one instance of this struct with this method.
     static auto get_instance() -> Engine*;
     auto game_loop() -> void;
     auto event_queue_flush() -> void;
@@ -7529,11 +7509,11 @@ public:
         const u32 current_inventory_row,
         const u32 current_inventory_column,
         Inventory* inventory_component,
-        Transform* slot_transfrom_component,
+        Transform* slot_transform_component,
         Mesh* mesh_component
     ) -> SlotData;
     auto update_data_ubo_icons_ui(
-        Transform* item_transfrom_component,
+        Transform* item_transform_component,
         Collider* item_collider_component,
         Item* item_component,
         const u32 row_inventory,
@@ -7553,14 +7533,14 @@ public:
     auto initialize_font_data() -> void;
     auto compute_model_matrix(Transform* transform, Rotation* rotation)
         -> Matrix<f32, 4>;
-    auto compute_hud_screeen_coordinates() -> void;
+    auto compute_hud_screen_coordinates() -> void;
     auto load_texture_from_file(const char* path_to_texture_component)
         -> TextureHandle;
     auto load_texture_from_address(
-        u32 i_width,
-        u32 i_height,
-        u32 dat_length,
-        u8* u_i_data
+        u32 width,
+        u32 height,
+        u32 data_length,
+        u8* data
     ) -> TextureHandle;
     auto load_mesh_from_obj(const char* mesh_path) -> MeshHandle;
     auto load_mesh_from_gltf(const char* path_to_mesh) -> MeshHandle;

@@ -22,7 +22,6 @@ target_include_directories(glvm_log
 target_link_libraries(glvm_log
   PUBLIC
     rusty
-    glvm_app
 )
 
 # [tests]

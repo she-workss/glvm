@@ -1,4 +1,4 @@
-function(cevy_add_test NAME)
+function(glvm_add_test NAME)
   add_executable(${NAME} "${CMAKE_CURRENT_SOURCE_DIR}/${NAME}.cpp")
   target_link_libraries(${NAME}
     PRIVATE
@@ -17,4 +17,4 @@ function(cevy_add_test NAME)
   )
 endfunction()
 
-cevy_add_test(basic_glvm)
+glvm_add_test(basic_glvm)
