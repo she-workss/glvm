@@ -312,7 +312,7 @@ struct Mesh {
 } // namespace glvm
 
 constexpr auto INVALID_ENTITY_ID = 4000000000;
-constexpr i32 BOX_INDICES_FOR_INDEX_BUFFER[36] = {0, 1, 2, 3, 0, 2, 4, 0, 3,
+constexpr Array<i32, 36> BOX_INDICES_FOR_INDEX_BUFFER = {0, 1, 2, 3, 0, 2, 4, 0, 3,
                                                   7, 4, 3, 4, 5, 1, 0, 4, 1,
                                                   1, 5, 6, 2, 1, 6, 5, 4, 7,
                                                   6, 5, 7, 3, 2, 6, 7, 3, 6};
@@ -986,7 +986,7 @@ struct Vector;
 template<typename T, i32 Var>
 struct Matrix {
 private:
-    T elements[Var][Var] {};
+    Array<Array<T, Var>, Var> elements {};
 
 public:
     Matrix(T arg = 0) {
@@ -1023,7 +1023,7 @@ public:
     }
 
     auto self_tensor_transpose() -> void {
-        T temp_matrix[Var][Var];
+        Array<Array<T, Var>, Var> temp_matrix;
         for (i32 p = 0; p < Var; ++p) {
             for (i32 u = 0; u < Var; ++u) {
                 temp_matrix[p][u] = elements[u][p];
@@ -1097,12 +1097,12 @@ auto Matrix<T, Var>::operator*(const Matrix& matrix) -> Matrix<T, Var> {
 
 template<typename T, i32 Var>
 auto Matrix<T, Var>::operator[](const i32 index) -> T* {
-    return elements[index];
+    return elements[index].data();
 }
 
 template<typename T, i32 Var>
 auto Matrix<T, Var>::operator[](const i32 index) const -> const T* {
-    return elements[index];
+    return elements[index].data();
 }
 
 template<typename T, i32 Var>
@@ -1122,11 +1122,11 @@ auto Matrix<T, Var>::operator*(const Vector<T2, Var2>& vector)
 template<typename T2, i32 Dim>
 struct Vector {
 public:
-    T2 elements[Dim] {};
+    Array<T2, Dim> elements {};
 
 public:
     Vector(T2 x = 0, T2 y = 0, T2 z = 0, T2 w = 0) {
-        T2 array[4] = {x, y, z, w};
+        Array<T2, 4> array = {x, y, z, w};
         for (i32 i = 0; i < Dim; ++i) {
             elements[i] = array[i];
         }
@@ -2066,7 +2066,7 @@ struct EventStack {
 private:
     i32 head = 0;
     static const auto stack_range = 6;
-    EventKind stack[stack_range] = {};
+    Array<EventKind, stack_range> stack = {};
 
 public:
     auto push(const EventKind& event) -> void {
@@ -2093,7 +2093,7 @@ public:
     }
 
     auto remove(const EventKind& event) -> void {
-        EventKind temp_stack[stack_range] = {};
+        Array<EventKind, stack_range> temp_stack = {};
         bool remove_flag = false;
         i32 n = 0;
 
@@ -2307,8 +2307,8 @@ struct ComponentTypeInfo {
     void (*move_assign)(void* dst, void* src) = nullptr;
 };
 
-extern ComponentTypeInfo
-    COMPONENT_TYPE_INFOS[ComponentsIndices::ComponentsCount];
+extern Array<ComponentTypeInfo, ComponentsIndices::ComponentsCount>
+    COMPONENT_TYPE_INFOS;
 
 auto register_component_move(u32 component_id, ComponentTypeInfo info) -> void;
 
@@ -2330,11 +2330,11 @@ struct Archetype {
 
     static constexpr auto CAPACITY = 1024;
 
-    u64 entities[CAPACITY];
+    Array<u64, CAPACITY> entities;
     u32 entity_count = 0;
-    u32 component_ids[ComponentsIndices::ComponentsCount] = {};
+    Array<u32, ComponentsIndices::ComponentsCount> component_ids = {};
     u32 component_count = 0;
-    void* components[ComponentsIndices::ComponentsCount] = {};
+    Array<void*, ComponentsIndices::ComponentsCount> components = {};
     u64 mask = 0;
 
     auto add_entity(u64 entity) -> u32;
@@ -2346,8 +2346,8 @@ struct EntityLocation {
     u32 index;
     static const auto max_grid_cell_number = 32;
     u8 grid_cell_counter = 0;
-    Vector<f32, 3> grid_cell_indices[max_grid_cell_number];
-    u32 cell_entity_indices[max_grid_cell_number];
+    Array<Vector<f32, 3>, max_grid_cell_number> grid_cell_indices;
+    Array<u32, max_grid_cell_number> cell_entity_indices;
     // Whether the entity has been moved or removed.
     bool is_dirty = false;
 };
@@ -2744,7 +2744,7 @@ struct alignas(64) ModelMatrixUBO {
     Matrix<f32, 4> model;
     Matrix<f32, 4> view;
     Matrix<f32, 4> proj;
-    Matrix<f32, 4> joint_matrices[MAX_JOINTS_NUMBER];
+    Array<Matrix<f32, 4>, MAX_JOINTS_NUMBER> joint_matrices;
 
     Vector<f32, 3> ambient;
     f32 shininess;
@@ -2759,7 +2759,7 @@ struct alignas(64) ModelMatrixUBO {
 struct alignas(16) ShadowMapMatrixUBO {
     Matrix<f32, 4> model;
     Matrix<f32, 4> light_space_matrix;
-    Matrix<f32, 4> joint_matrices[MAX_JOINTS_NUMBER];
+    Array<Matrix<f32, 4>, MAX_JOINTS_NUMBER> joint_matrices;
 };
 
 struct alignas(16) SpotLightShadowMapMatrixUBO {
@@ -2772,7 +2772,7 @@ struct alignas(64) PointLightShadowMapMatrixUBO {
     Matrix<f32, 4> light_space_matrix;
     Vector<f32, 3> light_position;
     f32 far_plane;
-    Matrix<f32, 4> joint_matrices[MAX_JOINTS_NUMBER];
+    Array<Matrix<f32, 4>, MAX_JOINTS_NUMBER> joint_matrices;
 };
 
 struct alignas(16) UniformBufferObjectLightUBO {
@@ -2826,23 +2826,25 @@ struct alignas(64) LightData {
 
     alignas(16) Vector<f32, 3> view_position;
 
-    PointLight point_lights[POINT_LIGHTS_NUMBER];
+    Array<PointLight, POINT_LIGHTS_NUMBER> point_lights;
     i32 point_lights_array_size;
     f32 far_plane;
     i32 padding0;
     i32 padding1;
 
-    DirectionalLight directional_lights[DIRECTIONAL_LIGHTS_NUMBER];
+    Array<DirectionalLight, DIRECTIONAL_LIGHTS_NUMBER> directional_lights;
     alignas(16) i32 directional_lights_array_size;
 
-    SpotLight spot_lights[SPOT_LIGHTS_NUMBER];
+    Array<SpotLight, SPOT_LIGHTS_NUMBER> spot_lights;
     i32 spot_light_array_size;
     i32 padding2;
     i32 padding3;
     i32 padding4;
 
-    Vector<i32, 4> indirect_texture
-        [INDIRECT_TEXTURE_WIDTH * INDIRECT_TEXTURE_HEIGHT / 4 + 1];
+    Array<
+        Vector<i32, 4>,
+        INDIRECT_TEXTURE_WIDTH * INDIRECT_TEXTURE_HEIGHT / 4 + 1>
+        indirect_texture;
 
     // Debug: 0 = off, 1 = directional, 2 = spot. When set, the main shader
     // renders the shadow map depth projected onto the scene instead of
@@ -3430,11 +3432,11 @@ enum SpecificPipeline {
 
 struct RenderPass {
     u32 actual_attachment_description_number;
-    VkAttachmentDescription attachment_descriptions[16];
+    Array<VkAttachmentDescription, 16> attachment_descriptions;
     u32 actual_attachment_reference_number;
-    VkAttachmentReference attachment_references[16];
+    Array<VkAttachmentReference, 16> attachment_references;
     u32 actual_subpass_dependency_number;
-    VkSubpassDependency subpass_dependencies[8];
+    Array<VkSubpassDependency, 8> subpass_dependencies;
 };
 
 struct GpuImage {
@@ -3474,7 +3476,7 @@ struct DescriptorSet {
     u32 host_descriptor_number;
     VkDescriptorSetLayout set_layout;
     static constexpr auto MAXIMUM_LINKED_DESCRIPTOR_BINDINGS_DS = 32;
-    u32 descriptors_bindings_ids[MAXIMUM_LINKED_DESCRIPTOR_BINDINGS_DS];
+    Array<u32, MAXIMUM_LINKED_DESCRIPTOR_BINDINGS_DS> descriptors_bindings_ids;
     u32 descriptor_set_offset;
     bool is_texture;
 };
@@ -3488,7 +3490,7 @@ struct Pipeline {
     Array<VkVertexInputAttributeDescription, 5> attribute_descriptions;
     u32 actual_linked_descriptor_sets_number;
     static constexpr auto MAXIMUM_LINKED_DESCRIPTOR_SET_DS = 32;
-    u32 linked_descriptor_set_ids[MAXIMUM_LINKED_DESCRIPTOR_SET_DS];
+    Array<u32, MAXIMUM_LINKED_DESCRIPTOR_SET_DS> linked_descriptor_set_ids;
 };
 
 struct GPUBuffer {
@@ -3597,7 +3599,7 @@ struct RenderSpotLight {
 };
 
 struct RenderPointLight {
-    Matrix<f32, 4> point_light_space_matrix[CUBE_MAP_LAYER_NUMBER];
+    Array<Matrix<f32, 4>, CUBE_MAP_LAYER_NUMBER> point_light_space_matrix;
     Vector<f32, 3> position;
 
     Vector<f32, 3> ambient;
@@ -3691,7 +3693,7 @@ extern glvm::EventStack global_input_stack;
 
 extern i32 GLOBAL_POINTER_X;
 extern i32 GLOBAL_POINTER_Y;
-extern i32 KEYS_PRESSED[6];
+extern Array<i32, 6> KEYS_PRESSED;
 
 namespace glvm {
 extern Vec<VkDescriptorSet> DESCRIPTOR_SETS_CHUNKS;
@@ -3739,8 +3741,8 @@ public:
     u32 cached_font_archetypes_number = 0;
 
     struct ArchView {
-        Archetype* cached_attackable_archetypes[32];
-        Archetype* cached_font_archetypes[32];
+        Array<Archetype*, 32> cached_attackable_archetypes;
+        Array<Archetype*, 32> cached_font_archetypes;
     } arch_view;
 
     struct ComponentsView {
@@ -3770,7 +3772,7 @@ public:
     u32 cached_archetypes_number = 0;
 
     struct ArchView {
-        Archetype* cached_archetypes[32];
+        Array<Archetype*, 32> cached_archetypes;
     } arch_view;
 
     struct ComponentsView {
@@ -5392,7 +5394,7 @@ struct SpatialGrid {
     static const auto width = 8;
     static const auto height = 8;
     static const auto depth = 8;
-    GridChunk grid[width][height][depth];
+    Array<Array<Array<GridChunk, depth>, height>, width> grid;
 };
 
 struct World {
@@ -5407,7 +5409,7 @@ struct World {
     auto remove_entity(u64 entity) -> void;
     auto search_cache_archetypes(
         u64 required_mask,
-        Archetype* cached_archetypes[],
+        Archetype** cached_archetypes,
         u32& cached_archetypes_number
     ) -> void;
 };
@@ -5510,12 +5512,14 @@ struct SwapChainSupportDetails {
 struct Renderer {
 public:
     bool print = true;
-    Vector<i32, 4> indirect_texture
-        [(INDIRECT_TEXTURE_WIDTH * INDIRECT_TEXTURE_HEIGHT / 4) + 1];
+    Array<
+        Vector<i32, 4>,
+        (INDIRECT_TEXTURE_WIDTH * INDIRECT_TEXTURE_HEIGHT / 4) + 1>
+        indirect_texture;
     Vec<u32> entities_collection_linked_trn_mat_mes_act;
     Vec<u32> entities_collection_linked_trn_po_l_mes_act;
 
-    char glyphs[128] = {'A',  'B',  'C', 'D', 'E', 'F', 'G',  'H',  'I', 'J',
+    Array<char, 128> glyphs = {'A',  'B',  'C', 'D', 'E', 'F', 'G',  'H',  'I', 'J',
                         'K',  'L',  'M', 'N', 'O', 'P', 'Q',  'R',  'S', 'T',
                         'U',  'V',  'W', 'X', 'Y', 'Z', 'a',  'b',  'c', 'd',
                         'e',  'f',  'g', 'h', 'i', 'j', 'k',  'l',  'm', 'n',
@@ -5553,7 +5557,7 @@ public:
     f32 hud_screen_x = 0.0f;
     f32 hud_screen_y;
 
-    u32 entities[32];
+    Array<u32, 32> entities;
     Vec<RenderActor> actors;
     Vec<RenderDirectionalLight> directional_lights;
     Vec<RenderSpotLight> spot_lights;
@@ -5689,8 +5693,8 @@ public:
         shadow_map_directional_light_model_matrix_uniform_buffers_memory;
     Vec<GpuImage> directional_light_texture_images;
 
-    Matrix<f32, 4> dir_light_space_matrix[DIRECTIONAL_LIGHTS_NUMBER];
-    Matrix<f32, 4> spot_light_space_matrix[SPOT_LIGHTS_NUMBER];
+    Array<Matrix<f32, 4>, DIRECTIONAL_LIGHTS_NUMBER> dir_light_space_matrix;
+    Array<Matrix<f32, 4>, SPOT_LIGHTS_NUMBER> spot_light_space_matrix;
 
     u32 point_light_number = 0;
     Vec<Vec<VkFramebuffer>> point_light_shadow_map_frame_buffers;
@@ -5895,7 +5899,7 @@ public:
         VkImageLayout image_layout,
         Vec<GpuImage>& texture_images,
         const u32 image_view_index,
-        VkDescriptorImageInfo descriptor_image_infos[]
+        VkDescriptorImageInfo* descriptor_image_infos
     ) -> void;
     auto create_descriptor_buffer_info(VkBuffer ubo, u32 offset, u32 range)
         -> VkDescriptorBufferInfo;
@@ -6108,7 +6112,7 @@ public:
     bool is_left_mouse_button_pressed;
     bool* is_left_mouse_button_released;
     EventStack& input_stack;
-    Archetype* cached_archetypes[32];
+    Array<Archetype*, 32> cached_archetypes;
     u32 cached_archetypes_number = 0;
 
     struct CollisionComponentsView {
@@ -6154,7 +6158,7 @@ namespace glvm {
 
 struct SpatialGridSystem: public System {
 private:
-    Archetype* cached_archetypes[32];
+    Array<Archetype*, 32> cached_archetypes;
     u32 cached_archetypes_number = 0;
     bool is_initialized = false;
 
@@ -6208,25 +6212,25 @@ private:
     CollisionSystem* collision_system;
     PhysicsSystem* physics_system;
     DamageSystem* damage_system;
-    Archetype* cached_directional_light_archetypes[32];
+    Array<Archetype*, 32> cached_directional_light_archetypes;
     u32 directional_light_archetypes_number = 0;
     u64 directional_light_required_mask =
         (1ul << ComponentsIndices::DirectionalLightComponent)
         | (1ul << ComponentsIndices::MeshComponent)
         | (1ul << ComponentsIndices::TransformComponent);
-    Archetype* cached_spot_light_archetypes[32];
+    Array<Archetype*, 32> cached_spot_light_archetypes;
     u32 spot_light_archetypes_number = 0;
     u64 spot_light_required_mask =
         (1ul << ComponentsIndices::SpotLightComponent)
         | (1ul << ComponentsIndices::MeshComponent)
         | (1ul << ComponentsIndices::TransformComponent);
-    Archetype* cached_point_light_archetypes[32];
+    Array<Archetype*, 32> cached_point_light_archetypes;
     u32 point_light_archetypes_number = 0;
     u64 point_light_required_mask =
         (1ul << ComponentsIndices::PointLightComponent)
         | (1ul << ComponentsIndices::MeshComponent)
         | (1ul << ComponentsIndices::TransformComponent);
-    Archetype* cached_animation_actors_archetypes[32];
+    Array<Archetype*, 32> cached_animation_actors_archetypes;
     u32 animation_actors_archetypes_number = 0;
     u64 animated_actors_required_mask =
         (1ul << ComponentsIndices::MaterialComponent)
@@ -6237,23 +6241,23 @@ private:
     // Entities carrying the base Camera (Beholder) component drive the view
     // matrix and the tracked-positions buffer. Games decide which entities
     // those are.
-    Archetype* cached_camera_archetypes[32];
+    Array<Archetype*, 32> cached_camera_archetypes;
     u32 camera_archetypes_number = 0;
     u64 camera_required_mask = (1ul << ComponentsIndices::ViewComponent)
         | (1ul << ComponentsIndices::TransformComponent);
-    Archetype* cached_animation_archetypes[32];
+    Array<Archetype*, 32> cached_animation_archetypes;
     u32 animation_archetypes_number = 0;
     u64 animation_required_mask = (1ul << ComponentsIndices::MaterialComponent)
         | (1ul << ComponentsIndices::AnimationComponent)
         | (1ul << ComponentsIndices::RotationComponent)
         | (1ul << ComponentsIndices::TransformComponent)
         | (1ul << ComponentsIndices::MeshComponent);
-    Archetype* cached_health_bars_archetypes[32];
+    Array<Archetype*, 32> cached_health_bars_archetypes;
     u32 health_bars_archetypes_number = 0;
     u64 health_bars_required_mask = (1ul << ComponentsIndices::HealthComponent)
         | (1ul << ComponentsIndices::MeshComponent)
         | (1ul << ComponentsIndices::TransformComponent);
-    Archetype* cached_fonts_archetypes[32];
+    Array<Archetype*, 32> cached_fonts_archetypes;
     u32 fonts_archetypes_number = 0;
     u64 font_required_mask = (1ul << ComponentsIndices::FontComponent)
         | (1ul << ComponentsIndices::TransformComponent);

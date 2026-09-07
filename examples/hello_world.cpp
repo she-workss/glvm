@@ -123,17 +123,17 @@ constexpr auto CROSSHAIR_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
        + sizeof(CrosshairTagComponent));
 
 struct CrosshairArchetype: Archetype {
-    Transform transforms[CROSSHAIR_ARCH_CHUNK_SIZE];
-    Mesh meshes[CROSSHAIR_ARCH_CHUNK_SIZE];
-    Material materials[CROSSHAIR_ARCH_CHUNK_SIZE];
-    CrosshairTagComponent crosshair_tag_components[CROSSHAIR_ARCH_CHUNK_SIZE] {};
+    Array<Transform, CROSSHAIR_ARCH_CHUNK_SIZE> transforms;
+    Array<Mesh, CROSSHAIR_ARCH_CHUNK_SIZE> meshes;
+    Array<Material, CROSSHAIR_ARCH_CHUNK_SIZE> materials;
+    Array<CrosshairTagComponent, CROSSHAIR_ARCH_CHUNK_SIZE> crosshair_tag_components {};
 
     CrosshairArchetype() {
-        components[ComponentsIndices::TransformComponent] = transforms;
-        components[ComponentsIndices::MeshComponent] = meshes;
-        components[ComponentsIndices::MaterialComponent] = materials;
+        components[ComponentsIndices::TransformComponent] = transforms.data();
+        components[ComponentsIndices::MeshComponent] = meshes.data();
+        components[ComponentsIndices::MaterialComponent] = materials.data();
         components[ComponentsIndices::CrosshairTagComponent] =
-            crosshair_tag_components;
+            crosshair_tag_components.data();
 
         mask = (1ull << ComponentsIndices::TransformComponent)
             | (1ull << ComponentsIndices::MeshComponent)
@@ -153,18 +153,18 @@ constexpr auto DIRECTIONAL_LIGHT_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
        + sizeof(DirectionalLightComponent));
 
 struct DirectionalLightArchetype: Archetype {
-    Transform transforms[DIRECTIONAL_LIGHT_ARCH_CHUNK_SIZE];
-    Mesh meshes[DIRECTIONAL_LIGHT_ARCH_CHUNK_SIZE];
-    Material materials[DIRECTIONAL_LIGHT_ARCH_CHUNK_SIZE];
-    DirectionalLightComponent
-        directional_lights[DIRECTIONAL_LIGHT_ARCH_CHUNK_SIZE];
+    Array<Transform, DIRECTIONAL_LIGHT_ARCH_CHUNK_SIZE> transforms;
+    Array<Mesh, DIRECTIONAL_LIGHT_ARCH_CHUNK_SIZE> meshes;
+    Array<Material, DIRECTIONAL_LIGHT_ARCH_CHUNK_SIZE> materials;
+    Array<DirectionalLightComponent, DIRECTIONAL_LIGHT_ARCH_CHUNK_SIZE>
+        directional_lights;
 
     DirectionalLightArchetype() {
-        components[ComponentsIndices::TransformComponent] = transforms;
-        components[ComponentsIndices::MeshComponent] = meshes;
-        components[ComponentsIndices::MaterialComponent] = materials;
+        components[ComponentsIndices::TransformComponent] = transforms.data();
+        components[ComponentsIndices::MeshComponent] = meshes.data();
+        components[ComponentsIndices::MaterialComponent] = materials.data();
         components[ComponentsIndices::DirectionalLightComponent] =
-            directional_lights;
+            directional_lights.data();
 
         mask = (1ull << ComponentsIndices::TransformComponent)
             | (1ull << ComponentsIndices::MeshComponent)
@@ -186,36 +186,36 @@ constexpr auto ENEMY_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
        + sizeof(Attack) + sizeof(Rotation) + sizeof(Move));
 
 struct EnemyArchetype: Archetype {
-    Transform transforms[ENEMY_ARCH_CHUNK_SIZE];
-    Enemy enemies[ENEMY_ARCH_CHUNK_SIZE] {};
-    State states[ENEMY_ARCH_CHUNK_SIZE] {};
-    Font fonts[ENEMY_ARCH_CHUNK_SIZE];
-    Animation animations[ENEMY_ARCH_CHUNK_SIZE];
-    Material materials[ENEMY_ARCH_CHUNK_SIZE];
-    Mesh meshes[ENEMY_ARCH_CHUNK_SIZE];
-    Collider colliders[ENEMY_ARCH_CHUNK_SIZE];
-    ColliderFlags collider_flags[ENEMY_ARCH_CHUNK_SIZE] {};
-    Health health[ENEMY_ARCH_CHUNK_SIZE] {};
-    RigidBody rigid_bodies[ENEMY_ARCH_CHUNK_SIZE];
-    Attack attacks[ENEMY_ARCH_CHUNK_SIZE] {};
-    Rotation rotations[ENEMY_ARCH_CHUNK_SIZE];
-    Move moves[ENEMY_ARCH_CHUNK_SIZE];
+    Array<Transform, ENEMY_ARCH_CHUNK_SIZE> transforms;
+    Array<Enemy, ENEMY_ARCH_CHUNK_SIZE> enemies {};
+    Array<State, ENEMY_ARCH_CHUNK_SIZE> states {};
+    Array<Font, ENEMY_ARCH_CHUNK_SIZE> fonts;
+    Array<Animation, ENEMY_ARCH_CHUNK_SIZE> animations;
+    Array<Material, ENEMY_ARCH_CHUNK_SIZE> materials;
+    Array<Mesh, ENEMY_ARCH_CHUNK_SIZE> meshes;
+    Array<Collider, ENEMY_ARCH_CHUNK_SIZE> colliders;
+    Array<ColliderFlags, ENEMY_ARCH_CHUNK_SIZE> collider_flags {};
+    Array<Health, ENEMY_ARCH_CHUNK_SIZE> health {};
+    Array<RigidBody, ENEMY_ARCH_CHUNK_SIZE> rigid_bodies;
+    Array<Attack, ENEMY_ARCH_CHUNK_SIZE> attacks {};
+    Array<Rotation, ENEMY_ARCH_CHUNK_SIZE> rotations;
+    Array<Move, ENEMY_ARCH_CHUNK_SIZE> moves;
 
     EnemyArchetype() {
-        components[ComponentsIndices::TransformComponent] = transforms;
-        components[ComponentsIndices::EnemyComponent] = enemies;
-        components[ComponentsIndices::StateComponent] = states;
-        components[ComponentsIndices::FontComponent] = fonts;
-        components[ComponentsIndices::AnimationComponent] = animations;
-        components[ComponentsIndices::MaterialComponent] = materials;
-        components[ComponentsIndices::MeshComponent] = meshes;
-        components[ComponentsIndices::ColliderComponent] = colliders;
-        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags;
-        components[ComponentsIndices::HealthComponent] = health;
-        components[ComponentsIndices::RigidBodyComponent] = rigid_bodies;
-        components[ComponentsIndices::AttackComponent] = attacks;
-        components[ComponentsIndices::RotationComponent] = rotations;
-        components[ComponentsIndices::MoveComponent] = moves;
+        components[ComponentsIndices::TransformComponent] = transforms.data();
+        components[ComponentsIndices::EnemyComponent] = enemies.data();
+        components[ComponentsIndices::StateComponent] = states.data();
+        components[ComponentsIndices::FontComponent] = fonts.data();
+        components[ComponentsIndices::AnimationComponent] = animations.data();
+        components[ComponentsIndices::MaterialComponent] = materials.data();
+        components[ComponentsIndices::MeshComponent] = meshes.data();
+        components[ComponentsIndices::ColliderComponent] = colliders.data();
+        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags.data();
+        components[ComponentsIndices::HealthComponent] = health.data();
+        components[ComponentsIndices::RigidBodyComponent] = rigid_bodies.data();
+        components[ComponentsIndices::AttackComponent] = attacks.data();
+        components[ComponentsIndices::RotationComponent] = rotations.data();
+        components[ComponentsIndices::MoveComponent] = moves.data();
 
         mask = (1ull << ComponentsIndices::TransformComponent)
             | (1ull << ComponentsIndices::EnemyComponent)
@@ -254,16 +254,16 @@ constexpr auto INVENTORY_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
     / (sizeof(Transform) + sizeof(Mesh) + sizeof(Inventory) + sizeof(Material));
 
 struct InventoryArchetype: Archetype {
-    Transform transforms[INVENTORY_ARCH_CHUNK_SIZE];
-    Mesh meshes[INVENTORY_ARCH_CHUNK_SIZE];
-    Inventory inventories[INVENTORY_ARCH_CHUNK_SIZE];
-    Material materials[INVENTORY_ARCH_CHUNK_SIZE];
+    Array<Transform, INVENTORY_ARCH_CHUNK_SIZE> transforms;
+    Array<Mesh, INVENTORY_ARCH_CHUNK_SIZE> meshes;
+    Array<Inventory, INVENTORY_ARCH_CHUNK_SIZE> inventories;
+    Array<Material, INVENTORY_ARCH_CHUNK_SIZE> materials;
 
     InventoryArchetype() {
-        components[ComponentsIndices::TransformComponent] = transforms;
-        components[ComponentsIndices::MeshComponent] = meshes;
-        components[ComponentsIndices::InventoryComponent] = inventories;
-        components[ComponentsIndices::MaterialComponent] = materials;
+        components[ComponentsIndices::TransformComponent] = transforms.data();
+        components[ComponentsIndices::MeshComponent] = meshes.data();
+        components[ComponentsIndices::InventoryComponent] = inventories.data();
+        components[ComponentsIndices::MaterialComponent] = materials.data();
 
         mask = (1ull << ComponentsIndices::TransformComponent)
             | (1ull << ComponentsIndices::MeshComponent)
@@ -284,29 +284,29 @@ constexpr auto ITEM_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
        + sizeof(Move) + sizeof(Item));
 
 struct ItemArchetype: Archetype {
-    Transform transforms[ITEM_ARCH_CHUNK_SIZE];
-    Collider colliders[ITEM_ARCH_CHUNK_SIZE];
-    ColliderFlags collider_flags[ITEM_ARCH_CHUNK_SIZE] {};
-    Mesh meshes[ITEM_ARCH_CHUNK_SIZE];
-    RigidBody rigid_bodies[ITEM_ARCH_CHUNK_SIZE];
-    Material materials[ITEM_ARCH_CHUNK_SIZE];
-    Rotation rotations[ITEM_ARCH_CHUNK_SIZE];
-    Move moves[ITEM_ARCH_CHUNK_SIZE];
-    Item items[ITEM_ARCH_CHUNK_SIZE];
+    Array<Transform, ITEM_ARCH_CHUNK_SIZE> transforms;
+    Array<Collider, ITEM_ARCH_CHUNK_SIZE> colliders;
+    Array<ColliderFlags, ITEM_ARCH_CHUNK_SIZE> collider_flags {};
+    Array<Mesh, ITEM_ARCH_CHUNK_SIZE> meshes;
+    Array<RigidBody, ITEM_ARCH_CHUNK_SIZE> rigid_bodies;
+    Array<Material, ITEM_ARCH_CHUNK_SIZE> materials;
+    Array<Rotation, ITEM_ARCH_CHUNK_SIZE> rotations;
+    Array<Move, ITEM_ARCH_CHUNK_SIZE> moves;
+    Array<Item, ITEM_ARCH_CHUNK_SIZE> items;
 
     ItemArchetype();
 };
 
 ItemArchetype::ItemArchetype() {
-    components[ComponentsIndices::TransformComponent] = transforms;
-    components[ComponentsIndices::ColliderComponent] = colliders;
-    components[ComponentsIndices::ColliderFlagsComponent] = collider_flags;
-    components[ComponentsIndices::MeshComponent] = meshes;
-    components[ComponentsIndices::RigidBodyComponent] = rigid_bodies;
-    components[ComponentsIndices::MaterialComponent] = materials;
-    components[ComponentsIndices::RotationComponent] = rotations;
-    components[ComponentsIndices::MoveComponent] = moves;
-    components[ComponentsIndices::ItemComponent] = items;
+    components[ComponentsIndices::TransformComponent] = transforms.data();
+    components[ComponentsIndices::ColliderComponent] = colliders.data();
+    components[ComponentsIndices::ColliderFlagsComponent] = collider_flags.data();
+    components[ComponentsIndices::MeshComponent] = meshes.data();
+    components[ComponentsIndices::RigidBodyComponent] = rigid_bodies.data();
+    components[ComponentsIndices::MaterialComponent] = materials.data();
+    components[ComponentsIndices::RotationComponent] = rotations.data();
+    components[ComponentsIndices::MoveComponent] = moves.data();
+    components[ComponentsIndices::ItemComponent] = items.data();
 
     mask = (1ull << ComponentsIndices::TransformComponent)
         | (1ull << ComponentsIndices::ColliderComponent)
@@ -336,24 +336,24 @@ constexpr auto LEVEL_CHUNK_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
        + sizeof(LevelChunkTagComponent));
 
 struct LevelChunkArchetype: Archetype {
-    Transform transforms[LEVEL_CHUNK_ARCH_CHUNK_SIZE];
-    Material materials[LEVEL_CHUNK_ARCH_CHUNK_SIZE];
-    Mesh meshes[LEVEL_CHUNK_ARCH_CHUNK_SIZE];
-    Collider colliders[LEVEL_CHUNK_ARCH_CHUNK_SIZE];
-    ColliderFlags collider_flags[LEVEL_CHUNK_ARCH_CHUNK_SIZE] {};
-    Rotation rotations[LEVEL_CHUNK_ARCH_CHUNK_SIZE];
-    LevelChunkTagComponent
-        level_chunk_tag_components[LEVEL_CHUNK_ARCH_CHUNK_SIZE] {};
+    Array<Transform, LEVEL_CHUNK_ARCH_CHUNK_SIZE> transforms;
+    Array<Material, LEVEL_CHUNK_ARCH_CHUNK_SIZE> materials;
+    Array<Mesh, LEVEL_CHUNK_ARCH_CHUNK_SIZE> meshes;
+    Array<Collider, LEVEL_CHUNK_ARCH_CHUNK_SIZE> colliders;
+    Array<ColliderFlags, LEVEL_CHUNK_ARCH_CHUNK_SIZE> collider_flags {};
+    Array<Rotation, LEVEL_CHUNK_ARCH_CHUNK_SIZE> rotations;
+    Array<LevelChunkTagComponent, LEVEL_CHUNK_ARCH_CHUNK_SIZE>
+        level_chunk_tag_components {};
 
     LevelChunkArchetype() {
-        components[ComponentsIndices::TransformComponent] = transforms;
-        components[ComponentsIndices::MaterialComponent] = materials;
-        components[ComponentsIndices::MeshComponent] = meshes;
-        components[ComponentsIndices::ColliderComponent] = colliders;
-        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags;
-        components[ComponentsIndices::RotationComponent] = rotations;
+        components[ComponentsIndices::TransformComponent] = transforms.data();
+        components[ComponentsIndices::MaterialComponent] = materials.data();
+        components[ComponentsIndices::MeshComponent] = meshes.data();
+        components[ComponentsIndices::ColliderComponent] = colliders.data();
+        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags.data();
+        components[ComponentsIndices::RotationComponent] = rotations.data();
         components[ComponentsIndices::LevelChunkTagComponent] =
-            level_chunk_tag_components;
+            level_chunk_tag_components.data();
 
         mask = (1ull << ComponentsIndices::TransformComponent)
             | (1ull << ComponentsIndices::MaterialComponent)
@@ -382,37 +382,37 @@ constexpr auto PLAYER_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
        + sizeof(PlayerTagComponent));
 
 struct PlayerArchetype: Archetype {
-    Transform transforms[PLAYER_ARCH_CHUNK_SIZE];
-    Beholder beholders[PLAYER_ARCH_CHUNK_SIZE];
-    Collider colliders[PLAYER_ARCH_CHUNK_SIZE];
-    ColliderFlags collider_flags[PLAYER_ARCH_CHUNK_SIZE] {};
-    Mesh meshes[PLAYER_ARCH_CHUNK_SIZE];
-    RigidBody rigid_bodies[PLAYER_ARCH_CHUNK_SIZE];
-    Health health[PLAYER_ARCH_CHUNK_SIZE] {};
-    Material materials[PLAYER_ARCH_CHUNK_SIZE];
-    Move moves[PLAYER_ARCH_CHUNK_SIZE];
-    Attack attacks[PLAYER_ARCH_CHUNK_SIZE] {};
-    Animation animations[PLAYER_ARCH_CHUNK_SIZE];
-    Font fonts[PLAYER_ARCH_CHUNK_SIZE];
-    Rotation rotations[PLAYER_ARCH_CHUNK_SIZE];
-    PlayerTagComponent player_tag_components[PLAYER_ARCH_CHUNK_SIZE] {};
+    Array<Transform, PLAYER_ARCH_CHUNK_SIZE> transforms;
+    Array<Beholder, PLAYER_ARCH_CHUNK_SIZE> beholders;
+    Array<Collider, PLAYER_ARCH_CHUNK_SIZE> colliders;
+    Array<ColliderFlags, PLAYER_ARCH_CHUNK_SIZE> collider_flags {};
+    Array<Mesh, PLAYER_ARCH_CHUNK_SIZE> meshes;
+    Array<RigidBody, PLAYER_ARCH_CHUNK_SIZE> rigid_bodies;
+    Array<Health, PLAYER_ARCH_CHUNK_SIZE> health {};
+    Array<Material, PLAYER_ARCH_CHUNK_SIZE> materials;
+    Array<Move, PLAYER_ARCH_CHUNK_SIZE> moves;
+    Array<Attack, PLAYER_ARCH_CHUNK_SIZE> attacks {};
+    Array<Animation, PLAYER_ARCH_CHUNK_SIZE> animations;
+    Array<Font, PLAYER_ARCH_CHUNK_SIZE> fonts;
+    Array<Rotation, PLAYER_ARCH_CHUNK_SIZE> rotations;
+    Array<PlayerTagComponent, PLAYER_ARCH_CHUNK_SIZE> player_tag_components {};
 
     PlayerArchetype() {
-        components[ComponentsIndices::TransformComponent] = transforms;
-        components[ComponentsIndices::ViewComponent] = beholders;
-        components[ComponentsIndices::ColliderComponent] = colliders;
-        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags;
-        components[ComponentsIndices::MeshComponent] = meshes;
-        components[ComponentsIndices::RigidBodyComponent] = rigid_bodies;
-        components[ComponentsIndices::HealthComponent] = health;
-        components[ComponentsIndices::MaterialComponent] = materials;
-        components[ComponentsIndices::MoveComponent] = moves;
-        components[ComponentsIndices::AttackComponent] = attacks;
-        components[ComponentsIndices::AnimationComponent] = animations;
-        components[ComponentsIndices::FontComponent] = fonts;
-        components[ComponentsIndices::RotationComponent] = rotations;
+        components[ComponentsIndices::TransformComponent] = transforms.data();
+        components[ComponentsIndices::ViewComponent] = beholders.data();
+        components[ComponentsIndices::ColliderComponent] = colliders.data();
+        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags.data();
+        components[ComponentsIndices::MeshComponent] = meshes.data();
+        components[ComponentsIndices::RigidBodyComponent] = rigid_bodies.data();
+        components[ComponentsIndices::HealthComponent] = health.data();
+        components[ComponentsIndices::MaterialComponent] = materials.data();
+        components[ComponentsIndices::MoveComponent] = moves.data();
+        components[ComponentsIndices::AttackComponent] = attacks.data();
+        components[ComponentsIndices::AnimationComponent] = animations.data();
+        components[ComponentsIndices::FontComponent] = fonts.data();
+        components[ComponentsIndices::RotationComponent] = rotations.data();
         components[ComponentsIndices::PlayerTagComponent] =
-            player_tag_components;
+            player_tag_components.data();
 
         mask = (1ull << ComponentsIndices::TransformComponent)
             | (1ull << ComponentsIndices::ViewComponent)
@@ -452,16 +452,16 @@ constexpr auto POINT_LIGHT_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
        + sizeof(PointLightComponent));
 
 struct PointLightArchetype: Archetype {
-    Transform transforms[POINT_LIGHT_ARCH_CHUNK_SIZE];
-    Mesh meshes[POINT_LIGHT_ARCH_CHUNK_SIZE];
-    Material materials[POINT_LIGHT_ARCH_CHUNK_SIZE];
-    PointLightComponent point_lights[POINT_LIGHT_ARCH_CHUNK_SIZE];
+    Array<Transform, POINT_LIGHT_ARCH_CHUNK_SIZE> transforms;
+    Array<Mesh, POINT_LIGHT_ARCH_CHUNK_SIZE> meshes;
+    Array<Material, POINT_LIGHT_ARCH_CHUNK_SIZE> materials;
+    Array<PointLightComponent, POINT_LIGHT_ARCH_CHUNK_SIZE> point_lights;
 
     PointLightArchetype() {
-        components[ComponentsIndices::TransformComponent] = transforms;
-        components[ComponentsIndices::MeshComponent] = meshes;
-        components[ComponentsIndices::MaterialComponent] = materials;
-        components[ComponentsIndices::PointLightComponent] = point_lights;
+        components[ComponentsIndices::TransformComponent] = transforms.data();
+        components[ComponentsIndices::MeshComponent] = meshes.data();
+        components[ComponentsIndices::MaterialComponent] = materials.data();
+        components[ComponentsIndices::PointLightComponent] = point_lights.data();
 
         mask = (1ull << ComponentsIndices::TransformComponent)
             | (1ull << ComponentsIndices::MeshComponent)
@@ -483,31 +483,31 @@ constexpr auto PROJECTILE_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
        + sizeof(ProjectileTagComponent));
 
 struct ProjectileArchetype: Archetype {
-    Transform transforms[PROJECTILE_ARCH_CHUNK_SIZE];
-    Mesh meshes[PROJECTILE_ARCH_CHUNK_SIZE];
-    Collider colliders[PROJECTILE_ARCH_CHUNK_SIZE];
-    ColliderFlags collider_flags[PROJECTILE_ARCH_CHUNK_SIZE] {};
-    Rotation rotations[PROJECTILE_ARCH_CHUNK_SIZE];
-    ProjectileBundle projectile_bundles[PROJECTILE_ARCH_CHUNK_SIZE];
-    Health health[PROJECTILE_ARCH_CHUNK_SIZE] {};
-    Attack attacks[PROJECTILE_ARCH_CHUNK_SIZE] {};
-    Font fonts[PROJECTILE_ARCH_CHUNK_SIZE];
-    ProjectileTagComponent
-        projectile_tag_components[PROJECTILE_ARCH_CHUNK_SIZE] {};
+    Array<Transform, PROJECTILE_ARCH_CHUNK_SIZE> transforms;
+    Array<Mesh, PROJECTILE_ARCH_CHUNK_SIZE> meshes;
+    Array<Collider, PROJECTILE_ARCH_CHUNK_SIZE> colliders;
+    Array<ColliderFlags, PROJECTILE_ARCH_CHUNK_SIZE> collider_flags {};
+    Array<Rotation, PROJECTILE_ARCH_CHUNK_SIZE> rotations;
+    Array<ProjectileBundle, PROJECTILE_ARCH_CHUNK_SIZE> projectile_bundles;
+    Array<Health, PROJECTILE_ARCH_CHUNK_SIZE> health {};
+    Array<Attack, PROJECTILE_ARCH_CHUNK_SIZE> attacks {};
+    Array<Font, PROJECTILE_ARCH_CHUNK_SIZE> fonts;
+    Array<ProjectileTagComponent, PROJECTILE_ARCH_CHUNK_SIZE>
+        projectile_tag_components {};
 
     ProjectileArchetype() {
-        components[ComponentsIndices::TransformComponent] = transforms;
-        components[ComponentsIndices::MeshComponent] = meshes;
-        components[ComponentsIndices::ColliderComponent] = colliders;
-        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags;
-        components[ComponentsIndices::RotationComponent] = rotations;
+        components[ComponentsIndices::TransformComponent] = transforms.data();
+        components[ComponentsIndices::MeshComponent] = meshes.data();
+        components[ComponentsIndices::ColliderComponent] = colliders.data();
+        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags.data();
+        components[ComponentsIndices::RotationComponent] = rotations.data();
         components[ComponentsIndices::ProjectileBundleComponent] =
-            projectile_bundles;
-        components[ComponentsIndices::HealthComponent] = health;
-        components[ComponentsIndices::AttackComponent] = attacks;
-        components[ComponentsIndices::FontComponent] = fonts;
+            projectile_bundles.data();
+        components[ComponentsIndices::HealthComponent] = health.data();
+        components[ComponentsIndices::AttackComponent] = attacks.data();
+        components[ComponentsIndices::FontComponent] = fonts.data();
         components[ComponentsIndices::ProjectileTagComponent] =
-            projectile_tag_components;
+            projectile_tag_components.data();
 
         mask = (1ull << ComponentsIndices::TransformComponent)
             | (1ull << ComponentsIndices::MeshComponent)
@@ -538,8 +538,8 @@ constexpr auto RIGID_BODY_ARCH_CHUNK_SIZE =
     ARCHETYPE_CHUNK_SIZE / (sizeof(glvm::Transform) + sizeof(glvm::RigidBody));
 
 struct RigidBodyArch {
-    Transform transforms[RIGID_BODY_ARCH_CHUNK_SIZE];
-    RigidBody rigid_bodies[RIGID_BODY_ARCH_CHUNK_SIZE];
+    Array<Transform, RIGID_BODY_ARCH_CHUNK_SIZE> transforms;
+    Array<RigidBody, RIGID_BODY_ARCH_CHUNK_SIZE> rigid_bodies;
 };
 
 constexpr auto SPOT_LIGHT_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
@@ -547,16 +547,16 @@ constexpr auto SPOT_LIGHT_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
        + sizeof(SpotLightComponent));
 
 struct SpotLightArchetype: Archetype {
-    Transform transforms[SPOT_LIGHT_ARCH_CHUNK_SIZE];
-    Mesh meshes[SPOT_LIGHT_ARCH_CHUNK_SIZE];
-    Material materials[SPOT_LIGHT_ARCH_CHUNK_SIZE];
-    SpotLightComponent spot_lights[SPOT_LIGHT_ARCH_CHUNK_SIZE];
+    Array<Transform, SPOT_LIGHT_ARCH_CHUNK_SIZE> transforms;
+    Array<Mesh, SPOT_LIGHT_ARCH_CHUNK_SIZE> meshes;
+    Array<Material, SPOT_LIGHT_ARCH_CHUNK_SIZE> materials;
+    Array<SpotLightComponent, SPOT_LIGHT_ARCH_CHUNK_SIZE> spot_lights;
 
     SpotLightArchetype() {
-        components[ComponentsIndices::TransformComponent] = transforms;
-        components[ComponentsIndices::MeshComponent] = meshes;
-        components[ComponentsIndices::MaterialComponent] = materials;
-        components[ComponentsIndices::SpotLightComponent] = spot_lights;
+        components[ComponentsIndices::TransformComponent] = transforms.data();
+        components[ComponentsIndices::MeshComponent] = meshes.data();
+        components[ComponentsIndices::MaterialComponent] = materials.data();
+        components[ComponentsIndices::SpotLightComponent] = spot_lights.data();
 
         mask = (1ull << ComponentsIndices::TransformComponent)
             | (1ull << ComponentsIndices::MeshComponent)
@@ -577,26 +577,26 @@ constexpr auto STATIC_MESH_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
        + sizeof(StaticMeshTagComponent));
 
 struct StaticMeshArchetype: Archetype {
-    Transform transforms[STATIC_MESH_ARCH_CHUNK_SIZE];
-    Collider colliders[STATIC_MESH_ARCH_CHUNK_SIZE];
-    ColliderFlags collider_flags[STATIC_MESH_ARCH_CHUNK_SIZE] {};
-    Mesh meshes[STATIC_MESH_ARCH_CHUNK_SIZE];
-    Material materials[STATIC_MESH_ARCH_CHUNK_SIZE];
-    Font fonts[STATIC_MESH_ARCH_CHUNK_SIZE];
-    Rotation rotations[STATIC_MESH_ARCH_CHUNK_SIZE];
-    StaticMeshTagComponent
-        static_mesh_tag_components[STATIC_MESH_ARCH_CHUNK_SIZE] {};
+    Array<Transform, STATIC_MESH_ARCH_CHUNK_SIZE> transforms;
+    Array<Collider, STATIC_MESH_ARCH_CHUNK_SIZE> colliders;
+    Array<ColliderFlags, STATIC_MESH_ARCH_CHUNK_SIZE> collider_flags {};
+    Array<Mesh, STATIC_MESH_ARCH_CHUNK_SIZE> meshes;
+    Array<Material, STATIC_MESH_ARCH_CHUNK_SIZE> materials;
+    Array<Font, STATIC_MESH_ARCH_CHUNK_SIZE> fonts;
+    Array<Rotation, STATIC_MESH_ARCH_CHUNK_SIZE> rotations;
+    Array<StaticMeshTagComponent, STATIC_MESH_ARCH_CHUNK_SIZE>
+        static_mesh_tag_components {};
 
     StaticMeshArchetype() {
-        components[ComponentsIndices::TransformComponent] = transforms;
-        components[ComponentsIndices::ColliderComponent] = colliders;
-        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags;
-        components[ComponentsIndices::MeshComponent] = meshes;
-        components[ComponentsIndices::MaterialComponent] = materials;
-        components[ComponentsIndices::FontComponent] = fonts;
-        components[ComponentsIndices::RotationComponent] = rotations;
+        components[ComponentsIndices::TransformComponent] = transforms.data();
+        components[ComponentsIndices::ColliderComponent] = colliders.data();
+        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags.data();
+        components[ComponentsIndices::MeshComponent] = meshes.data();
+        components[ComponentsIndices::MaterialComponent] = materials.data();
+        components[ComponentsIndices::FontComponent] = fonts.data();
+        components[ComponentsIndices::RotationComponent] = rotations.data();
         components[ComponentsIndices::StaticMeshTagComponent] =
-            static_mesh_tag_components;
+            static_mesh_tag_components.data();
 
         mask = (1ull << ComponentsIndices::TransformComponent)
             | (1ull << ComponentsIndices::ColliderComponent)
@@ -623,12 +623,12 @@ constexpr auto COLLIDER_ARCH_CHUNK_SIZE =
     ARCHETYPE_CHUNK_SIZE / (sizeof(Collider) + sizeof(ColliderFlags));
 
 struct ColliderArchetype: Archetype {
-    Collider colliders[COLLIDER_ARCH_CHUNK_SIZE];
-    ColliderFlags collider_flags[COLLIDER_ARCH_CHUNK_SIZE] {};
+    Array<Collider, COLLIDER_ARCH_CHUNK_SIZE> colliders;
+    Array<ColliderFlags, COLLIDER_ARCH_CHUNK_SIZE> collider_flags {};
 
     ColliderArchetype() {
-        components[ComponentsIndices::ColliderComponent] = colliders;
-        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags;
+        components[ComponentsIndices::ColliderComponent] = colliders.data();
+        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags.data();
 
         mask = (1ull << ComponentsIndices::ColliderComponent)
             | (1ull << ComponentsIndices::ColliderFlagsComponent);
@@ -643,14 +643,14 @@ constexpr auto DAMAGE_ARCH_CHUNK_SIZE =
     ARCHETYPE_CHUNK_SIZE / (sizeof(Attack) + sizeof(Health) + sizeof(Font));
 
 struct DamageArchetype: Archetype {
-    Attack attacks[DAMAGE_ARCH_CHUNK_SIZE] {};
-    Health health[DAMAGE_ARCH_CHUNK_SIZE] {};
-    Font fonts[DAMAGE_ARCH_CHUNK_SIZE];
+    Array<Attack, DAMAGE_ARCH_CHUNK_SIZE> attacks {};
+    Array<Health, DAMAGE_ARCH_CHUNK_SIZE> health {};
+    Array<Font, DAMAGE_ARCH_CHUNK_SIZE> fonts;
 
     DamageArchetype() {
-        components[ComponentsIndices::AttackComponent] = attacks;
-        components[ComponentsIndices::HealthComponent] = health;
-        components[ComponentsIndices::FontComponent] = fonts;
+        components[ComponentsIndices::AttackComponent] = attacks.data();
+        components[ComponentsIndices::HealthComponent] = health.data();
+        components[ComponentsIndices::FontComponent] = fonts.data();
 
         mask = (1ull << ComponentsIndices::AttackComponent)
             | (1ull << ComponentsIndices::HealthComponent)
@@ -668,18 +668,18 @@ constexpr auto PHYSICS_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
        + sizeof(Move) + sizeof(RigidBody));
 
 struct PhysicsArchetype: Archetype {
-    Transform transforms[PHYSICS_ARCH_CHUNK_SIZE];
-    Collider colliders[PHYSICS_ARCH_CHUNK_SIZE];
-    ColliderFlags collider_flags[PHYSICS_ARCH_CHUNK_SIZE] {};
-    Move moves[PHYSICS_ARCH_CHUNK_SIZE];
-    RigidBody rigid_bodies[PHYSICS_ARCH_CHUNK_SIZE];
+    Array<Transform, PHYSICS_ARCH_CHUNK_SIZE> transforms;
+    Array<Collider, PHYSICS_ARCH_CHUNK_SIZE> colliders;
+    Array<ColliderFlags, PHYSICS_ARCH_CHUNK_SIZE> collider_flags {};
+    Array<Move, PHYSICS_ARCH_CHUNK_SIZE> moves;
+    Array<RigidBody, PHYSICS_ARCH_CHUNK_SIZE> rigid_bodies;
 
     PhysicsArchetype() {
-        components[ComponentsIndices::TransformComponent] = transforms;
-        components[ComponentsIndices::ColliderComponent] = colliders;
-        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags;
-        components[ComponentsIndices::MoveComponent] = moves;
-        components[ComponentsIndices::RigidBodyComponent] = rigid_bodies;
+        components[ComponentsIndices::TransformComponent] = transforms.data();
+        components[ComponentsIndices::ColliderComponent] = colliders.data();
+        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags.data();
+        components[ComponentsIndices::MoveComponent] = moves.data();
+        components[ComponentsIndices::RigidBodyComponent] = rigid_bodies.data();
 
         mask = (1ull << ComponentsIndices::TransformComponent)
             | (1ull << ComponentsIndices::ColliderComponent)
@@ -853,7 +853,7 @@ public:
 
     struct MovementArchView {
         Archetype* player_cached_archetype = nullptr;
-        Archetype* rigid_body_contained_archetypes_cache[32] {};
+        Array<Archetype*, 32> rigid_body_contained_archetypes_cache {};
     } arch_view;
 
     struct MovementComponentsView {
@@ -2938,7 +2938,7 @@ auto MovementSystem::update() -> void {
     rigid_body_contained_archetypes_number = 0;
     world.search_cache_archetypes(
         rigid_body_required_mask,
-        arch_view.rigid_body_contained_archetypes_cache,
+        arch_view.rigid_body_contained_archetypes_cache.data(),
         rigid_body_contained_archetypes_number
     );
 
@@ -3361,7 +3361,7 @@ auto game_fill_frame_data(u32 actor_counter, i32 dragged_item_entity) -> u32 {
     if (renderer->is_inventory_opened) {
         renderer->inventories.clear();
         u32 inventory_counter = 0;
-        Archetype* cached_inventory_archetypes[32];
+        Array<Archetype*, 32> cached_inventory_archetypes;
         u32 inventory_archetypes_number = 0;
         u64 inventory_required_mask =
             (1ull << ComponentsIndices::TransformComponent)
@@ -3369,7 +3369,7 @@ auto game_fill_frame_data(u32 actor_counter, i32 dragged_item_entity) -> u32 {
             | (1ull << ComponentsIndices::MeshComponent);
         world.search_cache_archetypes(
             inventory_required_mask,
-            cached_inventory_archetypes,
+            cached_inventory_archetypes.data(),
             inventory_archetypes_number
         );
 
@@ -3433,7 +3433,7 @@ auto game_fill_frame_data(u32 actor_counter, i32 dragged_item_entity) -> u32 {
 
                     renderer->items.clear();
                     u32 item_counter = 0;
-                    Archetype* cached_item_archetypes[32];
+                    Array<Archetype*, 32> cached_item_archetypes;
                     u32 item_archetypes_number = 0;
                     u64 item_required_mask =
                         (1ul << ComponentsIndices::TransformComponent)
@@ -3444,7 +3444,7 @@ auto game_fill_frame_data(u32 actor_counter, i32 dragged_item_entity) -> u32 {
                         | (1ul << ComponentsIndices::ColliderFlagsComponent);
                     world.search_cache_archetypes(
                         item_required_mask,
-                        cached_item_archetypes,
+                        cached_item_archetypes.data(),
                         item_archetypes_number
                     );
 
@@ -3513,7 +3513,7 @@ auto game_fill_frame_data(u32 actor_counter, i32 dragged_item_entity) -> u32 {
     }
 
     renderer->crosshairs.clear();
-    Archetype* cached_crosshair_actors_archetypes[32];
+    Array<Archetype*, 32> cached_crosshair_actors_archetypes;
     u32 crosshair_actors_archetypes_number = 0;
     u64 crosshair_required_mask =
         (1ull << ComponentsIndices::TransformComponent)
@@ -3521,7 +3521,7 @@ auto game_fill_frame_data(u32 actor_counter, i32 dragged_item_entity) -> u32 {
         | (1ull << ComponentsIndices::MeshComponent);
     world.search_cache_archetypes(
         crosshair_required_mask,
-        cached_crosshair_actors_archetypes,
+        cached_crosshair_actors_archetypes.data(),
         crosshair_actors_archetypes_number
     );
 
@@ -3550,7 +3550,7 @@ auto game_fill_frame_data(u32 actor_counter, i32 dragged_item_entity) -> u32 {
 
     u32 game_actors_counter = actor_counter;
 
-    Archetype* cached_level_chunk_actors_archetypes[32];
+    Array<Archetype*, 32> cached_level_chunk_actors_archetypes;
     u32 level_chunk_actors_archetypes_number = 0;
     u64 level_chunk_required_mask =
         (1ul << ComponentsIndices::MaterialComponent)
@@ -3560,7 +3560,7 @@ auto game_fill_frame_data(u32 actor_counter, i32 dragged_item_entity) -> u32 {
         | (1ul << ComponentsIndices::MeshComponent);
     world.search_cache_archetypes(
         level_chunk_required_mask,
-        cached_level_chunk_actors_archetypes,
+        cached_level_chunk_actors_archetypes.data(),
         level_chunk_actors_archetypes_number
     );
 
@@ -3620,7 +3620,7 @@ auto game_fill_frame_data(u32 actor_counter, i32 dragged_item_entity) -> u32 {
         }
     }
 
-    Archetype* cached_static_actors_archetypes[32];
+    Array<Archetype*, 32> cached_static_actors_archetypes;
     u32 static_actors_archetypes_number = 0;
     u64 static_actors_required_mask =
         (1ul << ComponentsIndices::MaterialComponent)
@@ -3630,7 +3630,7 @@ auto game_fill_frame_data(u32 actor_counter, i32 dragged_item_entity) -> u32 {
         | (1ul << ComponentsIndices::MeshComponent);
     world.search_cache_archetypes(
         static_actors_required_mask,
-        cached_static_actors_archetypes,
+        cached_static_actors_archetypes.data(),
         static_actors_archetypes_number
     );
 
@@ -3686,7 +3686,7 @@ auto game_fill_frame_data(u32 actor_counter, i32 dragged_item_entity) -> u32 {
         }
     }
 
-    Archetype* cached_projectile_actors_archetypes[32];
+    Array<Archetype*, 32> cached_projectile_actors_archetypes;
     u32 projectile_actors_archetypes_number = 0;
     u64 projectile_required_mask =
         (1ul << ComponentsIndices::ProjectileBundleComponent)
@@ -3695,7 +3695,7 @@ auto game_fill_frame_data(u32 actor_counter, i32 dragged_item_entity) -> u32 {
         | (1ul << ComponentsIndices::MeshComponent);
     world.search_cache_archetypes(
         projectile_required_mask,
-        cached_projectile_actors_archetypes,
+        cached_projectile_actors_archetypes.data(),
         projectile_actors_archetypes_number
     );
 
@@ -3753,7 +3753,7 @@ auto game_fill_frame_data(u32 actor_counter, i32 dragged_item_entity) -> u32 {
 
     // Item actors render in the game world.
 
-    Archetype* cached_item_actors_archetypes[32];
+    Array<Archetype*, 32> cached_item_actors_archetypes;
     u32 item_actors_archetypes_number = 0;
     u64 rotation_item_required_mask = (1ul << ComponentsIndices::ItemComponent)
         | (1ul << ComponentsIndices::MeshComponent)
@@ -3764,7 +3764,7 @@ auto game_fill_frame_data(u32 actor_counter, i32 dragged_item_entity) -> u32 {
         | (1ul << ComponentsIndices::MaterialComponent);
     world.search_cache_archetypes(
         rotation_item_required_mask,
-        cached_item_actors_archetypes,
+        cached_item_actors_archetypes.data(),
         item_actors_archetypes_number
     );
 

@@ -180,7 +180,7 @@ auto World::remove_entity(u64 entity) -> void {
 
 auto World::search_cache_archetypes(
     u64 required_mask,
-    Archetype* cached_archetypes[],
+    Archetype** cached_archetypes,
     u32& cached_archetypes_number
 ) -> void {
     for (const auto arch : world.archetypes) {
@@ -193,7 +193,8 @@ auto World::search_cache_archetypes(
 }; // namespace glvm
 
 namespace glvm {
-ComponentTypeInfo COMPONENT_TYPE_INFOS[ComponentsIndices::ComponentsCount] = {};
+Array<ComponentTypeInfo, ComponentsIndices::ComponentsCount>
+    COMPONENT_TYPE_INFOS = {};
 
 auto register_component_move(u32 component_id, ComponentTypeInfo info) -> void {
     if (component_id < ComponentsIndices::ComponentsCount) {
@@ -645,7 +646,7 @@ auto Engine::render_vulkan() -> void {
     directional_light_archetypes_number = 0;
     world.search_cache_archetypes(
         directional_light_required_mask,
-        cached_directional_light_archetypes,
+        cached_directional_light_archetypes.data(),
         directional_light_archetypes_number
     );
     vulkan_renderer->directional_light_number =
@@ -654,7 +655,7 @@ auto Engine::render_vulkan() -> void {
     spot_light_archetypes_number = 0;
     world.search_cache_archetypes(
         spot_light_required_mask,
-        cached_spot_light_archetypes,
+        cached_spot_light_archetypes.data(),
         spot_light_archetypes_number
     );
     vulkan_renderer->spot_light_number = spot_light_archetypes_number;
@@ -662,7 +663,7 @@ auto Engine::render_vulkan() -> void {
     point_light_archetypes_number = 0;
     world.search_cache_archetypes(
         point_light_required_mask,
-        cached_point_light_archetypes,
+        cached_point_light_archetypes.data(),
         point_light_archetypes_number
     );
     vulkan_renderer->point_light_number = point_light_archetypes_number;
@@ -670,7 +671,7 @@ auto Engine::render_vulkan() -> void {
     animation_actors_archetypes_number = 0;
     world.search_cache_archetypes(
         animated_actors_required_mask,
-        cached_animation_actors_archetypes,
+        cached_animation_actors_archetypes.data(),
         animation_actors_archetypes_number
     );
 
@@ -853,7 +854,7 @@ auto Engine::set_view_matrix() -> void {
     camera_archetypes_number = 0;
     world.search_cache_archetypes(
         camera_required_mask,
-        cached_camera_archetypes,
+        cached_camera_archetypes.data(),
         camera_archetypes_number
     );
 
@@ -1174,7 +1175,7 @@ auto Engine::set_frame_data() -> void {
     directional_light_archetypes_number = 0;
     world.search_cache_archetypes(
         directional_light_required_mask,
-        cached_directional_light_archetypes,
+        cached_directional_light_archetypes.data(),
         directional_light_archetypes_number
     );
 
@@ -1236,7 +1237,7 @@ auto Engine::set_frame_data() -> void {
     spot_light_archetypes_number = 0;
     world.search_cache_archetypes(
         spot_light_required_mask,
-        cached_spot_light_archetypes,
+        cached_spot_light_archetypes.data(),
         spot_light_archetypes_number
     );
 
@@ -1283,7 +1284,7 @@ auto Engine::set_frame_data() -> void {
     point_light_archetypes_number = 0;
     world.search_cache_archetypes(
         point_light_required_mask,
-        cached_point_light_archetypes,
+        cached_point_light_archetypes.data(),
         point_light_archetypes_number
     );
 
@@ -1333,7 +1334,7 @@ auto Engine::set_frame_data() -> void {
     health_bars_archetypes_number = 0;
     world.search_cache_archetypes(
         health_bars_required_mask,
-        cached_health_bars_archetypes,
+        cached_health_bars_archetypes.data(),
         health_bars_archetypes_number
     );
 
@@ -1377,7 +1378,7 @@ auto Engine::set_frame_data() -> void {
     fonts_archetypes_number = 0;
     world.search_cache_archetypes(
         font_required_mask,
-        cached_fonts_archetypes,
+        cached_fonts_archetypes.data(),
         fonts_archetypes_number
     );
 
@@ -1418,7 +1419,7 @@ auto Engine::set_frame_data() -> void {
     animation_actors_archetypes_number = 0;
     world.search_cache_archetypes(
         animation_required_mask,
-        cached_animation_archetypes,
+        cached_animation_archetypes.data(),
         animation_actors_archetypes_number
     );
 
@@ -1485,7 +1486,7 @@ auto Engine::set_frame_data() -> void {
     camera_archetypes_number = 0;
     world.search_cache_archetypes(
         camera_required_mask,
-        cached_camera_archetypes,
+        cached_camera_archetypes.data(),
         camera_archetypes_number
     );
 
@@ -2829,10 +2830,10 @@ auto push_axis(
 
 auto push_box(
     Vec<DebugVertex>& out,
-    const Vector<f32, 3> corners[8],
+    const Array<Vector<f32, 3>, 8>& corners,
     const Vector<f32, 3>& color
 ) -> void {
-    static const u32 EDGES[12][2] = {
+    static const Array<Array<u32, 2>, 12> EDGES = {{
         {0, 1},
         {1, 2},
         {2, 3},
@@ -2845,7 +2846,7 @@ auto push_box(
         {1, 5},
         {2, 6},
         {3, 7}
-    };
+    }};
     for (const auto& edge : EDGES) {
         push_line(out, corners[edge[0]], corners[edge[1]], color);
     }
@@ -3176,7 +3177,7 @@ auto ImGuiOverlay::build_debug_vertices() -> void {
             };
             const Vector<f32, 3> half =
                 {bounds.absolute_x, bounds.absolute_y, bounds.absolute_z};
-            Vector<f32, 3> local_corners[8] = {
+            Array<Vector<f32, 3>, 8> local_corners = {
                 center + Vector<f32, 3>(-half[0], -half[1], -half[2]),
                 center + Vector<f32, 3>(half[0], -half[1], -half[2]),
                 center + Vector<f32, 3>(half[0], half[1], -half[2]),
@@ -3229,7 +3230,7 @@ auto ImGuiOverlay::build_debug_vertices() -> void {
             };
             const Vector<f32, 3> half =
                 {bounds.absolute_x, bounds.absolute_y, bounds.absolute_z};
-            Vector<f32, 3> local_corners[8] = {
+            Array<Vector<f32, 3>, 8> local_corners = {
                 center + Vector<f32, 3>(-half[0], -half[1], -half[2]),
                 center + Vector<f32, 3>(half[0], -half[1], -half[2]),
                 center + Vector<f32, 3>(half[0], half[1], -half[2]),
@@ -3239,7 +3240,7 @@ auto ImGuiOverlay::build_debug_vertices() -> void {
                 center + Vector<f32, 3>(half[0], half[1], half[2]),
                 center + Vector<f32, 3>(-half[0], half[1], half[2])
             };
-            Vector<f32, 3> world_corners[8];
+            Array<Vector<f32, 3>, 8> world_corners;
             for (i32 c = 0; c < 8; ++c) {
                 world_corners[c] = from_vec4(
                     to_vec4(local_corners[c], 1.0f)
@@ -3257,7 +3258,7 @@ auto ImGuiOverlay::build_debug_vertices() -> void {
     if (show_light_frustums) {
         const Vector<f32, 3> yellow = {1.0f, 1.0f, 0.0f};
         for (u32 i = 0; i < renderer.directional_light_number; ++i) {
-            Vector<f32, 3> corners[8];
+            Array<Vector<f32, 3>, 8> corners;
             Matrix<f32, 4> inverse_light =
                 inverse_matrix_4x4(renderer.dir_light_space_matrix[i]);
             for (i32 c = 0; c < 8; ++c) {
@@ -3271,7 +3272,7 @@ auto ImGuiOverlay::build_debug_vertices() -> void {
         }
         const Vector<f32, 3> cyan = {0.0f, 1.0f, 1.0f};
         for (u32 i = 0; i < renderer.spot_light_number; ++i) {
-            Vector<f32, 3> corners[8];
+            Array<Vector<f32, 3>, 8> corners;
             Matrix<f32, 4> inverse_light =
                 inverse_matrix_4x4(renderer.spot_light_space_matrix[i]);
             for (i32 c = 0; c < 8; ++c) {
@@ -3377,7 +3378,7 @@ auto ImGuiOverlay::create_render_pass() -> void {
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &color_reference;
-    VkSubpassDependency dependencies[2] {};
+    Array<VkSubpassDependency, 2> dependencies {};
     dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
     dependencies[0].dstSubpass = 0;
     dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
@@ -3401,7 +3402,7 @@ auto ImGuiOverlay::create_render_pass() -> void {
     render_pass_info.subpassCount = 1;
     render_pass_info.pSubpasses = &subpass;
     render_pass_info.dependencyCount = 2;
-    render_pass_info.pDependencies = dependencies;
+    render_pass_info.pDependencies = dependencies.data();
     if (vkCreateRenderPass(
             renderer.device,
             &render_pass_info,
@@ -3441,7 +3442,7 @@ auto ImGuiOverlay::create_line_pipeline() -> void {
     VkShaderModule frag =
         create_shader_module(GLVM_SHADER_DIR "/debug/debug_frag.spv");
 
-    VkPipelineShaderStageCreateInfo shader_stages[2] {};
+    Array<VkPipelineShaderStageCreateInfo, 2> shader_stages {};
     shader_stages[0].sType =
         VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     shader_stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -3556,19 +3557,19 @@ auto ImGuiOverlay::create_line_pipeline() -> void {
     depth_stencil.depthTestEnable = VK_FALSE;
     depth_stencil.depthWriteEnable = VK_FALSE;
 
-    VkDynamicState dynamic_states[] = {
+    Array<VkDynamicState, 2> dynamic_states = {
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR
     };
     VkPipelineDynamicStateCreateInfo dynamic_state {};
     dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamic_state.dynamicStateCount = 2;
-    dynamic_state.pDynamicStates = dynamic_states;
+    dynamic_state.pDynamicStates = dynamic_states.data();
 
     VkGraphicsPipelineCreateInfo pipeline_info {};
     pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipeline_info.stageCount = 2;
-    pipeline_info.pStages = shader_stages;
+    pipeline_info.pStages = shader_stages.data();
     pipeline_info.pVertexInputState = &vertex_input_info;
     pipeline_info.pInputAssemblyState = &input_assembly;
     pipeline_info.pViewportState = &viewport_state;
@@ -4484,14 +4485,14 @@ auto Renderer::create_swap_chain() -> void {
     create_info.imageArrayLayers = 1;
     create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     QueueFamilyIndices indices = find_queue_families(physical_device);
-    u32 queue_family_indices[] = {
+    Array<u32, 2> queue_family_indices = {
         indices.graphics_family.value(),
         indices.present_family.value()
     };
     if (indices.graphics_family != indices.present_family) {
         create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
         create_info.queueFamilyIndexCount = 2;
-        create_info.pQueueFamilyIndices = queue_family_indices;
+        create_info.pQueueFamilyIndices = queue_family_indices.data();
     } else {
         create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     }
@@ -4577,13 +4578,13 @@ auto Renderer::create_main_render_pass() -> void {
             RENDER_PASS_CONFIGS[j].actual_attachment_description_number
         );
         render_pass_info.pAttachments =
-            RENDER_PASS_CONFIGS[j].attachment_descriptions;
+            RENDER_PASS_CONFIGS[j].attachment_descriptions.data();
         render_pass_info.subpassCount = 1;
         render_pass_info.pSubpasses = &subpass;
         render_pass_info.dependencyCount =
             RENDER_PASS_CONFIGS[j].actual_subpass_dependency_number;
         render_pass_info.pDependencies =
-            RENDER_PASS_CONFIGS[j].subpass_dependencies;
+            RENDER_PASS_CONFIGS[j].subpass_dependencies.data();
         if (vkCreateRenderPass(
                 device,
                 &render_pass_info,
@@ -5934,7 +5935,7 @@ auto Renderer::create_descriptor_image_info(
     VkImageLayout image_layout,
     Vec<GpuImage>& texture_images,
     const u32 image_view_index,
-    VkDescriptorImageInfo descriptor_image_infos[]
+    VkDescriptorImageInfo* descriptor_image_infos
 ) -> void {
     for (usize i = 0; i < descriptor_number; ++i) {
         descriptor_image_infos[i] = {};
@@ -6110,7 +6111,7 @@ auto Renderer::execute_secondary_command_buffer(
     VkCommandBuffer primary_command_buffer,
     VkCommandBuffer secondary_command_buffer
 ) -> void {
-    VkClearValue shadow_map_clear_values[1];
+    Array<VkClearValue, 1> shadow_map_clear_values;
     shadow_map_clear_values[0].depthStencil.depth = 1.0f;
     shadow_map_clear_values[0].depthStencil.stencil = 0;
 
@@ -6125,7 +6126,7 @@ auto Renderer::execute_secondary_command_buffer(
     shadow_map_render_pass_info.renderArea.extent.width = extent.width;
     shadow_map_render_pass_info.renderArea.extent.height = extent.height;
     shadow_map_render_pass_info.clearValueCount = 1;
-    shadow_map_render_pass_info.pClearValues = shadow_map_clear_values;
+    shadow_map_render_pass_info.pClearValues = shadow_map_clear_values.data();
 
     vkCmdBeginRenderPass(
         primary_command_buffer,
@@ -6381,9 +6382,9 @@ auto Renderer::hud_record_command_buffer(
             nullptr
         );
 
-        VkBuffer vertex_buffers[] = {vertex_buffer_container[ui_vertex_id]};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
+        Array<VkBuffer, 1> vertex_buffers = {vertex_buffer_container[ui_vertex_id]};
+        Array<VkDeviceSize, 1> offsets = {0};
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers.data(), offsets.data());
 
         vkCmdBindIndexBuffer(
             command_buffer,
@@ -6502,16 +6503,16 @@ auto Renderer::ui_record_command_buffer(
                     nullptr
                 );
 
-                VkBuffer vertex_buffers[] = {
+                Array<VkBuffer, 1> vertex_buffers = {
                     vertex_buffer_container[ui_vertex_id]
                 };
-                VkDeviceSize offsets[] = {0};
+                Array<VkDeviceSize, 1> offsets = {0};
                 vkCmdBindVertexBuffers(
                     command_buffer,
                     0,
                     1,
-                    vertex_buffers,
-                    offsets
+                    vertex_buffers.data(),
+                    offsets.data()
                 );
 
                 vkCmdBindIndexBuffer(
@@ -6628,9 +6629,9 @@ auto Renderer::ui_icons_record_command_buffer(
             nullptr
         );
 
-        VkBuffer vertex_buffers[] = {vertex_buffer_container[ui_vertex_id]};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
+        Array<VkBuffer, 1> vertex_buffers = {vertex_buffer_container[ui_vertex_id]};
+        Array<VkDeviceSize, 1> offsets = {0};
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers.data(), offsets.data());
 
         vkCmdBindIndexBuffer(
             command_buffer,
@@ -6727,9 +6728,9 @@ auto Renderer::hud_screen_record_command_buffer(
             nullptr
         );
 
-        VkBuffer vertex_buffers[] = {vertex_buffer_container[ui_vertex_id]};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
+        Array<VkBuffer, 1> vertex_buffers = {vertex_buffer_container[ui_vertex_id]};
+        Array<VkDeviceSize, 1> offsets = {0};
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers.data(), offsets.data());
 
         vkCmdBindIndexBuffer(
             command_buffer,
@@ -6827,9 +6828,9 @@ auto Renderer::sdf_record_command_buffer(
             nullptr
         );
 
-        VkBuffer vertex_buffers[] = {vertex_buffer_container[ui_vertex_id]};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
+        Array<VkBuffer, 1> vertex_buffers = {vertex_buffer_container[ui_vertex_id]};
+        Array<VkDeviceSize, 1> offsets = {0};
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers.data(), offsets.data());
 
         vkCmdBindIndexBuffer(
             command_buffer,
@@ -6907,17 +6908,17 @@ auto Renderer::font_record_command_buffer(
 
         for (u32 j = 0; j < font.font_string.size(); ++j) {
             u32 ascii_code = as<u32>(font.font_string[j]);
-            VkBuffer vertex_buffers[] = {
+            Array<VkBuffer, 1> vertex_buffers = {
                 font_vertex_buffer_container[ascii_code]
             };
-            VkDeviceSize offsets[] = {0};
+            Array<VkDeviceSize, 1> offsets = {0};
 
             vkCmdBindVertexBuffers(
                 command_buffer,
                 0,
                 1,
-                vertex_buffers,
-                offsets
+                vertex_buffers.data(),
+                offsets.data()
             );
             vkCmdBindIndexBuffer(
                 command_buffer,
@@ -7133,9 +7134,9 @@ auto Renderer::record_command_buffer(
             nullptr
         );
 
-        VkBuffer vertex_buffers[] = {vertex_buffer_container[ui_vertex_id]};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
+        Array<VkBuffer, 1> vertex_buffers = {vertex_buffer_container[ui_vertex_id]};
+        Array<VkDeviceSize, 1> offsets = {0};
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers.data(), offsets.data());
 
         vkCmdBindIndexBuffer(
             command_buffer,
@@ -7710,20 +7711,20 @@ auto Renderer::main_render_draw_frame() -> void {
     VkSubmitInfo submit_info {};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     // GraphicsQueue waits for the swapchain image when it becomes available.
-    VkSemaphore wait_semaphores[] = {image_available_semaphores[current_frame]};
-    VkPipelineStageFlags wait_stages[] = {
+    Array<VkSemaphore, 1> wait_semaphores = {image_available_semaphores[current_frame]};
+    Array<VkPipelineStageFlags, 1> wait_stages = {
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
     };
     submit_info.waitSemaphoreCount = 1;
-    submit_info.pWaitSemaphores = wait_semaphores;
-    submit_info.pWaitDstStageMask = wait_stages;
+    submit_info.pWaitSemaphores = wait_semaphores.data();
+    submit_info.pWaitDstStageMask = wait_stages.data();
 
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &main_render_command_buffers[current_frame];
 
-    VkSemaphore signal_semaphores[] = {render_finished_semaphores[image_index]};
+    Array<VkSemaphore, 1> signal_semaphores = {render_finished_semaphores[image_index]};
     submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = signal_semaphores;
+    submit_info.pSignalSemaphores = signal_semaphores.data();
 
     if (vkQueueSubmit(
             graphics_queue,
@@ -7739,11 +7740,11 @@ auto Renderer::main_render_draw_frame() -> void {
     present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
     present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores = signal_semaphores;
+    present_info.pWaitSemaphores = signal_semaphores.data();
 
-    VkSwapchainKHR swap_chains[] = {swap_chain};
+    Array<VkSwapchainKHR, 1> swap_chains = {swap_chain};
     present_info.swapchainCount = 1;
-    present_info.pSwapchains = swap_chains;
+    present_info.pSwapchains = swap_chains.data();
 
     present_info.pImageIndices = &image_index;
 
@@ -7980,14 +7981,14 @@ auto Renderer::directional_light_record_command_buffer(
                 nullptr
             );
 
-            VkBuffer vertex_buffers[] = {vertex_buffer_container[mesh_id]};
-            VkDeviceSize offsets[] = {0};
+            Array<VkBuffer, 1> vertex_buffers = {vertex_buffer_container[mesh_id]};
+            Array<VkDeviceSize, 1> offsets = {0};
             vkCmdBindVertexBuffers(
                 command_buffer,
                 0,
                 1,
-                vertex_buffers,
-                offsets
+                vertex_buffers.data(),
+                offsets.data()
             );
 
             vkCmdBindIndexBuffer(
@@ -8098,14 +8099,14 @@ auto Renderer::spot_light_record_command_buffer(
                 0,
                 nullptr
             );
-            VkBuffer vertex_buffers[] = {vertex_buffer_container[mesh_id]};
-            VkDeviceSize offsets[] = {0};
+            Array<VkBuffer, 1> vertex_buffers = {vertex_buffer_container[mesh_id]};
+            Array<VkDeviceSize, 1> offsets = {0};
             vkCmdBindVertexBuffers(
                 command_buffer,
                 0,
                 1,
-                vertex_buffers,
-                offsets
+                vertex_buffers.data(),
+                offsets.data()
             );
 
             vkCmdBindIndexBuffer(
@@ -8238,14 +8239,14 @@ auto Renderer::point_light_record_command_buffer(
                     nullptr
                 );
 
-                VkBuffer vertex_buffers[] = {vertex_buffer_container[mesh_id]};
-                VkDeviceSize offsets[] = {0};
+                Array<VkBuffer, 1> vertex_buffers = {vertex_buffer_container[mesh_id]};
+                Array<VkDeviceSize, 1> offsets = {0};
                 vkCmdBindVertexBuffers(
                     command_buffer,
                     0,
                     1,
-                    vertex_buffers,
-                    offsets
+                    vertex_buffers.data(),
+                    offsets.data()
                 );
 
                 vkCmdBindIndexBuffer(
@@ -10399,7 +10400,7 @@ auto CollisionSystem::update() -> void {
     cached_archetypes_number = 0;
     world.search_cache_archetypes(
         required_mask,
-        cached_archetypes,
+        cached_archetypes.data(),
         cached_archetypes_number
     );
 
@@ -10691,7 +10692,7 @@ auto DamageSystem::update() -> void {
     cached_attackable_archetypes_number = 0;
     world.search_cache_archetypes(
         attackable_required_mask,
-        arch_view.cached_attackable_archetypes,
+        arch_view.cached_attackable_archetypes.data(),
         cached_attackable_archetypes_number
     );
 
@@ -10739,7 +10740,7 @@ auto DamageSystem::update() -> void {
     cached_font_archetypes_number = 0;
     world.search_cache_archetypes(
         font_required_mask,
-        arch_view.cached_font_archetypes,
+        arch_view.cached_font_archetypes.data(),
         cached_font_archetypes_number
     );
 
@@ -10822,7 +10823,7 @@ auto PhysicsSystem::update() -> void {
     cached_archetypes_number = 0;
     world.search_cache_archetypes(
         required_mask,
-        arch_view.cached_archetypes,
+        arch_view.cached_archetypes.data(),
         cached_archetypes_number
     );
 
@@ -10982,7 +10983,7 @@ auto SpatialGridSystem::update() -> void {
     cached_archetypes_number = 0;
     world.search_cache_archetypes(
         required_mask,
-        cached_archetypes,
+        cached_archetypes.data(),
         cached_archetypes_number
     );
 
@@ -11639,7 +11640,7 @@ auto WindowWinVulkan::main_wnd_proc(
 
 constexpr auto WIDTH_OFFSET = 1.0f / 3;
 
-f32 VERTICES[] = {
+Array<f32, 30> VERTICES = {
     // Coordinates.
     0.5f,  0.5f,  0.0f, WIDTH_OFFSET, 1.0f, // Up right vertex.
     0.5f,  -0.5f, 0.0f, WIDTH_OFFSET, 0.75f, // Bottom right vertex.
@@ -11648,7 +11649,7 @@ f32 VERTICES[] = {
     0.5f,  0.5f,  0.0f, WIDTH_OFFSET, 1.0f,  -0.5f, -0.5f, 0.0f, 0.0f, 0.75f
 };
 
-f32 VERTICES2[] = {
+Array<f32, 30> VERTICES2 = {
     // Coordinates.
     0.5f,  0.5f,  0.0f, WIDTH_OFFSET * 2, 1.0f, // Up right vertex.
     0.5f,  -0.5f, 0.0f, WIDTH_OFFSET * 2, 0.75f, // Bottom right vertex.
@@ -11658,7 +11659,7 @@ f32 VERTICES2[] = {
     -0.5f, -0.5f, 0.0f, WIDTH_OFFSET,     0.75f
 };
 
-f32 VERTICES3[] = {
+Array<f32, 30> VERTICES3 = {
     // Coordinates.
     0.5f,
     0.5f,
@@ -11692,7 +11693,7 @@ f32 VERTICES3[] = {
     0.75f
 };
 
-f32 VERTICES4[] = {
+Array<f32, 30> VERTICES4 = {
     // Coordinates.
     0.5f,  0.5f,  0.0f, WIDTH_OFFSET, 0.75f, // Up right vertex.
     0.5f,  -0.5f, 0.0f, WIDTH_OFFSET, 0.5f, // Bottom right vertex.
@@ -11701,7 +11702,7 @@ f32 VERTICES4[] = {
     0.5f,  0.5f,  0.0f, WIDTH_OFFSET, 0.75f, -0.5f, -0.5f, 0.0f, 0.0f, 0.5f
 };
 
-f32 VERTICES5[] = {
+Array<f32, 30> VERTICES5 = {
     // Coordinates.
     0.5f,  0.5f,  0.0f, WIDTH_OFFSET * 2, 0.75f, // Up right vertex.
     0.5f,  -0.5f, 0.0f, WIDTH_OFFSET * 2, 0.5f, // Bottom right vertex.
@@ -11711,7 +11712,7 @@ f32 VERTICES5[] = {
     -0.5f, -0.5f, 0.0f, WIDTH_OFFSET,     0.5f
 };
 
-f32 VERTICES6[] = {
+Array<f32, 30> VERTICES6 = {
     // Coordinates.
     0.5f,
     0.5f,
@@ -11745,7 +11746,7 @@ f32 VERTICES6[] = {
     0.5f
 };
 
-f32 VERTICES7[] = {
+Array<f32, 30> VERTICES7 = {
     // Coordinates.
     0.5f,  0.5f,  0.0f, WIDTH_OFFSET, 0.5f, // Up right vertex.
     0.5f,  -0.5f, 0.0f, WIDTH_OFFSET, 0.25f, // Bottom right vertex.
@@ -11754,7 +11755,7 @@ f32 VERTICES7[] = {
     0.5f,  0.5f,  0.0f, WIDTH_OFFSET, 0.5f,  -0.5f, -0.5f, 0.0f, 0.0f, 0.25f
 };
 
-f32 VERTICES8[] = {
+Array<f32, 30> VERTICES8 = {
     // Coordinates.
     0.5f,  0.5f,  0.0f, WIDTH_OFFSET * 2, 0.5f, // Up right vertex.
     0.5f,  -0.5f, 0.0f, WIDTH_OFFSET * 2, 0.25f, // Bottom right vertex.
@@ -11764,7 +11765,7 @@ f32 VERTICES8[] = {
     -0.5f, -0.5f, 0.0f, WIDTH_OFFSET,     0.25f
 };
 
-f32 VERTICES9[] = {
+Array<f32, 30> VERTICES9 = {
     // Coordinates.
     0.5f,
     0.5f,
@@ -11798,7 +11799,7 @@ f32 VERTICES9[] = {
     0.25f
 };
 
-f32 VERTICES10[] = {
+Array<f32, 30> VERTICES10 = {
     // Coordinates.
     0.5f,  0.5f,  0.0f, WIDTH_OFFSET, 0.25f, // Up right vertex.
     0.5f,  -0.5f, 0.0f, WIDTH_OFFSET, 0.0f, // Bottom right vertex.
@@ -11807,7 +11808,7 @@ f32 VERTICES10[] = {
     0.5f,  0.5f,  0.0f, WIDTH_OFFSET, 0.25f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f
 };
 
-f32 VERTICES11[] = {
+Array<f32, 30> VERTICES11 = {
     // Coordinates.
     0.5f,  0.5f,  0.0f, WIDTH_OFFSET * 2, 0.25f, // Up right vertex.
     0.5f,  -0.5f, 0.0f, WIDTH_OFFSET * 2, 0.0f, // Bottom right vertex.
@@ -11817,7 +11818,7 @@ f32 VERTICES11[] = {
     -0.5f, -0.5f, 0.0f, WIDTH_OFFSET,     0.0f
 };
 
-f32 VERTICES12[] = {
+Array<f32, 30> VERTICES12 = {
     // Coordinates.
     0.5f,
     0.5f,
@@ -11851,7 +11852,7 @@ f32 VERTICES12[] = {
     0.0f
 };
 
-i32 VERTICES_SIZE = sizeof(VERTICES);
+i32 VERTICES_SIZE = as<i32>(VERTICES.size() * sizeof(f32));
 
 namespace glvm {
 static auto equals_c_str(const Vec<char>& v, const char* s) -> bool {
@@ -12455,18 +12456,18 @@ auto registry_global_remove(void* data, struct wl_registry* registry, u32 name)
 }
 
 auto allocate_shared_memory(u64 size) -> i32 {
-    char name[8];
+    Array<char, 8> name;
     name[0] = '/';
     name[7] = 0;
     for (i8 i = 1; i < 6; ++i) {
         name[i] = (rand() & 23) + 97;
     }
     i32 file_descriptor = shm_open(
-        name,
+        name.data(),
         O_RDWR | O_CREAT | O_EXCL,
         S_IWUSR | S_IRUSR | S_IWOTH | S_IROTH
     );
-    shm_unlink(name);
+    shm_unlink(name.data());
     i32 result = ftruncate(file_descriptor, size);
 
     return file_descriptor;
@@ -12714,10 +12715,10 @@ WindowXVulkan::WindowXVulkan() {
     Cursor invisible_cursor;
     Pixmap bitmap_no_data;
     XColor black;
-    static char no_data[] = {0, 0, 0, 0, 0, 0, 0, 0};
+    static Array<char, 8> no_data = {0, 0, 0, 0, 0, 0, 0, 0};
     black.red = black.green = black.blue = 0;
 
-    bitmap_no_data = XCreateBitmapFromData(display, win, no_data, 8, 8);
+    bitmap_no_data = XCreateBitmapFromData(display, win, no_data.data(), 8, 8);
     invisible_cursor = XCreatePixmapCursor(
         display,
         bitmap_no_data,
@@ -12948,7 +12949,7 @@ WindowXCBVulkan::WindowXCBVulkan() {
 
     u32 event_mask = 0;
     event_mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
-    u32 event_flags[2];
+    Array<u32, 2> event_flags;
     event_flags[0] = screen->black_pixel;
     event_flags[1] = XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE
         | XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE
@@ -12969,7 +12970,7 @@ WindowXCBVulkan::WindowXCBVulkan() {
         XCB_WINDOW_CLASS_INPUT_OUTPUT,
         screen->root_visual,
         event_mask,
-        event_flags
+        event_flags.data()
     );
 
     // Verify the window was created (optional).
@@ -12993,14 +12994,14 @@ WindowXCBVulkan::WindowXCBVulkan() {
 auto WindowXCBVulkan::configure_window() -> void {
     u16 mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y
         | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
-    const u32 values[] = {
+    const Array<u32, 4> values = {
         320, // x.
         180, // y.
         width,
         height
     };
 
-    xcb_configure_window(connection, window, mask, values);
+    xcb_configure_window(connection, window, mask, values.data());
     xcb_flush(connection);
 }
 
@@ -13012,7 +13013,7 @@ auto WindowXCBVulkan::hide_cursor() -> void {
     xcb_gcontext_t graphical_context = xcb_generate_id(connection);
 
     u32 mask = XCB_GC_FOREGROUND | XCB_GC_BACKGROUND;
-    u32 values_list[2];
+    Array<u32, 2> values_list;
     values_list[0] = screen->black_pixel;
     values_list[1] = screen->white_pixel;
 
@@ -13021,10 +13022,10 @@ auto WindowXCBVulkan::hide_cursor() -> void {
         graphical_context,
         window,
         XCB_GC_FOREGROUND | XCB_GC_BACKGROUND,
-        values_list
+        values_list.data()
     );
 
-    const u8 pix_map_data[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    const Array<u8, 32> pix_map_data = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -13041,7 +13042,7 @@ auto WindowXCBVulkan::hide_cursor() -> void {
         0,
         8,
         32,
-        pix_map_data
+        pix_map_data.data()
     );
 
     xcb_cursor_t cursor = xcb_generate_id(connection);
