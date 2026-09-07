@@ -203,106 +203,7 @@ struct ComponentsIndices {
     };
 };
 
-constexpr auto PLAYER_COMPONENT_MASK =
-    (1ull << ComponentsIndices::TransformComponent)
-    | (1ull << ComponentsIndices::ViewComponent)
-    | (1ull << ComponentsIndices::ColliderComponent)
-    | (1ull << ComponentsIndices::ColliderFlagsComponent)
-    | (1ull << ComponentsIndices::MeshComponent)
-    | (1ull << ComponentsIndices::RigidBodyComponent)
-    | (1ull << ComponentsIndices::HealthComponent)
-    | (1ull << ComponentsIndices::MaterialComponent)
-    | (1ull << ComponentsIndices::MoveComponent)
-    | (1ull << ComponentsIndices::AttackComponent)
-    | (1ull << ComponentsIndices::AnimationComponent)
-    | (1ull << ComponentsIndices::FontComponent)
-    | (1ull << ComponentsIndices::RotationComponent)
-    | (1ull << ComponentsIndices::PlayerTagComponent);
-
-constexpr auto ENEMY_COMPONENT_MASK =
-    (1ull << ComponentsIndices::TransformComponent)
-    | (1ull << ComponentsIndices::EnemyComponent)
-    | (1ull << ComponentsIndices::StateComponent)
-    | (1ull << ComponentsIndices::FontComponent)
-    | (1ull << ComponentsIndices::AnimationComponent)
-    | (1ull << ComponentsIndices::MaterialComponent)
-    | (1ull << ComponentsIndices::MeshComponent)
-    | (1ull << ComponentsIndices::ColliderComponent)
-    | (1ull << ComponentsIndices::ColliderFlagsComponent)
-    | (1ull << ComponentsIndices::HealthComponent)
-    | (1ull << ComponentsIndices::RigidBodyComponent)
-    | (1ull << ComponentsIndices::AttackComponent)
-    | (1ull << ComponentsIndices::RotationComponent)
-    | (1ull << ComponentsIndices::MoveComponent);
-
-constexpr auto STATIC_MESH_COMPONENT_MASK =
-    (1ull << ComponentsIndices::TransformComponent)
-    | (1ull << ComponentsIndices::ColliderComponent)
-    | (1ull << ComponentsIndices::ColliderFlagsComponent)
-    | (1ull << ComponentsIndices::MeshComponent)
-    | (1ull << ComponentsIndices::MaterialComponent)
-    | (1ull << ComponentsIndices::FontComponent)
-    | (1ull << ComponentsIndices::RotationComponent)
-    | (1ull << ComponentsIndices::StaticMeshTagComponent);
-
-constexpr auto CROSSHAIR_COMPONENT_MASK =
-    (1ull << ComponentsIndices::TransformComponent)
-    | (1ull << ComponentsIndices::MeshComponent)
-    | (1ull << ComponentsIndices::MaterialComponent)
-    | (1ull << ComponentsIndices::CrosshairTagComponent);
-
-constexpr auto ITEM_COMPONENT_MASK =
-    (1ull << ComponentsIndices::TransformComponent)
-    | (1ull << ComponentsIndices::ColliderComponent)
-    | (1ull << ComponentsIndices::ColliderFlagsComponent)
-    | (1ull << ComponentsIndices::MeshComponent)
-    | (1ull << ComponentsIndices::RigidBodyComponent)
-    | (1ull << ComponentsIndices::MaterialComponent)
-    | (1ull << ComponentsIndices::RotationComponent)
-    | (1ull << ComponentsIndices::MoveComponent)
-    | (1ull << ComponentsIndices::ItemComponent);
-
-constexpr auto INVENTORY_COMPONENT_MASK =
-    (1ull << ComponentsIndices::TransformComponent)
-    | (1ull << ComponentsIndices::MeshComponent)
-    | (1ull << ComponentsIndices::InventoryComponent)
-    | (1ull << ComponentsIndices::MaterialComponent);
-
-constexpr auto DIRECTIONAL_LIGHT_COMPONENT_MASK =
-    (1ull << ComponentsIndices::TransformComponent)
-    | (1ull << ComponentsIndices::MeshComponent)
-    | (1ull << ComponentsIndices::MaterialComponent)
-    | (1ull << ComponentsIndices::DirectionalLightComponent);
-
-constexpr auto SPOT_LIGHT_COMPONENT_MASK =
-    (1ull << ComponentsIndices::TransformComponent)
-    | (1ull << ComponentsIndices::MeshComponent)
-    | (1ull << ComponentsIndices::MaterialComponent)
-    | (1ull << ComponentsIndices::SpotLightComponent);
-
-constexpr auto POINT_LIGHT_COMPONENT_MASK =
-    (1ull << ComponentsIndices::TransformComponent)
-    | (1ull << ComponentsIndices::MeshComponent)
-    | (1ull << ComponentsIndices::MaterialComponent)
-    | (1ull << ComponentsIndices::PointLightComponent);
-
-constexpr auto LEVEL_CHUNK_COMPONENT_MASK =
-    (1ull << ComponentsIndices::TransformComponent)
-    | (1ull << ComponentsIndices::MaterialComponent)
-    | (1ull << ComponentsIndices::MeshComponent)
-    | (1ull << ComponentsIndices::ColliderComponent)
-    | (1ull << ComponentsIndices::ColliderFlagsComponent)
-    | (1ull << ComponentsIndices::RotationComponent)
-    | (1ull << ComponentsIndices::LevelChunkTagComponent);
-
-constexpr auto PROJECTILE_COMPONENT_MASK =
-    (1ull << ComponentsIndices::TransformComponent)
-    | (1ull << ComponentsIndices::MeshComponent)
-    | (1ull << ComponentsIndices::ColliderComponent)
-    | (1ull << ComponentsIndices::ColliderFlagsComponent)
-    | (1ull << ComponentsIndices::RotationComponent)
-    | (1ull << ComponentsIndices::ProjectileBundleComponent)
-    | (1ull << ComponentsIndices::ProjectileTagComponent);
+// Game archetype masks live in the game (see examples/hello_world.cpp).
 }; // namespace glvm
 
 namespace glvm {
@@ -346,21 +247,11 @@ struct CameraComponent {};
 } // namespace glvm
 
 namespace glvm {
-struct Crosshair {};
-}; // namespace glvm
-
-namespace glvm {
 struct Damage {
     f32 maximum_damage;
     f32 minimum_damage;
     f32 critical_hit_rate;
     f32 critical_modifier;
-};
-} // namespace glvm
-
-namespace glvm {
-struct Enemy {
-    f32 detect_radius;
 };
 } // namespace glvm
 
@@ -391,38 +282,10 @@ struct InterfaceUi {};
 }; // namespace glvm
 
 namespace glvm {
-struct InventorySlot {
-    u32 item_entity = UINT_MAX;
-};
-} // namespace glvm
-
-namespace glvm {
-struct ItemSlotType {
-    u32 height;
-    u32 width;
-};
-
-struct Item {
-    // Array that contains entities with InventorySlotComponent.
-    Vec<u32> occupied_slots;
-    ItemSlotType item_slot_type;
-    bool is_actor;
-};
-} // namespace glvm
-
-namespace glvm {
 struct Physics {
     f32 gravity_accumulator = 0.0f;
 };
 }; // namespace glvm
-
-namespace glvm {
-struct Projectile {
-public:
-    u32 owner;
-    bool collision_status = false;
-};
-} // namespace glvm
 
 namespace glvm {
 struct Rotation {
@@ -1021,30 +884,6 @@ inline auto operator>>(const Translator& translator, const Point& point)
         .w = point.w * rww
     };
 }
-}; // namespace glvm
-
-namespace glvm {
-enum States : u8 { IDLE, ATTACK, ROAMING };
-} // namespace glvm
-
-namespace glvm {
-struct CrosshairTagComponent {};
-}; // namespace glvm
-
-namespace glvm {
-struct LevelChunkTagComponent {};
-}; // namespace glvm
-
-namespace glvm {
-struct PlayerTagComponent {};
-}; // namespace glvm
-
-namespace glvm {
-struct ProjectileTagComponent {};
-}; // namespace glvm
-
-namespace glvm {
-struct StaticMeshTagComponent {};
 }; // namespace glvm
 
 namespace glvm {
@@ -2203,58 +2042,6 @@ public:
 } // namespace glvm
 
 namespace glvm {
-struct Inventory {
-public:
-    Inventory() {
-        for (u32 i = 0; i < row; ++i) {
-            slots[i] = new u32[col];
-        }
-
-        for (u32 i = 0; i < row; ++i) {
-            for (u32 j = 0; j < col; ++j) {
-                slots[i][j] = -1;
-            }
-        }
-    }
-
-    Inventory(const Inventory& inv) {
-        for (u32 i = 0; i < row; ++i) {
-            this->slots[i] = new u32[col];
-        }
-
-        for (u32 i = 0; i < row; ++i) {
-            for (u32 j = 0; j < col; ++j) {
-                this->slots[i][j] = inv.slots[i][j];
-            }
-        }
-
-        this->entity_owner = inv.entity_owner;
-        this->highlighted_slots = inv.highlighted_slots;
-        this->is_available_highlighted_slots =
-            inv.is_available_highlighted_slots;
-    }
-
-    ~Inventory() {
-        for (u32 i = 0; i < row; ++i) {
-            delete[] slots[i];
-        }
-
-        delete[] slots;
-    }
-
-    u32 row = 8;
-    u32 col = 8;
-    // Array with entities containing InventorySlotComponents.
-    u32** slots = new u32*[row];
-    u32 entity_owner = UINT_MAX;
-    Vec<u32> highlighted_slots;
-    bool is_available_highlighted_slots = false;
-    MeshHandle slot_mesh_id;
-    f32 slot_scale;
-};
-}; // namespace glvm
-
-namespace glvm {
 struct MeshManager {
 private:
     static MeshManager* instance;
@@ -2484,12 +2271,6 @@ public:
 #endif // _WIN32
 
 namespace glvm {
-struct State {
-    States state;
-};
-} // namespace glvm
-
-namespace glvm {
 struct SoundSample {
     const char* path_to_file;
     u32 ui_duration;
@@ -2518,6 +2299,32 @@ public:
 } // namespace glvm
 
 namespace glvm {
+// Type-erased move-assign info per component index. The engine registers its
+// own components, games register theirs (see register_component). This keeps
+// Archetype::remove_entity generic instead of switching over hardcoded types.
+struct ComponentTypeInfo {
+    usize bytes = 0;
+    void (*move_assign)(void* dst, void* src) = nullptr;
+};
+
+extern ComponentTypeInfo
+    COMPONENT_TYPE_INFOS[ComponentsIndices::ComponentsCount];
+
+auto register_component_move(u32 component_id, ComponentTypeInfo info) -> void;
+
+template<typename T>
+auto register_component(u32 component_id) -> void {
+    register_component_move(
+        component_id,
+        ComponentTypeInfo {
+            .bytes = sizeof(T),
+            .move_assign = +[](void* dst, void* src) -> void {
+                *static_cast<T*>(dst) = *static_cast<T*>(src);
+            }
+        }
+    );
+}
+
 struct Archetype {
     virtual ~Archetype() = default;
 
@@ -2623,10 +2430,14 @@ struct Transform {
 } // namespace glvm
 
 namespace glvm {
+// Base engine camera component (like Bevy's Camera). Games attach it to
+// whichever entity should drive the view matrix.
 struct Beholder {
     Vector<f32, 3> position {0.0f, 0.0f, 0.0f};
     Vector<f32, 3> forward {0.0f, 0.0f, 0.0f};
 };
+
+using Camera = Beholder;
 } // namespace glvm
 
 namespace glvm {
@@ -3207,14 +3018,6 @@ public:
 #endif // _WIN32
 
 namespace glvm {
-struct ProjectileBundle {
-    Projectile projectile;
-    Damage damage;
-    Material material;
-};
-}; // namespace glvm
-
-namespace glvm {
 struct TextureManager {
 private:
     static TextureManager* instance;
@@ -3271,6 +3074,11 @@ private:
             dense_entities_map_to_components
         );
         components_types.push_back(typeid(ComponentType).name());
+        component_removers.push_back(
+            +[](ComponentManager* self, u32& entity) -> void {
+                self->remove_component<ComponentType>(entity);
+            }
+        );
         ++components_container_id;
         return LOCAL_CONTAINER_ID;
     }
@@ -3284,6 +3092,10 @@ public:
     Vec<Vec<u32>*> world_dense_components_map_to_entities;
 
     Vec<const char*> components_types;
+    // Type-erased per-component removers, registered once per component type.
+    // Lets remove_all_components stay generic: games register their own
+    // components without touching the engine.
+    Vec<void (*)(ComponentManager*, u32&)> component_removers;
     bool is_components_collection_changed = true;
 
     ~ComponentManager();
@@ -3474,46 +3286,8 @@ public:
     }
 
     auto remove_all_components(u32& entity) -> void {
-        for (u32 i = 0; i < world_components_container.size(); ++i) {
-            if (components_types[i] == typeid(Transform).name()) {
-                remove_component<Transform>(entity);
-            } else if (components_types[i] == typeid(Beholder).name()) {
-                remove_component<Beholder>(entity);
-            } else if (components_types[i] == typeid(RigidBody).name()) {
-                remove_component<RigidBody>(entity);
-            } else if (components_types[i] == typeid(Collider).name()) {
-                remove_component<Collider>(entity);
-            } else if (
-                components_types[i] == typeid(DirectionalLightComponent).name()
-            ) {
-                remove_component<DirectionalLightComponent>(entity);
-            } else if (components_types[i] == typeid(PointLightComponent).name()) {
-                remove_component<PointLightComponent>(entity);
-            } else if (components_types[i] == typeid(SpotLightComponent).name()) {
-                remove_component<SpotLightComponent>(entity);
-            } else if (components_types[i] == typeid(Material).name()) {
-                remove_component<Material>(entity);
-            } else if (components_types[i] == typeid(Move).name()) {
-                remove_component<Move>(entity);
-            } else if (components_types[i] == typeid(Mesh).name()) {
-                remove_component<Mesh>(entity);
-            } else if (components_types[i] == typeid(glvm::Controller).name()) {
-                remove_component<glvm::Controller>(entity);
-            } else if (components_types[i] == typeid(Projectile).name()) {
-                remove_component<Projectile>(entity);
-            } else if (components_types[i] == typeid(Enemy).name()) {
-                remove_component<Enemy>(entity);
-            } else if (components_types[i] == typeid(Font).name()) {
-                remove_component<Font>(entity);
-            } else if (components_types[i] == typeid(Health).name()) {
-                remove_component<Health>(entity);
-            } else if (components_types[i] == typeid(State).name()) {
-                remove_component<State>(entity);
-            } else if (components_types[i] == typeid(Actor).name()) {
-                remove_component<Actor>(entity);
-            } else {
-                continue;
-            }
+        for (u32 i = 0; i < component_removers.size(); ++i) {
+            component_removers[i](this, entity);
         }
     }
 
@@ -3926,13 +3700,11 @@ extern Vec<Descriptor> GPU_DESCRIPTORS;
 } // namespace glvm
 
 namespace glvm {
-enum DeactivatedSystems { DeactivatedMovementSystem };
-
 struct SystemManager: public System {
 private:
     static SystemManager* instance;
     static Mutex mutex;
-    Vec<DeactivatedSystems> deactivated_systems;
+    Vec<System*> deactivated_systems;
 
     SystemManager();
 
@@ -3949,8 +3721,8 @@ public:
     Vec<System*> system_container;
 
     auto activate_system(System* system) -> void;
-    auto deactivate_system(DeactivatedSystems system) -> void;
-    auto return_system_to_activated_state(DeactivatedSystems system) -> void;
+    auto deactivate_system(System* system) -> void;
+    auto return_system_to_activated_state(System* system) -> void;
 
     auto update() -> void override;
 };
@@ -4038,609 +3810,8 @@ public:
 } // namespace glvm
 
 namespace glvm {
-constexpr auto CROSSHAIR_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
-    / (sizeof(Transform) + sizeof(Mesh) + sizeof(Material)
-       + sizeof(CrosshairTagComponent));
-
-struct CrosshairArchetype: Archetype {
-    Transform transforms[CROSSHAIR_ARCH_CHUNK_SIZE];
-    Mesh meshes[CROSSHAIR_ARCH_CHUNK_SIZE];
-    Material materials[CROSSHAIR_ARCH_CHUNK_SIZE];
-    CrosshairTagComponent crosshair_tag_components[CROSSHAIR_ARCH_CHUNK_SIZE];
-
-    CrosshairArchetype() {
-        components[ComponentsIndices::TransformComponent] = transforms;
-        components[ComponentsIndices::MeshComponent] = meshes;
-        components[ComponentsIndices::MaterialComponent] = materials;
-        components[ComponentsIndices::CrosshairTagComponent] =
-            crosshair_tag_components;
-
-        mask = (1ull << ComponentsIndices::TransformComponent)
-            | (1ull << ComponentsIndices::MeshComponent)
-            | (1ull << ComponentsIndices::MaterialComponent)
-            | (1ull << ComponentsIndices::CrosshairTagComponent);
-
-        component_ids[0] = ComponentsIndices::TransformComponent;
-        component_ids[1] = ComponentsIndices::MeshComponent;
-        component_ids[2] = ComponentsIndices::MaterialComponent;
-        component_ids[3] = ComponentsIndices::CrosshairTagComponent;
-        component_count = 4;
-    }
-};
-}; // namespace glvm
-
-namespace glvm {
-constexpr auto DIRECTIONAL_LIGHT_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
-    / (sizeof(Transform) + sizeof(Mesh) + sizeof(Material)
-       + sizeof(DirectionalLightComponent));
-
-struct DirectionalLightArchetype: Archetype {
-    Transform transforms[DIRECTIONAL_LIGHT_ARCH_CHUNK_SIZE];
-    Mesh meshes[DIRECTIONAL_LIGHT_ARCH_CHUNK_SIZE];
-    Material materials[DIRECTIONAL_LIGHT_ARCH_CHUNK_SIZE];
-    DirectionalLightComponent
-        directional_lights[DIRECTIONAL_LIGHT_ARCH_CHUNK_SIZE];
-
-    DirectionalLightArchetype() {
-        components[ComponentsIndices::TransformComponent] = transforms;
-        components[ComponentsIndices::MeshComponent] = meshes;
-        components[ComponentsIndices::MaterialComponent] = materials;
-        components[ComponentsIndices::DirectionalLightComponent] =
-            directional_lights;
-
-        mask = (1ull << ComponentsIndices::TransformComponent)
-            | (1ull << ComponentsIndices::MeshComponent)
-            | (1ull << ComponentsIndices::MaterialComponent)
-            | (1ull << ComponentsIndices::DirectionalLightComponent);
-
-        component_ids[0] = ComponentsIndices::TransformComponent;
-        component_ids[1] = ComponentsIndices::MeshComponent;
-        component_ids[2] = ComponentsIndices::MaterialComponent;
-        component_ids[3] = ComponentsIndices::DirectionalLightComponent;
-        component_count = 4;
-    }
-};
-}; // namespace glvm
-
-namespace glvm {
-constexpr auto ENEMY_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
-    / (sizeof(Transform) + sizeof(Enemy) + sizeof(State) + sizeof(Font)
-       + sizeof(Animation) + sizeof(Material) + sizeof(Mesh) + sizeof(Collider)
-       + sizeof(ColliderFlags) + sizeof(Health) + sizeof(RigidBody)
-       + sizeof(Attack) + sizeof(Rotation) + sizeof(Move));
-
-struct EnemyArchetype: Archetype {
-    Transform transforms[ENEMY_ARCH_CHUNK_SIZE];
-    Enemy enemies[ENEMY_ARCH_CHUNK_SIZE];
-    State states[ENEMY_ARCH_CHUNK_SIZE];
-    Font fonts[ENEMY_ARCH_CHUNK_SIZE];
-    Animation animations[ENEMY_ARCH_CHUNK_SIZE];
-    Material materials[ENEMY_ARCH_CHUNK_SIZE];
-    Mesh meshes[ENEMY_ARCH_CHUNK_SIZE];
-    Collider colliders[ENEMY_ARCH_CHUNK_SIZE];
-    ColliderFlags collider_flags[ENEMY_ARCH_CHUNK_SIZE];
-    Health health[ENEMY_ARCH_CHUNK_SIZE];
-    RigidBody rigid_bodies[ENEMY_ARCH_CHUNK_SIZE];
-    Attack attacks[ENEMY_ARCH_CHUNK_SIZE];
-    Rotation rotations[ENEMY_ARCH_CHUNK_SIZE];
-    Move moves[ENEMY_ARCH_CHUNK_SIZE];
-
-    EnemyArchetype() {
-        components[ComponentsIndices::TransformComponent] = transforms;
-        components[ComponentsIndices::EnemyComponent] = enemies;
-        components[ComponentsIndices::StateComponent] = states;
-        components[ComponentsIndices::FontComponent] = fonts;
-        components[ComponentsIndices::AnimationComponent] = animations;
-        components[ComponentsIndices::MaterialComponent] = materials;
-        components[ComponentsIndices::MeshComponent] = meshes;
-        components[ComponentsIndices::ColliderComponent] = colliders;
-        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags;
-        components[ComponentsIndices::HealthComponent] = health;
-        components[ComponentsIndices::RigidBodyComponent] = rigid_bodies;
-        components[ComponentsIndices::AttackComponent] = attacks;
-        components[ComponentsIndices::RotationComponent] = rotations;
-        components[ComponentsIndices::MoveComponent] = moves;
-
-        mask = (1ull << ComponentsIndices::TransformComponent)
-            | (1ull << ComponentsIndices::EnemyComponent)
-            | (1ull << ComponentsIndices::StateComponent)
-            | (1ull << ComponentsIndices::FontComponent)
-            | (1ull << ComponentsIndices::AnimationComponent)
-            | (1ull << ComponentsIndices::MaterialComponent)
-            | (1ull << ComponentsIndices::MeshComponent)
-            | (1ull << ComponentsIndices::ColliderComponent)
-            | (1ull << ComponentsIndices::ColliderFlagsComponent)
-            | (1ull << ComponentsIndices::HealthComponent)
-            | (1ull << ComponentsIndices::RigidBodyComponent)
-            | (1ull << ComponentsIndices::AttackComponent)
-            | (1ull << ComponentsIndices::RotationComponent)
-            | (1ull << ComponentsIndices::MoveComponent);
-
-        component_ids[0] = ComponentsIndices::TransformComponent;
-        component_ids[1] = ComponentsIndices::EnemyComponent;
-        component_ids[2] = ComponentsIndices::StateComponent;
-        component_ids[3] = ComponentsIndices::FontComponent;
-        component_ids[4] = ComponentsIndices::AnimationComponent;
-        component_ids[5] = ComponentsIndices::MaterialComponent;
-        component_ids[6] = ComponentsIndices::MeshComponent;
-        component_ids[7] = ComponentsIndices::ColliderComponent;
-        component_ids[8] = ComponentsIndices::ColliderFlagsComponent;
-        component_ids[9] = ComponentsIndices::HealthComponent;
-        component_ids[10] = ComponentsIndices::RigidBodyComponent;
-        component_ids[11] = ComponentsIndices::AttackComponent;
-        component_ids[12] = ComponentsIndices::RotationComponent;
-        component_ids[13] = ComponentsIndices::MoveComponent;
-        component_count = 14;
-    }
-};
-}; // namespace glvm
-
-namespace glvm {
-constexpr auto INVENTORY_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
-    / (sizeof(Transform) + sizeof(Mesh) + sizeof(Inventory) + sizeof(Material));
-
-struct InventoryArchetype: Archetype {
-    Transform transforms[INVENTORY_ARCH_CHUNK_SIZE];
-    Mesh meshes[INVENTORY_ARCH_CHUNK_SIZE];
-    Inventory inventories[INVENTORY_ARCH_CHUNK_SIZE];
-    Material materials[INVENTORY_ARCH_CHUNK_SIZE];
-
-    InventoryArchetype() {
-        components[ComponentsIndices::TransformComponent] = transforms;
-        components[ComponentsIndices::MeshComponent] = meshes;
-        components[ComponentsIndices::InventoryComponent] = inventories;
-        components[ComponentsIndices::MaterialComponent] = materials;
-
-        mask = (1ull << ComponentsIndices::TransformComponent)
-            | (1ull << ComponentsIndices::MeshComponent)
-            | (1ull << ComponentsIndices::InventoryComponent)
-            | (1ull << ComponentsIndices::MaterialComponent);
-
-        component_ids[0] = ComponentsIndices::TransformComponent;
-        component_ids[1] = ComponentsIndices::MeshComponent;
-        component_ids[2] = ComponentsIndices::InventoryComponent;
-        component_ids[3] = ComponentsIndices::MaterialComponent;
-        component_count = 4;
-    }
-};
-}; // namespace glvm
-
-namespace glvm {
-constexpr auto ITEM_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
-    / (sizeof(Transform) + sizeof(Collider) + sizeof(ColliderFlags)
-       + sizeof(Mesh) + sizeof(RigidBody) + sizeof(Material) + sizeof(Rotation)
-       + sizeof(Move) + sizeof(Item));
-
-struct ItemArchetype: Archetype {
-    Transform transforms[ITEM_ARCH_CHUNK_SIZE];
-    Collider colliders[ITEM_ARCH_CHUNK_SIZE];
-    ColliderFlags collider_flags[ITEM_ARCH_CHUNK_SIZE];
-    Mesh meshes[ITEM_ARCH_CHUNK_SIZE];
-    RigidBody rigid_bodies[ITEM_ARCH_CHUNK_SIZE];
-    Material materials[ITEM_ARCH_CHUNK_SIZE];
-    Rotation rotations[ITEM_ARCH_CHUNK_SIZE];
-    Move moves[ITEM_ARCH_CHUNK_SIZE];
-    Item items[ITEM_ARCH_CHUNK_SIZE];
-
-    ItemArchetype() {
-        components[ComponentsIndices::TransformComponent] = transforms;
-        components[ComponentsIndices::ColliderComponent] = colliders;
-        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags;
-        components[ComponentsIndices::MeshComponent] = meshes;
-        components[ComponentsIndices::RigidBodyComponent] = rigid_bodies;
-        components[ComponentsIndices::MaterialComponent] = materials;
-        components[ComponentsIndices::RotationComponent] = rotations;
-        components[ComponentsIndices::MoveComponent] = moves;
-        components[ComponentsIndices::ItemComponent] = items;
-
-        mask = (1ull << ComponentsIndices::TransformComponent)
-            | (1ull << ComponentsIndices::ColliderComponent)
-            | (1ull << ComponentsIndices::ColliderFlagsComponent)
-            | (1ull << ComponentsIndices::MeshComponent)
-            | (1ull << ComponentsIndices::RigidBodyComponent)
-            | (1ull << ComponentsIndices::MaterialComponent)
-            | (1ull << ComponentsIndices::RotationComponent)
-            | (1ull << ComponentsIndices::MoveComponent)
-            | (1ull << ComponentsIndices::ItemComponent);
-
-        component_ids[0] = ComponentsIndices::TransformComponent;
-        component_ids[1] = ComponentsIndices::ColliderComponent;
-        component_ids[2] = ComponentsIndices::ColliderFlagsComponent;
-        component_ids[3] = ComponentsIndices::MeshComponent;
-        component_ids[4] = ComponentsIndices::RigidBodyComponent;
-        component_ids[5] = ComponentsIndices::MaterialComponent;
-        component_ids[6] = ComponentsIndices::RotationComponent;
-        component_ids[7] = ComponentsIndices::MoveComponent;
-        component_ids[8] = ComponentsIndices::ItemComponent;
-        component_count = 9;
-    }
-};
-}; // namespace glvm
-
-namespace glvm {
-constexpr auto LEVEL_CHUNK_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
-    / (sizeof(Transform) + sizeof(Material) + sizeof(Mesh) + sizeof(Collider)
-       + sizeof(ColliderFlags) + sizeof(Rotation)
-       + sizeof(LevelChunkTagComponent));
-
-struct LevelChunkArchetype: Archetype {
-    Transform transforms[LEVEL_CHUNK_ARCH_CHUNK_SIZE];
-    Material materials[LEVEL_CHUNK_ARCH_CHUNK_SIZE];
-    Mesh meshes[LEVEL_CHUNK_ARCH_CHUNK_SIZE];
-    Collider colliders[LEVEL_CHUNK_ARCH_CHUNK_SIZE];
-    ColliderFlags collider_flags[LEVEL_CHUNK_ARCH_CHUNK_SIZE];
-    Rotation rotations[LEVEL_CHUNK_ARCH_CHUNK_SIZE];
-    LevelChunkTagComponent
-        level_chunk_tag_components[LEVEL_CHUNK_ARCH_CHUNK_SIZE];
-
-    LevelChunkArchetype() {
-        components[ComponentsIndices::TransformComponent] = transforms;
-        components[ComponentsIndices::MaterialComponent] = materials;
-        components[ComponentsIndices::MeshComponent] = meshes;
-        components[ComponentsIndices::ColliderComponent] = colliders;
-        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags;
-        components[ComponentsIndices::RotationComponent] = rotations;
-        components[ComponentsIndices::LevelChunkTagComponent] =
-            level_chunk_tag_components;
-
-        mask = (1ull << ComponentsIndices::TransformComponent)
-            | (1ull << ComponentsIndices::MaterialComponent)
-            | (1ull << ComponentsIndices::MeshComponent)
-            | (1ull << ComponentsIndices::ColliderComponent)
-            | (1ull << ComponentsIndices::ColliderFlagsComponent)
-            | (1ull << ComponentsIndices::RotationComponent)
-            | (1ull << ComponentsIndices::LevelChunkTagComponent);
-
-        component_ids[0] = ComponentsIndices::TransformComponent;
-        component_ids[1] = ComponentsIndices::MaterialComponent;
-        component_ids[2] = ComponentsIndices::MeshComponent;
-        component_ids[3] = ComponentsIndices::ColliderComponent;
-        component_ids[4] = ComponentsIndices::ColliderFlagsComponent;
-        component_ids[5] = ComponentsIndices::RotationComponent;
-        component_ids[6] = ComponentsIndices::LevelChunkTagComponent;
-        component_count = 7;
-    }
-};
-}; // namespace glvm
-
-namespace glvm {
-constexpr auto PLAYER_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
-    / (sizeof(Transform) + sizeof(Beholder) + sizeof(Collider)
-       + sizeof(ColliderFlags) + sizeof(Mesh) + sizeof(RigidBody)
-       + sizeof(Health) + sizeof(Material) + sizeof(Move) + sizeof(Attack)
-       + sizeof(Animation) + sizeof(Font) + sizeof(Rotation)
-       + sizeof(PlayerTagComponent));
-
-struct PlayerArchetype: Archetype {
-    Transform transforms[PLAYER_ARCH_CHUNK_SIZE];
-    Beholder beholders[PLAYER_ARCH_CHUNK_SIZE];
-    Collider colliders[PLAYER_ARCH_CHUNK_SIZE];
-    ColliderFlags collider_flags[PLAYER_ARCH_CHUNK_SIZE];
-    Mesh meshes[PLAYER_ARCH_CHUNK_SIZE];
-    RigidBody rigid_bodies[PLAYER_ARCH_CHUNK_SIZE];
-    Health health[PLAYER_ARCH_CHUNK_SIZE];
-    Material materials[PLAYER_ARCH_CHUNK_SIZE];
-    Move moves[PLAYER_ARCH_CHUNK_SIZE];
-    Attack attacks[PLAYER_ARCH_CHUNK_SIZE];
-    Animation animations[PLAYER_ARCH_CHUNK_SIZE];
-    Font fonts[PLAYER_ARCH_CHUNK_SIZE];
-    Rotation rotations[PLAYER_ARCH_CHUNK_SIZE];
-    PlayerTagComponent player_tag_components[PLAYER_ARCH_CHUNK_SIZE];
-
-    PlayerArchetype() {
-        components[ComponentsIndices::TransformComponent] = transforms;
-        components[ComponentsIndices::ViewComponent] = beholders;
-        components[ComponentsIndices::ColliderComponent] = colliders;
-        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags;
-        components[ComponentsIndices::MeshComponent] = meshes;
-        components[ComponentsIndices::RigidBodyComponent] = rigid_bodies;
-        components[ComponentsIndices::HealthComponent] = health;
-        components[ComponentsIndices::MaterialComponent] = materials;
-        components[ComponentsIndices::MoveComponent] = moves;
-        components[ComponentsIndices::AttackComponent] = attacks;
-        components[ComponentsIndices::AnimationComponent] = animations;
-        components[ComponentsIndices::FontComponent] = fonts;
-        components[ComponentsIndices::RotationComponent] = rotations;
-        components[ComponentsIndices::PlayerTagComponent] =
-            player_tag_components;
-
-        mask = (1ull << ComponentsIndices::TransformComponent)
-            | (1ull << ComponentsIndices::ViewComponent)
-            | (1ull << ComponentsIndices::ColliderComponent)
-            | (1ull << ComponentsIndices::ColliderFlagsComponent)
-            | (1ull << ComponentsIndices::MeshComponent)
-            | (1ull << ComponentsIndices::RigidBodyComponent)
-            | (1ull << ComponentsIndices::HealthComponent)
-            | (1ull << ComponentsIndices::MaterialComponent)
-            | (1ull << ComponentsIndices::MoveComponent)
-            | (1ull << ComponentsIndices::AttackComponent)
-            | (1ull << ComponentsIndices::AnimationComponent)
-            | (1ull << ComponentsIndices::FontComponent)
-            | (1ull << ComponentsIndices::RotationComponent)
-            | (1ull << ComponentsIndices::PlayerTagComponent);
-
-        component_ids[0] = ComponentsIndices::TransformComponent;
-        component_ids[1] = ComponentsIndices::ViewComponent;
-        component_ids[2] = ComponentsIndices::ColliderComponent;
-        component_ids[3] = ComponentsIndices::ColliderFlagsComponent;
-        component_ids[4] = ComponentsIndices::MeshComponent;
-        component_ids[5] = ComponentsIndices::RigidBodyComponent;
-        component_ids[6] = ComponentsIndices::HealthComponent;
-        component_ids[7] = ComponentsIndices::MaterialComponent;
-        component_ids[8] = ComponentsIndices::MoveComponent;
-        component_ids[9] = ComponentsIndices::AttackComponent;
-        component_ids[10] = ComponentsIndices::AnimationComponent;
-        component_ids[11] = ComponentsIndices::FontComponent;
-        component_ids[12] = ComponentsIndices::RotationComponent;
-        component_ids[13] = ComponentsIndices::PlayerTagComponent;
-        component_count = 14;
-    }
-};
-}; // namespace glvm
-
-namespace glvm {
-constexpr auto POINT_LIGHT_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
-    / (sizeof(Transform) + sizeof(Mesh) + sizeof(Material)
-       + sizeof(PointLightComponent));
-
-struct PointLightArchetype: Archetype {
-    Transform transforms[POINT_LIGHT_ARCH_CHUNK_SIZE];
-    Mesh meshes[POINT_LIGHT_ARCH_CHUNK_SIZE];
-    Material materials[POINT_LIGHT_ARCH_CHUNK_SIZE];
-    PointLightComponent point_lights[POINT_LIGHT_ARCH_CHUNK_SIZE];
-
-    PointLightArchetype() {
-        components[ComponentsIndices::TransformComponent] = transforms;
-        components[ComponentsIndices::MeshComponent] = meshes;
-        components[ComponentsIndices::MaterialComponent] = materials;
-        components[ComponentsIndices::PointLightComponent] = point_lights;
-
-        mask = (1ull << ComponentsIndices::TransformComponent)
-            | (1ull << ComponentsIndices::MeshComponent)
-            | (1ull << ComponentsIndices::MaterialComponent)
-            | (1ull << ComponentsIndices::PointLightComponent);
-
-        component_ids[0] = ComponentsIndices::TransformComponent;
-        component_ids[1] = ComponentsIndices::MeshComponent;
-        component_ids[2] = ComponentsIndices::MaterialComponent;
-        component_ids[3] = ComponentsIndices::PointLightComponent;
-        component_count = 4;
-    }
-};
-}; // namespace glvm
-
-namespace glvm {
-constexpr auto PROJECTILE_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
-    / (sizeof(Transform) + sizeof(Mesh) + sizeof(Collider)
-       + sizeof(ColliderFlags) + sizeof(Rotation) + sizeof(ProjectileBundle)
-       + sizeof(Health) + sizeof(Attack) + sizeof(Font)
-       + sizeof(ProjectileTagComponent));
-
-struct ProjectileArchetype: Archetype {
-    Transform transforms[PROJECTILE_ARCH_CHUNK_SIZE];
-    Mesh meshes[PROJECTILE_ARCH_CHUNK_SIZE];
-    Collider colliders[PROJECTILE_ARCH_CHUNK_SIZE];
-    ColliderFlags collider_flags[PROJECTILE_ARCH_CHUNK_SIZE];
-    Rotation rotations[PROJECTILE_ARCH_CHUNK_SIZE];
-    ProjectileBundle projectile_bundles[PROJECTILE_ARCH_CHUNK_SIZE];
-    Health health[PROJECTILE_ARCH_CHUNK_SIZE];
-    Attack attacks[PROJECTILE_ARCH_CHUNK_SIZE];
-    Font fonts[PROJECTILE_ARCH_CHUNK_SIZE];
-    ProjectileTagComponent projectile_tag_components[PROJECTILE_ARCH_CHUNK_SIZE];
-
-    ProjectileArchetype() {
-        components[ComponentsIndices::TransformComponent] = transforms;
-        components[ComponentsIndices::MeshComponent] = meshes;
-        components[ComponentsIndices::ColliderComponent] = colliders;
-        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags;
-        components[ComponentsIndices::RotationComponent] = rotations;
-        components[ComponentsIndices::ProjectileBundleComponent] =
-            projectile_bundles;
-        components[ComponentsIndices::HealthComponent] = health;
-        components[ComponentsIndices::AttackComponent] = attacks;
-        components[ComponentsIndices::FontComponent] = fonts;
-        components[ComponentsIndices::ProjectileTagComponent] =
-            projectile_tag_components;
-
-        mask = (1ull << ComponentsIndices::TransformComponent)
-            | (1ull << ComponentsIndices::MeshComponent)
-            | (1ull << ComponentsIndices::ColliderComponent)
-            | (1ull << ComponentsIndices::ColliderFlagsComponent)
-            | (1ull << ComponentsIndices::RotationComponent)
-            | (1ull << ComponentsIndices::ProjectileBundleComponent)
-            | (1ull << ComponentsIndices::HealthComponent)
-            | (1ull << ComponentsIndices::AttackComponent)
-            | (1ull << ComponentsIndices::FontComponent)
-            | (1ull << ComponentsIndices::ProjectileTagComponent);
-
-        component_ids[0] = ComponentsIndices::TransformComponent;
-        component_ids[1] = ComponentsIndices::MeshComponent;
-        component_ids[2] = ComponentsIndices::ColliderComponent;
-        component_ids[3] = ComponentsIndices::ColliderFlagsComponent;
-        component_ids[4] = ComponentsIndices::RotationComponent;
-        component_ids[5] = ComponentsIndices::ProjectileBundleComponent;
-        component_ids[6] = ComponentsIndices::HealthComponent;
-        component_ids[7] = ComponentsIndices::AttackComponent;
-        component_ids[8] = ComponentsIndices::FontComponent;
-        component_ids[9] = ComponentsIndices::ProjectileTagComponent;
-        component_count = 10;
-    }
-};
-}; // namespace glvm
-
-namespace glvm {
-constexpr auto RIGID_BODY_ARCH_CHUNK_SIZE =
-    ARCHETYPE_CHUNK_SIZE / (sizeof(glvm::Transform) + sizeof(glvm::RigidBody));
-
-struct RigidBodyArch {
-    Transform transforms[RIGID_BODY_ARCH_CHUNK_SIZE];
-    RigidBody rigid_bodies[RIGID_BODY_ARCH_CHUNK_SIZE];
-};
-}; // namespace glvm
-
-namespace glvm {
-constexpr auto SPOT_LIGHT_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
-    / (sizeof(Transform) + sizeof(Mesh) + sizeof(Material)
-       + sizeof(SpotLightComponent));
-
-struct SpotLightArchetype: Archetype {
-    Transform transforms[SPOT_LIGHT_ARCH_CHUNK_SIZE];
-    Mesh meshes[SPOT_LIGHT_ARCH_CHUNK_SIZE];
-    Material materials[SPOT_LIGHT_ARCH_CHUNK_SIZE];
-    SpotLightComponent spot_lights[SPOT_LIGHT_ARCH_CHUNK_SIZE];
-
-    SpotLightArchetype() {
-        components[ComponentsIndices::TransformComponent] = transforms;
-        components[ComponentsIndices::MeshComponent] = meshes;
-        components[ComponentsIndices::MaterialComponent] = materials;
-        components[ComponentsIndices::SpotLightComponent] = spot_lights;
-
-        mask = (1ull << ComponentsIndices::TransformComponent)
-            | (1ull << ComponentsIndices::MeshComponent)
-            | (1ull << ComponentsIndices::MaterialComponent)
-            | (1ull << ComponentsIndices::SpotLightComponent);
-
-        component_ids[0] = ComponentsIndices::TransformComponent;
-        component_ids[1] = ComponentsIndices::MeshComponent;
-        component_ids[2] = ComponentsIndices::MaterialComponent;
-        component_ids[3] = ComponentsIndices::SpotLightComponent;
-        component_count = 4;
-    }
-};
-}; // namespace glvm
-
-namespace glvm {
-constexpr auto STATIC_MESH_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
-    / (sizeof(Transform) + sizeof(Collider) + sizeof(ColliderFlags)
-       + sizeof(Mesh) + sizeof(Material) + sizeof(Font) + sizeof(Rotation)
-       + sizeof(StaticMeshTagComponent));
-
-struct StaticMeshArchetype: Archetype {
-    Transform transforms[STATIC_MESH_ARCH_CHUNK_SIZE];
-    Collider colliders[STATIC_MESH_ARCH_CHUNK_SIZE];
-    ColliderFlags collider_flags[STATIC_MESH_ARCH_CHUNK_SIZE];
-    Mesh meshes[STATIC_MESH_ARCH_CHUNK_SIZE];
-    Material materials[STATIC_MESH_ARCH_CHUNK_SIZE];
-    Font fonts[STATIC_MESH_ARCH_CHUNK_SIZE];
-    Rotation rotations[STATIC_MESH_ARCH_CHUNK_SIZE];
-    StaticMeshTagComponent
-        static_mesh_tag_components[STATIC_MESH_ARCH_CHUNK_SIZE];
-
-    StaticMeshArchetype() {
-        components[ComponentsIndices::TransformComponent] = transforms;
-        components[ComponentsIndices::ColliderComponent] = colliders;
-        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags;
-        components[ComponentsIndices::MeshComponent] = meshes;
-        components[ComponentsIndices::MaterialComponent] = materials;
-        components[ComponentsIndices::FontComponent] = fonts;
-        components[ComponentsIndices::RotationComponent] = rotations;
-        components[ComponentsIndices::StaticMeshTagComponent] =
-            static_mesh_tag_components;
-
-        mask = (1ull << ComponentsIndices::TransformComponent)
-            | (1ull << ComponentsIndices::ColliderComponent)
-            | (1ull << ComponentsIndices::ColliderFlagsComponent)
-            | (1ull << ComponentsIndices::MeshComponent)
-            | (1ull << ComponentsIndices::MaterialComponent)
-            | (1ull << ComponentsIndices::FontComponent)
-            | (1ull << ComponentsIndices::RotationComponent)
-            | (1ull << ComponentsIndices::StaticMeshTagComponent);
-
-        component_ids[0] = ComponentsIndices::TransformComponent;
-        component_ids[1] = ComponentsIndices::ColliderComponent;
-        component_ids[2] = ComponentsIndices::ColliderFlagsComponent;
-        component_ids[3] = ComponentsIndices::MeshComponent;
-        component_ids[4] = ComponentsIndices::MaterialComponent;
-        component_ids[5] = ComponentsIndices::FontComponent;
-        component_ids[6] = ComponentsIndices::RotationComponent;
-        component_ids[7] = ComponentsIndices::StaticMeshTagComponent;
-        component_count = 8;
-    }
-};
-}; // namespace glvm
-
-namespace glvm {
-constexpr auto COLLIDER_ARCH_CHUNK_SIZE =
-    ARCHETYPE_CHUNK_SIZE / (sizeof(Collider) + sizeof(ColliderFlags));
-
-struct ColliderArchetype: Archetype {
-    Collider colliders[COLLIDER_ARCH_CHUNK_SIZE];
-    ColliderFlags collider_flags[COLLIDER_ARCH_CHUNK_SIZE];
-
-    ColliderArchetype() {
-        components[ComponentsIndices::ColliderComponent] = colliders;
-        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags;
-
-        mask = (1ull << ComponentsIndices::ColliderComponent)
-            | (1ull << ComponentsIndices::ColliderFlagsComponent);
-
-        component_ids[0] = ComponentsIndices::ColliderComponent;
-        component_ids[1] = ComponentsIndices::ColliderFlagsComponent;
-        component_count = 2;
-    }
-};
-}; // namespace glvm
-
-namespace glvm {
-constexpr auto DAMAGE_ARCH_CHUNK_SIZE =
-    ARCHETYPE_CHUNK_SIZE / (sizeof(Attack) + sizeof(Health) + sizeof(Font));
-
-struct DamageArchetype: Archetype {
-    Attack attacks[DAMAGE_ARCH_CHUNK_SIZE];
-    Health health[DAMAGE_ARCH_CHUNK_SIZE];
-    Font fonts[DAMAGE_ARCH_CHUNK_SIZE];
-
-    DamageArchetype() {
-        components[ComponentsIndices::AttackComponent] = attacks;
-        components[ComponentsIndices::HealthComponent] = health;
-        components[ComponentsIndices::FontComponent] = fonts;
-
-        mask = (1ull << ComponentsIndices::AttackComponent)
-            | (1ull << ComponentsIndices::HealthComponent)
-            | (1ull << ComponentsIndices::FontComponent);
-
-        component_ids[0] = ComponentsIndices::AttackComponent;
-        component_ids[1] = ComponentsIndices::HealthComponent;
-        component_ids[2] = ComponentsIndices::FontComponent;
-        component_count = 3;
-    }
-};
-}; // namespace glvm
-
-namespace glvm {
-constexpr auto PHYSICS_ARCH_CHUNK_SIZE = ARCHETYPE_CHUNK_SIZE
-    / (sizeof(Transform) + sizeof(Collider) + sizeof(ColliderFlags)
-       + sizeof(Move) + sizeof(RigidBody));
-
-struct PhysicsArchetype: Archetype {
-    Transform transforms[PHYSICS_ARCH_CHUNK_SIZE];
-    Collider colliders[PHYSICS_ARCH_CHUNK_SIZE];
-    ColliderFlags collider_flags[PHYSICS_ARCH_CHUNK_SIZE];
-    Move moves[PHYSICS_ARCH_CHUNK_SIZE];
-    RigidBody rigid_bodies[PHYSICS_ARCH_CHUNK_SIZE];
-
-    PhysicsArchetype() {
-        components[ComponentsIndices::TransformComponent] = transforms;
-        components[ComponentsIndices::ColliderComponent] = colliders;
-        components[ComponentsIndices::ColliderFlagsComponent] = collider_flags;
-        components[ComponentsIndices::MoveComponent] = moves;
-        components[ComponentsIndices::RigidBodyComponent] = rigid_bodies;
-
-        mask = (1ull << ComponentsIndices::TransformComponent)
-            | (1ull << ComponentsIndices::ColliderComponent)
-            | (1ull << ComponentsIndices::ColliderFlagsComponent)
-            | (1ull << ComponentsIndices::MoveComponent)
-            | (1ull << ComponentsIndices::RigidBodyComponent);
-
-        component_ids[0] = ComponentsIndices::TransformComponent;
-        component_ids[1] = ComponentsIndices::ColliderComponent;
-        component_ids[2] = ComponentsIndices::ColliderFlagsComponent;
-        component_ids[3] = ComponentsIndices::MoveComponent;
-        component_ids[4] = ComponentsIndices::RigidBodyComponent;
-        component_count = 5;
-    }
-};
-}; // namespace glvm
+// (Game archetypes moved to the game, see examples/hello_world.cpp.)
+} // namespace glvm
 
 #ifdef __linux__
 
@@ -6156,18 +5327,6 @@ auto get_id(u64 entity) -> u32;
 auto get_gen(u64 entity) -> u32;
 auto matches_required_mask(const u64 archetype_mask, const u64& system_mask)
     -> bool;
-
-template<typename T>
-auto unwrap_archetype(Archetype* arch, u64 mask, void (*func)(T*)) -> void {
-    switch (mask) {
-        case PLAYER_COMPONENT_MASK:
-            func(as<PlayerArchetype*>(arch));
-            break;
-        case ENEMY_COMPONENT_MASK:
-            func(as<EnemyArchetype*>(arch));
-            break;
-    }
-}
 }; // namespace glvm
 
 namespace glvm {
@@ -6279,91 +5438,8 @@ private:
 }; // namespace glvm
 
 namespace glvm {
-struct InventorySystem: public System {
-public:
-    u32 crosshair_archetypes_number = 0;
-    u32 inventory_archetypes_number = 0;
-
-    struct ArchView {
-        Archetype* crosshair_cached_archetype = nullptr;
-        Archetype* inventory_cached_archetype = nullptr;
-    } arch_view;
-
-    struct ComponentsView {
-        Transform* crosshair_transforms_view = nullptr;
-
-        Transform* inventory_transforms_view = nullptr;
-        Inventory* inventory_view = nullptr;
-        Mesh* inventory_meshes_view = nullptr;
-    } components_view;
-
-    u64 crosshair_required_mask =
-        (1ull << ComponentsIndices::TransformComponent)
-        | (1ull << ComponentsIndices::CrosshairTagComponent);
-
-    u64 inventory_required_mask =
-        (1ull << ComponentsIndices::TransformComponent)
-        | (1ull << ComponentsIndices::InventoryComponent)
-        | (1ull << ComponentsIndices::MeshComponent);
-
-    auto update() -> void override;
-    auto determine_swappable_status_and_slots(
-        Item* item_component,
-        Transform* inventory_transform_component,
-        Vec<u32>& potential_occupied_slots,
-        Transform* crosshair_transform_component,
-        Point2D<i32> intersection_slot,
-        Inventory* inventory_component,
-        const f32 inventory_slot_scale
-    ) -> i32;
-    auto fill_inventory_slots(
-        Item* item_component,
-        const i32 item_width,
-        const i32 item_height,
-        Inventory* inventory_component,
-        const i32 fill_value
-    ) -> void;
-    auto determine_swappable_field(
-        Item* item_component,
-        const i32 item_width,
-        const i32 item_height,
-        i32 pivot_row,
-        i32 pivot_column,
-        Inventory* inventory_component,
-        Vec<u32>& potential_occupied_slots
-    ) -> i32;
-    auto calculate_basic_offset(
-        const i32 item_axis_size,
-        const f32 axis_value,
-        const f32 crosshair_axis_position,
-        const i32 axis_slot_index,
-        const f32 inventory_slot_scale
-    ) -> i32;
-    auto check_crosshair_inventory_intersection(
-        Transform* crosshair_transform_component,
-        Transform* inventory_transform_component,
-        Inventory* inventory_component,
-        const f32 inventory_slot_scale,
-        const f32 inventory_slot_half_scale
-    ) -> bool;
-    auto determine_actual_intersection_slot(
-        Transform* crosshair_transform_component,
-        Transform* inventory_transform_component,
-        const f32 inventory_slot_scale,
-        const f32 inventory_slot_half_scale
-    ) -> Point2D<i32>;
-
-    bool is_inventory_opened;
-    i32* is_item_dragged;
-    bool* is_left_mouse_button_released;
-    bool is_left_mouse_button_pressed;
-    f32 mouse_offset_x = 0;
-    f32 mouse_offset_y = 0;
-    // Window aspect ratio, set by engine each frame.
-    f32 aspect_ratio = 0.0f;
-    Archetype* crosshair_cached_archetype;
-    Archetype* cached_inventory_archetype;
-};
+// Game systems (inventory, items, enemies, projectiles, procedural levels)
+// live in the game now, see examples/hello_world.cpp.
 } // namespace glvm
 
 #ifdef __linux__
@@ -6979,51 +6055,7 @@ public:
 }; // namespace glvm
 
 namespace glvm {
-struct ItemSystem: public System {
-    u32 inventory_archetypes_number = 0;
-    u32 item_archetypes_number = 0;
-    u32 crosshair_archetypes_number = 0;
-
-    struct ArchView {
-        Archetype* inventory_cached_archetype = nullptr;
-        Archetype* item_archetype = nullptr;
-        Archetype* crosshair_archetype = nullptr;
-    } arch_view;
-
-    struct ComponentsView {
-        Inventory* inventories_view = nullptr;
-
-        Item* items_view = nullptr;
-        Collider* item_colliders_view = nullptr;
-        Transform* item_transforms_view = nullptr;
-
-        Transform* crosshair_transforms = nullptr;
-    } components_view;
-
-    u64 inventory_required_mask =
-        (1ull << ComponentsIndices::InventoryComponent);
-
-    u64 item_required_mask = (1ul << ComponentsIndices::TransformComponent)
-        | (1ul << ComponentsIndices::ItemComponent)
-        | (1ul << ComponentsIndices::MeshComponent)
-        | (1ul << ComponentsIndices::MaterialComponent)
-        | (1ul << ComponentsIndices::ColliderComponent)
-        | (1ul << ComponentsIndices::ColliderFlagsComponent);
-
-    u64 crosshair_required_mask = (1ul << ComponentsIndices::TransformComponent)
-        | (1ul << ComponentsIndices::CrosshairTagComponent);
-
-    auto update() -> void;
-    auto put_item2x2(Inventory* inventory_component, u32 item_entity) -> bool;
-
-    EventStack* input_stack;
-    bool is_inventory_opened;
-    i32* dragged_item_entity;
-    bool* is_left_mouse_button_released;
-    bool is_left_mouse_button_pressed;
-    f32 mouse_offset_x = 0;
-    f32 mouse_offset_y = 0;
-};
+// (ItemSystem moved to the game, see examples/hello_world.cpp.)
 } // namespace glvm
 
 namespace glvm {
@@ -7054,146 +6086,16 @@ auto is_exist(const Vec<T>& array, const T& element) -> bool {
 }
 
 auto set_mesh_bounds(MeshAxisLimitingValues mesh_axis_limiting_values) -> void;
-auto create_projectile(
-    const Vector<f32, 3>& projectile_position,
-    const Vector<f32, 3>& projectile_forward,
-    const MeshHandle& mesh_handle,
-    const Material& material,
-    const Damage& damage,
-    const EntityLocation& projectile_location
-) -> void;
+// (create_projectile moved to the game, see examples/hello_world.cpp.)
 }; // namespace glvm
 
 namespace glvm {
-struct MovementSystem: public System {
-public:
-    f32 delta_frame_time;
-    f32 gravity;
-    EventStack& input_stack;
-    f32 prev_delta_x = 0.0f;
-    f32 prev_x = 0.0f;
-    f32 current_x = 0.0f;
-    Vector<f32, 3> prev_forward;
-
-    u32 player_archetypes_number = 0;
-    u32 rigid_body_contained_archetypes_number = 0;
-
-    struct MovementArchView {
-        Archetype* player_cached_archetype = nullptr;
-        Archetype* rigid_body_contained_archetypes_cache[32];
-    } arch_view;
-
-    struct MovementComponentsView {
-        Move* player_moves = nullptr;
-        Beholder* player_views = nullptr;
-        ColliderFlags* player_collider_flags = nullptr;
-        RigidBody* player_rigid_body = nullptr;
-
-        // Components related to archetypes contains rigid.
-        Transform* transforms = nullptr;
-        RigidBody* rigid_bodies = nullptr;
-        Move* moves = nullptr;
-        Item* items = nullptr;
-    } components_view;
-
-    u64 player_required_mask = (1ull << ComponentsIndices::PlayerTagComponent);
-    u64 rigid_body_required_mask =
-        (1ul << ComponentsIndices::TransformComponent)
-        | (1ul << ComponentsIndices::RigidBodyComponent)
-        | (1ul << ComponentsIndices::MoveComponent);
-
-    MovementSystem(EventStack& input_stack);
-
-    auto update() -> void;
-    auto calculate_vector_rl(Beholder& beholder) -> Vector<f32, 3>;
-    auto calculate_vector_fb(Beholder& beholder, Event& event)
-        -> Vector<f32, 3>;
-};
+// (MovementSystem moved to the game, see examples/hello_world.cpp.)
 } // namespace glvm
 
 namespace glvm {
-struct ProceduralLevelGeneratingSystem: public System {
-public:
-    u32 level_number = 0;
-    bool stupid_flag = false;
-    u32 previous_half_x_rand = 0;
-    u32 previous_half_z_rand = 0;
-    Vector<f32, 3> current_level_position = {5.0f, 0.0f, 15.0f};
-    Vector<f32, 3> transition_bridge_position = {0.0f, 0.0f, 0.0f};
-    u32 next_level_transition_direction = 0;
-    u32 previous_iteration_transition_bridge_direction = 0;
-
-    u32 cached_level_chunk_arch_number = 0;
-    u32 cached_player_arch_number = 0;
-
-    struct ProceduralLevelArchView {
-        Archetype* cached_level_chunk_arch = nullptr;
-        Archetype* cached_player_arch = nullptr;
-    } arch_view;
-
-    struct ComponentsView {
-        Transform* player_transforms = nullptr;
-    } components_view;
-
-    u64 player_required_mask = (1ull << ComponentsIndices::PlayerTagComponent);
-
-    u64 required_mask = (1ull << ComponentsIndices::TransformComponent)
-        | (1ull << ComponentsIndices::MaterialComponent)
-        | (1ull << ComponentsIndices::MeshComponent)
-        | (1ull << ComponentsIndices::ColliderComponent)
-        | (1ull << ComponentsIndices::ColliderFlagsComponent)
-        | (1ull << ComponentsIndices::LevelChunkTagComponent);
-
-    Vec<MeshHandle> mesh_handles;
-    Vec<TextureHandle> texture_handlers;
-
-    Vec<Vec<Vertex>> level_generated_vertices;
-    // Wavefront .obj indices.
-    Vec<Vec<u32>> level_generated_indices;
-    // Keep axis limiting values for every axis per mesh in current iteration
-    // while initializing Wavefront .obj and GLTF.
-    MeshAxisLimitingValues mesh_axis_limiting_values;
-    // Contains maximum coordinate value in every direction for all generated
-    // levels.
-    MeshAxisLimitingValues coordinate_maximum_value_per_direction;
-
-    auto update() -> void;
-    auto set_half_extents_from_direction(
-        f32& half_x,
-        f32& half_z,
-        const f32& transition_bridge_half_width,
-        const f32& transition_bridge_half_height,
-        const f32& next_level_transition_direction
-    ) -> void;
-    auto generate_level(
-        const u32 level_half_x,
-        const u32 level_half_y,
-        const u32 level_half_z,
-        const f32 transition_bridge_half_width,
-        const f32 transition_bridge_half_height
-    ) -> void;
-    auto generate_transition_bridge(
-        const u32 level_half_x,
-        const u32 level_half_y,
-        const u32 level_half_z,
-        const f32 transition_bridge_half_width,
-        const f32 transition_bridge_half_height
-    ) -> void;
-    auto make_cube_object_vertices(
-        Vector<f32, 4> joint_indices,
-        Vector<f32, 4> weights,
-        f32 half_x,
-        f32 half_y,
-        f32 half_z,
-        Vec<Vertex>& destination_vertices_container
-    ) -> void;
-    auto check_collision_intersection_with_maximum_coordinates(
-        Vector<f32, 3> position,
-        f32 half_x,
-        f32 half_y,
-        f32 half_z
-    ) -> bool;
-};
+// (ProceduralLevelGeneratingSystem moved to the game,
+// see examples/hello_world.cpp.)
 } // namespace glvm
 
 namespace glvm {
@@ -7241,113 +6143,11 @@ public:
 } // namespace glvm
 
 namespace glvm {
-struct EnemySystem: public System {
-public:
-    u32 player_archetypes_number = 0;
-    u32 enemy_archetypes_number = 0;
-    u32 projectile_archetypes_number = 0;
-
-    struct ArchView {
-        Archetype* player_cached_archetype = nullptr;
-        Archetype* enemy_cached_archetype = nullptr;
-        Archetype* projectile_archetype = nullptr;
-    } arch_view;
-
-    struct ComponentsView {
-        Transform* player_transforms = nullptr;
-
-        Transform* enemy_transforms = nullptr;
-        State* enemy_states = nullptr;
-        Enemy* enemies = nullptr;
-    } components_view;
-
-    u64 player_required_mask = (1ull << ComponentsIndices::PlayerTagComponent);
-
-    u64 enemy_required_mask = (1ul << ComponentsIndices::TransformComponent)
-        | (1ul << ComponentsIndices::StateComponent)
-        | (1ul << ComponentsIndices::EnemyComponent);
-
-    u64 projectile_required_mask =
-        (1ull << ComponentsIndices::ProjectileTagComponent);
-
-    auto update() -> void override;
-    SoundEngine* sound_engine;
-    Vec<TextureHandle> texture_handlers;
-    Vec<MeshHandle> mesh_handles;
-    f32 projectile_cooldown = 5.0f;
-    f32 delta_frame_time;
-};
+// (EnemySystem moved to the game, see examples/hello_world.cpp.)
 } // namespace glvm
 
 namespace glvm {
-template<typename T>
-concept UnitOrEnemy =
-    std::is_same_v<T, PlayerArchetype> || std::is_same_v<T, EnemyArchetype>;
-
-template<typename T>
-concept HasAttack = requires(T* t) {
-    { t->attacks };
-};
-
-struct ProjectileSystem: public System {
-public:
-    f32 yaw = -90.0f;
-    f32 pitch = 0.0f;
-    bool first_mouse = true;
-    EventStack& input_stack;
-    Vec<TextureHandle> texture_handlers;
-    Vec<MeshHandle> mesh_handles;
-    SoundEngine* sound_engine;
-    f32 projectile_cooldown = 2.0f;
-    f32 delta_frame_time;
-    bool is_inventory_opened;
-
-    u32 player_archetypes_number = 0;
-    u32 projectile_archetypes_number = 0;
-
-    struct ArchView {
-        Archetype* player_cached_archetype = nullptr;
-        Archetype* projectile_archetype = nullptr;
-    } arch_view;
-
-    struct ComponentsView {
-        Transform* player_transforms = nullptr;
-        Beholder* player_views = nullptr;
-
-        Transform* projectile_transforms = nullptr;
-        ColliderFlags* projectile_collider_flags = nullptr;
-        Collider* projectile_colliders = nullptr;
-        ProjectileBundle* projectile_bundles = nullptr;
-        Health* projectile_health = nullptr;
-        Attack* projectile_attacks = nullptr;
-    } components_view;
-
-    u64 player_required_mask = (1ull << ComponentsIndices::PlayerTagComponent);
-
-    u64 projectile_required_mask =
-        (1ull << ComponentsIndices::ProjectileTagComponent);
-
-    ProjectileSystem(EventStack& input_stack);
-    auto update() -> void override;
-    template<typename T>
-        requires UnitOrEnemy<T> && HasAttack<T>
-    static auto mark_as_attacked(
-        T* arch,
-        Damage* projectile_damage,
-        u32 entity_index
-    ) -> void;
-};
-
-template<typename T>
-    requires UnitOrEnemy<T> && HasAttack<T>
-auto ProjectileSystem::mark_as_attacked(
-    T* arch,
-    Damage* projectile_damage,
-    u32 entity_index
-) -> void {
-    arch->attacks[entity_index].damage = projectile_damage->maximum_damage;
-}
-
+// (ProjectileSystem moved to the game, see examples/hello_world.cpp.)
 } // namespace glvm
 
 namespace glvm {
@@ -7393,13 +6193,12 @@ private:
     Vec<const char*> paths_gltf;
     u32 mesh_id = 0;
     bool is_already_cached;
-    bool is_inventory_key_held = false;
-    bool was_inventory_opened = false;
+    // Optional mesh-bounds cache file. Empty disables the cache. Games set it
+    // via set_model_cache_path; the engine ships no default path.
+    String model_cache_path;
     bool is_cursor_hidden = false;
     f32 hud_screen_x = 0.0f;
     f32 hud_screen_y;
-    // If don't have any dragged item then this variable have value of -1.
-    i32 dragged_item_entity = -1;
     f32 yaw = -90.0f;
     f32 pitch = 0.0f;
     f32 previous_mouse_offset_x = 0.0f;
@@ -7407,14 +6206,8 @@ private:
     Renderer* vulkan_renderer;
     SpatialGridSystem* spatial_grid_system;
     CollisionSystem* collision_system;
-    MovementSystem* movement_system;
     PhysicsSystem* physics_system;
-    ProjectileSystem* projectile_system;
     DamageSystem* damage_system;
-    EnemySystem* enemy_system;
-    ItemSystem* item_system;
-    ProceduralLevelGeneratingSystem* procedural_level_generating_system;
-    InventorySystem* inventory_system;
     Archetype* cached_directional_light_archetypes[32];
     u32 directional_light_archetypes_number = 0;
     u64 directional_light_required_mask =
@@ -7441,19 +6234,13 @@ private:
         | (1ul << ComponentsIndices::RotationComponent)
         | (1ul << ComponentsIndices::TransformComponent)
         | (1ul << ComponentsIndices::MeshComponent);
-    Archetype* cached_static_actors_archetypes[32];
-    u32 static_actors_archetypes_number = 0;
-    u64 static_actors_required_mask =
-        (1ul << ComponentsIndices::MaterialComponent)
-        | (1ul << ComponentsIndices::StaticMeshTagComponent)
-        | (1ul << ComponentsIndices::TransformComponent)
-        | (1ul << ComponentsIndices::RotationComponent)
-        | (1ul << ComponentsIndices::MeshComponent);
-    Archetype* cached_player_archetypes[32];
-    u32 player_archetypes_number = 0;
-    u64 player_required_mask = (1ul << ComponentsIndices::PlayerTagComponent)
-        | (1ul << ComponentsIndices::TransformComponent)
-        | (1ul << ComponentsIndices::ViewComponent);
+    // Entities carrying the base Camera (Beholder) component drive the view
+    // matrix and the tracked-positions buffer. Games decide which entities
+    // those are.
+    Archetype* cached_camera_archetypes[32];
+    u32 camera_archetypes_number = 0;
+    u64 camera_required_mask = (1ul << ComponentsIndices::ViewComponent)
+        | (1ul << ComponentsIndices::TransformComponent);
     Archetype* cached_animation_archetypes[32];
     u32 animation_archetypes_number = 0;
     u64 animation_required_mask = (1ul << ComponentsIndices::MaterialComponent)
@@ -7461,50 +6248,6 @@ private:
         | (1ul << ComponentsIndices::RotationComponent)
         | (1ul << ComponentsIndices::TransformComponent)
         | (1ul << ComponentsIndices::MeshComponent);
-    Archetype* cached_crosshair_actors_archetypes[32];
-    u32 crosshair_actors_archetypes_number = 0;
-    u64 crosshair_required_mask =
-        (1ul << ComponentsIndices::CrosshairTagComponent)
-        | (1ul << ComponentsIndices::MeshComponent)
-        | (1ul << ComponentsIndices::TransformComponent);
-    Archetype* cached_level_chunk_actors_archetypes[32];
-    u32 level_chunk_actors_archetypes_number = 0;
-    u64 level_chunk_required_mask =
-        (1ul << ComponentsIndices::MaterialComponent)
-        | (1ul << ComponentsIndices::LevelChunkTagComponent)
-        | (1ul << ComponentsIndices::TransformComponent)
-        | (1ul << ComponentsIndices::RotationComponent)
-        | (1ul << ComponentsIndices::MeshComponent);
-    Archetype* cached_projectile_actors_archetypes[32];
-    u32 projectile_actors_archetypes_number = 0;
-    u64 projectile_required_mask =
-        (1ul << ComponentsIndices::ProjectileBundleComponent)
-        | (1ul << ComponentsIndices::TransformComponent)
-        | (1ul << ComponentsIndices::RotationComponent)
-        | (1ul << ComponentsIndices::MeshComponent);
-    Archetype* cached_item_actors_archetypes[32];
-    u32 item_actors_archetypes_number = 0;
-    u64 rotation_item_required_mask = (1ul << ComponentsIndices::ItemComponent)
-        | (1ul << ComponentsIndices::MeshComponent)
-        | (1ul << ComponentsIndices::TransformComponent)
-        | (1ul << ComponentsIndices::ColliderComponent)
-        | (1ul << ComponentsIndices::ColliderFlagsComponent)
-        | (1ul << ComponentsIndices::RotationComponent)
-        | (1ul << ComponentsIndices::MaterialComponent);
-    Archetype* cached_inventory_archetypes[32];
-    u32 inventory_archetypes_number = 0;
-    u64 inventory_required_mask = (1ul << ComponentsIndices::InventoryComponent)
-        | (1ul << ComponentsIndices::MeshComponent)
-        | (1ul << ComponentsIndices::TransformComponent)
-        | (1ul << ComponentsIndices::MaterialComponent);
-    Archetype* cached_item_archetypes[32];
-    u32 item_archetypes_number = 0;
-    u64 item_required_mask = (1ul << ComponentsIndices::ItemComponent)
-        | (1ul << ComponentsIndices::MeshComponent)
-        | (1ul << ComponentsIndices::TransformComponent)
-        | (1ul << ComponentsIndices::ColliderComponent)
-        | (1ul << ComponentsIndices::ColliderFlagsComponent)
-        | (1ul << ComponentsIndices::MaterialComponent);
     Archetype* cached_health_bars_archetypes[32];
     u32 health_bars_archetypes_number = 0;
     u64 health_bars_required_mask = (1ul << ComponentsIndices::HealthComponent)
@@ -7515,7 +6258,16 @@ private:
     u64 font_required_mask = (1ul << ComponentsIndices::FontComponent)
         | (1ul << ComponentsIndices::TransformComponent);
     f64 fps_accumulator = 0;
+    // Game extension points (schedules): hooks run inside the frame loop and
+    // inside set_frame_data. Games register systems and hooks; the engine
+    // itself owns no game logic.
+    std::function<void()> pre_update_hook;
+    std::function<void()> post_update_hook;
+    // Continues filling actor render data from the given actor index and
+    // returns the next free index.
+    std::function<u32(u32)> frame_data_hook;
     Engine();
+    auto register_engine_components() -> void;
 
 public:
     Vec<MeshHandle> mesh_handles;
@@ -7530,6 +6282,26 @@ public:
     void operator=(const Engine& other) = delete;
     // It is possible to get only one instance of this struct with this method.
     static auto get_instance() -> Engine*;
+    // Game wiring: register game systems and per-frame hooks. The engine
+    // owns no game logic itself. Note: the constructor only creates the
+    // generic systems; games choose the activation order (it matters, e.g.
+    // level generation must run before spatial indexing on the first frame).
+    auto add_system(System* system) -> void;
+    auto add_base_systems() -> void;
+    auto set_pre_update_hook(std::function<void()> hook) -> void;
+    auto set_post_update_hook(std::function<void()> hook) -> void;
+    auto set_frame_data_hook(std::function<u32(u32)> hook) -> void;
+    auto set_model_cache_path(const String& path) -> void;
+    // Read access for game systems and hooks.
+    auto get_sound_engine() -> SoundEngine*;
+    auto renderer() -> Renderer*;
+    auto get_delta_frame_time() const -> f32;
+    auto get_gravity() const -> f32;
+    auto get_hud_screen_x() const -> f32;
+    auto get_hud_screen_y() const -> f32;
+    auto set_hud_screen(f32 x, f32 y) -> void;
+    auto set_previous_mouse_offsets(f32 x, f32 y) -> void;
+    auto left_mouse_button_pressed() const -> bool;
     auto game_loop() -> void;
     auto event_queue_flush() -> void;
     auto render_vulkan() -> void;
@@ -7549,25 +6321,6 @@ public:
         PointLightComponent* light,
         u32 layer
     ) -> Matrix<f32, 4>;
-    auto update_data_ubo_ui(
-        const u32 current_inventory_row,
-        const u32 current_inventory_column,
-        Inventory* inventory_component,
-        Transform* slot_transform_component,
-        Mesh* mesh_component
-    ) -> SlotData;
-    auto update_data_ubo_icons_ui(
-        Transform* item_transform_component,
-        Collider* item_collider_component,
-        Item* item_component,
-        const u32 row_inventory,
-        const u32 column_inventory,
-        Transform* inventory_transform_component,
-        Mesh* item_mesh,
-        i32 item_entity
-    ) -> Matrix<f32, 4>;
-    auto update_data_hud_screen_ubo(Transform* cursor_transform)
-        -> Matrix<f32, 4>;
     auto set_frame_data() -> void;
     auto load_wavefront_obj() -> void;
     auto calculate_mesh_bounds(const Vector<f32, 4>& animated_vertex) -> void;

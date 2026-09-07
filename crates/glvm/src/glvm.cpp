@@ -193,6 +193,16 @@ auto World::search_cache_archetypes(
 }; // namespace glvm
 
 namespace glvm {
+ComponentTypeInfo COMPONENT_TYPE_INFOS[ComponentsIndices::ComponentsCount] = {};
+
+auto register_component_move(u32 component_id, ComponentTypeInfo info) -> void {
+    if (component_id < ComponentsIndices::ComponentsCount) {
+        COMPONENT_TYPE_INFOS[component_id] = info;
+    }
+}
+} // namespace glvm
+
+namespace glvm {
 ArchetypeEntityManager* ArchetypeEntityManager::instance = nullptr;
 Mutex ArchetypeEntityManager::mutex;
 
@@ -257,105 +267,13 @@ auto Archetype::remove_entity(u32 index) -> u64 {
     for (u32 i = 0; i < component_count; ++i) {
         const auto component_id = component_ids[i];
 
-        switch (component_id) {
-            case ComponentsIndices::TransformComponent:
-                as<Transform*>(components[component_id])[index] =
-                    as<Transform*>(components[component_id])[last];
-                break;
-            case ComponentsIndices::RigidBodyComponent:
-                as<RigidBody*>(components[component_id])[index] =
-                    as<RigidBody*>(components[component_id])[last];
-                break;
-            case ComponentsIndices::MeshComponent:
-                as<Mesh*>(components[component_id])[index] =
-                    as<Mesh*>(components[component_id])[last];
-                break;
-            case ComponentsIndices::FontComponent:
-                as<Font*>(components[component_id])[index] =
-                    as<Font*>(components[component_id])[last];
-                break;
-            case ComponentsIndices::ColliderComponent:
-                as<Collider*>(components[component_id])[index] =
-                    as<Collider*>(components[component_id])[last];
-                break;
-            case ComponentsIndices::ColliderFlagsComponent:
-                as<ColliderFlags*>(components[component_id])[index] =
-                    as<ColliderFlags*>(components[component_id])[last];
-                break;
-            case ComponentsIndices::MaterialComponent:
-                as<Material*>(components[component_id])[index] =
-                    as<Material*>(components[component_id])[last];
-                break;
-            case ComponentsIndices::ViewComponent:
-                as<Beholder*>(components[component_id])[index] =
-                    as<Beholder*>(components[component_id])[last];
-                break;
-            case ComponentsIndices::HealthComponent:
-                as<Health*>(components[component_id])[index] =
-                    as<Health*>(components[component_id])[last];
-                break;
-            case ComponentsIndices::AnimationComponent:
-                as<Animation*>(components[component_id])[index] =
-                    as<Animation*>(components[component_id])[last];
-                break;
-            case ComponentsIndices::StateComponent:
-                as<State*>(components[component_id])[index] =
-                    as<State*>(components[component_id])[last];
-                break;
-            case ComponentsIndices::EnemyComponent:
-                as<Enemy*>(components[component_id])[index] =
-                    as<Enemy*>(components[component_id])[last];
-                break;
-            case ComponentsIndices::DamageComponent:
-                as<Damage*>(components[component_id])[index] =
-                    as<Damage*>(components[component_id])[last];
-                break;
-            case ComponentsIndices::AttackComponent:
-                as<Attack*>(components[component_id])[index] =
-                    as<Attack*>(components[component_id])[last];
-                break;
-            case ComponentsIndices::InventoryComponent:
-                as<Inventory*>(components[component_id])[index] =
-                    as<Inventory*>(components[component_id])[last];
-                break;
-            case ComponentsIndices::DirectionalLightComponent:
-                as<DirectionalLightComponent*>(components[component_id])[index] =
-                    as<DirectionalLightComponent*>(
-                        components[component_id]
-                    )[last];
-                break;
-            case ComponentsIndices::SpotLightComponent:
-                as<SpotLightComponent*>(components[component_id])[index] =
-                    as<SpotLightComponent*>(components[component_id])[last];
-                break;
-            case ComponentsIndices::PointLightComponent:
-                as<PointLightComponent*>(components[component_id])[index] =
-                    as<PointLightComponent*>(components[component_id])[last];
-                break;
-            case ComponentsIndices::ItemComponent:
-                as<Item*>(components[component_id])[index] =
-                    as<Item*>(components[component_id])[last];
-                break;
-            case ComponentsIndices::MoveComponent:
-                as<Move*>(components[component_id])[index] =
-                    as<Move*>(components[component_id])[last];
-                break;
-            case ComponentsIndices::ProjectileBundleComponent:
-                as<ProjectileBundle*>(components[component_id])[index] =
-                    as<ProjectileBundle*>(components[component_id])[last];
-                break;
-            case ComponentsIndices::LevelChunkTagComponent:
-                as<LevelChunkTagComponent*>(components[component_id])[index] =
-                    as<LevelChunkTagComponent*>(components[component_id])[last];
-                break;
-            case ComponentsIndices::ProjectileTagComponent:
-                as<ProjectileTagComponent*>(components[component_id])[index] =
-                    as<ProjectileTagComponent*>(components[component_id])[last];
-                break;
-            case ComponentsIndices::PlayerTagComponent:
-                as<PlayerTagComponent*>(components[component_id])[index] =
-                    as<PlayerTagComponent*>(components[component_id])[last];
-                break;
+        const ComponentTypeInfo& info = COMPONENT_TYPE_INFOS[component_id];
+        if (info.bytes != 0 && info.move_assign != nullptr) {
+            auto* base = static_cast<char*>(components[component_id]);
+            info.move_assign(
+                base + index * info.bytes,
+                base + last * info.bytes
+            );
         }
     }
 
@@ -495,41 +413,7 @@ auto set_mesh_bounds(MeshAxisLimitingValues mesh_axis_limiting_values) -> void {
         / 2.0f;
 }
 
-auto create_projectile(
-    const Vector<f32, 3>& projectile_position,
-    const Vector<f32, 3>& projectile_forward,
-    const MeshHandle& mesh_handle,
-    const Material& material,
-    const Damage& damage,
-    const EntityLocation& projectile_location
-) -> void {
-    ProjectileArchetype* projectile_arch =
-        as<ProjectileArchetype*>(projectile_location.arch);
-    const auto projectile_index = projectile_location.index;
-
-    Mesh* projectile_mesh = &projectile_arch->meshes[projectile_index];
-    projectile_mesh->handle = mesh_handle;
-
-    ProjectileBundle* projectile_bundle =
-        &projectile_arch->projectile_bundles[projectile_index];
-    projectile_bundle->material = material;
-
-    Transform* projectile_transform =
-        &projectile_arch->transforms[projectile_index];
-    Health* projectile_health = &projectile_arch->health[projectile_index];
-    projectile_health->max_health = 100;
-    projectile_health->current_health = 100;
-
-    projectile_arch->colliders[projectile_index].colliders.clear();
-
-    projectile_transform->scale = 0.1f;
-    projectile_transform->position = projectile_position;
-    projectile_transform->forward = projectile_forward;
-    projectile_transform->position += projectile_transform->forward;
-
-    projectile_bundle->damage = damage;
-}
-}; // namespace glvm
+} // namespace glvm
 
 namespace glvm {
 ComponentManager* ComponentManager::instance = nullptr;
@@ -596,8 +480,38 @@ auto playback_sound(SoundEngine* sound_engine, AtomicBool& running_sound)
     }
 }
 
+auto Engine::register_engine_components() -> void {
+    // Base components owned by the engine (Transform/Camera/Mesh/Material,
+    // lights, physics, combat primitives). Games register their own via
+    // glvm::register_component.
+    register_component<Transform>(ComponentsIndices::TransformComponent);
+    register_component<RigidBody>(ComponentsIndices::RigidBodyComponent);
+    register_component<Mesh>(ComponentsIndices::MeshComponent);
+    register_component<Font>(ComponentsIndices::FontComponent);
+    register_component<Collider>(ComponentsIndices::ColliderComponent);
+    register_component<ColliderFlags>(ComponentsIndices::ColliderFlagsComponent);
+    register_component<Material>(ComponentsIndices::MaterialComponent);
+    register_component<Beholder>(ComponentsIndices::ViewComponent);
+    register_component<Health>(ComponentsIndices::HealthComponent);
+    register_component<Animation>(ComponentsIndices::AnimationComponent);
+    register_component<Damage>(ComponentsIndices::DamageComponent);
+    register_component<Attack>(ComponentsIndices::AttackComponent);
+    register_component<DirectionalLightComponent>(
+        ComponentsIndices::DirectionalLightComponent
+    );
+    register_component<SpotLightComponent>(
+        ComponentsIndices::SpotLightComponent
+    );
+    register_component<PointLightComponent>(
+        ComponentsIndices::PointLightComponent
+    );
+    register_component<Move>(ComponentsIndices::MoveComponent);
+    register_component<Rotation>(ComponentsIndices::RotationComponent);
+}
+
 Engine::Engine() {
     glvm_log::info("glvm", "Engine::Engine start");
+    register_engine_components();
     chrono = TimerCreator().create();
     glvm_log::info("glvm", "chrono created");
     sound_engine = SoundEngineFactory().create_sound_engine();
@@ -605,31 +519,15 @@ Engine::Engine() {
 
     spatial_grid_system = new SpatialGridSystem();
     collision_system = new CollisionSystem(global_input_stack);
-    movement_system = new MovementSystem(global_input_stack);
     physics_system = new PhysicsSystem(gravity, global_input_stack);
-    projectile_system = new ProjectileSystem(global_input_stack);
     damage_system = new DamageSystem();
-    enemy_system = new EnemySystem();
-    item_system = new ItemSystem();
-    procedural_level_generating_system = new ProceduralLevelGeneratingSystem();
-    inventory_system = new InventorySystem();
 
     delta_frame_time = 0.0f;
     global_event.set_event(Default);
 
-    SystemManager* system_manager = SystemManager::get_instance();
-
-    // Call of ActivateSystem function must be in this order.
-    system_manager->activate_system(procedural_level_generating_system);
-    system_manager->activate_system(movement_system);
-    system_manager->activate_system(enemy_system);
-    system_manager->activate_system(projectile_system);
-    system_manager->activate_system(spatial_grid_system);
-    system_manager->activate_system(collision_system);
-    system_manager->activate_system(damage_system);
-    system_manager->activate_system(physics_system);
-    system_manager->activate_system(inventory_system);
-    system_manager->activate_system(item_system);
+    // Created here, activated by the game: games choose the activation order
+    // via add_system/add_base_systems (order matters, e.g. level generation
+    // must run before spatial indexing on the first frame).
 
     sound_thread = std::thread(
         playback_sound,
@@ -651,6 +549,74 @@ auto Engine::get_instance() -> Engine* {
     return instance;
 }
 
+auto Engine::add_system(System* system) -> void {
+    SystemManager::get_instance()->activate_system(system);
+}
+
+auto Engine::add_base_systems() -> void {
+    // Generic simulation in pipeline order: index, detect, resolve damage,
+    // integrate. Games call this at the right point of their own schedule.
+    SystemManager* system_manager = SystemManager::get_instance();
+    system_manager->activate_system(spatial_grid_system);
+    system_manager->activate_system(collision_system);
+    system_manager->activate_system(damage_system);
+    system_manager->activate_system(physics_system);
+}
+
+auto Engine::set_pre_update_hook(std::function<void()> hook) -> void {
+    pre_update_hook = std::move(hook);
+}
+
+auto Engine::set_post_update_hook(std::function<void()> hook) -> void {
+    post_update_hook = std::move(hook);
+}
+
+auto Engine::set_frame_data_hook(std::function<u32(u32)> hook) -> void {
+    frame_data_hook = std::move(hook);
+}
+
+auto Engine::set_model_cache_path(const String& path) -> void {
+    model_cache_path = path;
+}
+
+auto Engine::get_sound_engine() -> SoundEngine* {
+    return sound_engine;
+}
+
+auto Engine::renderer() -> Renderer* {
+    return vulkan_renderer;
+}
+
+auto Engine::get_delta_frame_time() const -> f32 {
+    return delta_frame_time;
+}
+
+auto Engine::get_gravity() const -> f32 {
+    return gravity;
+}
+
+auto Engine::get_hud_screen_x() const -> f32 {
+    return hud_screen_x;
+}
+
+auto Engine::get_hud_screen_y() const -> f32 {
+    return hud_screen_y;
+}
+
+auto Engine::set_hud_screen(f32 x, f32 y) -> void {
+    hud_screen_x = x;
+    hud_screen_y = y;
+}
+
+auto Engine::set_previous_mouse_offsets(f32 x, f32 y) -> void {
+    previous_mouse_offset_x = x;
+    previous_mouse_offset_y = y;
+}
+
+auto Engine::left_mouse_button_pressed() const -> bool {
+    return is_left_mouse_button_pressed;
+}
+
 auto Engine::game_loop() -> void {
     render_vulkan();
 }
@@ -662,17 +628,8 @@ auto Engine::render_vulkan() -> void {
     SystemManager* system_manager = SystemManager::get_instance();
     bool game_loop_active = true;
 
-    projectile_system->texture_handlers = texture_handlers;
-    projectile_system->mesh_handles = mesh_handles;
-
-    enemy_system->texture_handlers = texture_handlers;
-    enemy_system->mesh_handles = mesh_handles;
-
-    procedural_level_generating_system->mesh_handles = mesh_handles;
-    procedural_level_generating_system->texture_handlers = texture_handlers;
-
-    inventory_system->is_item_dragged = &dragged_item_entity;
-    item_system->dragged_item_entity = &dragged_item_entity;
+    // Game systems wire themselves via add_system/hooks and the public
+    // Engine accessors; the engine only owns generic simulation systems.
 
     glvm_log::info("glvm", "render_vulkan: creating renderer");
     vulkan_renderer = new Renderer();
@@ -715,13 +672,6 @@ auto Engine::render_vulkan() -> void {
         animated_actors_required_mask,
         cached_animation_actors_archetypes,
         animation_actors_archetypes_number
-    );
-
-    static_actors_archetypes_number = 0;
-    world.search_cache_archetypes(
-        static_actors_required_mask,
-        cached_static_actors_archetypes,
-        static_actors_archetypes_number
     );
 
     glvm_log::info("glvm", "render_vulkan: load_wavefront_obj");
@@ -784,25 +734,8 @@ auto Engine::render_vulkan() -> void {
             is_left_mouse_button_pressed = false;
         }
 
-        bool inventory_key_pressed =
-            (global_input_stack.search_element(EventKind::InventoryToggle)
-             == EventKind::InventoryToggle);
-        if (inventory_key_pressed && !is_inventory_key_held) {
-            vulkan_renderer->is_inventory_opened =
-                !vulkan_renderer->is_inventory_opened;
-            if (vulkan_renderer->is_inventory_opened) {
-                system_manager->deactivate_system(
-                    DeactivatedSystems::DeactivatedMovementSystem
-                );
-                hud_screen_x = 0.0f;
-                hud_screen_y = 0.0f;
-            } else {
-                system_manager->return_system_to_activated_state(
-                    DeactivatedSystems::DeactivatedMovementSystem
-                );
-            }
-        }
-        is_inventory_key_held = inventory_key_pressed;
+        // Games handle their own UI toggles (e.g. inventory) in the
+        // pre-update hook.
         global_event.set_last_event(global_input_stack);
 
 #ifndef VK_USE_PLATFORM_WAYLAND_KHR
@@ -827,22 +760,8 @@ auto Engine::render_vulkan() -> void {
             );
         }
 
-        if (was_inventory_opened && !vulkan_renderer->is_inventory_opened) {
-            // Cursor was free while the inventory was open; reset the mouse
-            // state so the first locked sample doesn't feed a fake delta to the
-            // camera. WindowWinVulkan::cursor_lock also discards the >250px
-            // teleport on its own.
-            global_event.mouse_pointer_position.offset_x = 0;
-            global_event.mouse_pointer_position.offset_y = 0;
-            vulkan_renderer->prev_x = 0.0f;
-            vulkan_renderer->prev_y = 0.0f;
-            vulkan_renderer->current_x = 0.0f;
-            vulkan_renderer->current_y = 0.0f;
-            movement_system->prev_x = 0.0f;
-            previous_mouse_offset_x = 0.0f;
-            previous_mouse_offset_y = 0.0f;
-        }
-        was_inventory_opened = vulkan_renderer->is_inventory_opened;
+        // Games reset their own mouse/camera state on UI close in the
+        // pre-update hook.
 #else
         if (vulkan_renderer->window->is_focused) {
             vulkan_renderer->window->cursor_lock(
@@ -856,8 +775,6 @@ auto Engine::render_vulkan() -> void {
 
         compute_hud_screen_coordinates();
         damage_system->delta_time = delta_frame_time;
-        movement_system->delta_frame_time = delta_frame_time;
-        movement_system->gravity = gravity;
         collision_system->delta_time = delta_frame_time;
         collision_system->gravity = gravity;
         collision_system->is_inventory_opened =
@@ -866,41 +783,17 @@ auto Engine::render_vulkan() -> void {
             is_left_mouse_button_pressed;
         collision_system->is_left_mouse_button_released =
             &global_event.is_left_mouse_button_released;
-        enemy_system->delta_frame_time = delta_frame_time;
-        enemy_system->sound_engine = sound_engine;
-        projectile_system->delta_frame_time = delta_frame_time;
-        projectile_system->sound_engine = sound_engine;
-        projectile_system->is_inventory_opened =
-            vulkan_renderer->is_inventory_opened;
         physics_system->delta_time = delta_frame_time;
         physics_system->acceleration_of_gravity += (delta_frame_time / 20);
         physics_system->gravity = gravity;
-        inventory_system->is_inventory_opened =
-            vulkan_renderer->is_inventory_opened;
-        inventory_system->aspect_ratio = vulkan_renderer->aspect_ratio;
-        inventory_system->is_left_mouse_button_released =
-            &global_event.is_left_mouse_button_released;
-        inventory_system->is_left_mouse_button_pressed =
-            is_left_mouse_button_pressed;
-        inventory_system->mouse_offset_x = hud_screen_x;
-        inventory_system->mouse_offset_y = hud_screen_y;
-        item_system->input_stack = &global_input_stack;
-        item_system->is_inventory_opened = vulkan_renderer->is_inventory_opened;
-        item_system->is_left_mouse_button_released =
-            &global_event.is_left_mouse_button_released;
-        item_system->is_left_mouse_button_pressed =
-            is_left_mouse_button_pressed;
-        item_system->mouse_offset_x = hud_screen_x;
-        item_system->mouse_offset_y = hud_screen_y;
+        if (pre_update_hook) {
+            pre_update_hook();
+        }
         enlarge_frame_accumulator(delta_frame_time);
         system_manager->update();
-        vulkan_renderer->level_generated_vertices =
-            procedural_level_generating_system->level_generated_vertices;
-        vulkan_renderer->level_generated_indices =
-            procedural_level_generating_system->level_generated_indices;
-        procedural_level_generating_system->level_generated_vertices.clear();
-        procedural_level_generating_system->level_generated_indices.clear();
-        vulkan_renderer->dragged_item_entity = dragged_item_entity;
+        if (post_update_hook) {
+            post_update_hook();
+        }
         vulkan_renderer->hud_screen_x = hud_screen_x;
         vulkan_renderer->hud_screen_y = hud_screen_y;
         vulkan_renderer->initialize_game_level_vertices();
@@ -931,20 +824,13 @@ auto Engine::enlarge_frame_accumulator(f32 value) -> void {
 
     for (u32 n = 0; n < animation_archetypes_number; ++n) {
         Archetype* arch = cached_animation_archetypes[n];
-        Animation* animation_view = nullptr;
-        Mesh* mesh_view = nullptr;
-        if (arch != nullptr) {
-            switch (arch->mask) {
-                case ENEMY_COMPONENT_MASK:
-                    animation_view = as<EnemyArchetype*>(arch)->animations;
-                    mesh_view = as<EnemyArchetype*>(arch)->meshes;
-                    break;
-                case PLAYER_COMPONENT_MASK:
-                    animation_view = as<PlayerArchetype*>(arch)->animations;
-                    mesh_view = as<PlayerArchetype*>(arch)->meshes;
-                    break;
-            }
-
+        Animation* animation_view = as<Animation*>(
+            arch->components[ComponentsIndices::AnimationComponent]
+        );
+        Mesh* mesh_view =
+            as<Mesh*>(arch->components[ComponentsIndices::MeshComponent]);
+        if (arch != nullptr && animation_view != nullptr
+            && mesh_view != nullptr) {
             for (u32 i = 0; i < cached_animation_archetypes[n]->entity_count;
                  ++i) {
                 if (&mesh_view[i] != nullptr && &animation_view[i] != nullptr) {
@@ -962,15 +848,17 @@ auto Engine::enlarge_frame_accumulator(f32 value) -> void {
 }
 
 auto Engine::set_view_matrix() -> void {
-    player_archetypes_number = 0;
+    // Generic camera follow: any entity with the base Camera (Beholder)
+    // component drives the view. Games decide which entities those are.
+    camera_archetypes_number = 0;
     world.search_cache_archetypes(
-        player_required_mask,
-        cached_player_archetypes,
-        player_archetypes_number
+        camera_required_mask,
+        cached_camera_archetypes,
+        camera_archetypes_number
     );
 
-    for (u32 n = 0; n < player_archetypes_number; ++n) {
-        Archetype* arch = cached_player_archetypes[n];
+    for (u32 n = 0; n < camera_archetypes_number; ++n) {
+        Archetype* arch = cached_camera_archetypes[n];
         Beholder* views =
             as<Beholder*>(arch->components[ComponentsIndices::ViewComponent]);
         Transform* transforms = as<Transform*>(
@@ -1278,155 +1166,8 @@ auto Engine::update_point_light_space_matrix_shadow_map_ubo(
     return view_matrix_light * projection_matrix_cube_shadow_map;
 }
 
-[[nodiscard]] auto Engine::update_data_ubo_ui(
-    const u32 current_inventory_row,
-    const u32 current_inventory_column,
-    Inventory* inventory_component,
-    Transform* slot_transform_component,
-    Mesh* mesh_component
-) -> SlotData {
-    SlotData hud_ubo {};
-    Matrix<f32, 4> model(1.0f);
-    const auto full_slot_scale = mesh_component->gltf
-        ? inventory_component->slot_scale * 2.0f
-        : inventory_component->slot_scale;
-    const auto x = slot_transform_component->position[0]
-        + (current_inventory_column * full_slot_scale);
-    const auto y_scale_multiplier =
-        vulkan_renderer->aspect_ratio * full_slot_scale;
-    const auto y = slot_transform_component->position[1]
-        + (current_inventory_row * y_scale_multiplier);
-    const auto inventory_slot_scale = inventory_component->slot_scale;
-    model[0][0] = inventory_slot_scale;
-    model[1][1] = inventory_slot_scale;
-    model[2][2] = inventory_slot_scale;
-    model[3][0] = x;
-    model[3][1] = y;
-    model[3][2] = 0.1f;
-
-    hud_ubo.model = model;
-
-    bool highlighted_slot = false;
-    for (u32 i = 0; i < inventory_component->highlighted_slots.size(); ++i) {
-        if (inventory_component->highlighted_slots[i]
-            == (current_inventory_row * inventory_component->col)
-                + current_inventory_column) {
-            highlighted_slot = true;
-            break;
-        }
-        continue;
-    }
-
-    if (inventory_component->highlighted_slots.size() > 0) {
-        if (highlighted_slot) {
-            if (inventory_component->is_available_highlighted_slots) {
-                hud_ubo.color = {0.0f, 0.3f, 0.0f};
-            } else {
-                hud_ubo.color = {0.3f, 0.0f, 0.0f};
-            }
-        }
-    } else {
-        hud_ubo.color = {0.0f, 0.0f, 0.0f};
-    }
-
-    return hud_ubo;
-}
-
-auto Engine::update_data_ubo_icons_ui(
-    Transform* item_transform_component,
-    Collider* item_collider_component,
-    Item* item_component,
-    const u32 row_inventory,
-    const u32 column_inventory,
-    Transform* inventory_transform_component,
-    Mesh* item_mesh,
-    i32 item_entity
-) -> Matrix<f32, 4> {
-    f32 x_result_offset = 0.0f;
-    f32 y_result_offset = 0.0f;
-    if (item_component->occupied_slots.size() == 0) {
-    } else {
-        const auto inventory_slot_entity_0 = item_component->occupied_slots[0];
-        const auto inventory_slot_entity_3 =
-            item_component->occupied_slots.back();
-        const auto row_index_first_slot =
-            inventory_slot_entity_0 / row_inventory;
-        const auto col_index_first_slot =
-            inventory_slot_entity_0 % column_inventory;
-        const auto row_index_second_slot =
-            inventory_slot_entity_3 / row_inventory;
-        const auto col_index_second_slot =
-            inventory_slot_entity_3 % column_inventory;
-
-        const auto item_scale = item_transform_component->scale;
-        const auto full_slot_scale =
-            item_mesh->gltf ? item_scale * 2.0f : item_scale;
-        // Either division by 2.0f using multiply on 0.5f.
-        constexpr auto CENTRE_MULTIPLIER = 0.5f;
-        x_result_offset = inventory_transform_component->position[0]
-            + (((col_index_first_slot * full_slot_scale)
-                + (col_index_second_slot * full_slot_scale))
-               * CENTRE_MULTIPLIER);
-        y_result_offset = inventory_transform_component->position[1]
-            + (((row_index_first_slot * full_slot_scale)
-                + (row_index_second_slot * full_slot_scale))
-               * CENTRE_MULTIPLIER * vulkan_renderer->aspect_ratio);
-    }
-    f32 item_scale = item_transform_component->scale;
-
-    if (dragged_item_entity != item_entity) {
-        item_transform_component->position =
-            Vector<f32, 3>(x_result_offset, y_result_offset, 0.1f);
-    } else {
-        item_scale *= 1.1f;
-        item_transform_component->position[2] = 0.0f;
-    }
-    Matrix<f32, 4> model(1.0f);
-    model[0][0] = item_scale * item_component->item_slot_type.width;
-    model[1][1] = item_scale * item_component->item_slot_type.height;
-    model[2][2] = 0.0f;
-    model[3][0] = item_transform_component->position[0];
-    model[3][1] = item_transform_component->position[1];
-    model[3][2] = item_transform_component->position[2];
-
-    return model;
-}
-
-auto Engine::update_data_hud_screen_ubo(Transform* cursor_transform)
-    -> Matrix<f32, 4> {
-    Matrix<f32, 4> model;
-    Vector<f32, 3> default_position = Vector<f32, 3>(0.0f, 0.0f, 0.0f);
-
-    auto hud_x = this->hud_screen_x;
-#ifndef VK_USE_PLATFORM_WAYLAND_KHR
-    hud_x = -hud_x;
-#endif
-    cursor_transform->position[0] = hud_x;
-    cursor_transform->position[1] = -hud_screen_y;
-
-    if (!vulkan_renderer->is_inventory_opened
-        && !vulkan_renderer->is_cursor_released) {
-        model[3][0] = default_position[0];
-        model[3][1] = default_position[1];
-        model[3][2] = default_position[2];
-        model[0][0] = cursor_transform->scale;
-        model[1][1] = cursor_transform->scale;
-        model[2][2] = cursor_transform->scale;
-        model[3][3] = 1.0f;
-    } else {
-        default_position[0] = hud_x;
-        default_position[1] = -hud_screen_y;
-
-        model[3][0] = default_position[0];
-        model[3][1] = default_position[1];
-        model[3][2] = default_position[2];
-        model[0][0] = cursor_transform->scale;
-        model[1][1] = cursor_transform->scale;
-        model[2][2] = cursor_transform->scale;
-        model[3][3] = 1.0f;
-    }
-    return model;
-}
+// (UI data builders update_data_ubo_ui/icons_ui/hud_screen_ubo moved to the
+// game, see examples/hello_world.cpp.)
 
 auto Engine::set_frame_data() -> void {
     vulkan_renderer->directional_lights.clear();
@@ -1607,8 +1348,12 @@ auto Engine::set_frame_data() -> void {
         auto* health_bars =
             as<Health*>(arch->components[ComponentsIndices::HealthComponent]);
 
+        // The bar reuses mesh geometry: camera entities (e.g. the player
+        // avatar) use their own mesh, everything else uses mesh 0. This
+        // keeps bars small regardless of how big an entity mesh is.
         u32 ui_vertex_id = 0;
-        if (matches_required_mask(arch->mask, PLAYER_COMPONENT_MASK)) {
+        constexpr u64 view_mask = (1ull << ComponentsIndices::ViewComponent);
+        if ((arch->mask & view_mask) == view_mask) {
             ui_vertex_id = health_bar_meshes[0].handle.id;
         }
 
@@ -1659,231 +1404,16 @@ auto Engine::set_frame_data() -> void {
         }
     }
 
-    if (vulkan_renderer->is_inventory_opened) {
-        vulkan_renderer->inventories.clear();
-        u32 inventory_counter = 0;
-        inventory_archetypes_number = 0;
-        world.search_cache_archetypes(
-            inventory_required_mask,
-            cached_inventory_archetypes,
-            inventory_archetypes_number
-        );
-
-        for (u32 x = 0; x < inventory_archetypes_number; ++x) {
-            Archetype* arch = cached_inventory_archetypes[x];
-            Transform* inventory_transforms = as<Transform*>(
-                arch->components[ComponentsIndices::TransformComponent]
-            );
-            Inventory* inventory_data = as<Inventory*>(
-                arch->components[ComponentsIndices::InventoryComponent]
-            );
-            Material* inventory_materials = as<Material*>(
-                arch->components[ComponentsIndices::MaterialComponent]
-            );
-            Mesh* inventory_meshes =
-                as<Mesh*>(arch->components[ComponentsIndices::MeshComponent]);
-
-            if (inventory_transforms && inventory_materials && inventory_data
-                && inventory_meshes) {
-                for (u32 i = 0; i < arch->entity_count; ++i) {
-                    vulkan_renderer->inventories.push_back({});
-                    Inventory* inventory_component = &inventory_data[i];
-                    u32 inventory_texture_id =
-                        inventory_materials[i].diffuse_texture_id.id;
-                    u32 mesh_id = inventory_component->slot_mesh_id.id;
-                    vulkan_renderer->inventories[inventory_counter]
-                        .inventory_texture_id = inventory_texture_id;
-                    vulkan_renderer->inventories[inventory_counter].mesh_id =
-                        mesh_id;
-                    vulkan_renderer->inventories[inventory_counter].row =
-                        inventory_component->row;
-                    vulkan_renderer->inventories[inventory_counter].col =
-                        inventory_component->col;
-                    vulkan_renderer->inventories[inventory_counter]
-                        .slot_data.clear();
-                    for (u32 j = 0; j < inventory_component->row; ++j) {
-                        for (u32 m = 0; m < inventory_component->col; ++m) {
-                            Transform* slot_transform_component =
-                                &inventory_transforms[i];
-                            vulkan_renderer->inventories[inventory_counter]
-                                .slot_data.push_back({});
-                            vulkan_renderer->inventories[inventory_counter]
-                                .slot_data[(j * inventory_component->col) + m] =
-                                update_data_ubo_ui(
-                                    j,
-                                    m,
-                                    inventory_component,
-                                    slot_transform_component,
-                                    &inventory_meshes[i]
-                                );
-                        }
-                    }
-                    ++inventory_counter;
-                }
-
-                for (u32 i = 0; i < arch->entity_count; ++i) {
-                    Inventory* inventory_component = &inventory_data[i];
-                    Transform* inventory_transform_component =
-                        &inventory_transforms[i];
-
-                    vulkan_renderer->items.clear();
-                    u32 item_counter = 0;
-                    item_archetypes_number = 0;
-                    world.search_cache_archetypes(
-                        item_required_mask,
-                        cached_item_archetypes,
-                        item_archetypes_number
-                    );
-
-                    for (u32 c = 0; c < item_archetypes_number; ++c) {
-                        Archetype* arch = cached_item_archetypes[c];
-                        Transform* item_transforms = as<Transform*>(
-                            arch->components[ComponentsIndices::TransformComponent]
-                        );
-                        Item* items = as<Item*>(
-                            arch->components[ComponentsIndices::ItemComponent]
-                        );
-                        Material* item_materials = as<Material*>(
-                            arch->components[ComponentsIndices::MaterialComponent]
-                        );
-                        Mesh* item_meshes = as<Mesh*>(
-                            arch->components[ComponentsIndices::MeshComponent]
-                        );
-                        Collider* item_colliders = as<Collider*>(
-                            arch->components[ComponentsIndices::ColliderComponent]
-                        );
-
-                        if (item_transforms && item_materials && item_meshes
-                            && item_colliders && items) {
-                            for (u32 a = 0; a < arch->entity_count; ++a) {
-                                Item* item_component = &items[a];
-                                if (!item_component->is_actor) {
-                                    vulkan_renderer->items.push_back({});
-                                    u32 mesh_id = item_meshes[a].handle.id;
-                                    u32 diffuse_texture_id =
-                                        item_materials[a].diffuse_texture_id.id;
-                                    vulkan_renderer->items[item_counter]
-                                        .mesh_id = mesh_id;
-                                    vulkan_renderer->items[item_counter]
-                                        .diffuse_texture_id =
-                                        diffuse_texture_id;
-                                    Transform* item_transform_component =
-                                        &item_transforms[a];
-                                    Collider* item_collider_component =
-                                        &item_colliders[a];
-
-                                    u32 item_entity = arch->entities[a];
-                                    vulkan_renderer->items[item_counter].model =
-                                        update_data_ubo_icons_ui(
-                                            item_transform_component,
-                                            item_collider_component,
-                                            item_component,
-                                            inventory_component->row,
-                                            inventory_component->col,
-                                            inventory_transform_component,
-                                            &item_meshes[a],
-                                            item_entity
-                                        );
-                                    ++item_counter;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
+    // Game UI (inventories, items, crosshair) is filled by the game via
+    // frame_data_hook. The engine only clears the buffers here so a game
+    // without the hook still renders a clean frame.
+    vulkan_renderer->inventories.clear();
+    vulkan_renderer->items.clear();
     vulkan_renderer->crosshairs.clear();
-    crosshair_actors_archetypes_number = 0;
-    world.search_cache_archetypes(
-        crosshair_required_mask,
-        cached_crosshair_actors_archetypes,
-        crosshair_actors_archetypes_number
-    );
-
-    for (u32 x = 0; x < crosshair_actors_archetypes_number; ++x) {
-        Archetype* arch = cached_crosshair_actors_archetypes[x];
-        Transform* crosshair_transforms = as<Transform*>(
-            arch->components[ComponentsIndices::TransformComponent]
-        );
-        Mesh* crosshair_meshes =
-            as<Mesh*>(arch->components[ComponentsIndices::MeshComponent]);
-
-        for (u32 i = 0; i < arch->entity_count; ++i) {
-            vulkan_renderer->crosshairs.push_back({});
-            Transform* cursor_transform = &crosshair_transforms[i];
-            u32 mesh_id = crosshair_meshes[i].handle.id;
-            vulkan_renderer->crosshairs[i].mesh_id = mesh_id;
-            vulkan_renderer->crosshairs[i].model =
-                update_data_hud_screen_ubo(cursor_transform);
-        }
-    }
 
     vulkan_renderer->actors.clear();
-    level_chunk_actors_archetypes_number = 0;
-    world.search_cache_archetypes(
-        level_chunk_required_mask,
-        cached_level_chunk_actors_archetypes,
-        level_chunk_actors_archetypes_number
-    );
-
-    u32 level_chunk_actors_counter = 0;
-    for (u32 x = 0; x < level_chunk_actors_archetypes_number; ++x) {
-        Archetype* arch = cached_level_chunk_actors_archetypes[x];
-        Transform* level_chunk_transforms = as<Transform*>(
-            arch->components[ComponentsIndices::TransformComponent]
-        );
-        Mesh* level_chunk_meshes =
-            as<Mesh*>(arch->components[ComponentsIndices::MeshComponent]);
-        Material* level_chunk_materials = as<Material*>(
-            arch->components[ComponentsIndices::MaterialComponent]
-        );
-        Rotation* level_chunk_rotations = as<Rotation*>(
-            arch->components[ComponentsIndices::RotationComponent]
-        );
-        LevelChunkTagComponent* level_chunks = as<LevelChunkTagComponent*>(
-            arch->components[ComponentsIndices::LevelChunkTagComponent]
-        );
-
-        Vec<Matrix<f32, 4>> joint_matrices;
-        joint_matrices.resize(MAX_JOINTS_NUMBER);
-        for (u32 i = 0; i < MAX_JOINTS_NUMBER; ++i) {
-            Matrix<f32, 4> unit_matrix(1.0f);
-            joint_matrices[i] = unit_matrix;
-        }
-
-        for (u32 n = 0; n < arch->entity_count; ++n) {
-            vulkan_renderer->actors.push_back({});
-            Transform* transform_component = &level_chunk_transforms[n];
-            Material* material_component = &level_chunk_materials[n];
-            Rotation* rotation_component = &level_chunk_rotations[n];
-            if (level_chunk_transforms && level_chunk_materials && level_chunks
-                && level_chunk_rotations && level_chunk_meshes) {
-                u32 mesh_id = level_chunk_meshes[n].handle.id;
-                vulkan_renderer->actors[level_chunk_actors_counter]
-                    .model_matrix = compute_model_matrix(
-                    transform_component,
-                    rotation_component
-                );
-                vulkan_renderer->actors[level_chunk_actors_counter]
-                    .joint_matrices = joint_matrices;
-                vulkan_renderer->actors[level_chunk_actors_counter].mesh_id =
-                    mesh_id;
-                vulkan_renderer->actors[level_chunk_actors_counter]
-                    .diffuse_texture_index =
-                    material_component->diffuse_texture_id.id;
-                vulkan_renderer->actors[level_chunk_actors_counter]
-                    .specular_texture_index =
-                    material_component->specular_texture_id.id;
-                vulkan_renderer->actors[level_chunk_actors_counter].ambient =
-                    material_component->ambient;
-                vulkan_renderer->actors[level_chunk_actors_counter].shininess =
-                    material_component->shininess;
-                ++level_chunk_actors_counter;
-            }
-        }
-    }
+    // Game actor categories (level chunks, projectiles, items, ...) are
+    // appended by the game via frame_data_hook, see below.
 
     animation_actors_archetypes_number = 0;
     world.search_cache_archetypes(
@@ -1892,7 +1422,7 @@ auto Engine::set_frame_data() -> void {
         animation_actors_archetypes_number
     );
 
-    u32 animation_actors_counter = level_chunk_actors_counter;
+    u32 animation_actors_counter = 0;
     for (u32 x = 0; x < animation_actors_archetypes_number; ++x) {
         Archetype* arch = cached_animation_actors_archetypes[x];
         Transform* actor_transforms = as<Transform*>(
@@ -1944,207 +1474,24 @@ auto Engine::set_frame_data() -> void {
         }
     }
 
-    static_actors_archetypes_number = 0;
-    world.search_cache_archetypes(
-        static_actors_required_mask,
-        cached_static_actors_archetypes,
-        static_actors_archetypes_number
-    );
-
-    u32 static_actors_counter = animation_actors_counter;
-    for (u32 x = 0; x < static_actors_archetypes_number; ++x) {
-        Archetype* arch = cached_static_actors_archetypes[x];
-        Transform* static_actor_transforms = as<Transform*>(
-            arch->components[ComponentsIndices::TransformComponent]
-        );
-        Mesh* static_actor_meshes =
-            as<Mesh*>(arch->components[ComponentsIndices::MeshComponent]);
-        Material* static_actor_materials = as<Material*>(
-            arch->components[ComponentsIndices::MaterialComponent]
-        );
-        Rotation* static_actor_rotations = as<Rotation*>(
-            arch->components[ComponentsIndices::RotationComponent]
-        );
-
-        Vec<Matrix<f32, 4>> joint_matrices;
-        joint_matrices.resize(MAX_JOINTS_NUMBER);
-        for (u32 i = 0; i < MAX_JOINTS_NUMBER; ++i) {
-            Matrix<f32, 4> unit_matrix(1.0f);
-            joint_matrices[i] = unit_matrix;
-        }
-
-        for (u32 n = 0; n < arch->entity_count; ++n) {
-            vulkan_renderer->actors.push_back({});
-            Transform* transform_component = &static_actor_transforms[n];
-            Material* material_component = &static_actor_materials[n];
-            Rotation* rotation_component = &static_actor_rotations[n];
-            if (static_actor_transforms && static_actor_materials
-                && static_actor_rotations && static_actor_meshes) {
-                u32 mesh_id = static_actor_meshes[n].handle.id;
-                vulkan_renderer->actors[static_actors_counter].model_matrix =
-                    compute_model_matrix(
-                        transform_component,
-                        rotation_component
-                    );
-                vulkan_renderer->actors[static_actors_counter].joint_matrices =
-                    joint_matrices;
-                vulkan_renderer->actors[static_actors_counter].mesh_id =
-                    mesh_id;
-                vulkan_renderer->actors[static_actors_counter]
-                    .diffuse_texture_index =
-                    material_component->diffuse_texture_id.id;
-                vulkan_renderer->actors[static_actors_counter]
-                    .specular_texture_index =
-                    material_component->specular_texture_id.id;
-                vulkan_renderer->actors[static_actors_counter].ambient =
-                    material_component->ambient;
-                vulkan_renderer->actors[static_actors_counter].shininess =
-                    material_component->shininess;
-                ++static_actors_counter;
-            }
-        }
-    }
-
-    projectile_actors_archetypes_number = 0;
-    world.search_cache_archetypes(
-        projectile_required_mask,
-        cached_projectile_actors_archetypes,
-        projectile_actors_archetypes_number
-    );
-
-    u32 projectile_actors_counter = static_actors_counter;
-    for (u32 x = 0; x < projectile_actors_archetypes_number; ++x) {
-        Archetype* arch = cached_projectile_actors_archetypes[x];
-        Transform* actor_transforms = as<Transform*>(
-            arch->components[ComponentsIndices::TransformComponent]
-        );
-        Mesh* actor_meshes =
-            as<Mesh*>(arch->components[ComponentsIndices::MeshComponent]);
-        ProjectileBundle* actor_projectile_bundles = as<ProjectileBundle*>(
-            arch->components[ComponentsIndices::ProjectileBundleComponent]
-        );
-        Rotation* actor_rotations = as<Rotation*>(
-            arch->components[ComponentsIndices::RotationComponent]
-        );
-
-        Vec<Matrix<f32, 4>> joint_matrices;
-        joint_matrices.resize(MAX_JOINTS_NUMBER);
-        for (u32 i = 0; i < MAX_JOINTS_NUMBER; ++i) {
-            Matrix<f32, 4> unit_matrix(1.0f);
-            joint_matrices[i] = unit_matrix;
-        }
-
-        for (u32 n = 0; n < arch->entity_count; ++n) {
-            vulkan_renderer->actors.push_back({});
-            Transform* transform_component = &actor_transforms[n];
-            Material* material_component =
-                &actor_projectile_bundles[n].material;
-            Rotation* rotation_component = &actor_rotations[n];
-            if (actor_transforms && actor_projectile_bundles && actor_rotations
-                && actor_meshes) {
-                u32 mesh_id = actor_meshes[n].handle.id;
-                vulkan_renderer->actors[projectile_actors_counter].model_matrix =
-                    compute_model_matrix(
-                        transform_component,
-                        rotation_component
-                    );
-                vulkan_renderer->actors[projectile_actors_counter]
-                    .joint_matrices = joint_matrices;
-                vulkan_renderer->actors[projectile_actors_counter].mesh_id =
-                    mesh_id;
-                vulkan_renderer->actors[projectile_actors_counter]
-                    .diffuse_texture_index =
-                    material_component->diffuse_texture_id.id;
-                vulkan_renderer->actors[projectile_actors_counter]
-                    .specular_texture_index =
-                    material_component->specular_texture_id.id;
-                vulkan_renderer->actors[projectile_actors_counter].ambient =
-                    material_component->ambient;
-                vulkan_renderer->actors[projectile_actors_counter].shininess =
-                    material_component->shininess;
-                ++projectile_actors_counter;
-            }
-        }
-    }
-
-    // Item actors render in the game world.
-
-    item_actors_archetypes_number = 0;
-    world.search_cache_archetypes(
-        rotation_item_required_mask,
-        cached_item_actors_archetypes,
-        item_actors_archetypes_number
-    );
-
-    u32 item_actors_counter = projectile_actors_counter;
-    for (u32 x = 0; x < item_actors_archetypes_number; ++x) {
-        Archetype* arch = cached_item_actors_archetypes[x];
-        Transform* item_transforms = as<Transform*>(
-            arch->components[ComponentsIndices::TransformComponent]
-        );
-        Mesh* item_meshes =
-            as<Mesh*>(arch->components[ComponentsIndices::MeshComponent]);
-        Material* item_materials = as<Material*>(
-            arch->components[ComponentsIndices::MaterialComponent]
-        );
-        Rotation* item_rotations = as<Rotation*>(
-            arch->components[ComponentsIndices::RotationComponent]
-        );
-        Item* items =
-            as<Item*>(arch->components[ComponentsIndices::ItemComponent]);
-
-        Vec<Matrix<f32, 4>> joint_matrices;
-        joint_matrices.resize(MAX_JOINTS_NUMBER);
-        for (u32 i = 0; i < MAX_JOINTS_NUMBER; ++i) {
-            Matrix<f32, 4> unit_matrix(1.0f);
-            joint_matrices[i] = unit_matrix;
-        }
-
-        for (u32 n = 0; n < arch->entity_count; ++n) {
-            if (items[n].is_actor) {
-                vulkan_renderer->actors.push_back({});
-                Transform* transform_component = &item_transforms[n];
-                Material* material_component = &item_materials[n];
-                Rotation* rotation_component = &item_rotations[n];
-                if (item_transforms && item_materials && item_rotations
-                    && item_meshes) {
-                    u32 mesh_id = item_meshes[n].handle.id;
-                    vulkan_renderer->actors[item_actors_counter].model_matrix =
-                        compute_model_matrix(
-                            transform_component,
-                            rotation_component
-                        );
-                    vulkan_renderer->actors[item_actors_counter].joint_matrices =
-                        joint_matrices;
-                    vulkan_renderer->actors[item_actors_counter].mesh_id =
-                        mesh_id;
-                    vulkan_renderer->actors[item_actors_counter]
-                        .diffuse_texture_index =
-                        material_component->diffuse_texture_id.id;
-                    vulkan_renderer->actors[item_actors_counter]
-                        .specular_texture_index =
-                        material_component->specular_texture_id.id;
-                    vulkan_renderer->actors[item_actors_counter].ambient =
-                        material_component->ambient;
-                    vulkan_renderer->actors[item_actors_counter].shininess =
-                        material_component->shininess;
-                    ++item_actors_counter;
-                }
-            }
-        }
+    // Game actor categories (static meshes, level chunks, projectiles,
+    // items) and game UI are appended by the game via frame_data_hook.
+    u32 game_actors_counter = animation_actors_counter;
+    if (frame_data_hook) {
+        game_actors_counter = frame_data_hook(game_actors_counter);
     }
 
     vulkan_renderer->players.clear();
-    player_archetypes_number = 0;
+    camera_archetypes_number = 0;
     world.search_cache_archetypes(
-        player_required_mask,
-        cached_player_archetypes,
-        player_archetypes_number
+        camera_required_mask,
+        cached_camera_archetypes,
+        camera_archetypes_number
     );
 
     u32 player_entity_count = 0;
-    for (u32 x = 0; x < player_archetypes_number; ++x) {
-        Archetype* arch = cached_player_archetypes[x];
+    for (u32 x = 0; x < camera_archetypes_number; ++x) {
+        Archetype* arch = cached_camera_archetypes[x];
         Transform* player_transforms = as<Transform*>(
             arch->components[ComponentsIndices::TransformComponent]
         );
@@ -2306,15 +1653,16 @@ auto Engine::calculate_mesh_bounds(const Vector<f32, 4>& animated_vertex)
 }
 
 auto Engine::is_model_cache_exists(const String& model_file_path) -> bool {
-    std::ofstream models_cache(
-        "../../../examples/assets/cache/models/cache",
-        std::ios::app
-    );
+    // No cache path configured (the default): compute bounds every time.
+    if (model_cache_path.empty()) {
+        return false;
+    }
+    std::ofstream models_cache(model_cache_path, std::ios::app);
     if (!models_cache.is_open()) {
         std::cerr << "Error opening the models cache file" << std::endl;
         throw std::runtime_error("Failed to load mesh cache");
     }
-    std::ifstream file("../../../examples/assets/cache/models/cache");
+    std::ifstream file(model_cache_path);
     String line;
     while (std::getline(file, line)) {
         if (line.find(model_file_path) != String::npos) {
@@ -2343,10 +1691,10 @@ auto Engine::is_model_cache_exists(const String& model_file_path) -> bool {
 }
 
 auto Engine::write_models_cache(const String& model_file_path) -> void {
-    std::ofstream models_cache(
-        "../../../examples/assets/cache/models/cache",
-        std::ios::app
-    );
+    if (model_cache_path.empty()) {
+        return;
+    }
+    std::ofstream models_cache(model_cache_path, std::ios::app);
     if (!models_cache.is_open()) {
         std::cerr << "Error opening the models cache file" << '\n';
         throw std::runtime_error("Failed to load mesh cache");
@@ -2713,20 +2061,15 @@ auto Engine::game_kill() -> void {
 
     delete chrono;
     chrono = nullptr;
+    // Only generic systems are owned by the engine; games delete their own.
+    delete spatial_grid_system;
+    spatial_grid_system = nullptr;
     delete collision_system;
     collision_system = nullptr;
-    delete movement_system;
-    movement_system = nullptr;
     delete physics_system;
     physics_system = nullptr;
-    delete projectile_system;
-    projectile_system = nullptr;
     delete damage_system;
     damage_system = nullptr;
-    delete enemy_system;
-    enemy_system = nullptr;
-    delete item_system;
-    item_system = nullptr;
     glvm_log::info("glvm", "game_kill done");
 }
 } // namespace glvm
@@ -10814,543 +10157,6 @@ auto MeshManager::get_instance() -> MeshManager* {
 }
 } // namespace glvm
 
-namespace glvm {
-auto ProceduralLevelGeneratingSystem::update() -> void {
-    using namespace glvm;
-    Engine* glvm = Engine::get_instance();
-
-    // New arch ECS.
-    ArchetypeEntityManager* arch_entity_manager =
-        ArchetypeEntityManager::get_instance();
-
-    world.search_cache_archetypes(
-        player_required_mask,
-        &arch_view.cached_player_arch,
-        cached_player_arch_number
-    );
-    components_view.player_transforms =
-        as<Transform*>(arch_view.cached_player_arch
-                           ->components[ComponentsIndices::TransformComponent]);
-
-    while (level_number < 5) {
-        Vec<Vertex> next_level;
-        Vec<u32> indices;
-        Vec<Vertex> transition_bridge_vertices;
-        Vec<u32> transition_bridge_indices;
-
-        if (level_number < 5) {
-            std::random_device rd;
-            std::mt19937 mersenne(rd());
-            std::uniform_int_distribution<i32> dist_current_level_y(1, 1);
-            u32 level_half_y = dist_current_level_y(mersenne);
-            std::uniform_int_distribution<i32> dist_current_level_x_z(16, 16);
-            u32 level_half_x = dist_current_level_x_z(mersenne);
-            u32 level_half_z = dist_current_level_x_z(mersenne);
-
-            // Need to move on half.
-            constexpr auto TRANSITION_BRIDGE_HALF_WIDTH = 0.5f;
-            constexpr auto TRANSITION_BRIDGE_HALF_HEIGHT = 1.0f;
-            // On first iteration we dont need to define where locate current
-            // level depends on previousTransitionBridge.
-            if (level_number != 0) {
-                generate_level(
-                    level_half_x,
-                    level_half_y,
-                    level_half_z,
-                    TRANSITION_BRIDGE_HALF_WIDTH,
-                    TRANSITION_BRIDGE_HALF_HEIGHT
-                );
-            } else {
-                // Set to first level maximum values.
-                coordinate_maximum_value_per_direction.lowest_x =
-                    current_level_position[0] - level_half_x;
-                coordinate_maximum_value_per_direction.highest_x =
-                    current_level_position[0] + level_half_x;
-                coordinate_maximum_value_per_direction.lowest_y =
-                    current_level_position[1] - level_half_y;
-                coordinate_maximum_value_per_direction.highest_y =
-                    current_level_position[1] + level_half_y;
-                coordinate_maximum_value_per_direction.lowest_z =
-                    current_level_position[2] - level_half_z;
-                coordinate_maximum_value_per_direction.highest_z =
-                    current_level_position[2] + level_half_z;
-            }
-
-            generate_transition_bridge(
-                level_half_x,
-                level_half_y,
-                level_half_z,
-                TRANSITION_BRIDGE_HALF_WIDTH,
-                TRANSITION_BRIDGE_HALF_HEIGHT
-            );
-
-            for (const auto i : BOX_INDICES_FOR_INDEX_BUFFER) {
-                indices.push_back(i);
-            }
-
-            mesh_axis_limiting_values.set_to_default_values();
-
-            make_cube_object_vertices(
-                {-1, -1, -1, -1},
-                {1, 1, 1, 1},
-                level_half_x,
-                level_half_y,
-                level_half_z,
-                next_level
-            );
-            set_mesh_bounds(mesh_axis_limiting_values);
-
-            MeshHandle game_level_mesh_handle = glvm->load_mesh();
-            u64 game_level_chunk_entity = arch_entity_manager->create_entity();
-
-            cached_level_chunk_arch_number = 0;
-            // Search and cache one time for LevelChunkArch.
-            world.search_cache_archetypes(
-                required_mask,
-                &arch_view.cached_level_chunk_arch,
-                cached_level_chunk_arch_number
-            );
-
-            world.add_entity_to_archetype(
-                game_level_chunk_entity,
-                arch_view.cached_level_chunk_arch
-            );
-            EntityLocation game_level_chunk_location =
-                world.entity_locations[get_id(game_level_chunk_entity)];
-
-            LevelChunkArchetype* level_chunk_arch =
-                as<LevelChunkArchetype*>(game_level_chunk_location.arch);
-            const auto game_level_chunk_index = game_level_chunk_location.index;
-            TextureHandle game_level_texture = texture_handlers[2];
-            if (level_number == 0) {
-                // Set up current level position to player position.
-                components_view.player_transforms->position = Vector<f32, 3>(
-                    current_level_position[0],
-                    components_view.player_transforms->position[1],
-                    current_level_position[2]
-                );
-            }
-            level_chunk_arch->transforms[game_level_chunk_index] = {
-                .position = current_level_position,
-                .scale = 1.0f
-            };
-            level_chunk_arch->materials[game_level_chunk_index] = {
-                .diffuse_texture_id = game_level_texture,
-                .specular_texture_id = game_level_texture,
-                .ambient = {0.05f, 0.05f, 0.0f},
-                .shininess = 128.0f * 0.078125f
-            };
-            level_chunk_arch->meshes[game_level_chunk_index].handle =
-                game_level_mesh_handle;
-
-            for (const auto i : BOX_INDICES_FOR_INDEX_BUFFER) {
-                transition_bridge_indices.push_back(i);
-            }
-
-            mesh_axis_limiting_values.set_to_default_values();
-
-            f32 half_x = 0.0f;
-            f32 half_y = level_half_y;
-            f32 half_z = 0.0f;
-            set_half_extents_from_direction(
-                half_x,
-                half_z,
-                TRANSITION_BRIDGE_HALF_WIDTH,
-                TRANSITION_BRIDGE_HALF_HEIGHT,
-                next_level_transition_direction
-            );
-            make_cube_object_vertices(
-                {-1, -1, -1, -1},
-                {1, 1, 1, 1},
-                half_x,
-                half_y,
-                half_z,
-                transition_bridge_vertices
-            );
-            set_mesh_bounds(mesh_axis_limiting_values);
-
-            MeshHandle transition_bridge_mesh_handle = glvm->load_mesh();
-            u64 transition_bridge_entity = arch_entity_manager->create_entity();
-            world.add_entity_to_archetype(
-                transition_bridge_entity,
-                arch_view.cached_level_chunk_arch
-            );
-
-            EntityLocation transition_bridge_location =
-                world.entity_locations[get_id(transition_bridge_entity)];
-
-            LevelChunkArchetype* transition_bridge_arch =
-                as<LevelChunkArchetype*>(transition_bridge_location.arch);
-            const auto transition_bridge_index =
-                transition_bridge_location.index;
-            TextureHandle transition_bridge_texture = texture_handlers[3];
-            transition_bridge_arch->transforms[transition_bridge_index] = {
-                .position = transition_bridge_position,
-                .scale = 1.0f
-            };
-            transition_bridge_arch->materials[transition_bridge_index] = {
-                .diffuse_texture_id = transition_bridge_texture,
-                .specular_texture_id = transition_bridge_texture,
-                .ambient = {0.05f, 0.05f, 0.0f},
-                .shininess = 128.0f * 0.078125f
-            };
-            transition_bridge_arch->meshes[transition_bridge_index].handle =
-                transition_bridge_mesh_handle;
-
-            ++level_number;
-        }
-        level_generated_vertices.push_back(next_level);
-        level_generated_indices.push_back(indices);
-
-        level_generated_vertices.push_back(transition_bridge_vertices);
-        level_generated_indices.push_back(transition_bridge_indices);
-    }
-}
-
-auto ProceduralLevelGeneratingSystem::set_half_extents_from_direction(
-    f32& half_x,
-    f32& half_z,
-    const f32& transition_bridge_half_width,
-    const f32& transition_bridge_half_height,
-    const f32& next_level_transition_direction
-) -> void {
-    if (next_level_transition_direction == 1
-        || next_level_transition_direction == 3) {
-        half_x = transition_bridge_half_width;
-        half_z = transition_bridge_half_height;
-    } else if (
-        next_level_transition_direction == 2
-        || next_level_transition_direction == 4
-    ) {
-        half_x = transition_bridge_half_height;
-        half_z = transition_bridge_half_width;
-    }
-}
-
-auto ProceduralLevelGeneratingSystem::generate_level(
-    const u32 level_half_x,
-    const u32 level_half_y,
-    const u32 level_half_z,
-    const f32 transition_bridge_half_width,
-    const f32 transition_bridge_half_height
-) -> void {
-    std::random_device rd;
-    std::mt19937 mersenne(rd());
-    u32 previous_transition_bridge_anchor_point = 0;
-    bool valid_level = false;
-    while (!valid_level) {
-        switch (previous_iteration_transition_bridge_direction) {
-            case 1: {
-                std::uniform_int_distribution<i32>
-                    dist_previous_transition_bridge_anchor_point(
-                        0,
-                        (level_half_x * 2) - 1
-                    );
-                previous_transition_bridge_anchor_point =
-                    dist_previous_transition_bridge_anchor_point(mersenne);
-                current_level_position[0] = transition_bridge_position[0]
-                    - level_half_x + transition_bridge_half_width
-                    + previous_transition_bridge_anchor_point;
-                current_level_position[2] = transition_bridge_position[2]
-                    + level_half_z + transition_bridge_half_height;
-            } break;
-            case 2: {
-                std::uniform_int_distribution<i32>
-                    dist_previous_transition_bridge_anchor_point(
-                        0,
-                        (level_half_z * 2) - 1
-                    );
-                previous_transition_bridge_anchor_point =
-                    dist_previous_transition_bridge_anchor_point(mersenne);
-                current_level_position[2] = transition_bridge_position[2]
-                    - level_half_z + transition_bridge_half_width
-                    + previous_transition_bridge_anchor_point;
-                current_level_position[0] = transition_bridge_position[0]
-                    + level_half_x + transition_bridge_half_height;
-            } break;
-            case 3: {
-                std::uniform_int_distribution<i32>
-                    dist_previous_transition_bridge_anchor_point(
-                        0,
-                        (level_half_x * 2) - 1
-                    );
-                previous_transition_bridge_anchor_point =
-                    dist_previous_transition_bridge_anchor_point(mersenne);
-                current_level_position[0] = transition_bridge_position[0]
-                    - level_half_x + transition_bridge_half_width
-                    + previous_transition_bridge_anchor_point;
-                current_level_position[2] = transition_bridge_position[2]
-                    - level_half_z - transition_bridge_half_height;
-            } break;
-            case 4: {
-                std::uniform_int_distribution<i32>
-                    dist_previous_transition_bridge_anchor_point(
-                        0,
-                        (level_half_z * 2) - 1
-                    );
-                previous_transition_bridge_anchor_point =
-                    dist_previous_transition_bridge_anchor_point(mersenne);
-                current_level_position[2] = transition_bridge_position[2]
-                    - level_half_z + transition_bridge_half_width
-                    + previous_transition_bridge_anchor_point;
-                current_level_position[0] = transition_bridge_position[0]
-                    - level_half_x - transition_bridge_half_height;
-            } break;
-        }
-
-        if (check_collision_intersection_with_maximum_coordinates(
-                current_level_position,
-                level_half_x,
-                level_half_y,
-                level_half_z
-            )) {
-            previous_iteration_transition_bridge_direction =
-                ((4 + previous_iteration_transition_bridge_direction) % 4) + 1;
-        } else {
-            coordinate_maximum_value_per_direction
-                .compare_per_direction_and_set_to_maximum_value_by_module(
-                    current_level_position,
-                    as<f32>(level_half_x),
-                    as<f32>(level_half_y),
-                    as<f32>(level_half_z)
-                );
-            valid_level = true;
-        }
-    }
-    current_level_position[1] = 0.0f;
-}
-
-auto ProceduralLevelGeneratingSystem::generate_transition_bridge(
-    const u32 level_half_x,
-    const u32 level_half_y,
-    const u32 level_half_z,
-    const f32 transition_bridge_half_width,
-    const f32 transition_bridge_half_height
-) -> void {
-    std::random_device rd;
-    std::mt19937 mersenne(rd());
-    // 1 - north, 2 - east, 3 - south, 4 - west.
-    std::uniform_int_distribution<i32> dist_next_level_transition_direction(
-        1,
-        4
-    );
-    // Randomly choose the direction where the next level will appear.
-    next_level_transition_direction =
-        dist_next_level_transition_direction(mersenne);
-    u32 transition_bridge_anchor_point = 0;
-    f32 transition_bridge_offset_x = 0.0f;
-    f32 transition_bridge_offset_z = 0.0f;
-    bool valid_transition_bridge = false;
-    while (!valid_transition_bridge) {
-        // Choose up (1) or down (3) insert point direction.
-        if (next_level_transition_direction == 1
-            || next_level_transition_direction == 3) {
-            // In what point we connect next transition bridge to current level.
-            std::uniform_int_distribution<i32>
-                dist_transition_bridge_anchor_point(0, (level_half_x * 2) - 1);
-            transition_bridge_anchor_point =
-                dist_transition_bridge_anchor_point(mersenne);
-            // Sum the leftmost position with the random value of the point
-            // where the transition bridge will be inserted.
-            transition_bridge_offset_x = -as<f32>(level_half_x)
-                + as<f32>(transition_bridge_anchor_point);
-            if (next_level_transition_direction == 1) {
-                // Move to the bottom level edge.
-                transition_bridge_offset_z = level_half_z;
-                transition_bridge_position = {
-                    current_level_position[0] + transition_bridge_offset_x
-                        + transition_bridge_half_width,
-                    as<f32>(level_half_y),
-                    current_level_position[2] + transition_bridge_offset_z
-                        + transition_bridge_half_height
-                };
-            } else {
-                // Move to the upper level edge.
-                transition_bridge_offset_z = -as<f32>(level_half_z);
-                transition_bridge_position = {
-                    current_level_position[0] + transition_bridge_offset_x
-                        + transition_bridge_half_width,
-                    as<f32>(level_half_y),
-                    current_level_position[2] + transition_bridge_offset_z
-                        - transition_bridge_half_height
-                };
-            }
-            // Choose left (2) or right (4) insert point direction.
-        } else if (
-            next_level_transition_direction == 2
-            || next_level_transition_direction == 4
-        ) {
-            // In what point we connect next transition bridge to current level.
-            std::uniform_int_distribution<i32>
-                dist_transition_bridge_anchor_point(0, (level_half_z * 2) - 1);
-            transition_bridge_anchor_point =
-                dist_transition_bridge_anchor_point(mersenne);
-            // Sum the foremost position with the random value of the point
-            // where the transition bridge will be inserted.
-            transition_bridge_offset_z = -as<f32>(level_half_z)
-                + as<f32>(transition_bridge_anchor_point);
-            if (next_level_transition_direction == 2) {
-                // Move to the right level edge.
-                transition_bridge_offset_x = level_half_x;
-                transition_bridge_position = {
-                    current_level_position[0] + transition_bridge_offset_x
-                        + transition_bridge_half_height,
-                    as<f32>(level_half_y),
-                    current_level_position[2] + transition_bridge_offset_z
-                        + transition_bridge_half_width
-                };
-            } else {
-                // Move to the left level edge.
-                transition_bridge_offset_x = -as<f32>(level_half_x);
-                transition_bridge_position = {
-                    current_level_position[0] + transition_bridge_offset_x
-                        - transition_bridge_half_height,
-                    as<f32>(level_half_y),
-                    current_level_position[2] + transition_bridge_offset_z
-                        + transition_bridge_half_width
-                };
-            }
-        }
-
-        f32 width = 0;
-        f32 height = 0;
-        // Choose transition_bridge_half_width as X and
-        // transition_bridge_half_height as Z.
-        set_half_extents_from_direction(
-            width,
-            height,
-            transition_bridge_half_width,
-            transition_bridge_half_height,
-            next_level_transition_direction
-        );
-
-        if (check_collision_intersection_with_maximum_coordinates(
-                transition_bridge_position,
-                width,
-                level_half_y,
-                height
-            )) {
-            // Need to choose another direction if we got collided with level.
-            next_level_transition_direction =
-                ((4 + next_level_transition_direction) % 4) + 1;
-        } else {
-            // Setting up bounds for all levels.
-            coordinate_maximum_value_per_direction
-                .compare_per_direction_and_set_to_maximum_value_by_module(
-                    transition_bridge_position,
-                    as<f32>(width),
-                    as<f32>(level_half_y),
-                    as<f32>(height)
-                );
-            valid_transition_bridge = true;
-        }
-    }
-    transition_bridge_position[1] = current_level_position[1];
-    previous_iteration_transition_bridge_direction =
-        next_level_transition_direction;
-}
-
-auto ProceduralLevelGeneratingSystem::make_cube_object_vertices(
-    Vector<f32, 4> joint_indices,
-    Vector<f32, 4> weights,
-    f32 half_x,
-    f32 half_y,
-    f32 half_z,
-    Vec<Vertex>& destination_vertices_container
-) -> void {
-    u32 cube_vertices = 8;
-    for (u32 i = 0; i < cube_vertices; ++i) {
-        Position vertex;
-
-        switch (i) {
-            case 0:
-                vertex[0] = half_x;
-                vertex[1] = half_y;
-                vertex[2] = half_z;
-                break;
-            case 1:
-                vertex[0] = -as<f32>(half_x);
-                vertex[1] = half_y;
-                vertex[2] = half_z;
-                break;
-            case 2:
-                vertex[0] = -as<f32>(half_x);
-                vertex[1] = -as<f32>(half_y);
-                vertex[2] = half_z;
-                break;
-            case 3:
-                vertex[0] = half_x;
-                vertex[1] = -as<f32>(half_y);
-                vertex[2] = half_z;
-                break;
-            case 4:
-                vertex[0] = half_x;
-                vertex[1] = half_y;
-                vertex[2] = -as<f32>(half_z);
-                break;
-            case 5:
-                vertex[0] = -as<f32>(half_x);
-                vertex[1] = half_y;
-                vertex[2] = -as<f32>(half_z);
-                break;
-            case 6:
-                vertex[0] = -as<f32>(half_x);
-                vertex[1] = -as<f32>(half_y);
-                vertex[2] = -as<f32>(half_z);
-                break;
-            case 7:
-                vertex[0] = half_x;
-                vertex[1] = -as<f32>(half_y);
-                vertex[2] = -as<f32>(half_z);
-                break;
-        }
-
-        mesh_axis_limiting_values
-            .compare_per_direction_and_set_to_maximum_value_by_module(vertex);
-
-        Position normal;
-        normal[0] = 0;
-        normal[1] = 1;
-        normal[2] = 0;
-        Position texture;
-        texture[0] = 0;
-        texture[1] = 1;
-
-        destination_vertices_container.push_back(
-            {{vertex[0], vertex[1], vertex[2]},
-             {normal[0], normal[1], normal[2]},
-             {texture[0], texture[1]},
-             {joint_indices[0],
-              joint_indices[1],
-              joint_indices[2],
-              joint_indices[3]},
-             {weights[0], weights[1], weights[2], weights[3]}}
-        );
-    }
-}
-
-auto ProceduralLevelGeneratingSystem::
-    check_collision_intersection_with_maximum_coordinates(
-        Vector<f32, 3> position,
-        f32 half_x,
-        f32 half_y,
-        f32 half_z
-    ) -> bool {
-    return position[0] + half_x
-        > coordinate_maximum_value_per_direction.lowest_x
-        && position[0] - half_x
-        < coordinate_maximum_value_per_direction.highest_x
-        && position[1] + half_y
-        > coordinate_maximum_value_per_direction.lowest_y
-        && position[1] - half_y
-        < coordinate_maximum_value_per_direction.highest_y
-        && position[2] + half_z
-        > coordinate_maximum_value_per_direction.lowest_z
-        && position[2] - half_z
-        < coordinate_maximum_value_per_direction.highest_z;
-}
-} // namespace glvm
-
 #ifdef __linux__
 #endif
 
@@ -11542,12 +10348,16 @@ auto SystemManager::activate_system(System* system) -> void {
     ++system_count;
 }
 
-auto SystemManager::deactivate_system(DeactivatedSystems system) -> void {
+auto SystemManager::deactivate_system(System* system) -> void {
+    for (auto* deactivated : deactivated_systems) {
+        if (deactivated == system) {
+            return;
+        }
+    }
     deactivated_systems.push_back(system);
 }
 
-auto SystemManager::return_system_to_activated_state(DeactivatedSystems system)
-    -> void {
+auto SystemManager::return_system_to_activated_state(System* system) -> void {
     for (u32 i = 0; i < deactivated_systems.size(); ++i) {
         if (system == deactivated_systems[i]) {
             deactivated_systems.erase(deactivated_systems.begin() + i);
@@ -11557,19 +10367,15 @@ auto SystemManager::return_system_to_activated_state(DeactivatedSystems system)
 }
 
 auto SystemManager::update() -> void {
-    bool removed_system_flag = false;
     for (u32 i = 0; i < system_count; ++i) {
-        for (auto& deactivated_system : deactivated_systems) {
-            if (as<u32>(deactivated_system) == i) {
-                removed_system_flag = true;
-                continue;
+        bool skipped = false;
+        for (auto* deactivated : deactivated_systems) {
+            if (deactivated == system_container[i]) {
+                skipped = true;
+                break;
             }
         }
-
-        if (removed_system_flag) {
-            removed_system_flag = false;
-            continue;
-        } else {
+        if (!skipped) {
             system_container[i]->update();
         }
     }
@@ -11957,922 +10763,6 @@ auto DamageSystem::update() -> void {
 } // namespace glvm
 
 namespace glvm {
-auto EnemySystem::update() -> void {
-    player_archetypes_number = 0;
-    world.search_cache_archetypes(
-        player_required_mask,
-        &arch_view.player_cached_archetype,
-        player_archetypes_number
-    );
-    components_view.player_transforms =
-        as<Transform*>(arch_view.player_cached_archetype
-                           ->components[ComponentsIndices::TransformComponent]);
-
-    enemy_archetypes_number = 0;
-    world.search_cache_archetypes(
-        enemy_required_mask,
-        &arch_view.enemy_cached_archetype,
-        enemy_archetypes_number
-    );
-    components_view.enemy_transforms =
-        as<Transform*>(arch_view.enemy_cached_archetype
-                           ->components[ComponentsIndices::TransformComponent]);
-    components_view.enemy_states =
-        as<State*>(arch_view.enemy_cached_archetype
-                       ->components[ComponentsIndices::StateComponent]);
-    components_view.enemies =
-        as<Enemy*>(arch_view.enemy_cached_archetype
-                       ->components[ComponentsIndices::EnemyComponent]);
-
-    projectile_archetypes_number = 0;
-    world.search_cache_archetypes(
-        projectile_required_mask,
-        &arch_view.projectile_archetype,
-        projectile_archetypes_number
-    );
-
-    for (u32 j = 0; j < arch_view.player_cached_archetype->entity_count; ++j) {
-        Transform* player_transform_component =
-            &components_view.player_transforms[j];
-        for (u32 i = 0; i < arch_view.enemy_cached_archetype->entity_count;
-             ++i) {
-            Transform* enemy_transform_component =
-                &components_view.enemy_transforms[i];
-            State* state_enemy_component = &components_view.enemy_states[i];
-            Enemy* enemy_component = &components_view.enemies[i];
-
-            Vector<f32, 3> distance = player_transform_component->position
-                - enemy_transform_component->position;
-            f32 camera_speed = 5.5f * delta_frame_time;
-
-            if (projectile_cooldown > 0) {
-                projectile_cooldown -= camera_speed;
-            }
-            if (distance.length() > enemy_component->detect_radius
-                && state_enemy_component->state == States::ATTACK) {
-                f32 delta_length =
-                    distance.length() - enemy_component->detect_radius;
-                Vector<f32, 3> enemy_move =
-                    distance * (delta_length / distance.length());
-
-                enemy_transform_component->position += enemy_move;
-            }
-
-            if (distance.length() <= enemy_component->detect_radius) {
-                if (projectile_cooldown <= 0) {
-                    MeshHandle mesh_handle {};
-                    const auto sphere_mesh_handle_index = 2;
-                    if (mesh_handles.size() > 2) {
-                        mesh_handle = mesh_handles[sphere_mesh_handle_index];
-                    }
-
-                    TextureHandle texture_handle {};
-                    const auto gray_texture_handle = 2;
-                    if (texture_handlers.size() > 2) {
-                        texture_handle = texture_handlers[gray_texture_handle];
-                    }
-
-                    const Material material = {
-                        .diffuse_texture_id = texture_handle,
-                        .specular_texture_id = texture_handle,
-                        .ambient = {0.05f, 0.05f, 0.05f},
-                        .shininess = 128.0f * 0.078125f
-                    };
-
-                    const Damage damage = {
-                        .maximum_damage = 40,
-                        .minimum_damage = 20,
-                        .critical_hit_rate = 0,
-                        .critical_modifier = 0
-                    };
-
-                    ArchetypeEntityManager* arch_entity_manager =
-                        ArchetypeEntityManager::get_instance();
-                    u64 projectile_entity =
-                        arch_entity_manager->create_entity();
-                    world.add_entity_to_archetype(
-                        projectile_entity,
-                        arch_view.projectile_archetype
-                    );
-                    EntityLocation projectile_location =
-                        world.entity_locations[get_id(projectile_entity)];
-
-                    create_projectile(
-                        enemy_transform_component->position,
-                        player_transform_component->position
-                            - enemy_transform_component->position,
-                        mesh_handle,
-                        material,
-                        damage,
-                        projectile_location
-                    );
-
-                    sound_engine->create_sound_sample(
-                        "../../../examples/assets/sounds/pistol.wav",
-                        5,
-                        22050,
-                        0.05f
-                    );
-                    projectile_cooldown = 5.0f;
-                }
-
-                state_enemy_component->state = States::ATTACK;
-            }
-        }
-    }
-}
-} // namespace glvm
-
-namespace glvm {
-auto InventorySystem::update() -> void {
-    if (is_inventory_opened) {
-        crosshair_archetypes_number = 0;
-        world.search_cache_archetypes(
-            crosshair_required_mask,
-            &arch_view.crosshair_cached_archetype,
-            crosshair_archetypes_number
-        );
-        components_view.crosshair_transforms_view = as<Transform*>(
-            arch_view.crosshair_cached_archetype
-                ->components[ComponentsIndices::TransformComponent]
-        );
-
-        inventory_archetypes_number = 0;
-        world.search_cache_archetypes(
-            inventory_required_mask,
-            &arch_view.inventory_cached_archetype,
-            inventory_archetypes_number
-        );
-
-        components_view.inventory_transforms_view = as<Transform*>(
-            arch_view.inventory_cached_archetype
-                ->components[ComponentsIndices::TransformComponent]
-        );
-        components_view.inventory_view = as<Inventory*>(
-            arch_view.inventory_cached_archetype
-                ->components[ComponentsIndices::InventoryComponent]
-        );
-        components_view.inventory_meshes_view =
-            as<Mesh*>(arch_view.inventory_cached_archetype
-                          ->components[ComponentsIndices::MeshComponent]);
-
-        if (components_view.crosshair_transforms_view
-            && components_view.inventory_transforms_view
-            && components_view.inventory_view
-            && components_view.inventory_meshes_view) {
-            Transform* crosshair_transform_component =
-                &components_view.crosshair_transforms_view[0];
-
-            Transform* inventory_transform_component =
-                &components_view.inventory_transforms_view[0];
-            Inventory* inventory_component = &components_view.inventory_view[0];
-            Mesh* inventory_mesh_component =
-                &components_view.inventory_meshes_view[0];
-
-            const auto inventory_slot_scale = inventory_mesh_component->gltf
-                ? inventory_component->slot_scale * 2.0f
-                : inventory_component->slot_scale;
-            const auto inventory_slot_half_scale =
-                inventory_mesh_component->gltf
-                ? inventory_component->slot_scale
-                : inventory_component->slot_scale * 0.5f;
-
-            // Take an item from inventory.
-            if (*is_item_dragged < 0 && is_left_mouse_button_pressed
-                && *is_left_mouse_button_released) {
-                if (check_crosshair_inventory_intersection(
-                        crosshair_transform_component,
-                        inventory_transform_component,
-                        inventory_component,
-                        inventory_slot_scale,
-                        inventory_slot_half_scale
-                    )) {
-                    Point2D<i32> intersection_slot =
-                        determine_actual_intersection_slot(
-                            crosshair_transform_component,
-                            inventory_transform_component,
-                            inventory_slot_scale,
-                            inventory_slot_half_scale
-                        );
-                    const auto row = intersection_slot.y;
-                    const auto column = intersection_slot.x;
-                    const auto entity = inventory_component->slots[row][column];
-                    // Check slot is not empty and hold an item.
-                    if (entity != UINT_MAX && entity >= 0) {
-                        EntityLocation item_location =
-                            world.entity_locations[get_id(entity)];
-                        ItemArchetype* item_arch =
-                            as<ItemArchetype*>(item_location.arch);
-                        const auto item_index = item_location.index;
-                        Item* item_component = &item_arch->items[item_index];
-
-                        if (item_component != nullptr) {
-                            for (u32 i = 0;
-                                 i < item_component->occupied_slots.size();
-                                 ++i) {
-                                u32 row_index =
-                                    item_component->occupied_slots[i]
-                                    / inventory_component->row;
-                                u32 col_index =
-                                    item_component->occupied_slots[i]
-                                    % inventory_component->col;
-                                // Need to free all slots that hold an item.
-                                inventory_component
-                                    ->slots[row_index][col_index] = UINT_MAX;
-                            }
-                        }
-                        // Set currently dragged item entity.
-                        *is_item_dragged = entity;
-                    }
-                }
-                *is_left_mouse_button_released = false;
-            }
-
-            if (*is_item_dragged >= 0) {
-                if (check_crosshair_inventory_intersection(
-                        crosshair_transform_component,
-                        inventory_transform_component,
-                        inventory_component,
-                        inventory_slot_scale,
-                        inventory_slot_half_scale
-                    )) {
-                    Point2D<i32> intersection_slot =
-                        determine_actual_intersection_slot(
-                            crosshair_transform_component,
-                            inventory_transform_component,
-                            inventory_slot_scale,
-                            inventory_slot_half_scale
-                        );
-
-                    EntityLocation item_location =
-                        world.entity_locations[get_id(*is_item_dragged)];
-                    ItemArchetype* item_arch =
-                        as<ItemArchetype*>(item_location.arch);
-                    const auto item_index = item_location.index;
-                    Item* item_component = &item_arch->items[item_index];
-
-                    Vec<u32> potential_occupied_slots;
-                    i32 is_swappable = 0;
-                    is_swappable = determine_swappable_status_and_slots(
-                        item_component,
-                        inventory_transform_component,
-                        potential_occupied_slots,
-                        crosshair_transform_component,
-                        intersection_slot,
-                        inventory_component,
-                        inventory_slot_scale
-                    );
-
-                    inventory_component->highlighted_slots =
-                        potential_occupied_slots;
-                    inventory_component->is_available_highlighted_slots =
-                        is_swappable == -1 || is_swappable >= 0;
-                } else {
-                    inventory_component->highlighted_slots.clear();
-                }
-            }
-
-            // Item drop to inventory, swapped or we just can't place.
-            if (*is_item_dragged >= 0 && is_left_mouse_button_pressed
-                && *is_left_mouse_button_released) {
-                i32 is_swappable = 0;
-                if (check_crosshair_inventory_intersection(
-                        crosshair_transform_component,
-                        inventory_transform_component,
-                        inventory_component,
-                        inventory_slot_scale,
-                        inventory_slot_half_scale
-                    )) {
-                    Point2D<i32> intersection_slot =
-                        determine_actual_intersection_slot(
-                            crosshair_transform_component,
-                            inventory_transform_component,
-                            inventory_slot_scale,
-                            inventory_slot_half_scale
-                        );
-
-                    EntityLocation item_location =
-                        world.entity_locations[get_id(*is_item_dragged)];
-                    ItemArchetype* item_arch =
-                        as<ItemArchetype*>(item_location.arch);
-                    const auto item_index = item_location.index;
-                    Item* item_component = &item_arch->items[item_index];
-
-                    Vec<u32> potential_occupied_slots;
-                    is_swappable = determine_swappable_status_and_slots(
-                        item_component,
-                        inventory_transform_component,
-                        potential_occupied_slots,
-                        crosshair_transform_component,
-                        intersection_slot,
-                        inventory_component,
-                        inventory_slot_scale
-                    );
-
-                    const auto item_width =
-                        item_component->item_slot_type.width;
-                    const auto item_height =
-                        item_component->item_slot_type.height;
-
-                    // Default value. Just drop item to all empty slots.
-                    if (is_swappable == -1) {
-                        item_component->occupied_slots =
-                            potential_occupied_slots;
-                        fill_inventory_slots(
-                            item_component,
-                            item_width,
-                            item_height,
-                            inventory_component,
-                            *is_item_dragged
-                        );
-                        // Swap one item that we dragging to another one in
-                        // inventory.
-                    } else if (is_swappable > 0) {
-                        EntityLocation item_location =
-                            world.entity_locations[get_id(is_swappable)];
-                        ItemArchetype* item_arch =
-                            as<ItemArchetype*>(item_location.arch);
-                        const auto item_index = item_location.index;
-                        Item* swapped_item_component =
-                            &item_arch->items[item_index];
-
-                        item_component->occupied_slots =
-                            potential_occupied_slots;
-                        fill_inventory_slots(
-                            swapped_item_component,
-                            swapped_item_component->item_slot_type.width,
-                            swapped_item_component->item_slot_type.height,
-                            inventory_component,
-                            UINT_MAX
-                        );
-
-                        swapped_item_component->occupied_slots.clear();
-                        fill_inventory_slots(
-                            item_component,
-                            item_width,
-                            item_height,
-                            inventory_component,
-                            *is_item_dragged
-                        );
-                    }
-
-                    if (is_swappable == -1) {
-                        *is_left_mouse_button_released = false;
-                        *is_item_dragged = -1;
-                        // Already have 2 or more items in potential inventory
-                        // slots.
-                    } else if (is_swappable == -2) {
-                        *is_left_mouse_button_released = false;
-                    } else {
-                        *is_left_mouse_button_released = false;
-                        *is_item_dragged = is_swappable;
-                    }
-                    // Dropping the item to the ground.
-                } else {
-                    EntityLocation item_location =
-                        world.entity_locations[get_id(*is_item_dragged)];
-                    ItemArchetype* item_arch =
-                        as<ItemArchetype*>(item_location.arch);
-                    const auto item_index = item_location.index;
-                    item_arch->rigid_bodies[item_index] = {.mass = 2.0f};
-                    Transform* item_transform =
-                        &item_arch->transforms[item_index];
-                    Item* item = &item_arch->items[item_index];
-                    item->is_actor = true;
-                    // TODO: Remove this workaround.
-                    const auto player = 0;
-                    EntityLocation player_location =
-                        world.entity_locations[get_id(player)];
-                    if (player_location.arch != nullptr) {
-                        PlayerArchetype* player_arch =
-                            as<PlayerArchetype*>(player_location.arch);
-                        const auto player_index = player_location.index;
-                        Transform* player_transform =
-                            &player_arch->transforms[player_index];
-                        item_transform->position = player_transform->position;
-                        Vector<f32, 3> normalized_forward =
-                            normalize(player_transform->forward);
-                        item_transform->position[0] +=
-                            normalized_forward[0] * 2.5f;
-                        item_transform->position[1] +=
-                            normalized_forward[1] * 2.5f;
-                        item_transform->position[2] +=
-                            normalized_forward[2] * 2.5f;
-                        item_transform->scale = 0.05f;
-                    }
-
-                    *is_item_dragged = -1;
-                    *is_left_mouse_button_released = false;
-                }
-            }
-        }
-    }
-}
-
-auto InventorySystem::determine_swappable_status_and_slots(
-    Item* item_component,
-    Transform* inventory_transform_component,
-    Vec<u32>& potential_occupied_slots,
-    Transform* crosshair_transform_component,
-    Point2D<i32> intersection_slot,
-    Inventory* inventory_component,
-    const f32 inventory_slot_scale
-) -> i32 {
-    if (item_component != nullptr) {
-        const auto item_width = item_component->item_slot_type.width;
-        const auto item_height = item_component->item_slot_type.height;
-
-        const auto row = intersection_slot.y;
-        const auto column = intersection_slot.x;
-
-        // Find left-upper pivot slot inventory.
-        i32 row_basic_offset = 0;
-        i32 column_basic_offset = 0;
-
-        // Set as pivot point slot in left upper corner.
-        // Need to calculate offset for row and column
-        // to change it from center. And need to It is
-        // necessary to take into account the offset
-        // relative to the center for additional correction.
-        column_basic_offset = calculate_basic_offset(
-            item_width,
-            inventory_transform_component->position[0],
-            crosshair_transform_component->position[0],
-            column,
-            inventory_slot_scale
-        );
-        row_basic_offset = calculate_basic_offset(
-            item_height,
-            inventory_transform_component->position[1],
-            crosshair_transform_component->position[1],
-            row,
-            inventory_slot_scale * aspect_ratio
-        );
-
-        i32 pivot_row = row - row_basic_offset;
-        i32 pivot_column = column - column_basic_offset;
-
-        pivot_row = clamp<i32>(
-            0,
-            pivot_row,
-            as<i32>(inventory_component->row) - item_height
-        );
-        pivot_column = clamp<i32>(
-            0,
-            pivot_column,
-            as<i32>(inventory_component->col) - item_width
-        );
-
-        return determine_swappable_field(
-            item_component,
-            item_width,
-            item_height,
-            pivot_row,
-            pivot_column,
-            inventory_component,
-            potential_occupied_slots
-        );
-    } else {
-        // Return -3 as an error code, which means item_component is nullptr.
-        return -3;
-    }
-}
-
-auto InventorySystem::fill_inventory_slots(
-    Item* item_component,
-    const i32 item_width,
-    const i32 item_height,
-    Inventory* inventory_component,
-    const i32 fill_value
-) -> void {
-    for (i32 i = 0; i < item_height; ++i) {
-        for (i32 j = 0; j < item_width; ++j) {
-            const auto slots_row =
-                item_component->occupied_slots[i * item_width + j]
-                / inventory_component->col;
-            const auto slots_column =
-                item_component->occupied_slots[i * item_width + j]
-                % inventory_component->col;
-
-            inventory_component->slots[slots_row][slots_column] = fill_value;
-        }
-    }
-}
-
-auto InventorySystem::determine_swappable_field(
-    Item* item_component,
-    const i32 item_width,
-    const i32 item_height,
-    i32 pivot_row,
-    i32 pivot_column,
-    Inventory* inventory_component,
-    Vec<u32>& potential_occupied_slots
-) -> i32 {
-    item_component->occupied_slots.clear();
-    // -1: default value. -2: found two entities in potential slots. Any other
-    // value: swappable.
-    i32 is_swappable = -1;
-    for (i32 i = 0; i < item_height; ++i) {
-        for (i32 j = 0; j < item_width; ++j) {
-            const auto final_row = pivot_row + i;
-            const auto final_column = pivot_column + j;
-            if (is_swappable == -1
-                && inventory_component->slots[final_row][final_column]
-                    != UINT_MAX) {
-                is_swappable =
-                    inventory_component->slots[final_row][final_column];
-            } else if (
-                is_swappable > 0
-                && inventory_component->slots[final_row][final_column]
-                    != UINT_MAX
-                && as<i32>(inventory_component->slots[final_row][final_column])
-                    != is_swappable
-            ) {
-                is_swappable = -2;
-            }
-
-            potential_occupied_slots.push_back(
-                final_row * inventory_component->col + final_column
-            );
-        }
-    }
-
-    return is_swappable;
-}
-
-auto InventorySystem::calculate_basic_offset(
-    const i32 item_axis_size,
-    const f32 axis_value,
-    const f32 crosshair_axis_position,
-    const i32 axis_slot_index,
-    const f32 inventory_slot_scale
-) -> i32 {
-    if (item_axis_size % 2 == 0) {
-        const auto slot_center_x =
-            axis_value + as<f32>(axis_slot_index) * inventory_slot_scale;
-        if (slot_center_x > crosshair_axis_position) {
-            return item_axis_size / 2;
-        }
-        return item_axis_size / 2 - 1;
-    }
-    return item_axis_size / 2;
-}
-
-auto InventorySystem::check_crosshair_inventory_intersection(
-    Transform* crosshair_transform_component,
-    Transform* inventory_transform_component,
-    Inventory* inventory_component,
-    const f32 inventory_slot_scale,
-    const f32 inventory_slot_half_scale
-) -> bool {
-    return crosshair_transform_component->position[0]
-        > inventory_transform_component->position[0] - inventory_slot_half_scale
-        && crosshair_transform_component->position[0]
-        < inventory_transform_component->position[0] - inventory_slot_half_scale
-            + inventory_slot_scale * inventory_component->col
-        && crosshair_transform_component->position[1]
-        > inventory_transform_component->position[1]
-            - inventory_slot_half_scale * aspect_ratio
-        && crosshair_transform_component->position[1]
-        < inventory_transform_component->position[1]
-            - inventory_slot_half_scale * aspect_ratio
-            + inventory_slot_scale * inventory_component->row * aspect_ratio;
-}
-
-auto InventorySystem::determine_actual_intersection_slot(
-    Transform* crosshair_transform_component,
-    Transform* inventory_transform_component,
-    const f32 inventory_slot_scale,
-    const f32 inventory_slot_half_scale
-) -> Point2D<i32> {
-    f32 x_delta = crosshair_transform_component->position[0]
-        - inventory_transform_component->position[0]
-        + inventory_slot_half_scale;
-    f32 y_delta = crosshair_transform_component->position[1]
-        - inventory_transform_component->position[1]
-        + inventory_slot_half_scale * aspect_ratio;
-
-    return Point2D<i32> {
-        as<i32>((x_delta / inventory_slot_scale)),
-        as<i32>((y_delta / (inventory_slot_scale * aspect_ratio)))
-    };
-}
-} // namespace glvm
-
-namespace glvm {
-// This method tries to find suitable slots for the given specific item type.
-// It returns true if it finds them and false otherwise.
-auto ItemSystem::put_item2x2(Inventory* inventory_component, u32 item_entity)
-    -> bool {
-    bool is_slot_found = false;
-    u32 row = inventory_component->row;
-    u32 col = inventory_component->col;
-
-    EntityLocation item_location = world.entity_locations[get_id(item_entity)];
-    ItemArchetype* item_arch = as<ItemArchetype*>(item_location.arch);
-    const auto item_index = item_location.index;
-    Item* item_component = &item_arch->items[item_index];
-
-    u32 item_width = item_component->item_slot_type.width;
-    u32 item_height = item_component->item_slot_type.height;
-    for (u32 i = 0; i < row - item_height + 1; ++i) {
-        for (u32 j = 0; j < col - item_width + 1; ++j) {
-            Vec<u32> maybe_available_slots;
-            Vec<u32> indices_of_maybe_available_slots;
-            for (u32 m = i; m < i + item_height; ++m) {
-                for (u32 n = j; n < j + item_width; ++n) {
-                    maybe_available_slots.push_back(
-                        inventory_component->slots[m][n]
-                    );
-                    indices_of_maybe_available_slots.push_back(m * col + n);
-                }
-            }
-
-            u32 is_all_slots_available = 0;
-            for (u32 v = 0; v < maybe_available_slots.size(); ++v) {
-                if (maybe_available_slots[v] == UINT_MAX) {
-                    ++is_all_slots_available;
-                } else {
-                    --is_all_slots_available;
-                }
-            }
-            if (maybe_available_slots.size() == is_all_slots_available) {
-                for (u32 w = 0; w < maybe_available_slots.size(); ++w) {
-                    u32 row_index = indices_of_maybe_available_slots[w] / row;
-                    u32 col_index = indices_of_maybe_available_slots[w] % col;
-                    inventory_component->slots[row_index][col_index] =
-                        item_entity;
-                    item_component->occupied_slots.push_back(
-                        indices_of_maybe_available_slots[w]
-                    );
-                }
-
-                is_slot_found = true;
-                return is_slot_found;
-            }
-        }
-    }
-
-    return is_slot_found;
-}
-
-auto ItemSystem::update() -> void {
-    if (!is_inventory_opened) {
-        inventory_archetypes_number = 0;
-        world.search_cache_archetypes(
-            inventory_required_mask,
-            &arch_view.inventory_cached_archetype,
-            inventory_archetypes_number
-        );
-        components_view.inventories_view = as<Inventory*>(
-            arch_view.inventory_cached_archetype
-                ->components[ComponentsIndices::InventoryComponent]
-        );
-
-        item_archetypes_number = 0;
-        world.search_cache_archetypes(
-            item_required_mask,
-            &arch_view.item_archetype,
-            item_archetypes_number
-        );
-        components_view.items_view =
-            as<Item*>(arch_view.item_archetype
-                          ->components[ComponentsIndices::ItemComponent]);
-        components_view.item_colliders_view = as<Collider*>(
-            arch_view.item_archetype
-                ->components[ComponentsIndices::ColliderComponent]
-        );
-
-        for (u32 m = 0; m < arch_view.inventory_cached_archetype->entity_count;
-             ++m) {
-            Inventory* inventory_component =
-                &components_view.inventories_view[m];
-
-            for (u32 i = 0; i < arch_view.item_archetype->entity_count; ++i) {
-                u32 item_entity = arch_view.item_archetype->entities[i];
-                Collider* item_collider_component =
-                    &components_view.item_colliders_view[i];
-
-                for (u32 j = 0; j < item_collider_component->colliders.size();
-                     ++j) {
-                    if (item_collider_component->colliders[j]
-                            == inventory_component->entity_owner
-                        && components_view.items_view[i].is_actor) {
-                        if (put_item2x2(inventory_component, item_entity)) {
-                            components_view.items_view[i].is_actor = false;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    if (is_inventory_opened) {
-        crosshair_archetypes_number = 0;
-        world.search_cache_archetypes(
-            crosshair_required_mask,
-            &arch_view.crosshair_archetype,
-            crosshair_archetypes_number
-        );
-        components_view.crosshair_transforms = as<Transform*>(
-            arch_view.crosshair_archetype
-                ->components[ComponentsIndices::TransformComponent]
-        );
-
-        item_archetypes_number = 0;
-        world.search_cache_archetypes(
-            item_required_mask,
-            &arch_view.item_archetype,
-            item_archetypes_number
-        );
-        components_view.item_transforms_view = as<Transform*>(
-            arch_view.item_archetype
-                ->components[ComponentsIndices::TransformComponent]
-        );
-
-        Transform* crosshair_transform_component =
-            &components_view.crosshair_transforms[0];
-        for (u32 i = 0; i < arch_view.item_archetype->entity_count; ++i) {
-            u32 entity_item_containing = arch_view.item_archetype->entities[i];
-            Transform* item_transform_component =
-                &components_view.item_transforms_view[i];
-            if (*dragged_item_entity >= 0
-                && *dragged_item_entity == as<i32>(entity_item_containing)) {
-                // Set crosshair position to dragged items.
-                item_transform_component->position =
-                    crosshair_transform_component->position;
-            }
-        }
-    }
-}
-} // namespace glvm
-
-namespace glvm {
-MovementSystem::MovementSystem(EventStack& input_stack) :
-    input_stack(input_stack) {
-}
-
-auto MovementSystem::update() -> void {
-    world.search_cache_archetypes(
-        player_required_mask,
-        &arch_view.player_cached_archetype,
-        player_archetypes_number
-    );
-    components_view.player_moves =
-        as<Move*>(arch_view.player_cached_archetype
-                      ->components[ComponentsIndices::MoveComponent]);
-    components_view.player_views =
-        as<Beholder*>(arch_view.player_cached_archetype
-                          ->components[ComponentsIndices::ViewComponent]);
-    components_view.player_collider_flags = as<ColliderFlags*>(
-        arch_view.player_cached_archetype
-            ->components[ComponentsIndices::ColliderFlagsComponent]
-    );
-    components_view.player_rigid_body =
-        as<RigidBody*>(arch_view.player_cached_archetype
-                           ->components[ComponentsIndices::RigidBodyComponent]);
-
-    const auto camera_speed = 3.0f * delta_frame_time;
-    for (u32 i = 0; i < arch_view.player_cached_archetype->entity_count; ++i) {
-        const auto entity = arch_view.player_cached_archetype->entities[i];
-        EntityLocation& entity_location =
-            world.entity_locations[get_id(entity)];
-        Beholder* player_view = &components_view.player_views[i];
-        Move* player_move = &components_view.player_moves[i];
-        ColliderFlags* player_collider_flags =
-            &components_view.player_collider_flags[i];
-        RigidBody* player_rigid_body = &components_view.player_rigid_body[i];
-        for (i32 n = 0; n < 6; ++n) {
-            Vector<f32, 3> right;
-            Vector<f32, 3> forward;
-            switch (input_stack[n]) {
-                case EventKind::MoveLeft:
-                    right = calculate_vector_rl(*player_view);
-                    player_move->frame_movement -= right * camera_speed;
-                    entity_location.is_dirty = true;
-                    break;
-                case EventKind::MoveRight:
-                    right = calculate_vector_rl(*player_view);
-                    player_move->frame_movement += right * camera_speed;
-                    entity_location.is_dirty = true;
-                    break;
-                case EventKind::MoveBackward:
-                    forward = calculate_vector_fb(*player_view, global_event);
-                    player_move->frame_movement -= forward * camera_speed;
-                    entity_location.is_dirty = true;
-                    break;
-                case EventKind::MoveForward:
-                    forward = calculate_vector_fb(*player_view, global_event);
-                    player_move->frame_movement += forward * camera_speed;
-                    entity_location.is_dirty = true;
-                    break;
-                case EventKind::Jump: {
-                    entity_location.is_dirty = true;
-                    u8 is_ground_collision_mask =
-                        (0u << 0) | (1u << 1) | (0u << 2) | (0u << 3);
-                    if (player_collider_flags->flags
-                        & is_ground_collision_mask) {
-                        player_rigid_body->jump_accumulator = 1.5f;
-                    }
-                } break;
-                default:
-                    break;
-            }
-        }
-    }
-
-    rigid_body_contained_archetypes_number = 0;
-    world.search_cache_archetypes(
-        rigid_body_required_mask,
-        arch_view.rigid_body_contained_archetypes_cache,
-        rigid_body_contained_archetypes_number
-    );
-
-    for (u32 i0 = 0; i0 < rigid_body_contained_archetypes_number; ++i0) {
-        Archetype* current_arch =
-            arch_view.rigid_body_contained_archetypes_cache[i0];
-        components_view.transforms = as<Transform*>(
-            current_arch->components[ComponentsIndices::TransformComponent]
-        );
-        components_view.rigid_bodies = as<RigidBody*>(
-            current_arch->components[ComponentsIndices::RigidBodyComponent]
-        );
-        components_view.moves = as<Move*>(
-            current_arch->components[ComponentsIndices::MoveComponent]
-        );
-        components_view.items = as<Item*>(
-            current_arch->components[ComponentsIndices::ItemComponent]
-        );
-
-        for (u32 i1 = 0; i1 < current_arch->entity_count; ++i1) {
-            const auto entity = current_arch->entities[i1];
-            EntityLocation& entity_location =
-                world.entity_locations[get_id(entity)];
-            entity_location.is_dirty = true;
-
-            if (components_view.items && !components_view.items[i1].is_actor) {
-                continue;
-            }
-
-            Transform* transform_component = &components_view.transforms[i1];
-            RigidBody* rigid_body_component = &components_view.rigid_bodies[i1];
-            Move* move_component = &components_view.moves[i1];
-            transform_component->gravity_accumulator += delta_frame_time;
-            f32 gravity = 9.8f * transform_component->gravity_accumulator
-                * rigid_body_component->mass * 0.0005f;
-            if (gravity > 0.2f) {
-                gravity = 0.2f;
-            }
-
-            move_component->gravity[1] -= gravity;
-        }
-    }
-}
-
-auto MovementSystem::calculate_vector_rl(Beholder& beholder) -> Vector<f32, 3> {
-    Vector<f32, 3> normalized_vector =
-        normalize(cross(beholder.forward, Vector<f32, 3> {0.0f, -1.0f, 0.0f}));
-    return normalized_vector;
-}
-
-auto MovementSystem::calculate_vector_fb(Beholder& beholder, Event& event)
-    -> Vector<f32, 3> {
-    Vector<f32, 3> forward(0.0f);
-    current_x = as<f32>(global_event.mouse_pointer_position.offset_x);
-    f32 delta_x = current_x - prev_x;
-    const Vector<f32, 3> rotate_axis = {0.0f, -1.0f, 0.0f};
-    f32 rotation_angle = delta_x;
-    constexpr auto ANGLE_SCALE = 0.1f;
-    rotation_angle = radians(rotation_angle * ANGLE_SCALE);
-    // Quaternions need division by 2.
-    constexpr auto QUAT_ANGLE_CORRECTION = 0.5f;
-    const auto sin_rotation_angle =
-        sinf(rotation_angle * QUAT_ANGLE_CORRECTION);
-    Quaternion rotation_quat = Quaternion(
-        cosf(rotation_angle * QUAT_ANGLE_CORRECTION),
-        sin_rotation_angle * rotate_axis[0],
-        sin_rotation_angle * rotate_axis[1],
-        sin_rotation_angle * rotate_axis[2]
-    );
-    const Quaternion applied_rotation_quat = (rotation_quat
-                                              * Quaternion(
-                                                  0.0f,
-                                                  beholder.forward[0],
-                                                  beholder.forward[1],
-                                                  beholder.forward[2]
-                                              ))
-        * conjugate(rotation_quat);
-
-    forward[0] = applied_rotation_quat.x;
-    forward[1] = 0.0f;
-    forward[2] = applied_rotation_quat.z;
-    prev_x = as<f32>(global_event.mouse_pointer_position.offset_x);
-    forward = normalize(forward);
-    return forward;
-}
-} // namespace glvm
-
-namespace glvm {
 namespace {
 auto aabb_overlap(
     const Vector<f32, 3>& first_position,
@@ -13069,182 +10959,6 @@ auto PhysicsSystem::update() -> void {
                     Vector<f32, 3> jump =
                         Vector<f32, 3> {0.0f, 5.0f, 0.0f} * frame_step;
                     transform_component.position += jump;
-                }
-            }
-        }
-    }
-}
-} // namespace glvm
-
-namespace glvm {
-ProjectileSystem::ProjectileSystem(EventStack& input_stack) :
-    input_stack(input_stack) {
-}
-
-auto ProjectileSystem::update() -> void {
-    f32 camera_speed = 5.5f * delta_frame_time;
-
-    player_archetypes_number = 0;
-    world.search_cache_archetypes(
-        player_required_mask,
-        &arch_view.player_cached_archetype,
-        player_archetypes_number
-    );
-    components_view.player_transforms =
-        as<Transform*>(arch_view.player_cached_archetype
-                           ->components[ComponentsIndices::TransformComponent]);
-    components_view.player_views =
-        as<Beholder*>(arch_view.player_cached_archetype
-                          ->components[ComponentsIndices::ViewComponent]);
-
-    projectile_archetypes_number = 0;
-    world.search_cache_archetypes(
-        projectile_required_mask,
-        &arch_view.projectile_archetype,
-        projectile_archetypes_number
-    );
-
-    if (projectile_cooldown > 0) {
-        projectile_cooldown -= camera_speed;
-    }
-
-    // Iterate on every player and create projectile if "LMB pressed" event
-    // found.
-    for (u32 i = 0; i < arch_view.player_cached_archetype->entity_count; ++i) {
-        Beholder* player_view = &components_view.player_views[i];
-        Transform* player_transform = &components_view.player_transforms[i];
-        const auto max_event_number = 6;
-        for (u32 n = 0; n < max_event_number; ++n) {
-            if (!is_inventory_opened
-                && input_stack.search_element(EventKind::MouseLeftButton)
-                    == EventKind::MouseLeftButton) {
-                if (projectile_cooldown <= 0) {
-                    MeshHandle mesh_handle {};
-                    const auto sphere_mesh_handle_index = 2;
-                    if (mesh_handles.size() > 2) {
-                        mesh_handle = mesh_handles[sphere_mesh_handle_index];
-                    }
-
-                    TextureHandle texture_handle {};
-                    const auto gray_texture_handle = 2;
-                    if (texture_handlers.size() > 2) {
-                        texture_handle = texture_handlers[gray_texture_handle];
-                    }
-
-                    const Material material = {
-                        .diffuse_texture_id = texture_handle,
-                        .specular_texture_id = texture_handle,
-                        .ambient = {0.05f, 0.05f, 0.05f},
-                        .shininess = 128.0f * 0.078125f
-                    };
-
-                    const Damage damage = {
-                        .maximum_damage = 40,
-                        .minimum_damage = 20,
-                        .critical_hit_rate = 0,
-                        .critical_modifier = 0
-                    };
-
-                    ArchetypeEntityManager* arch_entity_manager =
-                        ArchetypeEntityManager::get_instance();
-                    u64 projectile_entity =
-                        arch_entity_manager->create_entity();
-                    world.add_entity_to_archetype(
-                        projectile_entity,
-                        arch_view.projectile_archetype
-                    );
-                    EntityLocation projectile_location =
-                        world.entity_locations[get_id(projectile_entity)];
-
-                    create_projectile(
-                        player_transform->position,
-                        player_view->forward,
-                        mesh_handle,
-                        material,
-                        damage,
-                        projectile_location
-                    );
-
-                    sound_engine->create_sound_sample(
-                        "../../../examples/assets/sounds/pistol.wav",
-                        5,
-                        22050,
-                        0.05f
-                    );
-                    projectile_cooldown = 2.0f;
-                }
-            }
-        }
-    }
-
-    projectile_archetypes_number = 0;
-    world.search_cache_archetypes(
-        projectile_required_mask,
-        &arch_view.projectile_archetype,
-        projectile_archetypes_number
-    );
-
-    components_view.projectile_transforms =
-        as<Transform*>(arch_view.projectile_archetype
-                           ->components[ComponentsIndices::TransformComponent]);
-    components_view.projectile_collider_flags = as<ColliderFlags*>(
-        arch_view.projectile_archetype
-            ->components[ComponentsIndices::ColliderFlagsComponent]
-    );
-    components_view.projectile_colliders =
-        as<Collider*>(arch_view.projectile_archetype
-                          ->components[ComponentsIndices::ColliderComponent]);
-    components_view.projectile_bundles = as<ProjectileBundle*>(
-        arch_view.projectile_archetype
-            ->components[ComponentsIndices::ProjectileBundleComponent]
-    );
-    components_view.projectile_health =
-        as<Health*>(arch_view.projectile_archetype
-                        ->components[ComponentsIndices::HealthComponent]);
-    components_view.projectile_attacks =
-        as<Attack*>(arch_view.projectile_archetype
-                        ->components[ComponentsIndices::AttackComponent]);
-
-    // Update position of every projectile.
-    for (u32 x = 0; x < arch_view.projectile_archetype->entity_count; ++x) {
-        Transform* projectile_transform =
-            &components_view.projectile_transforms[x];
-        projectile_transform->position +=
-            normalize(projectile_transform->forward) * camera_speed * 2.5f;
-    }
-    // Iterate every projectile, check for collisions with another entities and
-    // update damage info if collided entity has attack component.
-    for (u32 i = 0; i < arch_view.projectile_archetype->entity_count; ++i) {
-        ColliderFlags* projectile_collider_flags =
-            &components_view.projectile_collider_flags[i];
-        Health* projectile_health = &components_view.projectile_health[i];
-        Attack* projectile_attack = &components_view.projectile_attacks[i];
-        const auto wall_collision_bit = 1;
-        const auto ground_collision_bit = (1 << 1);
-        if ((projectile_collider_flags->flags & wall_collision_bit)
-            || (projectile_collider_flags->flags & ground_collision_bit)) {
-            Damage* projectile_damage =
-                &components_view.projectile_bundles[i].damage;
-            Collider* projectile_collider =
-                &components_view.projectile_colliders[i];
-            for (u32 j = 0; j < projectile_collider->colliders.size(); ++j) {
-                u32 collided_entity = projectile_collider->colliders[j];
-
-                EntityLocation collided_entity_location =
-                    world.entity_locations[get_id(collided_entity)];
-                u64 required_mask = (1ul << ComponentsIndices::HealthComponent)
-                    | (1ul << ComponentsIndices::AttackComponent);
-
-                if ((collided_entity_location.arch != nullptr)
-                    && (collided_entity_location.arch->mask & required_mask)
-                        == required_mask) {
-                    Attack* attacks = as<Attack*>(
-                        collided_entity_location.arch
-                            ->components[ComponentsIndices::AttackComponent]
-                    );
-                    attacks[collided_entity_location.index].damage =
-                        projectile_damage->maximum_damage;
-                    projectile_health->current_health = 0;
                 }
             }
         }
