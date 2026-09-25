@@ -1,0 +1,74 @@
+name: Documentation
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  CPM_SOURCE_CACHE: ${{ github.workspace }}/.cpm-cache
+
+jobs:
+  build:
+    name: Build Doxygen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install GCC 16 + Doxygen + Wayland/X11/XCB/ALSA deps
+        run: |
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+          sudo apt-get update
+          sudo apt-get install -y gcc-16 g++-16 doxygen graphviz ninja-build \
+            libwayland-dev libwayland-bin libasound2-dev \
+            libx11-dev libxcb1-dev libxcb-cursor-dev libxcb-keysyms1-dev \
+            glslang-tools
+
+      - uses: actions/cache@v6
+        with:
+          path: ${{ env.CPM_SOURCE_CACHE }}
+          key: cpm-docs-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+          restore-keys: cpm-docs-
+
+      - name: Configure
+        run: |
+          cmake --preset debug \
+            -DGLVM_BUILD_DOCS=ON \
+            -DGLVM_SANITIZERS=OFF \
+            -DCMAKE_C_COMPILER=gcc-16 \
+            -DCMAKE_CXX_COMPILER=g++-16
+
+      - name: Build docs
+        run: cmake --build --preset debug --target docs
+
+      - name: Setup Pages
+        if: github.event.repository.visibility == 'public'
+        uses: actions/configure-pages@v6
+
+      - name: Upload artifact
+        if: github.event.repository.visibility == 'public'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: build/debug/docs/html
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: github.event.repository.visibility == 'public'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v5

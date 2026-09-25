@@ -32,15 +32,13 @@ if(volk_ADDED)
   if(WIN32)
     target_compile_definitions(volk PUBLIC VK_USE_PLATFORM_WIN32_KHR)
   elseif(UNIX AND NOT APPLE)
-    # Exactly one Linux backend: glvm.hpp picks the window class and the
-    # VkSurface creator from this macro.
-    if(GLVM_WINDOW_SYSTEM STREQUAL "X11")
-      target_compile_definitions(volk PUBLIC VK_USE_PLATFORM_XLIB_KHR)
-    elseif(GLVM_WINDOW_SYSTEM STREQUAL "XCB")
-      target_compile_definitions(volk PUBLIC VK_USE_PLATFORM_XCB_KHR)
-    else()
-      target_compile_definitions(volk PUBLIC VK_USE_PLATFORM_WAYLAND_KHR)
-    endif()
+    # Every Linux backend is built; Renderer picks one at runtime
+    # (GLVM_WINDOW_SYSTEM=wayland|x11|xcb overrides), like GLFW/SDL do.
+    target_compile_definitions(volk PUBLIC
+      VK_USE_PLATFORM_WAYLAND_KHR
+      VK_USE_PLATFORM_XLIB_KHR
+      VK_USE_PLATFORM_XCB_KHR
+    )
   endif()
 endif()
 

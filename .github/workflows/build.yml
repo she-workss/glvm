@@ -1,69 +1,351 @@
-name: build
+name: Build & Test
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+env:
+  CPM_SOURCE_CACHE: ${{ github.workspace }}/.cpm-cache
 
 jobs:
-  linux:
-    name: linux-${{ matrix.runner }}-${{ matrix.backend }}
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        runner: [ubuntu-24.04, ubuntu-24.04-arm]
-        backend: [WAYLAND, X11, XCB]
+  linux-gcc-x64:
+    name: Linux - GCC 16 (x86_64)
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - name: Install dependencies
+      - name: Install GCC 16 + lld + Wayland/X11/XCB/ALSA deps
         run: |
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            gcc-14 g++-14 ninja-build pkg-config \
+          sudo apt-get install -y gcc-16 g++-16 lld ninja-build \
             libwayland-dev libwayland-bin libasound2-dev \
             libx11-dev libxcb1-dev libxcb-cursor-dev libxcb-keysyms1-dev \
             glslang-tools
 
+      - uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: linux-gcc-x64-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+
+      - uses: actions/cache@v6
+        with:
+          path: ${{ env.CPM_SOURCE_CACHE }}
+          key: cpm-linux-gcc-x64-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+          restore-keys: cpm-linux-gcc-x64-
+
       - name: Configure
-        run: >
-          cmake -S . -B build -G Ninja
-          -DCMAKE_BUILD_TYPE=Debug
-          -DCMAKE_C_COMPILER=gcc-14
-          -DCMAKE_CXX_COMPILER=g++-14
-          -DGLVM_WINDOW_SYSTEM=${{ matrix.backend }}
-          -DGLVM_BUILD_DOCS=OFF
-          -DGLVM_SANITIZERS=OFF
+        run: |
+          cmake --preset debug \
+            -DGLVM_BUILD_DOCS=OFF \
+            -DGLVM_SANITIZERS=OFF \
+            -DCMAKE_C_COMPILER=gcc-16 \
+            -DCMAKE_CXX_COMPILER=g++-16 \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld"
 
       - name: Build
-        run: cmake --build build --parallel
+        run: cmake --build --preset debug
 
-  windows:
-    name: windows-${{ matrix.arch }}
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runner: windows-latest
-            arch: x64
-          - runner: windows-11-arm
-            arch: ARM64
+      - name: Test
+        run: ctest --preset debug
+
+  linux-clang-x64:
+    name: Linux - Clang 23 (x86_64)
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      # No -G/-A: the default Visual Studio generator uses the runner's host
-      # arch (x64 on windows-latest, ARM64 on windows-11-arm).
+      - name: Install Clang 23 + libc++ + lld + Wayland/X11/XCB/ALSA deps
+        run: |
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key \
+            | sudo tee /etc/apt/trusted.gpg.d/llvm.asc
+          . /etc/os-release
+          echo "deb http://apt.llvm.org/${VERSION_CODENAME}/ llvm-toolchain-${VERSION_CODENAME}-23 main" \
+            | sudo tee /etc/apt/sources.list.d/llvm-23.list
+          sudo apt-get update
+          sudo apt-get install -y clang-23 lld-23 libc++-23-dev libc++abi-23-dev ninja-build \
+            libwayland-dev libwayland-bin libasound2-dev \
+            libx11-dev libxcb1-dev libxcb-cursor-dev libxcb-keysyms1-dev \
+            glslang-tools
+
+      - uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: linux-clang-x64-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+
+      - uses: actions/cache@v6
+        with:
+          path: ${{ env.CPM_SOURCE_CACHE }}
+          key: cpm-linux-clang-x64-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+          restore-keys: cpm-linux-clang-x64-
+
       - name: Configure
-        run: >
-          cmake -S . -B build
-          -DGLVM_BUILD_DOCS=OFF
-          -DGLVM_SANITIZERS=OFF
+        run: |
+          cmake --preset debug \
+            -DGLVM_BUILD_DOCS=OFF \
+            -DGLVM_SANITIZERS=OFF \
+            -DCMAKE_C_COMPILER=clang-23 \
+            -DCMAKE_CXX_COMPILER=clang++-23 \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld-23 -stdlib=libc++"
 
       - name: Build
-        run: cmake --build build --config Debug --parallel
+        run: cmake --build --preset debug
+
+      - name: Test
+        run: ctest --preset debug
+
+  linux-gcc-arm64:
+    name: Linux - GCC 16 (aarch64)
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install GCC 16 + lld + Wayland/X11/XCB/ALSA deps
+        run: |
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+          sudo apt-get update
+          sudo apt-get install -y gcc-16 g++-16 lld ninja-build \
+            libwayland-dev libwayland-bin libasound2-dev \
+            libx11-dev libxcb1-dev libxcb-cursor-dev libxcb-keysyms1-dev \
+            glslang-tools
+
+      - uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: linux-gcc-arm64-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+
+      - uses: actions/cache@v6
+        with:
+          path: ${{ env.CPM_SOURCE_CACHE }}
+          key: cpm-linux-gcc-arm64-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+          restore-keys: cpm-linux-gcc-arm64-
+
+      - name: Configure
+        run: |
+          cmake --preset debug \
+            -DGLVM_BUILD_DOCS=OFF \
+            -DGLVM_SANITIZERS=OFF \
+            -DCMAKE_C_COMPILER=gcc-16 \
+            -DCMAKE_CXX_COMPILER=g++-16 \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld"
+
+      - name: Build
+        run: cmake --build --preset debug
+
+      - name: Test
+        run: ctest --preset debug
+
+  linux-clang-arm64:
+    name: Linux - Clang 23 (aarch64)
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Clang 23 + libc++ + lld + Wayland/X11/XCB/ALSA deps
+        run: |
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key \
+            | sudo tee /etc/apt/trusted.gpg.d/llvm.asc
+          . /etc/os-release
+          echo "deb http://apt.llvm.org/${VERSION_CODENAME}/ llvm-toolchain-${VERSION_CODENAME}-23 main" \
+            | sudo tee /etc/apt/sources.list.d/llvm-23.list
+          sudo apt-get update
+          sudo apt-get install -y clang-23 lld-23 libc++-23-dev libc++abi-23-dev ninja-build \
+            libwayland-dev libwayland-bin libasound2-dev \
+            libx11-dev libxcb1-dev libxcb-cursor-dev libxcb-keysyms1-dev \
+            glslang-tools
+
+      - uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: linux-clang-arm64-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+
+      - uses: actions/cache@v6
+        with:
+          path: ${{ env.CPM_SOURCE_CACHE }}
+          key: cpm-linux-clang-arm64-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+          restore-keys: cpm-linux-clang-arm64-
+
+      - name: Configure
+        run: |
+          cmake --preset debug \
+            -DGLVM_BUILD_DOCS=OFF \
+            -DGLVM_SANITIZERS=OFF \
+            -DCMAKE_C_COMPILER=clang-23 \
+            -DCMAKE_CXX_COMPILER=clang++-23 \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld-23 -stdlib=libc++"
+
+      - name: Build
+        run: cmake --build --preset debug
+
+      - name: Test
+        run: ctest --preset debug
+
+  windows-gcc-x64:
+    name: Windows - GCC (MSYS2 UCRT64)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            git
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-lld
+            mingw-w64-ucrt-x86_64-ccache
+
+      - uses: actions/cache@v6
+        with:
+          path: ${{ env.CPM_SOURCE_CACHE }}
+          key: cpm-windows-gcc-x64-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+          restore-keys: cpm-windows-gcc-x64-
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.ccache
+          key: ccache-windows-gcc-x64-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+          restore-keys: ccache-windows-gcc-x64-
+
+      - name: Configure
+        run: |
+          cmake --preset debug \
+            -DGLVM_BUILD_DOCS=OFF \
+            -DGLVM_SANITIZERS=OFF \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld"
+
+      - name: Build
+        run: cmake --build --preset debug
+
+      - name: Test
+        run: ctest --preset debug
+
+  windows-clang-x64:
+    name: Windows - Clang (MSYS2 CLANG64)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: CLANG64
+          update: true
+          install: >-
+            git
+            mingw-w64-clang-x86_64-clang
+            mingw-w64-clang-x86_64-cmake
+            mingw-w64-clang-x86_64-ninja
+            mingw-w64-clang-x86_64-lld
+            mingw-w64-clang-x86_64-ccache
+
+      - uses: actions/cache@v6
+        with:
+          path: ${{ env.CPM_SOURCE_CACHE }}
+          key: cpm-windows-clang-x64-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+          restore-keys: cpm-windows-clang-x64-
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.ccache
+          key: ccache-windows-clang-x64-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+          restore-keys: ccache-windows-clang-x64-
+
+      - name: Configure
+        run: |
+          cmake --preset debug-clang \
+            -DGLVM_BUILD_DOCS=OFF \
+            -DGLVM_SANITIZERS=OFF \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld"
+
+      - name: Build
+        run: cmake --build --preset debug-clang
+
+      - name: Test
+        run: ctest --preset debug-clang
+
+  windows-msvc-x64:
+    name: Windows - MSVC (x86_64)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - uses: mozilla-actions/sccache-action@v0.0.11
+
+      - uses: actions/cache@v6
+        with:
+          path: ${{ env.CPM_SOURCE_CACHE }}
+          key: cpm-windows-msvc-x64-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+          restore-keys: cpm-windows-msvc-x64-
+
+      - name: Configure
+        shell: pwsh
+        run: |
+          cmake --preset debug-msvc `
+            -DGLVM_BUILD_DOCS=OFF `
+            -DGLVM_SANITIZERS=OFF `
+            -DCMAKE_C_COMPILER_LAUNCHER=sccache `
+            -DCMAKE_CXX_COMPILER_LAUNCHER=sccache `
+            -DCMAKE_LINKER=lld-link `
+            -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded
+
+      - name: Build
+        shell: pwsh
+        run: cmake --build --preset debug-msvc
+
+      - name: Test
+        shell: pwsh
+        run: ctest --preset debug-msvc
+
+  windows-msvc-arm64:
+    name: Windows - MSVC (aarch64)
+    runs-on: windows-11-arm
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: arm64
+
+      - uses: mozilla-actions/sccache-action@v0.0.11
+
+      - uses: actions/cache@v6
+        with:
+          path: ${{ env.CPM_SOURCE_CACHE }}
+          key: cpm-windows-msvc-arm64-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+          restore-keys: cpm-windows-msvc-arm64-
+
+      - name: Configure
+        shell: pwsh
+        run: |
+          cmake --preset debug-msvc `
+            -DGLVM_BUILD_DOCS=OFF `
+            -DGLVM_SANITIZERS=OFF `
+            -DCMAKE_C_COMPILER_LAUNCHER=sccache `
+            -DCMAKE_CXX_COMPILER_LAUNCHER=sccache `
+            -DCMAKE_LINKER=lld-link `
+            -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded
+
+      - name: Build
+        shell: pwsh
+        run: cmake --build --preset debug-msvc
+
+      - name: Test
+        shell: pwsh
+        run: ctest --preset debug-msvc
