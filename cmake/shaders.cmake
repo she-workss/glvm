@@ -9,10 +9,31 @@ find_program(
   HINTS "$ENV{VULKAN_SDK}/bin" "$ENV{VULKAN_SDK}/Bin"
 )
 if(NOT GLVM_GLSLANG_VALIDATOR)
-  message(
-    FATAL_ERROR
-    "glslangValidator not found. Install the Vulkan SDK or put it on PATH."
+  # No Vulkan SDK around (e.g. plain MSVC): build the reference compiler.
+  # ENABLE_OPT stays off so no SPIRV-Tools checkout is needed; -V -g do not
+  # use the optimizer.
+  message(STATUS "glslangValidator not found, building glslang via CPM")
+  set(CMAKE_MESSAGE_LOG_LEVEL_BACKUP ${CMAKE_MESSAGE_LOG_LEVEL})
+  set(CMAKE_MESSAGE_LOG_LEVEL WARNING)
+  CPMAddPackage(
+    NAME glslang
+    GITHUB_REPOSITORY KhronosGroup/glslang
+    GIT_TAG vulkan-sdk-1.4.357.0
+    OPTIONS
+      "BUILD_TESTING OFF"
+      "ENABLE_OPT OFF"
+      "SKIP_GLSLANG_INSTALL ON"
   )
+  set(CMAKE_MESSAGE_LOG_LEVEL ${CMAKE_MESSAGE_LOG_LEVEL_BACKUP})
+  if(NOT TARGET glslang-standalone)
+    message(
+      FATAL_ERROR
+      "glslang-standalone target missing after building glslang."
+    )
+  endif()
+  # Recent glslang renamed the glslangValidator binary to glslang; the
+  # -V -g <src> -o <out> interface is unchanged.
+  set(GLVM_GLSLANG_VALIDATOR "$<TARGET_FILE:glslang-standalone>")
 endif()
 
 set(GLVM_SHADER_SRC_DIR ${PROJECT_SOURCE_DIR}/crates/glvm/assets/shaders)
@@ -25,6 +46,8 @@ set(_glvm_shaders
   "cube_shadow_map/cubeShadowMap.frag=fragCubeShadowMap.spv"
   "debug/debug.vert=debug_vert.spv"
   "debug/debug.frag=debug_frag.spv"
+  "debug/math_objects.vert=math_objects_vert.spv"
+  "debug/math_objects.frag=math_objects_frag.spv"
   "flat_shadow_map/flatShadowMap.vert=vertFlatShadowMap.spv"
   "flat_shadow_map/flatShadowMap.frag=fragFlatShadowMap.spv"
   "font/font_shader.vert=font_vert.spv"

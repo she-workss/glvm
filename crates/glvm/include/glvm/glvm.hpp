@@ -43,6 +43,9 @@
 #include <type_traits>
 #include <vector>
 #include <vulkan/vulkan_core.h>
+// volk provides every vk* function pointer (VK_NO_PROTOTYPES is set on the
+// glvm target); the loader is initialized in Renderer::init_vulkan.
+#include <volk.h>
 
 #ifdef _WIN32
 #include <cwchar>
@@ -168,6 +171,11 @@ constexpr auto WGL_TYPE_RGBA_ARB = 0x202B;
 namespace glvm {
 constexpr auto ENTITY_BITS_MASK = (1ull << ENTITY_ID_BITS) - 1;
 
+// Component indices owned by the engine. Games define their own indices
+// starting at 32 (see GameComponentsIndices in the game); both share the
+// 64-bit archetype mask, so every index must stay below MAX_COMPONENTS.
+constexpr usize MAX_COMPONENTS = 64;
+
 struct ComponentsIndices {
     enum Types : u32 {
         TransformComponent,
@@ -178,36 +186,15 @@ struct ComponentsIndices {
         ColliderFlagsComponent,
         MaterialComponent,
         ViewComponent,
-        HealthComponent,
         AnimationComponent,
-        StateComponent,
-        EnemyComponent,
-        DamageComponent,
-        AttackComponent,
-        InventoryComponent,
         DirectionalLightComponent,
         SpotLightComponent,
         PointLightComponent,
-        ItemComponent,
-        MoveComponent,
-        ProjectileBundleComponent,
-        RotationComponent,
-
-        LevelChunkTagComponent,
-        PlayerTagComponent,
-        CrosshairTagComponent,
-        StaticMeshTagComponent,
-        ProjectileTagComponent,
+        MeshGenerationComponent,
 
         ComponentsCount,
     };
 };
-
-// Game archetype masks live in the game (see examples/hello_world.cpp).
-}; // namespace glvm
-
-namespace glvm {
-struct Actor {};
 } // namespace glvm
 
 namespace glvm {
@@ -219,11 +206,7 @@ struct Animation {
 
 namespace glvm {}
 
-namespace glvm {
-struct Attack {
-    f32 damage;
-};
-} // namespace glvm
+namespace glvm {}
 
 namespace glvm {
 struct Collider {
@@ -241,62 +224,10 @@ struct ColliderFlags {
 }; // namespace glvm
 
 namespace glvm {
-struct Controller {};
-
-struct CameraComponent {};
-} // namespace glvm
-
-namespace glvm {
-struct Damage {
-    f32 maximum_damage;
-    f32 minimum_damage;
-    f32 critical_hit_rate;
-    f32 critical_modifier;
-};
-} // namespace glvm
-
-namespace glvm {
 struct Font {
     Vec<char> font_string;
     f32 lifetime;
     bool removable;
-};
-} // namespace glvm
-
-namespace glvm {
-struct Health {
-    f32 max_health;
-    f32 current_health;
-};
-} // namespace glvm
-
-namespace glvm {
-struct Hud {
-    bool hud = false;
-    bool gltf = true;
-};
-}; // namespace glvm
-
-namespace glvm {
-struct InterfaceUi {};
-}; // namespace glvm
-
-namespace glvm {
-struct Physics {
-    f32 gravity_accumulator = 0.0f;
-};
-}; // namespace glvm
-
-namespace glvm {
-struct Rotation {
-    f32 yaw = 0.0f;
-    f32 pitch = 0.0f;
-};
-}; // namespace glvm
-
-namespace glvm {
-struct TextureComponent {
-    u32 id;
 };
 } // namespace glvm
 
@@ -312,10 +243,19 @@ struct Mesh {
 } // namespace glvm
 
 constexpr auto INVALID_ENTITY_ID = 4000000000;
-constexpr Array<i32, 36> BOX_INDICES_FOR_INDEX_BUFFER = {0, 1, 2, 3, 0, 2, 4, 0, 3,
-                                                  7, 4, 3, 4, 5, 1, 0, 4, 1,
-                                                  1, 5, 6, 2, 1, 6, 5, 4, 7,
-                                                  6, 5, 7, 3, 2, 6, 7, 3, 6};
+constexpr Array<i32, 36> BOX_INDICES_FOR_INDEX_BUFFER = {
+    0, 1, 2, 3, 0, 2, 4, 0, 3, 7, 4, 3, 4, 5, 1, 0, 4, 1,
+    1, 5, 6, 2, 1, 6, 5, 4, 7, 6, 5, 7, 3, 2, 6, 7, 3, 6
+};
+
+// Index buffers of the generated math-object primitives. The math-objects
+// pipeline draws lines, so the box uses its edge list.
+constexpr Array<i32, 3> TRIANGLE_INDEX_BUFFER_DATA = {0, 1, 2};
+constexpr Array<i32, 2> VECTOR_INDEX_BUFFER_DATA = {0, 1};
+constexpr Array<i32, 8> PLANE_INDEX_BUFFER_DATA = {0, 1, 1, 2, 2, 3, 3, 0};
+constexpr Array<i32, 24> BOX_INDEX_BUFFER_DATA_LINE_MODE = {
+    0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 4, 1, 5, 2, 6, 3, 7
+};
 
 namespace glvm {
 
@@ -1604,6 +1544,17 @@ auto cross(const Vector<T, 3>& lhs, const Vector<T, 3>& rhs) -> Vector<T, 3> {
     );
 }
 
+/// 2D cross product (the z component of the 3D cross): positive when
+/// turning from lhs toward rhs is counter-clockwise.
+///
+/// @param lhs First vector.
+/// @param rhs Second vector.
+/// @return Signed area of the parallelogram spanned by the vectors.
+template<typename T>
+auto cross(const Vector<T, 2>& lhs, const Vector<T, 2>& rhs) -> T {
+    return lhs[0] * rhs[1] - lhs[1] * rhs[0];
+}
+
 template<typename T>
 auto dot(const Vector<T, 3>& lhs, const Vector<T, 3>& rhs) -> T {
     return (lhs[0] * rhs[0] + lhs[1] * rhs[1] + lhs[2] * rhs[2]);
@@ -1636,6 +1587,23 @@ auto normalize(Vector<T, 3> other) -> Vector<T, 3> {
         other[l] = other[l] / range;
     }
     return other;
+}
+
+/// Y-axis rotation matrix for mesh facing, in the same column layout the
+/// renderer uploads to the GPU. Rotating (0, 0, -1) by -pi/2 yields
+/// (1, 0, 0), matching the facing math that snaps forward toward movement.
+///
+/// @param yaw Rotation angle in radians around the Y axis.
+/// @return Rotation matrix, identity at zero.
+[[nodiscard]] inline auto rotation_yaw_matrix(f32 yaw) -> Matrix<f32, 4> {
+    const auto cos_yaw = std::cos(yaw);
+    const auto sin_yaw = std::sin(yaw);
+    Matrix<f32, 4> rotation(1.0f);
+    rotation[0][0] = cos_yaw;
+    rotation[0][2] = -sin_yaw;
+    rotation[2][0] = sin_yaw;
+    rotation[2][2] = cos_yaw;
+    return rotation;
 }
 
 template<typename T>
@@ -2263,9 +2231,9 @@ private:
 public:
     TimerWin();
 
-    auto init_frequency() -> f64;
-    auto reset() -> f64;
-    auto get_elapsed() -> f64;
+    auto init_frequency() -> f64 override;
+    auto reset() -> f64 override;
+    auto get_elapsed() -> f64 override;
 };
 } // namespace glvm
 #endif // _WIN32
@@ -2280,8 +2248,7 @@ struct SoundSample {
 
 struct SoundEngine {
 public:
-    virtual ~SoundEngine() {
-    }
+    virtual ~SoundEngine() = default;
 
     virtual auto open_device(const char* device) -> void = 0;
     virtual auto close_device() -> void = 0;
@@ -2307,8 +2274,7 @@ struct ComponentTypeInfo {
     void (*move_assign)(void* dst, void* src) = nullptr;
 };
 
-extern Array<ComponentTypeInfo, ComponentsIndices::ComponentsCount>
-    COMPONENT_TYPE_INFOS;
+extern Array<ComponentTypeInfo, MAX_COMPONENTS> COMPONENT_TYPE_INFOS;
 
 auto register_component_move(u32 component_id, ComponentTypeInfo info) -> void;
 
@@ -2332,9 +2298,9 @@ struct Archetype {
 
     Array<u64, CAPACITY> entities;
     u32 entity_count = 0;
-    Array<u32, ComponentsIndices::ComponentsCount> component_ids = {};
+    Array<u32, MAX_COMPONENTS> component_ids = {};
     u32 component_count = 0;
-    Array<void*, ComponentsIndices::ComponentsCount> components = {};
+    Array<void*, MAX_COMPONENTS> components = {};
     u64 mask = 0;
 
     auto add_entity(u64 entity) -> u32;
@@ -2374,21 +2340,21 @@ struct Material {
 } // namespace glvm
 
 namespace glvm {
-struct Move {
-    EventKind event = EventKind::Default;
-    Vector<f32, 3> frame_movement {0.0f, 0.0f, 0.0f};
-    Vector<f32, 3> gravity {0.0f, 0.0f, 0.0f};
+/// Generated debug mesh for a math object.
+struct MeshGeneration {
+    /// Source vertices; the engine picks the index buffer from the count.
+    Vec<Vector<f32, 3>> vertices;
+    /// Index of the generated mesh, assigned by the engine at startup.
+    u32 mesh_id = 0;
 };
 } // namespace glvm
 
 namespace glvm {
 struct PointLightComponent {
     Vector<f32, 3> position;
-
     Vector<f32, 3> ambient;
     Vector<f32, 3> diffuse;
     Vector<f32, 3> specular;
-
     f32 constant;
     f32 linear;
     f32 quadratic;
@@ -2407,16 +2373,14 @@ namespace glvm {
 struct SpotLightComponent {
     Vector<f32, 3> position;
     Vector<f32, 3> direction;
-    f32 cut_off;
-    f32 outer_cut_off;
-
+    f32 cut_off {};
+    f32 outer_cut_off {};
     Vector<f32, 3> ambient;
     Vector<f32, 3> diffuse;
     Vector<f32, 3> specular;
-
-    f32 constant;
-    f32 linear;
-    f32 quadratic;
+    f32 constant {};
+    f32 linear {};
+    f32 quadratic {};
 };
 } // namespace glvm
 
@@ -2455,7 +2419,7 @@ enum JsonType {
 struct JsonValue;
 
 union JsonVariant {
-    String* string;
+    String* string {};
     f64 float_number;
     i32 int_number;
     bool boolean;
@@ -2478,33 +2442,26 @@ struct JsonValue {
     JsonVariant value;
     JsonType type;
 
-    JsonValue() {
-        type = JsonInvalidValue;
+    JsonValue() : type(JsonInvalidValue) {
     }
 
-    JsonValue(String str) {
-        type = JsonString;
+    JsonValue(String str) : type(JsonString) {
         value.string = new String(str);
     }
 
-    JsonValue(f64 number) {
-        type = JsonFloatNumber;
+    JsonValue(f64 number) : type(JsonFloatNumber) {
         value.float_number = number;
     }
 
-    JsonValue(i32 number) {
-        type = JsonIntegerNumber;
+    JsonValue(i32 number) : type(JsonIntegerNumber) {
         value.int_number = number;
     }
 
-    JsonValue(bool flag) {
-        type = JsonBoolean;
+    JsonValue(bool flag) : type(JsonBoolean) {
         value.boolean = flag;
     }
 
-    JsonValue(const JsonValue& other) {
-        type = JsonInvalidValue;
-
+    JsonValue(const JsonValue& other) : type(JsonInvalidValue) {
         switch (other.type) {
             case JsonObject:
                 value.object =
@@ -2541,19 +2498,19 @@ struct JsonValue {
             case JsonObject:
                 delete value.object;
                 break;
+            case JsonString:
+                delete value.string;
+                break;
+            case JsonArray:
+                delete value.array;
+                break;
             case JsonIntegerNumber:
                 break;
             case JsonFloatNumber:
                 break;
-            case JsonString:
-                delete value.string;
-                break;
             case JsonBoolean:
                 break;
             case JsonNull:
-                break;
-            case JsonArray:
-                delete value.array;
                 break;
         }
     }
@@ -2565,19 +2522,19 @@ struct JsonValue {
             case JsonObject:
                 delete value.object;
                 break;
+            case JsonString:
+                delete value.string;
+                break;
+            case JsonArray:
+                delete value.array;
+                break;
             case JsonIntegerNumber:
                 break;
             case JsonFloatNumber:
                 break;
-            case JsonString:
-                delete value.string;
-                break;
             case JsonBoolean:
                 break;
             case JsonNull:
-                break;
-            case JsonArray:
-                delete value.array;
                 break;
         }
 
@@ -2675,8 +2632,8 @@ private:
     Vec<JsonValue*> stack_of_json_values;
     JsonValue* root;
     bool key_flag = true;
-    String last_key = "";
-    String buffer_string = "";
+    String last_key;
+    String buffer_string;
 
     auto search_in_json_array(
         Vec<JsonValue>* array_value,
@@ -2734,10 +2691,9 @@ public:
 namespace glvm {
 struct LightSpaceMatrixUBO {
     alignas(16) Matrix<f32, 4> spot_space_matrix[SPOT_LIGHTS_NUMBER];
-    alignas(16) u32 spot_lights_number;
-
+    alignas(16) u32 spot_lights_number {};
     alignas(16) Matrix<f32, 4> dir_space_matrix[DIRECTIONAL_LIGHTS_NUMBER];
-    alignas(16) u32 directional_lights_number;
+    alignas(16) u32 directional_lights_number {};
 };
 
 struct alignas(64) ModelMatrixUBO {
@@ -2745,15 +2701,12 @@ struct alignas(64) ModelMatrixUBO {
     Matrix<f32, 4> view;
     Matrix<f32, 4> proj;
     Array<Matrix<f32, 4>, MAX_JOINTS_NUMBER> joint_matrices;
-
     Vector<f32, 3> ambient;
-    f32 shininess;
-
+    f32 shininess {};
     alignas(16) Matrix<f32, 4> spot_space_matrix[SPOT_LIGHTS_NUMBER];
-    alignas(16) u32 spot_lights_number;
-
+    alignas(16) u32 spot_lights_number {};
     alignas(16) Matrix<f32, 4> dir_space_matrix[DIRECTIONAL_LIGHTS_NUMBER];
-    alignas(16) u32 directional_lights_number;
+    alignas(16) u32 directional_lights_number {};
 };
 
 struct alignas(16) ShadowMapMatrixUBO {
@@ -2771,19 +2724,18 @@ struct alignas(64) PointLightShadowMapMatrixUBO {
     Matrix<f32, 4> model;
     Matrix<f32, 4> light_space_matrix;
     Vector<f32, 3> light_position;
-    f32 far_plane;
+    f32 far_plane {};
     Array<Matrix<f32, 4>, MAX_JOINTS_NUMBER> joint_matrices;
 };
 
 struct alignas(16) UniformBufferObjectLightUBO {
     Vector<f32, 3> light_position;
-    f32 far_plane;
+    f32 far_plane {};
 };
 
 struct alignas(16) DirectionalLight {
     Vector<f32, 4> position;
     Vector<f32, 4> direction;
-
     Vector<f32, 4> ambient;
     Vector<f32, 4> diffuse;
     Vector<f32, 4> specular;
@@ -2791,77 +2743,65 @@ struct alignas(16) DirectionalLight {
 
 struct alignas(16) PointLight {
     Vector<f32, 3> position;
-    f32 padding0;
-
+    f32 padding0 {};
     Vector<f32, 3> ambient;
-    f32 padding1;
+    f32 padding1 {};
     Vector<f32, 3> diffuse;
-    f32 padding2;
-
+    f32 padding2 {};
     Vector<f32, 3> specular;
-    f32 constant;
-    f32 linear;
-    f32 quadratic;
+    f32 constant {};
+    f32 linear {};
+    f32 quadratic {};
 };
 
 struct alignas(16) SpotLight {
     alignas(16) Vector<f32, 3> position;
     alignas(16) Vector<f32, 3> direction;
-    f32 cut_off;
-    f32 outer_cut_off;
-
+    f32 cut_off {};
+    f32 outer_cut_off {};
     alignas(16) Vector<f32, 3> ambient;
     alignas(16) Vector<f32, 3> diffuse;
     alignas(16) Vector<f32, 3> specular;
-
-    f32 constant;
-    f32 linear;
-    f32 quadratic;
+    f32 constant {};
+    f32 linear {};
+    f32 quadratic {};
 };
 
 struct alignas(64) LightData {
     Vector<f32, 2> tileset_tiles_count;
-    i32 tiles_row;
-    i32 tiles_column;
-
+    i32 tiles_row {};
+    i32 tiles_column {};
     alignas(16) Vector<f32, 3> view_position;
-
     Array<PointLight, POINT_LIGHTS_NUMBER> point_lights;
-    i32 point_lights_array_size;
-    f32 far_plane;
-    i32 padding0;
-    i32 padding1;
-
+    i32 point_lights_array_size {};
+    f32 far_plane {};
+    i32 padding0 {};
+    i32 padding1 {};
     Array<DirectionalLight, DIRECTIONAL_LIGHTS_NUMBER> directional_lights;
-    alignas(16) i32 directional_lights_array_size;
-
+    alignas(16) i32 directional_lights_array_size {};
     Array<SpotLight, SPOT_LIGHTS_NUMBER> spot_lights;
-    i32 spot_light_array_size;
-    i32 padding2;
-    i32 padding3;
-    i32 padding4;
-
-    Array<
-        Vector<i32, 4>,
-        INDIRECT_TEXTURE_WIDTH * INDIRECT_TEXTURE_HEIGHT / 4 + 1>
+    i32 spot_light_array_size {};
+    i32 padding2 {};
+    i32 padding3 {};
+    i32 padding4 {};
+    Array<Vector<i32, 4>, INDIRECT_TEXTURE_WIDTH * INDIRECT_TEXTURE_HEIGHT / 4 + 1>
         indirect_texture;
-
     // Debug: 0 = off, 1 = directional, 2 = spot. When set, the main shader
     // renders the shadow map depth projected onto the scene instead of
     // lighting (visualized from the normal moving camera).
-    i32 debug_shadow_mode;
-    i32 debug_shadow_light;
-    i32 shadows_enabled;
+    i32 debug_shadow_mode {};
+    i32 debug_shadow_light {};
+    i32 shadows_enabled {};
 };
 
 struct alignas(64) HudUbo {
     Matrix<f32, 4> view;
     Matrix<f32, 4> proj;
     Vector<f32, 3> entity_position;
-    i32 hud_exists;
-    f32 max_hp;
-    f32 current_hp;
-    f32 highest_y;
+    i32 hud_exists {};
+    f32 max_hp {};
+    f32 current_hp {};
+    f32 highest_y {};
 };
 
 struct alignas(64) HudScreenUbo {
@@ -2872,7 +2812,7 @@ struct alignas(64) FontUbo {
     Matrix<f32, 4> view;
     Matrix<f32, 4> proj;
     Vector<f32, 3> position;
-    f32 scale;
+    f32 scale {};
 };
 
 struct alignas(64) UiUbo {
@@ -2884,7 +2824,13 @@ struct alignas(64) VirtualTextureUbo {};
 
 struct alignas(64) SdfUbo {
     Matrix<f32, 4> model;
-    f32 time;
+    f32 time {};
+};
+
+struct alignas(16) MathObjectDebugUbo {
+    Matrix<f32, 4> model;
+    Matrix<f32, 4> view;
+    Matrix<f32, 4> projection;
 };
 
 } // namespace glvm
@@ -2898,12 +2844,10 @@ private:
     HWND classic_window;
     HDC classic_dc;
     HGLRC classic_context;
-
     WNDCLASS window_class;
     HDC modern_dc;
     HGLRC modern_context;
     HWND modern_window;
-
     // Cursor-lock baseline: the cursor's actual position after the last warp
     // (not the computed center).
     i32 previous_x = 0;
@@ -2915,7 +2859,6 @@ public:
     u32 width = GetSystemMetrics(SM_CXSCREEN);
     u32 height = GetSystemMetrics(SM_CYSCREEN);
     WindowWinVulkan();
-
     auto swap_buffers() -> void override;
     auto clear_display() -> void override;
     auto handle_event(Event& event) -> bool override;
@@ -3024,12 +2967,10 @@ struct TextureManager {
 private:
     static TextureManager* instance;
     static Mutex mutex;
-
     Vec<Texture> texture_vector;
 
 public:
     TextureManager();
-
     auto set_texture_vector(Vec<Texture> textures) -> void;
     // It is possible to get only one instance of this struct with this method.
     static auto get_instance() -> TextureManager*;
@@ -3047,7 +2988,6 @@ private:
     static ComponentManager* instance;
     static Mutex mutex;
     u32 number_of_base_components;
-
     ComponentManager();
 
     template<typename ComponentType>
@@ -3066,12 +3006,12 @@ private:
             std::make_shared<Vec<ComponentType>>()
         );
         // Create ID's component container.
-        Vec<u32>* sparse_entities_map_to_components = new Vec<u32>;
+        auto* sparse_entities_map_to_components = new Vec<u32>;
         world_sparse_entities_map_to_components.push_back(
             sparse_entities_map_to_components
         );
         // Create dense map from component index to entity.
-        Vec<u32>* dense_entities_map_to_components = new Vec<u32>;
+        auto* dense_entities_map_to_components = new Vec<u32>;
         world_dense_components_map_to_entities.push_back(
             dense_entities_map_to_components
         );
@@ -3114,7 +3054,6 @@ public:
         u32 local_container_id = 0;
         ComponentType component;
         local_container_id = create_component_container<ComponentType>();
-
         Vec<u32>& sparse = *as<Vec<u32>*>(
             world_sparse_entities_map_to_components[local_container_id]
         );
@@ -3128,13 +3067,10 @@ public:
         if (check_availability(sparse, dense, entity)) {
             return;
         }
-
         if (entity >= sparse.size()) {
             sparse.resize(entity + 1);
         }
-
         assert(dense.size() == components.size());
-
         sparse[entity] = dense.size();
         dense.push_back(entity);
         components.push_back(component);
@@ -3159,7 +3095,6 @@ public:
         Vec<u32>& dense = *as<Vec<u32>*>(
             world_dense_components_map_to_entities[first_component_array_index]
         );
-
         if (dense.size() > 0) {
             ++number_of_base_components;
             number_of_base_components += sizeof...(Args);
@@ -3221,12 +3156,11 @@ public:
 
     template<typename ComponentType>
     auto is_component_exists(const u32& entity) -> bool {
-        u32 local_container_id;
-        local_container_id = create_component_container<ComponentType>();
-        Vec<u32>& sparse = *as<Vec<u32>*>(
+        auto local_container_id = create_component_container<ComponentType>();
+        auto sparse = *as<Vec<u32>*>(
             world_sparse_entities_map_to_components[local_container_id]
         );
-        Vec<u32>& dense = *as<Vec<u32>*>(
+        auto dense = *as<Vec<u32>*>(
             world_dense_components_map_to_entities[local_container_id]
         );
         return check_availability(sparse, dense, entity);
@@ -3234,42 +3168,37 @@ public:
 
     template<typename ComponentType>
     auto get_component(const u32& entity) -> ComponentType* {
-        u32 local_container_id;
-        local_container_id = create_component_container<ComponentType>();
-        Vec<u32>& sparse = *as<Vec<u32>*>(
+        auto local_container_id = create_component_container<ComponentType>();
+        auto sparse = *as<Vec<u32>*>(
             world_sparse_entities_map_to_components[local_container_id]
         );
-        Vec<u32>& dense = *as<Vec<u32>*>(
+        auto dense = *as<Vec<u32>*>(
             world_dense_components_map_to_entities[local_container_id]
         );
-        Vec<ComponentType>& components =
-            *std::static_pointer_cast<Vec<ComponentType>>(
-                world_components_container[local_container_id]
-            );
+        auto components = *std::static_pointer_cast<Vec<ComponentType>>(
+            world_components_container[local_container_id]
+        );
         if (check_availability(sparse, dense, entity)) {
             u32 component_index = sparse[entity];
             return &components[component_index];
-        } else {
-            return nullptr;
         }
+        return nullptr;
     }
 
     // No need to delete the real component in this method, because systems
     // don't work with components lacking indices in the ordered container.
     template<typename ComponentType>
     auto remove_component(u32& entity) -> void {
-        u32 local_container_id;
-        local_container_id = create_component_container<ComponentType>();
-        Vec<u32>& sparse = *as<Vec<u32>*>(
+        auto local_container_id = create_component_container<ComponentType>();
+        auto sparse = *as<Vec<u32>*>(
             world_sparse_entities_map_to_components[local_container_id]
         );
-        Vec<u32>& dense = *as<Vec<u32>*>(
+        auto dense = *as<Vec<u32>*>(
             world_dense_components_map_to_entities[local_container_id]
         );
-        Vec<ComponentType>& components =
-            *std::static_pointer_cast<Vec<ComponentType>>(
-                world_components_container[local_container_id]
-            );
+        auto components = *std::static_pointer_cast<Vec<ComponentType>>(
+            world_components_container[local_container_id]
+        );
         if (check_availability(sparse, dense, entity)) {
             assert(dense.size() == components.size());
             u32 index_in_dense_of_removable_entity = sparse[entity];
@@ -3288,8 +3217,8 @@ public:
     }
 
     auto remove_all_components(u32& entity) -> void {
-        for (u32 i = 0; i < component_removers.size(); ++i) {
-            component_removers[i](this, entity);
+        for (auto& component_remover : component_removers) {
+            component_remover(this, entity);
         }
     }
 
@@ -3318,7 +3247,6 @@ struct MeshAxisMaxAbsoluteValues {
     f32 absolute_x = 0.0f;
     f32 absolute_y = 0.0f;
     f32 absolute_z = 0.0f;
-
     f32 origin_offset_x = 0.0f;
     f32 origin_offset_y = 0.0f;
     f32 origin_offset_z = 0.0f;
@@ -3369,24 +3297,12 @@ struct MeshAxisLimitingValues {
         f32 half_y,
         f32 half_z
     ) -> void {
-        if (position[0] + half_x > highest_x) {
-            highest_x = position[0] + half_x;
-        }
-        if (position[0] - half_x < lowest_x) {
-            lowest_x = position[0] - half_x;
-        }
-        if (position[1] + half_y > highest_y) {
-            highest_y = position[1] + half_y;
-        }
-        if (position[1] - half_y < lowest_y) {
-            lowest_y = position[1] - half_y;
-        }
-        if (position[2] + half_z > highest_z) {
-            highest_z = position[2] + half_z;
-        }
-        if (position[2] - half_z < lowest_z) {
-            lowest_z = position[2] - half_z;
-        }
+        highest_x = std::max(position[0] + half_x, highest_x);
+        lowest_x = std::min(position[0] - half_x, lowest_x);
+        highest_y = std::max(position[1] + half_y, highest_y);
+        lowest_y = std::min(position[1] - half_y, lowest_y);
+        highest_z = std::max(position[2] + half_z, highest_z);
+        lowest_z = std::min(position[2] - half_z, lowest_z);
     }
 };
 
@@ -3410,6 +3326,7 @@ enum DescriptorSetDataLink {
     MainRenderSpecularSampler,
     MainRenderDiffuseSampler,
     SdfData,
+    MathObjectsDebugData,
     // Not related to any pipeline values.
     ReadableTextures,
     DescriptorChunksNumber
@@ -3427,6 +3344,7 @@ enum SpecificPipeline {
     VirtualTexturesPipeline,
     MainRenderPipeline,
     SdfPipeline,
+    MathObjectsDebugPipeline,
     PipelinesNumber
 };
 
@@ -3442,7 +3360,7 @@ struct RenderPass {
 struct GpuImage {
     VkImage image;
     VkDeviceMemory device_memory = {};
-    Vec<VkImageView> views = {};
+    Vec<VkImageView> views;
     VkImageViewType view_type = {};
     VkImageCreateFlags create_flags = {};
     VkMemoryPropertyFlags memory_property_flags = {};
@@ -3466,6 +3384,7 @@ struct DescriptorBinding {
     VkShaderStageFlags shader_stage_flag;
     u32 binding;
     u32 shader_descriptors_number;
+    /// Offset in the GPU_DESCRIPTORS array.
     u32 global_descriptor_offset;
     VkDeviceSize ubo_chunk_size;
 };
@@ -3486,6 +3405,8 @@ struct Pipeline {
     VkPipelineLayout pipeline_layout;
     const char* vert_shader = nullptr;
     const char* frag_shader = nullptr;
+    VkPolygonMode polygon_mode = VK_POLYGON_MODE_FILL;
+    VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     VkVertexInputBindingDescription binding_description;
     Array<VkVertexInputAttributeDescription, 5> attribute_descriptions;
     u32 actual_linked_descriptor_sets_number;
@@ -3493,16 +3414,17 @@ struct Pipeline {
     Array<u32, MAXIMUM_LINKED_DESCRIPTOR_SET_DS> linked_descriptor_set_ids;
 };
 
-struct GPUBuffer {
+struct GpuBuffer {
     VkBuffer buffer;
     VkDeviceMemory device_memory;
+    /// Host pointer of the persistent mapping, null while unmapped.
+    void* mapped_data_ptr = nullptr;
 };
 
 union Descriptor {
     Descriptor() {};
     ~Descriptor() {};
-
-    GPUBuffer* gpu_buffer;
+    GpuBuffer* gpu_buffer {};
     GpuImage* gpu_image;
 };
 
@@ -3518,39 +3440,32 @@ struct Vertex {
         binding_description.binding = 0;
         binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
         binding_description.stride = sizeof(Vertex);
-
         return binding_description;
     }
 
     static auto get_attribute_descriptions()
         -> Array<VkVertexInputAttributeDescription, 5> {
         Array<VkVertexInputAttributeDescription, 5> attribute_descriptions {};
-
         attribute_descriptions[0].binding = 0;
         attribute_descriptions[0].location = 0;
         attribute_descriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
         attribute_descriptions[0].offset = offsetof(Vertex, pos);
-
         attribute_descriptions[1].binding = 0;
         attribute_descriptions[1].location = 1;
         attribute_descriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
         attribute_descriptions[1].offset = offsetof(Vertex, color);
-
         attribute_descriptions[2].binding = 0;
         attribute_descriptions[2].location = 2;
         attribute_descriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
         attribute_descriptions[2].offset = offsetof(Vertex, tex_coord);
-
         attribute_descriptions[3].binding = 0;
         attribute_descriptions[3].location = 3;
         attribute_descriptions[3].format = VK_FORMAT_R32G32B32A32_SFLOAT;
         attribute_descriptions[3].offset = offsetof(Vertex, joint_indices);
-
         attribute_descriptions[4].binding = 0;
         attribute_descriptions[4].location = 4;
         attribute_descriptions[4].format = VK_FORMAT_R32G32B32A32_SFLOAT;
         attribute_descriptions[4].offset = offsetof(Vertex, weights);
-
         return attribute_descriptions;
     }
 };
@@ -3576,7 +3491,6 @@ struct RenderDirectionalLight {
     Matrix<f32, 4> directional_light_space_matrix;
     Vector<f32, 4> position;
     Vector<f32, 4> direction;
-
     Vector<f32, 4> ambient;
     Vector<f32, 4> diffuse;
     Vector<f32, 4> specular;
@@ -3586,36 +3500,32 @@ struct RenderSpotLight {
     Matrix<f32, 4> spot_light_space_matrix;
     Vector<f32, 3> position;
     Vector<f32, 3> direction;
-    f32 cut_off;
-    f32 outer_cut_off;
-
+    f32 cut_off {};
+    f32 outer_cut_off {};
     Vector<f32, 3> ambient;
     Vector<f32, 3> diffuse;
     Vector<f32, 3> specular;
-
-    f32 constant;
-    f32 linear;
-    f32 quadratic;
+    f32 constant {};
+    f32 linear {};
+    f32 quadratic {};
 };
 
 struct RenderPointLight {
     Array<Matrix<f32, 4>, CUBE_MAP_LAYER_NUMBER> point_light_space_matrix;
     Vector<f32, 3> position;
-
     Vector<f32, 3> ambient;
     Vector<f32, 3> diffuse;
     Vector<f32, 3> specular;
-
-    f32 constant;
-    f32 linear;
-    f32 quadratic;
+    f32 constant {};
+    f32 linear {};
+    f32 quadratic {};
 };
 
 struct RenderHealth {
     Vector<f32, 3> position;
-    f32 max_health;
-    f32 current_health;
-    u32 mesh_id;
+    f32 max_health {};
+    f32 current_health {};
+    u32 mesh_id {};
 };
 
 struct RenderFont {
@@ -3639,25 +3549,47 @@ struct RenderInventory {
 
 struct RenderItem {
     Matrix<f32, 4> model;
-    u32 mesh_id;
-    u32 diffuse_texture_id;
+    u32 mesh_id {};
+    u32 diffuse_texture_id {};
 };
 
 struct RenderCrosshair {
     Matrix<f32, 4> model;
-    u32 mesh_id;
+    u32 mesh_id {};
 };
+
+struct RenderMathObject {
+    Vector<f32, 3> position;
+    Vector<f32, 3> forward;
+    Matrix<f32, 4> model_matrix;
+    u32 mesh_id {};
+};
+
+namespace glvm {
+/// Plane indices inside a Frustum, in extraction order.
+enum struct PlaneIndex : u32 {
+    Left,
+    Right,
+    Bottom,
+    Top,
+    Near,
+    Far,
+};
+
+/// Six view-frustum planes in PGA form: (x, y, z) is the normal, w the offset.
+struct Frustum {
+    Array<Plane, 6> planes;
+};
+} // namespace glvm
 
 namespace glvm {
 struct EntityManager {
 private:
     static EntityManager* instance;
     static Mutex mutex;
-
     inline static u32 id = 0;
     Vec<u32> removed_entity_registry;
     Vec<u32> active_entity_registry;
-
     EntityManager();
 
 public: // TODO: Delete this.
@@ -3677,8 +3609,7 @@ public: // TODO: Delete this.
 
 namespace glvm {
 struct System {
-    virtual ~System() {
-    }
+    virtual ~System() = default;
 
     virtual auto update() -> void = 0;
 };
@@ -3707,112 +3638,23 @@ private:
     static SystemManager* instance;
     static Mutex mutex;
     Vec<System*> deactivated_systems;
-
     SystemManager();
 
 public:
-    ~SystemManager();
+    ~SystemManager() override;
     // No need to make a copy because of singleton property.
     SystemManager(SystemManager& other) = delete;
     // Don't need assignment operator because of singleton property.
     void operator=(const SystemManager& other) = delete;
     // It is possible to get only one instance of this struct with this method.
     static auto get_instance() -> SystemManager*;
-
     inline static u32 system_count = 0;
     Vec<System*> system_container;
-
     auto activate_system(System* system) -> void;
     auto deactivate_system(System* system) -> void;
     auto return_system_to_activated_state(System* system) -> void;
-
     auto update() -> void override;
 };
-} // namespace glvm
-
-namespace glvm {
-struct DamageSystem: public System {
-public:
-    auto update() -> void override;
-
-    f32 delta_time;
-
-    u32 cached_attackable_archetypes_number = 0;
-    u32 cached_font_archetypes_number = 0;
-
-    struct ArchView {
-        Array<Archetype*, 32> cached_attackable_archetypes;
-        Array<Archetype*, 32> cached_font_archetypes;
-    } arch_view;
-
-    struct ComponentsView {
-        Attack* attackable_attacks = nullptr;
-        Health* attackable_health = nullptr;
-        Font* attackable_fonts = nullptr;
-
-        Font* fonts = nullptr;
-    } components_view;
-
-    u64 attackable_required_mask = (1ul << ComponentsIndices::AttackComponent)
-        | (1ul << ComponentsIndices::HealthComponent)
-        | (1ul << ComponentsIndices::FontComponent);
-
-    u64 font_required_mask = (1ull << ComponentsIndices::FontComponent);
-};
-} // namespace glvm
-
-namespace glvm {
-struct PhysicsSystem: public System {
-public:
-    f32 acceleration_of_gravity;
-    f32 delta_time;
-    f32& gravity;
-    EventStack& input_stack;
-
-    u32 cached_archetypes_number = 0;
-
-    struct ArchView {
-        Array<Archetype*, 32> cached_archetypes;
-    } arch_view;
-
-    struct ComponentsView {
-        Transform* transforms_view = nullptr;
-        Move* moves_view = nullptr;
-        RigidBody* rigid_bodies_view = nullptr;
-        ColliderFlags* collider_flags_view = nullptr;
-        Collider* colliders_view = nullptr;
-        Mesh* meshes_view = nullptr;
-    } components_view;
-
-    u64 required_mask = (1ul << ComponentsIndices::TransformComponent)
-        | (1ul << ComponentsIndices::MoveComponent)
-        | (1ul << ComponentsIndices::RigidBodyComponent)
-        | (1ul << ComponentsIndices::ColliderComponent)
-        | (1ul << ComponentsIndices::MeshComponent);
-
-    PhysicsSystem(f32& initial_gravity, EventStack& stack) :
-        gravity(initial_gravity),
-        input_stack(stack) {
-    }
-
-    // Sets the backtracking entity's transform Y to the ground entity's upper Y.
-
-    // This update searches for entities referring to colliders and checks their
-    // transform components for collisions; if a collision is detected, it
-    // checks whether the backtracking entity has a gravity component to call
-    // the gravity function.
-    auto update() -> void override;
-    auto repel(
-        Transform& transform_component,
-        f32& delta_time,
-        Beholder& view,
-        Event& event
-    ) -> void;
-};
-} // namespace glvm
-
-namespace glvm {
-// (Game archetypes moved to the game, see examples/hello_world.cpp.)
 } // namespace glvm
 
 #ifdef __linux__
@@ -4073,8 +3915,12 @@ namespace glvm {
 struct Renderer;
 
 struct DebugVertex {
-    f32 x, y, z;
-    f32 r, g, b;
+    f32 x;
+    f32 y;
+    f32 z;
+    f32 r;
+    f32 g;
+    f32 b;
 };
 
 struct ImGuiOverlay {
@@ -4128,20 +3974,16 @@ public:
 private:
     Renderer& renderer;
     bool initialized = false;
-
     VkRenderPass render_pass = VK_NULL_HANDLE;
     Vec<VkFramebuffer> framebuffers;
-
     VkPipelineLayout line_layout = VK_NULL_HANDLE;
     VkPipeline line_pipeline = VK_NULL_HANDLE;
-
     VkBuffer vertex_buffer = VK_NULL_HANDLE;
     VkDeviceMemory vertex_buffer_memory = VK_NULL_HANDLE;
     void* vertex_buffer_mapped = nullptr;
     u32 line_vertex_count = 0;
     /// Rolling frame times in ms for the stats graph (capped at 120 samples).
     Vec<f32> frame_time_history;
-
     auto create_render_pass() -> void;
     auto create_line_pipeline() -> void;
     auto create_vertex_buffer() -> void;
@@ -4166,20 +4008,17 @@ inline auto vk_config_initializer() -> void {
     // Pipelines and their render passes. Put all metadata related to pipelines
     // here. Also needed to add metadata of descriptor sets and their bindings
     // that will be related to a specific pipeline.
-
     DESCRIPTOR_SETS_CONFIG[ShadowMapDirectionalLight]
         .actual_linked_descriptor_bindings_number = 1;
     DESCRIPTOR_SETS_CONFIG[ShadowMapDirectionalLight].host_descriptor_number =
         128;
     DESCRIPTOR_SETS_CONFIG[ShadowMapDirectionalLight].is_texture = false;
-
     DESCRIPTOR_BINDINGS_CONFIG[0].vk_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     DESCRIPTOR_BINDINGS_CONFIG[0].shader_stage_flag =
         VK_SHADER_STAGE_VERTEX_BIT;
     DESCRIPTOR_BINDINGS_CONFIG[0].binding = 0;
     DESCRIPTOR_BINDINGS_CONFIG[0].shader_descriptors_number = 1;
     DESCRIPTOR_BINDINGS_CONFIG[0].ubo_chunk_size = sizeof(ShadowMapMatrixUBO);
-
     PIPELINE_CONFIGS[DirectionalLightPipeline].vert_shader =
         GLVM_SHADER_DIR "/flat_shadow_map/vertFlatShadowMap.spv";
     PIPELINE_CONFIGS[DirectionalLightPipeline].binding_description =
@@ -4188,7 +4027,6 @@ inline auto vk_config_initializer() -> void {
         Vertex::get_attribute_descriptions();
     PIPELINE_CONFIGS[DirectionalLightPipeline]
         .actual_linked_descriptor_sets_number = 1;
-
     RENDER_PASS_CONFIGS[DirectionalLightPipeline]
         .actual_attachment_description_number = 1;
     RENDER_PASS_CONFIGS[DirectionalLightPipeline]
@@ -4215,7 +4053,6 @@ inline auto vk_config_initializer() -> void {
     RENDER_PASS_CONFIGS[DirectionalLightPipeline]
         .attachment_descriptions[0]
         .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-
     RENDER_PASS_CONFIGS[DirectionalLightPipeline]
         .actual_attachment_reference_number = 1;
     RENDER_PASS_CONFIGS[DirectionalLightPipeline]
@@ -4224,7 +4061,6 @@ inline auto vk_config_initializer() -> void {
     RENDER_PASS_CONFIGS[DirectionalLightPipeline]
         .attachment_references[0]
         .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[DirectionalLightPipeline]
         .actual_subpass_dependency_number = 2;
     RENDER_PASS_CONFIGS[DirectionalLightPipeline]
@@ -4248,7 +4084,6 @@ inline auto vk_config_initializer() -> void {
     RENDER_PASS_CONFIGS[DirectionalLightPipeline]
         .subpass_dependencies[0]
         .dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
     RENDER_PASS_CONFIGS[DirectionalLightPipeline]
         .subpass_dependencies[1]
         .srcSubpass = 0;
@@ -4270,19 +4105,16 @@ inline auto vk_config_initializer() -> void {
     RENDER_PASS_CONFIGS[DirectionalLightPipeline]
         .subpass_dependencies[1]
         .dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
     DESCRIPTOR_SETS_CONFIG[ShadowMapSpotLight]
         .actual_linked_descriptor_bindings_number = 1;
     DESCRIPTOR_SETS_CONFIG[ShadowMapSpotLight].host_descriptor_number = 256;
     DESCRIPTOR_SETS_CONFIG[ShadowMapSpotLight].is_texture = false;
-
     DESCRIPTOR_BINDINGS_CONFIG[1].vk_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     DESCRIPTOR_BINDINGS_CONFIG[1].shader_stage_flag =
         VK_SHADER_STAGE_VERTEX_BIT;
     DESCRIPTOR_BINDINGS_CONFIG[1].binding = 0;
     DESCRIPTOR_BINDINGS_CONFIG[1].shader_descriptors_number = 1;
     DESCRIPTOR_BINDINGS_CONFIG[1].ubo_chunk_size = sizeof(ShadowMapMatrixUBO);
-
     PIPELINE_CONFIGS[SpotLightPipeline].vert_shader =
         GLVM_SHADER_DIR "/flat_shadow_map/vertFlatShadowMap.spv";
     PIPELINE_CONFIGS[SpotLightPipeline].binding_description =
@@ -4291,7 +4123,6 @@ inline auto vk_config_initializer() -> void {
         Vertex::get_attribute_descriptions();
     PIPELINE_CONFIGS[SpotLightPipeline].actual_linked_descriptor_sets_number =
         1;
-
     RENDER_PASS_CONFIGS[SpotLightPipeline].actual_attachment_description_number =
         1;
     RENDER_PASS_CONFIGS[SpotLightPipeline].attachment_descriptions[0].flags = 0;
@@ -4313,14 +4144,12 @@ inline auto vk_config_initializer() -> void {
     RENDER_PASS_CONFIGS[SpotLightPipeline]
         .attachment_descriptions[0]
         .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-
     RENDER_PASS_CONFIGS[SpotLightPipeline].actual_attachment_reference_number =
         1;
     RENDER_PASS_CONFIGS[SpotLightPipeline].attachment_references[0].attachment =
         0;
     RENDER_PASS_CONFIGS[SpotLightPipeline].attachment_references[0].layout =
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[SpotLightPipeline].actual_subpass_dependency_number = 2;
     RENDER_PASS_CONFIGS[SpotLightPipeline].subpass_dependencies[0].srcSubpass =
         VK_SUBPASS_EXTERNAL;
@@ -4337,7 +4166,6 @@ inline auto vk_config_initializer() -> void {
     RENDER_PASS_CONFIGS[SpotLightPipeline]
         .subpass_dependencies[0]
         .dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
     RENDER_PASS_CONFIGS[SpotLightPipeline].subpass_dependencies[1].srcSubpass =
         0;
     RENDER_PASS_CONFIGS[SpotLightPipeline].subpass_dependencies[1].dstSubpass =
@@ -4353,12 +4181,10 @@ inline auto vk_config_initializer() -> void {
     RENDER_PASS_CONFIGS[SpotLightPipeline]
         .subpass_dependencies[1]
         .dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
     DESCRIPTOR_SETS_CONFIG[ShadowMapPointLight]
         .actual_linked_descriptor_bindings_number = 1;
     DESCRIPTOR_SETS_CONFIG[ShadowMapPointLight].host_descriptor_number = 512;
     DESCRIPTOR_SETS_CONFIG[ShadowMapPointLight].is_texture = false;
-
     DESCRIPTOR_BINDINGS_CONFIG[2].vk_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     DESCRIPTOR_BINDINGS_CONFIG[2].shader_stage_flag =
         VK_SHADER_STAGE_VERTEX_BIT;
@@ -4366,7 +4192,6 @@ inline auto vk_config_initializer() -> void {
     DESCRIPTOR_BINDINGS_CONFIG[2].shader_descriptors_number = 1;
     DESCRIPTOR_BINDINGS_CONFIG[2].ubo_chunk_size =
         sizeof(PointLightShadowMapMatrixUBO);
-
     PIPELINE_CONFIGS[PointLightPipeline].vert_shader =
         GLVM_SHADER_DIR "/cube_shadow_map/vertCubeShadowMap.spv";
     PIPELINE_CONFIGS[PointLightPipeline].frag_shader =
@@ -4377,7 +4202,6 @@ inline auto vk_config_initializer() -> void {
         Vertex::get_attribute_descriptions();
     PIPELINE_CONFIGS[PointLightPipeline].actual_linked_descriptor_sets_number =
         1;
-
     RENDER_PASS_CONFIGS[PointLightPipeline]
         .actual_attachment_description_number = 1;
     RENDER_PASS_CONFIGS[PointLightPipeline].attachment_descriptions[0].flags =
@@ -4400,14 +4224,12 @@ inline auto vk_config_initializer() -> void {
     RENDER_PASS_CONFIGS[PointLightPipeline]
         .attachment_descriptions[0]
         .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-
     RENDER_PASS_CONFIGS[PointLightPipeline].actual_attachment_reference_number =
         1;
     RENDER_PASS_CONFIGS[PointLightPipeline].attachment_references[0].attachment =
         0;
     RENDER_PASS_CONFIGS[PointLightPipeline].attachment_references[0].layout =
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[PointLightPipeline].actual_subpass_dependency_number =
         2;
     RENDER_PASS_CONFIGS[PointLightPipeline].subpass_dependencies[0].srcSubpass =
@@ -4427,7 +4249,6 @@ inline auto vk_config_initializer() -> void {
     RENDER_PASS_CONFIGS[PointLightPipeline]
         .subpass_dependencies[0]
         .dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
     RENDER_PASS_CONFIGS[PointLightPipeline].subpass_dependencies[1].srcSubpass =
         0;
     RENDER_PASS_CONFIGS[PointLightPipeline].subpass_dependencies[1].dstSubpass =
@@ -4445,18 +4266,15 @@ inline auto vk_config_initializer() -> void {
     RENDER_PASS_CONFIGS[PointLightPipeline]
         .subpass_dependencies[1]
         .dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
     DESCRIPTOR_SETS_CONFIG[HUD].actual_linked_descriptor_bindings_number = 1;
     DESCRIPTOR_SETS_CONFIG[HUD].host_descriptor_number = 1024;
     DESCRIPTOR_SETS_CONFIG[HUD].is_texture = false;
-
     DESCRIPTOR_BINDINGS_CONFIG[3].vk_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     DESCRIPTOR_BINDINGS_CONFIG[3].shader_stage_flag =
         VK_SHADER_STAGE_VERTEX_BIT;
     DESCRIPTOR_BINDINGS_CONFIG[3].binding = 0;
     DESCRIPTOR_BINDINGS_CONFIG[3].shader_descriptors_number = 1;
     DESCRIPTOR_BINDINGS_CONFIG[3].ubo_chunk_size = sizeof(HudUbo);
-
     PIPELINE_CONFIGS[HudPipeline].vert_shader =
         GLVM_SHADER_DIR "/hud/hud_vert.spv";
     PIPELINE_CONFIGS[HudPipeline].frag_shader =
@@ -4466,7 +4284,6 @@ inline auto vk_config_initializer() -> void {
     PIPELINE_CONFIGS[HudPipeline].attribute_descriptions =
         Vertex::get_attribute_descriptions();
     PIPELINE_CONFIGS[HudPipeline].actual_linked_descriptor_sets_number = 1;
-
     RENDER_PASS_CONFIGS[HudPipeline].actual_attachment_description_number = 2;
     RENDER_PASS_CONFIGS[HudPipeline].attachment_descriptions[0].flags = 0;
     RENDER_PASS_CONFIGS[HudPipeline].attachment_descriptions[0].samples =
@@ -4483,7 +4300,6 @@ inline auto vk_config_initializer() -> void {
         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     RENDER_PASS_CONFIGS[HudPipeline].attachment_descriptions[0].finalLayout =
         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
     RENDER_PASS_CONFIGS[HudPipeline].attachment_descriptions[1].flags = 0;
     RENDER_PASS_CONFIGS[HudPipeline].attachment_descriptions[1].samples =
         VK_SAMPLE_COUNT_1_BIT;
@@ -4499,16 +4315,13 @@ inline auto vk_config_initializer() -> void {
         VK_IMAGE_LAYOUT_UNDEFINED;
     RENDER_PASS_CONFIGS[HudPipeline].attachment_descriptions[1].finalLayout =
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[HudPipeline].actual_attachment_reference_number = 2;
     RENDER_PASS_CONFIGS[HudPipeline].attachment_references[0].attachment = 0;
     RENDER_PASS_CONFIGS[HudPipeline].attachment_references[0].layout =
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[HudPipeline].attachment_references[1].attachment = 1;
     RENDER_PASS_CONFIGS[HudPipeline].attachment_references[1].layout =
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[HudPipeline].actual_subpass_dependency_number = 1;
     RENDER_PASS_CONFIGS[HudPipeline].subpass_dependencies[0].srcSubpass = 0;
     RENDER_PASS_CONFIGS[HudPipeline].subpass_dependencies[0].dstSubpass =
@@ -4527,32 +4340,27 @@ inline auto vk_config_initializer() -> void {
         | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     RENDER_PASS_CONFIGS[HudPipeline].subpass_dependencies[0].dependencyFlags =
         {};
-
     DESCRIPTOR_SETS_CONFIG[FontRenderUbo]
         .actual_linked_descriptor_bindings_number = 1;
     DESCRIPTOR_SETS_CONFIG[FontRenderUbo].host_descriptor_number = 4096;
     DESCRIPTOR_SETS_CONFIG[FontRenderUbo].is_texture = false;
-
     DESCRIPTOR_BINDINGS_CONFIG[4].vk_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     DESCRIPTOR_BINDINGS_CONFIG[4].shader_stage_flag =
         VK_SHADER_STAGE_VERTEX_BIT;
     DESCRIPTOR_BINDINGS_CONFIG[4].binding = 0;
     DESCRIPTOR_BINDINGS_CONFIG[4].shader_descriptors_number = 1;
     DESCRIPTOR_BINDINGS_CONFIG[4].ubo_chunk_size = sizeof(FontUbo);
-
     DESCRIPTOR_SETS_CONFIG[FontRenderSampler]
         .actual_linked_descriptor_bindings_number = 1;
     DESCRIPTOR_SETS_CONFIG[FontRenderSampler].host_descriptor_number =
         MAX_TEXTURES;
     DESCRIPTOR_SETS_CONFIG[FontRenderSampler].is_texture = true;
-
     DESCRIPTOR_BINDINGS_CONFIG[5].vk_type =
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     DESCRIPTOR_BINDINGS_CONFIG[5].shader_stage_flag =
         VK_SHADER_STAGE_FRAGMENT_BIT;
     DESCRIPTOR_BINDINGS_CONFIG[5].binding = 0;
     DESCRIPTOR_BINDINGS_CONFIG[5].shader_descriptors_number = 1;
-
     PIPELINE_CONFIGS[FontPipeline].vert_shader =
         GLVM_SHADER_DIR "/font/font_vert.spv";
     PIPELINE_CONFIGS[FontPipeline].frag_shader =
@@ -4562,7 +4370,6 @@ inline auto vk_config_initializer() -> void {
     PIPELINE_CONFIGS[FontPipeline].attribute_descriptions =
         Vertex::get_attribute_descriptions();
     PIPELINE_CONFIGS[FontPipeline].actual_linked_descriptor_sets_number = 2;
-
     RENDER_PASS_CONFIGS[FontPipeline].actual_attachment_description_number = 2;
     RENDER_PASS_CONFIGS[FontPipeline].attachment_descriptions[0].flags = 0;
     RENDER_PASS_CONFIGS[FontPipeline].attachment_descriptions[0].samples =
@@ -4579,7 +4386,6 @@ inline auto vk_config_initializer() -> void {
         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     RENDER_PASS_CONFIGS[FontPipeline].attachment_descriptions[0].finalLayout =
         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
     RENDER_PASS_CONFIGS[FontPipeline].attachment_descriptions[1].flags = 0;
     RENDER_PASS_CONFIGS[FontPipeline].attachment_descriptions[1].samples =
         VK_SAMPLE_COUNT_1_BIT;
@@ -4595,7 +4401,6 @@ inline auto vk_config_initializer() -> void {
         VK_IMAGE_LAYOUT_UNDEFINED;
     RENDER_PASS_CONFIGS[FontPipeline].attachment_descriptions[1].finalLayout =
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[FontPipeline].actual_attachment_reference_number = 2;
     RENDER_PASS_CONFIGS[FontPipeline].attachment_references[0].attachment = 0;
     RENDER_PASS_CONFIGS[FontPipeline].attachment_references[0].layout =
@@ -4604,7 +4409,6 @@ inline auto vk_config_initializer() -> void {
     RENDER_PASS_CONFIGS[FontPipeline].attachment_references[1].attachment = 1;
     RENDER_PASS_CONFIGS[FontPipeline].attachment_references[1].layout =
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[FontPipeline].actual_subpass_dependency_number = 1;
     RENDER_PASS_CONFIGS[FontPipeline].subpass_dependencies[0].srcSubpass = 0;
     RENDER_PASS_CONFIGS[FontPipeline].subpass_dependencies[0].dstSubpass =
@@ -4623,19 +4427,16 @@ inline auto vk_config_initializer() -> void {
         | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     RENDER_PASS_CONFIGS[FontPipeline].subpass_dependencies[0].dependencyFlags =
         {};
-
     DESCRIPTOR_SETS_CONFIG[HudScreen].actual_linked_descriptor_bindings_number =
         1;
     DESCRIPTOR_SETS_CONFIG[HudScreen].host_descriptor_number = 64;
     DESCRIPTOR_SETS_CONFIG[HudScreen].is_texture = false;
-
     DESCRIPTOR_BINDINGS_CONFIG[6].vk_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     DESCRIPTOR_BINDINGS_CONFIG[6].shader_stage_flag =
         VK_SHADER_STAGE_VERTEX_BIT;
     DESCRIPTOR_BINDINGS_CONFIG[6].binding = 0;
     DESCRIPTOR_BINDINGS_CONFIG[6].shader_descriptors_number = 1;
     DESCRIPTOR_BINDINGS_CONFIG[6].ubo_chunk_size = sizeof(HudScreenUbo);
-
     PIPELINE_CONFIGS[HudScreenPipeline].vert_shader =
         GLVM_SHADER_DIR "/hud_screen/vert_hud_screen.spv";
     PIPELINE_CONFIGS[HudScreenPipeline].frag_shader =
@@ -4646,7 +4447,6 @@ inline auto vk_config_initializer() -> void {
         Vertex::get_attribute_descriptions();
     PIPELINE_CONFIGS[HudScreenPipeline].actual_linked_descriptor_sets_number =
         1;
-
     RENDER_PASS_CONFIGS[HudScreenPipeline].actual_attachment_description_number =
         2;
     RENDER_PASS_CONFIGS[HudScreenPipeline].attachment_descriptions[0].flags = 0;
@@ -4668,7 +4468,6 @@ inline auto vk_config_initializer() -> void {
     RENDER_PASS_CONFIGS[HudScreenPipeline]
         .attachment_descriptions[0]
         .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
     RENDER_PASS_CONFIGS[HudScreenPipeline].attachment_descriptions[1].flags = 0;
     RENDER_PASS_CONFIGS[HudScreenPipeline].attachment_descriptions[1].samples =
         VK_SAMPLE_COUNT_1_BIT;
@@ -4688,19 +4487,16 @@ inline auto vk_config_initializer() -> void {
     RENDER_PASS_CONFIGS[HudScreenPipeline]
         .attachment_descriptions[1]
         .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[HudScreenPipeline].actual_attachment_reference_number =
         2;
     RENDER_PASS_CONFIGS[HudScreenPipeline].attachment_references[0].attachment =
         0;
     RENDER_PASS_CONFIGS[HudScreenPipeline].attachment_references[0].layout =
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[HudScreenPipeline].attachment_references[1].attachment =
         1;
     RENDER_PASS_CONFIGS[HudScreenPipeline].attachment_references[1].layout =
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[HudScreenPipeline].actual_subpass_dependency_number = 1;
     RENDER_PASS_CONFIGS[HudScreenPipeline].subpass_dependencies[0].srcSubpass =
         0;
@@ -4723,30 +4519,25 @@ inline auto vk_config_initializer() -> void {
     RENDER_PASS_CONFIGS[HudScreenPipeline]
         .subpass_dependencies[0]
         .dependencyFlags = {};
-
     DESCRIPTOR_SETS_CONFIG[UI].actual_linked_descriptor_bindings_number = 1;
     DESCRIPTOR_SETS_CONFIG[UI].host_descriptor_number = 128;
     DESCRIPTOR_SETS_CONFIG[UI].is_texture = false;
-
     DESCRIPTOR_BINDINGS_CONFIG[7].vk_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     DESCRIPTOR_BINDINGS_CONFIG[7].shader_stage_flag =
         VK_SHADER_STAGE_VERTEX_BIT;
     DESCRIPTOR_BINDINGS_CONFIG[7].binding = 0;
     DESCRIPTOR_BINDINGS_CONFIG[7].shader_descriptors_number = 1;
     DESCRIPTOR_BINDINGS_CONFIG[7].ubo_chunk_size = sizeof(UiUbo);
-
     DESCRIPTOR_SETS_CONFIG[UiSamplers].actual_linked_descriptor_bindings_number =
         1;
     DESCRIPTOR_SETS_CONFIG[UiSamplers].host_descriptor_number = MAX_TEXTURES;
     DESCRIPTOR_SETS_CONFIG[UiSamplers].is_texture = true;
-
     DESCRIPTOR_BINDINGS_CONFIG[8].vk_type =
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     DESCRIPTOR_BINDINGS_CONFIG[8].shader_stage_flag =
         VK_SHADER_STAGE_FRAGMENT_BIT;
     DESCRIPTOR_BINDINGS_CONFIG[8].binding = 0;
     DESCRIPTOR_BINDINGS_CONFIG[8].shader_descriptors_number = 1;
-
     PIPELINE_CONFIGS[UiPipeline].vert_shader =
         GLVM_SHADER_DIR "/ui/vert_ui.spv";
     PIPELINE_CONFIGS[UiPipeline].frag_shader =
@@ -4756,7 +4547,6 @@ inline auto vk_config_initializer() -> void {
     PIPELINE_CONFIGS[UiPipeline].attribute_descriptions =
         Vertex::get_attribute_descriptions();
     PIPELINE_CONFIGS[UiPipeline].actual_linked_descriptor_sets_number = 2;
-
     RENDER_PASS_CONFIGS[UiPipeline].actual_attachment_description_number = 2;
     RENDER_PASS_CONFIGS[UiPipeline].attachment_descriptions[0].flags = 0;
     RENDER_PASS_CONFIGS[UiPipeline].attachment_descriptions[0].samples =
@@ -4773,7 +4563,6 @@ inline auto vk_config_initializer() -> void {
         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     RENDER_PASS_CONFIGS[UiPipeline].attachment_descriptions[0].finalLayout =
         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
     RENDER_PASS_CONFIGS[UiPipeline].attachment_descriptions[1].flags = 0;
     RENDER_PASS_CONFIGS[UiPipeline].attachment_descriptions[1].samples =
         VK_SAMPLE_COUNT_1_BIT;
@@ -4789,16 +4578,13 @@ inline auto vk_config_initializer() -> void {
         VK_IMAGE_LAYOUT_UNDEFINED;
     RENDER_PASS_CONFIGS[UiPipeline].attachment_descriptions[1].finalLayout =
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[UiPipeline].actual_attachment_reference_number = 2;
     RENDER_PASS_CONFIGS[UiPipeline].attachment_references[0].attachment = 0;
     RENDER_PASS_CONFIGS[UiPipeline].attachment_references[0].layout =
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[UiPipeline].attachment_references[1].attachment = 1;
     RENDER_PASS_CONFIGS[UiPipeline].attachment_references[1].layout =
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[UiPipeline].actual_subpass_dependency_number = 1;
     RENDER_PASS_CONFIGS[UiPipeline].subpass_dependencies[0].srcSubpass = 0;
     RENDER_PASS_CONFIGS[UiPipeline].subpass_dependencies[0].dstSubpass =
@@ -4816,32 +4602,27 @@ inline auto vk_config_initializer() -> void {
         VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
         | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     RENDER_PASS_CONFIGS[UiPipeline].subpass_dependencies[0].dependencyFlags = {};
-
     DESCRIPTOR_SETS_CONFIG[UiIcons].actual_linked_descriptor_bindings_number =
         1;
     DESCRIPTOR_SETS_CONFIG[UiIcons].host_descriptor_number = 128;
     DESCRIPTOR_SETS_CONFIG[UiIcons].is_texture = false;
-
     DESCRIPTOR_BINDINGS_CONFIG[9].vk_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     DESCRIPTOR_BINDINGS_CONFIG[9].shader_stage_flag =
         VK_SHADER_STAGE_VERTEX_BIT;
     DESCRIPTOR_BINDINGS_CONFIG[9].binding = 0;
     DESCRIPTOR_BINDINGS_CONFIG[9].shader_descriptors_number = 1;
     DESCRIPTOR_BINDINGS_CONFIG[9].ubo_chunk_size = sizeof(UiUbo);
-
     DESCRIPTOR_SETS_CONFIG[UiIconsSamplers]
         .actual_linked_descriptor_bindings_number = 1;
     DESCRIPTOR_SETS_CONFIG[UiIconsSamplers].host_descriptor_number =
         MAX_TEXTURES;
     DESCRIPTOR_SETS_CONFIG[UiIconsSamplers].is_texture = true;
-
     DESCRIPTOR_BINDINGS_CONFIG[10].vk_type =
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     DESCRIPTOR_BINDINGS_CONFIG[10].shader_stage_flag =
         VK_SHADER_STAGE_FRAGMENT_BIT;
     DESCRIPTOR_BINDINGS_CONFIG[10].binding = 0;
     DESCRIPTOR_BINDINGS_CONFIG[10].shader_descriptors_number = 1;
-
     PIPELINE_CONFIGS[UiIconsPipeline].vert_shader =
         GLVM_SHADER_DIR "/ui_icons/vert_ui_icons.spv";
     PIPELINE_CONFIGS[UiIconsPipeline].frag_shader =
@@ -4851,7 +4632,6 @@ inline auto vk_config_initializer() -> void {
     PIPELINE_CONFIGS[UiIconsPipeline].attribute_descriptions =
         Vertex::get_attribute_descriptions();
     PIPELINE_CONFIGS[UiIconsPipeline].actual_linked_descriptor_sets_number = 2;
-
     RENDER_PASS_CONFIGS[UiIconsPipeline].actual_attachment_description_number =
         2;
     RENDER_PASS_CONFIGS[UiIconsPipeline].attachment_descriptions[0].flags = 0;
@@ -4872,7 +4652,6 @@ inline auto vk_config_initializer() -> void {
         .initialLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     RENDER_PASS_CONFIGS[UiIconsPipeline].attachment_descriptions[0].finalLayout =
         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
     RENDER_PASS_CONFIGS[UiIconsPipeline].attachment_descriptions[1].flags = 0;
     RENDER_PASS_CONFIGS[UiIconsPipeline].attachment_descriptions[1].samples =
         VK_SAMPLE_COUNT_1_BIT;
@@ -4891,18 +4670,15 @@ inline auto vk_config_initializer() -> void {
         .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     RENDER_PASS_CONFIGS[UiIconsPipeline].attachment_descriptions[1].finalLayout =
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[UiIconsPipeline].actual_attachment_reference_number = 2;
     RENDER_PASS_CONFIGS[UiIconsPipeline].attachment_references[0].attachment =
         0;
     RENDER_PASS_CONFIGS[UiIconsPipeline].attachment_references[0].layout =
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[UiIconsPipeline].attachment_references[1].attachment =
         1;
     RENDER_PASS_CONFIGS[UiIconsPipeline].attachment_references[1].layout =
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[UiIconsPipeline].actual_subpass_dependency_number = 1;
     RENDER_PASS_CONFIGS[UiIconsPipeline].subpass_dependencies[0].srcSubpass = 0;
     RENDER_PASS_CONFIGS[UiIconsPipeline].subpass_dependencies[0].dstSubpass =
@@ -4923,32 +4699,27 @@ inline auto vk_config_initializer() -> void {
     RENDER_PASS_CONFIGS[UiIconsPipeline]
         .subpass_dependencies[0]
         .dependencyFlags = {};
-
     DESCRIPTOR_SETS_CONFIG[VirtualTexturesUbo]
         .actual_linked_descriptor_bindings_number = 1;
     DESCRIPTOR_SETS_CONFIG[VirtualTexturesUbo].host_descriptor_number = 128;
     DESCRIPTOR_SETS_CONFIG[VirtualTexturesUbo].is_texture = false;
-
     DESCRIPTOR_BINDINGS_CONFIG[11].vk_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     DESCRIPTOR_BINDINGS_CONFIG[11].shader_stage_flag =
         VK_SHADER_STAGE_VERTEX_BIT;
     DESCRIPTOR_BINDINGS_CONFIG[11].binding = 0;
     DESCRIPTOR_BINDINGS_CONFIG[11].shader_descriptors_number = 1;
     DESCRIPTOR_BINDINGS_CONFIG[11].ubo_chunk_size = sizeof(VirtualTextureUbo);
-
     DESCRIPTOR_SETS_CONFIG[VirtualTexturesTileset]
         .actual_linked_descriptor_bindings_number = 1;
     DESCRIPTOR_SETS_CONFIG[VirtualTexturesTileset].host_descriptor_number =
         MAX_TEXTURES;
     DESCRIPTOR_SETS_CONFIG[VirtualTexturesTileset].is_texture = true;
-
     DESCRIPTOR_BINDINGS_CONFIG[12].vk_type =
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     DESCRIPTOR_BINDINGS_CONFIG[12].shader_stage_flag =
         VK_SHADER_STAGE_FRAGMENT_BIT;
     DESCRIPTOR_BINDINGS_CONFIG[12].binding = 0;
     DESCRIPTOR_BINDINGS_CONFIG[12].shader_descriptors_number = 1;
-
     PIPELINE_CONFIGS[VirtualTexturesPipeline].vert_shader =
         GLVM_SHADER_DIR "/virtual_textures/virtualTexturesVert.spv";
     PIPELINE_CONFIGS[VirtualTexturesPipeline].frag_shader =
@@ -4959,7 +4730,6 @@ inline auto vk_config_initializer() -> void {
         Vertex::get_attribute_descriptions();
     PIPELINE_CONFIGS[VirtualTexturesPipeline]
         .actual_linked_descriptor_sets_number = 2;
-
     RENDER_PASS_CONFIGS[VirtualTexturesPipeline]
         .actual_attachment_description_number = 2;
     RENDER_PASS_CONFIGS[VirtualTexturesPipeline]
@@ -4986,7 +4756,6 @@ inline auto vk_config_initializer() -> void {
     RENDER_PASS_CONFIGS[VirtualTexturesPipeline]
         .attachment_descriptions[0]
         .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
     RENDER_PASS_CONFIGS[VirtualTexturesPipeline]
         .attachment_descriptions[1]
         .flags = 0;
@@ -5011,7 +4780,6 @@ inline auto vk_config_initializer() -> void {
     RENDER_PASS_CONFIGS[VirtualTexturesPipeline]
         .attachment_descriptions[1]
         .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[VirtualTexturesPipeline]
         .actual_attachment_reference_number = 2;
     RENDER_PASS_CONFIGS[VirtualTexturesPipeline]
@@ -5019,13 +4787,11 @@ inline auto vk_config_initializer() -> void {
         .attachment = 0;
     RENDER_PASS_CONFIGS[VirtualTexturesPipeline].attachment_references[0].layout =
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[VirtualTexturesPipeline]
         .attachment_references[1]
         .attachment = 1;
     RENDER_PASS_CONFIGS[VirtualTexturesPipeline].attachment_references[1].layout =
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[VirtualTexturesPipeline]
         .actual_subpass_dependency_number = 1;
     RENDER_PASS_CONFIGS[VirtualTexturesPipeline]
@@ -5054,78 +4820,66 @@ inline auto vk_config_initializer() -> void {
     RENDER_PASS_CONFIGS[VirtualTexturesPipeline]
         .subpass_dependencies[0]
         .dependencyFlags = {};
-
     DESCRIPTOR_SETS_CONFIG[MainRenderMatrixUbo]
         .actual_linked_descriptor_bindings_number = 1;
     DESCRIPTOR_SETS_CONFIG[MainRenderMatrixUbo].host_descriptor_number = 1024;
     DESCRIPTOR_SETS_CONFIG[MainRenderMatrixUbo].is_texture = false;
-
     DESCRIPTOR_BINDINGS_CONFIG[13].vk_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     DESCRIPTOR_BINDINGS_CONFIG[13].shader_stage_flag =
         VK_SHADER_STAGE_VERTEX_BIT;
     DESCRIPTOR_BINDINGS_CONFIG[13].binding = 0;
     DESCRIPTOR_BINDINGS_CONFIG[13].shader_descriptors_number = 1;
     DESCRIPTOR_BINDINGS_CONFIG[13].ubo_chunk_size = sizeof(ModelMatrixUBO);
-
     DESCRIPTOR_SETS_CONFIG[MainRenderLightDataUbo]
         .actual_linked_descriptor_bindings_number = 4;
     DESCRIPTOR_SETS_CONFIG[MainRenderLightDataUbo].host_descriptor_number = 2;
     DESCRIPTOR_SETS_CONFIG[MainRenderLightDataUbo].is_texture = false;
-
     DESCRIPTOR_BINDINGS_CONFIG[14].vk_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     DESCRIPTOR_BINDINGS_CONFIG[14].shader_stage_flag =
         VK_SHADER_STAGE_FRAGMENT_BIT;
     DESCRIPTOR_BINDINGS_CONFIG[14].binding = 0;
     DESCRIPTOR_BINDINGS_CONFIG[14].shader_descriptors_number = 1;
     DESCRIPTOR_BINDINGS_CONFIG[14].ubo_chunk_size = sizeof(LightData);
-
     DESCRIPTOR_BINDINGS_CONFIG[15].vk_type =
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     DESCRIPTOR_BINDINGS_CONFIG[15].shader_stage_flag =
         VK_SHADER_STAGE_FRAGMENT_BIT;
     DESCRIPTOR_BINDINGS_CONFIG[15].binding = 1;
     DESCRIPTOR_BINDINGS_CONFIG[15].shader_descriptors_number = 4;
-
     DESCRIPTOR_BINDINGS_CONFIG[16].vk_type =
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     DESCRIPTOR_BINDINGS_CONFIG[16].shader_stage_flag =
         VK_SHADER_STAGE_FRAGMENT_BIT;
     DESCRIPTOR_BINDINGS_CONFIG[16].binding = 5;
     DESCRIPTOR_BINDINGS_CONFIG[16].shader_descriptors_number = 32;
-
     DESCRIPTOR_BINDINGS_CONFIG[17].vk_type =
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     DESCRIPTOR_BINDINGS_CONFIG[17].shader_stage_flag =
         VK_SHADER_STAGE_FRAGMENT_BIT;
     DESCRIPTOR_BINDINGS_CONFIG[17].binding = 37;
     DESCRIPTOR_BINDINGS_CONFIG[17].shader_descriptors_number = 8;
-
     DESCRIPTOR_SETS_CONFIG[MainRenderSpecularSampler]
         .actual_linked_descriptor_bindings_number = 1;
     DESCRIPTOR_SETS_CONFIG[MainRenderSpecularSampler].host_descriptor_number =
         MAX_TEXTURES;
     DESCRIPTOR_SETS_CONFIG[MainRenderSpecularSampler].is_texture = true;
-
     DESCRIPTOR_BINDINGS_CONFIG[18].vk_type =
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     DESCRIPTOR_BINDINGS_CONFIG[18].shader_stage_flag =
         VK_SHADER_STAGE_FRAGMENT_BIT;
     DESCRIPTOR_BINDINGS_CONFIG[18].binding = 0;
     DESCRIPTOR_BINDINGS_CONFIG[18].shader_descriptors_number = 1;
-
     DESCRIPTOR_SETS_CONFIG[MainRenderDiffuseSampler]
         .actual_linked_descriptor_bindings_number = 1;
     DESCRIPTOR_SETS_CONFIG[MainRenderDiffuseSampler].host_descriptor_number =
         MAX_TEXTURES;
     DESCRIPTOR_SETS_CONFIG[MainRenderDiffuseSampler].is_texture = true;
-
     DESCRIPTOR_BINDINGS_CONFIG[19].vk_type =
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     DESCRIPTOR_BINDINGS_CONFIG[19].shader_stage_flag =
         VK_SHADER_STAGE_FRAGMENT_BIT;
     DESCRIPTOR_BINDINGS_CONFIG[19].binding = 0;
     DESCRIPTOR_BINDINGS_CONFIG[19].shader_descriptors_number = 1;
-
     PIPELINE_CONFIGS[MainRenderPipeline].vert_shader =
         GLVM_SHADER_DIR "/main_renderer/vert.spv";
     PIPELINE_CONFIGS[MainRenderPipeline].frag_shader =
@@ -5136,7 +4890,6 @@ inline auto vk_config_initializer() -> void {
         Vertex::get_attribute_descriptions();
     PIPELINE_CONFIGS[MainRenderPipeline].actual_linked_descriptor_sets_number =
         4;
-
     RENDER_PASS_CONFIGS[MainRenderPipeline]
         .actual_attachment_description_number = 2;
     RENDER_PASS_CONFIGS[MainRenderPipeline].attachment_descriptions[0].flags =
@@ -5159,7 +4912,6 @@ inline auto vk_config_initializer() -> void {
     RENDER_PASS_CONFIGS[MainRenderPipeline]
         .attachment_descriptions[0]
         .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
     RENDER_PASS_CONFIGS[MainRenderPipeline].attachment_descriptions[1].flags =
         0;
     RENDER_PASS_CONFIGS[MainRenderPipeline].attachment_descriptions[1].samples =
@@ -5180,19 +4932,16 @@ inline auto vk_config_initializer() -> void {
     RENDER_PASS_CONFIGS[MainRenderPipeline]
         .attachment_descriptions[1]
         .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[MainRenderPipeline].actual_attachment_reference_number =
         2;
     RENDER_PASS_CONFIGS[MainRenderPipeline].attachment_references[0].attachment =
         0;
     RENDER_PASS_CONFIGS[MainRenderPipeline].attachment_references[0].layout =
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[MainRenderPipeline].attachment_references[1].attachment =
         1;
     RENDER_PASS_CONFIGS[MainRenderPipeline].attachment_references[1].layout =
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[MainRenderPipeline].actual_subpass_dependency_number =
         1;
     RENDER_PASS_CONFIGS[MainRenderPipeline].subpass_dependencies[0].srcSubpass =
@@ -5217,19 +4966,16 @@ inline auto vk_config_initializer() -> void {
     RENDER_PASS_CONFIGS[MainRenderPipeline]
         .subpass_dependencies[0]
         .dependencyFlags = {};
-
     DESCRIPTOR_SETS_CONFIG[SdfData].actual_linked_descriptor_bindings_number =
         1;
     DESCRIPTOR_SETS_CONFIG[SdfData].host_descriptor_number = 64;
     DESCRIPTOR_SETS_CONFIG[SdfData].is_texture = false;
-
     DESCRIPTOR_BINDINGS_CONFIG[20].vk_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     DESCRIPTOR_BINDINGS_CONFIG[20].shader_stage_flag =
         VK_SHADER_STAGE_VERTEX_BIT;
     DESCRIPTOR_BINDINGS_CONFIG[20].binding = 0;
     DESCRIPTOR_BINDINGS_CONFIG[20].shader_descriptors_number = 1;
     DESCRIPTOR_BINDINGS_CONFIG[20].ubo_chunk_size = sizeof(SdfUbo);
-
     PIPELINE_CONFIGS[SdfPipeline].vert_shader =
         GLVM_SHADER_DIR "/sdf/sdf_vert.spv";
     PIPELINE_CONFIGS[SdfPipeline].frag_shader =
@@ -5239,7 +4985,6 @@ inline auto vk_config_initializer() -> void {
     PIPELINE_CONFIGS[SdfPipeline].attribute_descriptions =
         Vertex::get_attribute_descriptions();
     PIPELINE_CONFIGS[SdfPipeline].actual_linked_descriptor_sets_number = 1;
-
     RENDER_PASS_CONFIGS[SdfPipeline].actual_attachment_description_number = 2;
     RENDER_PASS_CONFIGS[SdfPipeline].attachment_descriptions[0].flags = 0;
     RENDER_PASS_CONFIGS[SdfPipeline].attachment_descriptions[0].samples =
@@ -5256,7 +5001,6 @@ inline auto vk_config_initializer() -> void {
         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     RENDER_PASS_CONFIGS[SdfPipeline].attachment_descriptions[0].finalLayout =
         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
     RENDER_PASS_CONFIGS[SdfPipeline].attachment_descriptions[1].flags = 0;
     RENDER_PASS_CONFIGS[SdfPipeline].attachment_descriptions[1].samples =
         VK_SAMPLE_COUNT_1_BIT;
@@ -5272,16 +5016,13 @@ inline auto vk_config_initializer() -> void {
         VK_IMAGE_LAYOUT_UNDEFINED;
     RENDER_PASS_CONFIGS[SdfPipeline].attachment_descriptions[1].finalLayout =
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[SdfPipeline].actual_attachment_reference_number = 2;
     RENDER_PASS_CONFIGS[SdfPipeline].attachment_references[0].attachment = 0;
     RENDER_PASS_CONFIGS[SdfPipeline].attachment_references[0].layout =
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[SdfPipeline].attachment_references[1].attachment = 1;
     RENDER_PASS_CONFIGS[SdfPipeline].attachment_references[1].layout =
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
     RENDER_PASS_CONFIGS[SdfPipeline].actual_subpass_dependency_number = 1;
     RENDER_PASS_CONFIGS[SdfPipeline].subpass_dependencies[0].srcSubpass = 0;
     RENDER_PASS_CONFIGS[SdfPipeline].subpass_dependencies[0].dstSubpass =
@@ -5300,20 +5041,134 @@ inline auto vk_config_initializer() -> void {
         | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     RENDER_PASS_CONFIGS[SdfPipeline].subpass_dependencies[0].dependencyFlags =
         {};
-
+    DESCRIPTOR_SETS_CONFIG[MathObjectsDebugData]
+        .actual_linked_descriptor_bindings_number = 1;
+    DESCRIPTOR_SETS_CONFIG[MathObjectsDebugData].host_descriptor_number = 64;
+    DESCRIPTOR_SETS_CONFIG[MathObjectsDebugData].is_texture = false;
+    DESCRIPTOR_BINDINGS_CONFIG[21].vk_type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    DESCRIPTOR_BINDINGS_CONFIG[21].shader_stage_flag =
+        VK_SHADER_STAGE_VERTEX_BIT;
+    DESCRIPTOR_BINDINGS_CONFIG[21].binding = 0;
+    DESCRIPTOR_BINDINGS_CONFIG[21].shader_descriptors_number = 1;
+    DESCRIPTOR_BINDINGS_CONFIG[21].ubo_chunk_size = sizeof(MathObjectDebugUbo);
+    PIPELINE_CONFIGS[MathObjectsDebugPipeline].vert_shader =
+        GLVM_SHADER_DIR "/debug/math_objects_vert.spv";
+    PIPELINE_CONFIGS[MathObjectsDebugPipeline].frag_shader =
+        GLVM_SHADER_DIR "/debug/math_objects_frag.spv";
+    PIPELINE_CONFIGS[MathObjectsDebugPipeline].polygon_mode =
+        VK_POLYGON_MODE_LINE;
+    PIPELINE_CONFIGS[MathObjectsDebugPipeline].topology =
+        VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    PIPELINE_CONFIGS[MathObjectsDebugPipeline].binding_description =
+        Vertex::get_binding_description();
+    PIPELINE_CONFIGS[MathObjectsDebugPipeline].attribute_descriptions =
+        Vertex::get_attribute_descriptions();
+    PIPELINE_CONFIGS[MathObjectsDebugPipeline]
+        .actual_linked_descriptor_sets_number = 1;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .actual_attachment_description_number = 2;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .attachment_descriptions[0]
+        .flags = 0;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .attachment_descriptions[0]
+        .samples = VK_SAMPLE_COUNT_1_BIT;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .attachment_descriptions[0]
+        .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .attachment_descriptions[0]
+        .storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .attachment_descriptions[0]
+        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .attachment_descriptions[0]
+        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .attachment_descriptions[0]
+        .initialLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .attachment_descriptions[0]
+        .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .attachment_descriptions[1]
+        .flags = 0;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .attachment_descriptions[1]
+        .samples = VK_SAMPLE_COUNT_1_BIT;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .attachment_descriptions[1]
+        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .attachment_descriptions[1]
+        .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .attachment_descriptions[1]
+        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .attachment_descriptions[1]
+        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .attachment_descriptions[1]
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .attachment_descriptions[1]
+        .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .actual_attachment_reference_number = 2;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .attachment_references[0]
+        .attachment = 0;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .attachment_references[0]
+        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .attachment_references[1]
+        .attachment = 1;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .attachment_references[1]
+        .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .actual_subpass_dependency_number = 1;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .subpass_dependencies[0]
+        .srcSubpass = 0;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .subpass_dependencies[0]
+        .dstSubpass = VK_SUBPASS_EXTERNAL;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .subpass_dependencies[0]
+        .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+        | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT
+        | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .subpass_dependencies[0]
+        .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+        | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT
+        | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .subpass_dependencies[0]
+        .srcAccessMask = {};
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .subpass_dependencies[0]
+        .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+        | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    RENDER_PASS_CONFIGS[MathObjectsDebugPipeline]
+        .subpass_dependencies[0]
+        .dependencyFlags = {};
     // Not related to any pipeline descriptor sets and its bindings.
     DESCRIPTOR_SETS_CONFIG[ReadableTextures]
         .actual_linked_descriptor_bindings_number = 1;
     DESCRIPTOR_SETS_CONFIG[ReadableTextures].host_descriptor_number =
         MAX_TEXTURES;
     DESCRIPTOR_SETS_CONFIG[ReadableTextures].is_texture = true;
-
-    DESCRIPTOR_BINDINGS_CONFIG[21].vk_type =
+    DESCRIPTOR_BINDINGS_CONFIG[22].vk_type =
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    DESCRIPTOR_BINDINGS_CONFIG[21].shader_stage_flag =
+    DESCRIPTOR_BINDINGS_CONFIG[22].shader_stage_flag =
         VK_SHADER_STAGE_FRAGMENT_BIT;
-    DESCRIPTOR_BINDINGS_CONFIG[21].binding = 0;
-    DESCRIPTOR_BINDINGS_CONFIG[21].shader_descriptors_number = MAX_TEXTURES;
+    DESCRIPTOR_BINDINGS_CONFIG[22].binding = 0;
+    DESCRIPTOR_BINDINGS_CONFIG[22].shader_descriptors_number = MAX_TEXTURES;
 }
 }; // namespace glvm
 
@@ -5327,8 +5182,7 @@ namespace glvm {
 auto make_entity(u32 id, u32 generation) -> u64;
 auto get_id(u64 entity) -> u32;
 auto get_gen(u64 entity) -> u32;
-auto matches_required_mask(const u64 archetype_mask, const u64& system_mask)
-    -> bool;
+auto matches_required_mask(u64 archetype_mask, const u64& system_mask) -> bool;
 }; // namespace glvm
 
 namespace glvm {
@@ -5519,15 +5373,15 @@ public:
     Vec<u32> entities_collection_linked_trn_mat_mes_act;
     Vec<u32> entities_collection_linked_trn_po_l_mes_act;
 
-    Array<char, 128> glyphs = {'A',  'B',  'C', 'D', 'E', 'F', 'G',  'H',  'I', 'J',
-                        'K',  'L',  'M', 'N', 'O', 'P', 'Q',  'R',  'S', 'T',
-                        'U',  'V',  'W', 'X', 'Y', 'Z', 'a',  'b',  'c', 'd',
-                        'e',  'f',  'g', 'h', 'i', 'j', 'k',  'l',  'm', 'n',
-                        'o',  'p',  'q', 'r', 's', 't', 'u',  'v',  'w', 'x',
-                        'y',  'z',  '0', '1', '2', '3', '4',  '5',  '6', '7',
-                        '8',  '9',  '.', ',', '"', '"', '\'', '\'', '"', '"',
-                        '\'', '\'', '?', '!', '_', '$', '(',  ')',  '+', '-',
-                        '/',  ':',  ';', '<', '>', '=', '[',  ']',  '\\'};
+    Array<char, 128> glyphs = {
+        'A', 'B',  'C',  'D', 'E', 'F',  'G',  'H', 'I', 'J', 'K', 'L', 'M',
+        'N', 'O',  'P',  'Q', 'R', 'S',  'T',  'U', 'V', 'W', 'X', 'Y', 'Z',
+        'a', 'b',  'c',  'd', 'e', 'f',  'g',  'h', 'i', 'j', 'k', 'l', 'm',
+        'n', 'o',  'p',  'q', 'r', 's',  't',  'u', 'v', 'w', 'x', 'y', 'z',
+        '0', '1',  '2',  '3', '4', '5',  '6',  '7', '8', '9', '.', ',', '"',
+        '"', '\'', '\'', '"', '"', '\'', '\'', '?', '!', '_', '$', '(', ')',
+        '+', '-',  '/',  ':', ';', '<',  '>',  '=', '[', ']', '\\'
+    };
     // FIXME: Padding that may be needed for alignment.
     const Vec<Vertex> padding[128];
     const Vec<u32> symbol_g_indices = {0, 1, 2, 2, 1, 3};
@@ -5567,6 +5421,7 @@ public:
     Vec<RenderInventory> inventories;
     Vec<RenderItem> items;
     Vec<RenderCrosshair> crosshairs;
+    Vec<RenderMathObject> math_objects;
     Vec<RenderPlayer> players;
     RenderPlayer player;
 
@@ -5611,6 +5466,7 @@ public:
         -> void;
     auto set_projection_matrix(Matrix<f32, 4> new_projection_matrix) -> void;
     auto set_view_matrix(Matrix<f32, 4> new_view_matrix) -> void;
+    auto extract_frustum(const Matrix<f32, 4>& vp) -> Frustum;
     auto initialize_game_level_vertices() -> void;
     auto run() -> void;
 
@@ -5727,6 +5583,13 @@ public:
     Vec<VkBuffer> font_index_buffer_container;
     Vec<VkDeviceMemory> font_index_buffer_memory_container;
 
+    Vec<Vec<Vertex>> math_objects_vertices;
+    Vec<Vec<u32>> math_objects_indices;
+    Vec<VkBuffer> math_objects_vertex_buffer_container;
+    Vec<VkDeviceMemory> math_objects_vertex_buffer_memory_container;
+    Vec<VkBuffer> math_objects_index_buffer_container;
+    Vec<VkDeviceMemory> math_objects_index_buffer_memory_container;
+
     VkBuffer model_matrix_uniform_buffer;
     VkDeviceMemory model_matrix_uniform_buffers_memory;
     VkBuffer light_data_uniform_buffer;
@@ -5802,6 +5665,7 @@ public:
     auto initialize_vertex_buffers_with_wavefront_data() -> void;
     auto initialize_vertex_buffers_with_gltf_data() -> void;
     auto initialize_vertex_buffers_with_font_data() -> void;
+    auto initialize_vertex_buffers_with_math_objects_data() -> void;
     auto cleanup_swap_chain() -> void;
     auto cleanup() -> void;
     auto create_instance() -> void;
@@ -5937,6 +5801,14 @@ public:
         VkCommandBuffer primary_command_buffer,
         VkCommandBuffer secondary_command_buffer
     ) -> void;
+    /// Maps the whole host-visible UBO buffer that backs a descriptor binding.
+    ///
+    /// @param descriptor_set_link Descriptor set that owns the mapped binding.
+    /// @param ubo_data_size Size of one UBO chunk in the binding.
+    auto map_memory_ubo(
+        DescriptorSetDataLink descriptor_set_link,
+        u32 ubo_data_size
+    ) -> void;
     auto update_hud_ubo(
         u32 offset,
         bool hud_exists,
@@ -5945,6 +5817,7 @@ public:
     ) -> void;
     auto update_hud_screen_ubo(u32 offset, u32 crosshair) -> void;
     auto update_sdf_ubo(u32 offset, u32 crosshair) -> void;
+    auto update_math_objects_debug_ubo(u32 offset, u32 math_object) -> void;
     auto update_ubo_ui(
         const u32 current_inventory_row,
         const u32 current_inventory_column,
@@ -5969,6 +5842,10 @@ public:
         u32 image_index
     ) -> void;
     auto sdf_record_command_buffer(
+        VkCommandBuffer& command_buffer,
+        u32 image_index
+    ) -> void;
+    auto math_objects_debug_record_command_buffer(
         VkCommandBuffer& command_buffer,
         u32 image_index
     ) -> void;
@@ -6063,6 +5940,73 @@ namespace glvm {
 } // namespace glvm
 
 namespace glvm {
+/// Axis-aligned bounding-box overlap test in world space.
+///
+/// @param first_position World position of the first box.
+/// @param first_bounds Local bounds of the first mesh.
+/// @param first_scale Scale of the first entity.
+/// @param second_position World position of the second box.
+/// @param second_bounds Local bounds of the second mesh.
+/// @param second_scale Scale of the second entity.
+/// @return True when the boxes intersect.
+inline auto aabb_overlap(
+    const Vector<f32, 3>& first_position,
+    const MeshAxisMaxAbsoluteValues& first_bounds,
+    f32 first_scale,
+    const Vector<f32, 3>& second_position,
+    const MeshAxisMaxAbsoluteValues& second_bounds,
+    f32 second_scale
+) -> bool {
+    return first_position[0] + first_bounds.origin_offset_x * first_scale
+            + first_bounds.absolute_x * first_scale
+        > second_position[0] + second_bounds.origin_offset_x * second_scale
+            - second_bounds.absolute_x * second_scale
+        && first_position[0] + first_bounds.origin_offset_x * first_scale
+            - first_bounds.absolute_x * first_scale
+        < second_position[0] + second_bounds.origin_offset_x * second_scale
+            + second_bounds.absolute_x * second_scale
+        && first_position[1] + first_bounds.origin_offset_y * first_scale
+            + first_bounds.absolute_y * first_scale
+        > second_position[1] + second_bounds.origin_offset_y * second_scale
+            - second_bounds.absolute_y * second_scale
+        && first_position[1] + first_bounds.origin_offset_y * first_scale
+            - first_bounds.absolute_y * first_scale
+        < second_position[1] + second_bounds.origin_offset_y * second_scale
+            + second_bounds.absolute_y * second_scale
+        && first_position[2] + first_bounds.origin_offset_z * first_scale
+            + first_bounds.absolute_z * first_scale
+        > second_position[2] + second_bounds.origin_offset_z * second_scale
+            - second_bounds.absolute_z * second_scale
+        && first_position[2] + first_bounds.origin_offset_z * first_scale
+            - first_bounds.absolute_z * first_scale
+        < second_position[2] + second_bounds.origin_offset_z * second_scale
+            + second_bounds.absolute_z * second_scale;
+}
+
+/// Checks whether the first box rests above the second one.
+///
+/// @param first_position World position of the first box.
+/// @param first_bounds Local bounds of the first mesh.
+/// @param first_scale Scale of the first entity.
+/// @param second_position World position of the second box.
+/// @param second_bounds Local bounds of the second mesh.
+/// @param second_scale Scale of the second entity.
+/// @return True when the first box is above the second.
+inline auto is_above(
+    const Vector<f32, 3>& first_position,
+    const MeshAxisMaxAbsoluteValues& first_bounds,
+    f32 first_scale,
+    const Vector<f32, 3>& second_position,
+    const MeshAxisMaxAbsoluteValues& second_bounds,
+    f32 second_scale
+) -> bool {
+    constexpr auto EPSILON = 0.15f;
+    return first_position[1] + first_bounds.origin_offset_y * first_scale
+        - first_bounds.absolute_y * first_scale + EPSILON
+        > second_position[1] + second_bounds.origin_offset_y * second_scale
+        + second_bounds.absolute_y * second_scale;
+}
+
 auto box_collider(
     const Vector<f32, 3> backtracking_position,
     const Vector<f32, 3> compared_position,
@@ -6103,47 +6047,7 @@ namespace glvm {
 } // namespace glvm
 
 namespace glvm {
-struct CollisionSystem: public System {
-public:
-    f32 delta_time;
-    f32 gravity;
-    bool is_inventory_opened;
-    bool* is_item_dragged;
-    bool is_left_mouse_button_pressed;
-    bool* is_left_mouse_button_released;
-    EventStack& input_stack;
-    Array<Archetype*, 32> cached_archetypes;
-    u32 cached_archetypes_number = 0;
-
-    struct CollisionComponentsView {
-        Transform* backtracking_transforms = nullptr;
-        Collider* backtracking_colliders = nullptr;
-        ColliderFlags* backtracking_collider_flags = nullptr;
-        Mesh* backtracking_meshes = nullptr;
-        Move* backtracking_move = nullptr;
-        Transform* compared_transforms = nullptr;
-        Mesh* compared_meshes = nullptr;
-        Move* compared_move = nullptr;
-    } view;
-
-    u64 required_mask = (1ul << ComponentsIndices::ColliderComponent)
-        | (1ul << ComponentsIndices::ColliderFlagsComponent)
-        | (1ul << ComponentsIndices::TransformComponent)
-        | (1ul << ComponentsIndices::MeshComponent);
-
-    CollisionSystem(EventStack& stack) : input_stack(stack) {
-    }
-
-    auto update() -> void override;
-    auto upper_actor_check(
-        Vector<f32, 3> backtracking_position,
-        Vector<f32, 3> compared_position,
-        f32 backtracking_scale,
-        f32 compared_scale,
-        MeshHandle backtracking_mesh_handle,
-        MeshHandle compared_mesh_handle
-    ) -> bool;
-};
+// (CollisionSystem moved to the game, see examples/tps.cpp.)
 } // namespace glvm
 
 namespace glvm {
@@ -6167,10 +6071,10 @@ private:
         Mesh* meshes = nullptr;
     } view;
 
-    u64 required_mask = (1ul << ComponentsIndices::ColliderComponent)
-        | (1ul << ComponentsIndices::ColliderFlagsComponent)
-        | (1ul << ComponentsIndices::TransformComponent)
-        | (1ul << ComponentsIndices::MeshComponent);
+    u64 required_mask = (1ull << ComponentsIndices::ColliderComponent)
+        | (1ull << ComponentsIndices::ColliderFlagsComponent)
+        | (1ull << ComponentsIndices::TransformComponent)
+        | (1ull << ComponentsIndices::MeshComponent);
 
     auto update() -> void override;
 };
@@ -6209,58 +6113,42 @@ private:
     f32 previous_mouse_offset_y = 0.0f;
     Renderer* vulkan_renderer;
     SpatialGridSystem* spatial_grid_system;
-    CollisionSystem* collision_system;
-    PhysicsSystem* physics_system;
-    DamageSystem* damage_system;
     Array<Archetype*, 32> cached_directional_light_archetypes;
     u32 directional_light_archetypes_number = 0;
     u64 directional_light_required_mask =
-        (1ul << ComponentsIndices::DirectionalLightComponent)
-        | (1ul << ComponentsIndices::MeshComponent)
-        | (1ul << ComponentsIndices::TransformComponent);
+        (1ull << ComponentsIndices::DirectionalLightComponent)
+        | (1ull << ComponentsIndices::MeshComponent)
+        | (1ull << ComponentsIndices::TransformComponent);
     Array<Archetype*, 32> cached_spot_light_archetypes;
     u32 spot_light_archetypes_number = 0;
     u64 spot_light_required_mask =
-        (1ul << ComponentsIndices::SpotLightComponent)
-        | (1ul << ComponentsIndices::MeshComponent)
-        | (1ul << ComponentsIndices::TransformComponent);
+        (1ull << ComponentsIndices::SpotLightComponent)
+        | (1ull << ComponentsIndices::MeshComponent)
+        | (1ull << ComponentsIndices::TransformComponent);
     Array<Archetype*, 32> cached_point_light_archetypes;
     u32 point_light_archetypes_number = 0;
     u64 point_light_required_mask =
-        (1ul << ComponentsIndices::PointLightComponent)
-        | (1ul << ComponentsIndices::MeshComponent)
-        | (1ul << ComponentsIndices::TransformComponent);
-    Array<Archetype*, 32> cached_animation_actors_archetypes;
-    u32 animation_actors_archetypes_number = 0;
-    u64 animated_actors_required_mask =
-        (1ul << ComponentsIndices::MaterialComponent)
-        | (1ul << ComponentsIndices::AnimationComponent)
-        | (1ul << ComponentsIndices::RotationComponent)
-        | (1ul << ComponentsIndices::TransformComponent)
-        | (1ul << ComponentsIndices::MeshComponent);
+        (1ull << ComponentsIndices::PointLightComponent)
+        | (1ull << ComponentsIndices::MeshComponent)
+        | (1ull << ComponentsIndices::TransformComponent);
     // Entities carrying the base Camera (Beholder) component drive the view
     // matrix and the tracked-positions buffer. Games decide which entities
     // those are.
     Array<Archetype*, 32> cached_camera_archetypes;
     u32 camera_archetypes_number = 0;
-    u64 camera_required_mask = (1ul << ComponentsIndices::ViewComponent)
-        | (1ul << ComponentsIndices::TransformComponent);
+    u64 camera_required_mask = (1ull << ComponentsIndices::ViewComponent)
+        | (1ull << ComponentsIndices::TransformComponent);
     Array<Archetype*, 32> cached_animation_archetypes;
     u32 animation_archetypes_number = 0;
-    u64 animation_required_mask = (1ul << ComponentsIndices::MaterialComponent)
-        | (1ul << ComponentsIndices::AnimationComponent)
-        | (1ul << ComponentsIndices::RotationComponent)
-        | (1ul << ComponentsIndices::TransformComponent)
-        | (1ul << ComponentsIndices::MeshComponent);
-    Array<Archetype*, 32> cached_health_bars_archetypes;
-    u32 health_bars_archetypes_number = 0;
-    u64 health_bars_required_mask = (1ul << ComponentsIndices::HealthComponent)
-        | (1ul << ComponentsIndices::MeshComponent)
-        | (1ul << ComponentsIndices::TransformComponent);
     Array<Archetype*, 32> cached_fonts_archetypes;
     u32 fonts_archetypes_number = 0;
-    u64 font_required_mask = (1ul << ComponentsIndices::FontComponent)
-        | (1ul << ComponentsIndices::TransformComponent);
+    u64 font_required_mask = (1ull << ComponentsIndices::FontComponent)
+        | (1ull << ComponentsIndices::TransformComponent);
+    // Archetypes whose entities carry generated debug meshes.
+    Array<Archetype*, 32> cached_math_object_archetypes;
+    u32 math_object_archetypes_number = 0;
+    u64 math_object_required_mask =
+        (1ull << ComponentsIndices::MeshGenerationComponent);
     f64 fps_accumulator = 0;
     // Game extension points (schedules): hooks run inside the frame loop and
     // inside set_frame_data. Games register systems and hooks; the engine
@@ -6332,8 +6220,8 @@ public:
     auto write_models_cache(const String& model_file_path) -> void;
     auto initialize_gltf() -> void;
     auto initialize_font_data() -> void;
-    auto compute_model_matrix(Transform* transform, Rotation* rotation)
-        -> Matrix<f32, 4>;
+    auto initialize_math_objects_data() -> void;
+    auto compute_model_matrix(Transform* transform, f32 yaw) -> Matrix<f32, 4>;
     auto compute_hud_screen_coordinates() -> void;
     auto load_texture_from_file(const char* path_to_texture_component)
         -> TextureHandle;

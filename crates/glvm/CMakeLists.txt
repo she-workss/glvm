@@ -19,8 +19,14 @@ target_link_libraries(glvm
     glvm_log
     imgui
     rusty
-    ${Vulkan_LIBRARY}
+    volk
+    Vulkan::Headers
 )
+
+# Vulkan functions are loaded at runtime by volk: no vk* prototypes from
+# vulkan.h, everything goes through volk's function pointers. PUBLIC so all
+# consumers (examples, tests) include the headers the same way.
+target_compile_definitions(glvm PUBLIC VK_NO_PROTOTYPES)
 
 if(WIN32)
   target_link_libraries(glvm PUBLIC dwmapi gdi32 winmm)

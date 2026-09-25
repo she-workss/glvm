@@ -35,3 +35,4 @@ function(glvm_add_example NAME)
 endfunction()
 
 glvm_add_example(hello_world)
+glvm_add_example(tps)

@@ -1,0 +1,8 @@
+// raddbg 0.9.29 project file
+
+target:
+{
+  executable: "build/debug-msvc/examples/tps.exe"
+  working_directory: "build/debug-msvc/examples"
+  enabled: 1
+}

@@ -1,5 +1,40 @@
-# Find packages
-find_package(Vulkan REQUIRED)
+# Vulkan without a preinstalled SDK: headers and the volk loader come from
+# CPM, so MSVC builds work with nothing but a compiler. volk loads
+# vulkan-1.dll at runtime, no link-time dependency on the SDK.
+CPMAddPackage(
+  NAME Vulkan-Headers
+  GITHUB_REPOSITORY KhronosGroup/Vulkan-Headers
+  GIT_TAG vulkan-sdk-1.4.357.0
+  SYSTEM YES
+)
+
+CPMAddPackage(
+  NAME volk
+  GITHUB_REPOSITORY zeux/volk
+  GIT_TAG vulkan-sdk-1.4.357.0
+  OPTIONS
+    "VOLK_INSTALL OFF"
+    # Headers come from the Vulkan-Headers package above (linked below),
+    # never from a host SDK: same headers on every machine.
+    "VOLK_PULL_IN_VULKAN OFF"
+  SYSTEM YES
+)
+
+if(volk_ADDED)
+  # volk.c includes <vulkan/vulkan.h>; give it the CPM headers.
+  target_link_libraries(volk PRIVATE Vulkan::Headers)
+  target_include_directories(volk PUBLIC
+    $<BUILD_INTERFACE:${volk_SOURCE_DIR}>
+  )
+  # volk declares/defines the vk* globals (incl. platform surface entry
+  # points) behind VK_USE_PLATFORM_* guards: the volk TU and every consumer
+  # including volk.h must see the same guard, hence PUBLIC.
+  if(WIN32)
+    target_compile_definitions(volk PUBLIC VK_USE_PLATFORM_WIN32_KHR)
+  elseif(UNIX AND NOT APPLE)
+    target_compile_definitions(volk PUBLIC VK_USE_PLATFORM_WAYLAND_KHR)
+  endif()
+endif()
 
 CPMAddPackage(
   NAME imgui
@@ -27,6 +62,15 @@ if(imgui_ADDED AND NOT TARGET imgui)
       ${imgui_SOURCE_DIR}
       ${imgui_SOURCE_DIR}/backends
   )
+  # imgui_impl_vulkan.cpp calls vk* directly: with VK_NO_PROTOTYPES those
+  # resolve to volk's runtime-loaded pointers (loaded by glvm at startup).
+  # IMGUI_IMPL_VULKAN_USE_VOLK makes the backend include volk.h itself, so
+  # it uses volk globals instead of demanding ImGui_ImplVulkan_LoadFunctions.
+  target_compile_definitions(imgui PUBLIC
+    VK_NO_PROTOTYPES
+    IMGUI_IMPL_VULKAN_USE_VOLK
+  )
+  target_link_libraries(imgui PUBLIC volk Vulkan::Headers)
 endif()
 
 if(UNIX AND NOT APPLE)

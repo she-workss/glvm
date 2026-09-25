@@ -14,7 +14,7 @@ imgui.ini
 .agents/
 
 # RAD Debugger files
-*.rad
+user.raddbg
 
 # Compiled Vulkan shaders (built at build time into build/shaders)
 *.spv

@@ -1,5 +1,5 @@
 {
-    "version": 8,
+    "version": 10,
     "cmakeMinimumRequired": {
         "major": 3,
         "minor": 28,
@@ -17,21 +17,217 @@
             }
         },
         {
-            "name": "debug",
-            "displayName": "Debug",
-            "description": "Debug build",
+            "name": "__build-debug",
+            "hidden": true,
             "inherits": "default",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
             }
         },
         {
-            "name": "release",
-            "displayName": "Release",
-            "description": "Release build",
+            "name": "__build-release",
+            "hidden": true,
             "inherits": "default",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release"
+                "CMAKE_BUILD_TYPE": "MinSizeRel"
+            }
+        },
+        {
+            "name": "__compiler-gcc",
+            "hidden": true,
+            "inherits": "default",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++"
+            },
+            "vendor": {
+                "glvm:compiler": "gcc"
+            }
+        },
+        {
+            "name": "__compiler-clang",
+            "hidden": true,
+            "inherits": "default",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++"
+            },
+            "vendor": {
+                "glvm:compiler": "clang"
+            }
+        },
+        {
+            "name": "__compiler-clang-cl",
+            "hidden": true,
+            "inherits": "default",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang-cl",
+                "CMAKE_CXX_COMPILER": "clang-cl",
+                "CMAKE_LINKER": "lldebug-link",
+                "CMAKE_MSVC_DEBUG_INFORMATION_FORMAT": "ProgramDatabase",
+                "CMAKE_RC_COMPILER": "rc",
+                "CMAKE_NINJA_CMCLDEPS_RC": "OFF"
+            },
+            "vendor": {
+                "glvm:compiler": "clang-cl"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "__compiler-msvc",
+            "hidden": true,
+            "inherits": "default",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "cl",
+                "CMAKE_CXX_COMPILER": "cl",
+                "CMAKE_MSVC_DEBUG_INFORMATION_FORMAT": "ProgramDatabase",
+                "CMAKE_RC_COMPILER": "rc",
+                "CMAKE_NINJA_CMCLDEPS_RC": "OFF"
+            },
+            "vendor": {
+                "glvm:compiler": "msvc"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "debug",
+            "displayName": "Debug",
+            "description": "Debug build",
+            "inherits": "__build-debug"
+        },
+        {
+            "name": "release",
+            "displayName": "Release",
+            "description": "Release build (Size optimized)",
+            "inherits": "__build-release"
+        },
+        {
+            "name": "debug-gcc",
+            "displayName": "Debug (GCC)",
+            "description": "Debug build (GCC)",
+            "inherits": [
+                "__build-debug",
+                "__compiler-gcc"
+            ],
+            "vendor": {
+                "glvm:compiler": "gcc"
+            }
+        },
+        {
+            "name": "debug-clang",
+            "displayName": "Debug (Clang)",
+            "description": "Debug build (Clang)",
+            "inherits": [
+                "__build-debug",
+                "__compiler-clang"
+            ],
+            "vendor": {
+                "glvm:compiler": "clang"
+            }
+        },
+        {
+            "name": "debug-clang-cl",
+            "displayName": "Debug (Clang-CL)",
+            "description": "Debug build (clang-cl + lldebug-link)",
+            "inherits": [
+                "__build-debug",
+                "__compiler-clang-cl"
+            ],
+            "vendor": {
+                "glvm:compiler": "clang-cl"
+            }
+        },
+        {
+            "name": "debug-msvc",
+            "displayName": "Debug (MSVC)",
+            "description": "Debug build (MSVC)",
+            "inherits": [
+                "__build-debug",
+                "__compiler-msvc"
+            ],
+            "vendor": {
+                "glvm:compiler": "msvc"
+            }
+        },
+        {
+            "name": "release-gcc",
+            "displayName": "Release (GCC)",
+            "description": "Release build (GCC)",
+            "inherits": [
+                "__build-release",
+                "__compiler-gcc"
+            ],
+            "vendor": {
+                "glvm:compiler": "gcc"
+            }
+        },
+        {
+            "name": "release-clang",
+            "displayName": "Release (Clang)",
+            "description": "Release build (Clang)",
+            "inherits": [
+                "__build-release",
+                "__compiler-clang"
+            ],
+            "vendor": {
+                "glvm:compiler": "clang"
+            }
+        },
+        {
+            "name": "release-clang-cl",
+            "displayName": "Release (Clang-CL)",
+            "description": "Release build (clang-cl + lldebug-link)",
+            "inherits": [
+                "__build-release",
+                "__compiler-clang-cl"
+            ],
+            "vendor": {
+                "glvm:compiler": "clang-cl"
+            }
+        },
+        {
+            "name": "release-msvc",
+            "displayName": "Release (MSVC)",
+            "description": "Release build (MSVC)",
+            "inherits": [
+                "__build-release",
+                "__compiler-msvc"
+            ],
+            "vendor": {
+                "glvm:compiler": "msvc"
+            }
+        },
+        {
+            "name": "profiling",
+            "displayName": "Profiling",
+            "description": "Release build with debug info",
+            "inherits": "default",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_CXX_FLAGS": "-g -fno-omit-frame-pointer",
+                "GLVM_ENABLE_TRACY": "ON"
+            }
+        },
+        {
+            "name": "profiling-msvc",
+            "displayName": "Profiling (MSVC)",
+            "description": "Release build with debug info (MSVC)",
+            "inherits": "default",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_MSVC_DEBUG_INFORMATION_FORMAT": "ProgramDatabase",
+                "GLVM_BUILD_BENCHES": "OFF",
+                "GLVM_BUILD_DOCS": "OFF",
+                "CMAKE_RC_COMPILER": "rc",
+                "CMAKE_NINJA_CMCLDEPS_RC": "OFF"
             }
         },
         {
@@ -55,8 +251,8 @@
             "description": "Debug build with undefined behavior sanitizer",
             "inherits": "debug",
             "cacheVariables": {
-                "CMAKE_CXX_FLAGS": "-fsanitize=undefined -fno-omit-frame-pointer -g",
-                "CMAKE_EXE_LINKER_FLAGS": "-fsanitize=undefined"
+                "CMAKE_CXX_FLAGS": "-fsanitize=undefined -fno-sanitize=vptr -fno-omit-frame-pointer -g",
+                "CMAKE_EXE_LINKER_FLAGS": "-fsanitize=undefined -fno-sanitize=vptr"
             },
             "condition": {
                 "type": "notEquals",
@@ -75,13 +271,73 @@
             "name": "release",
             "configurePreset": "release",
             "displayName": "Build (Release)"
+        },
+        {
+            "name": "debug-gcc",
+            "configurePreset": "debug-gcc",
+            "displayName": "Build (Debug GCC)"
+        },
+        {
+            "name": "debug-clang",
+            "configurePreset": "debug-clang",
+            "displayName": "Build (Debug Clang)"
+        },
+        {
+            "name": "debug-clang-cl",
+            "configurePreset": "debug-clang-cl",
+            "displayName": "Build (Debug Clang-CL)"
+        },
+        {
+            "name": "debug-msvc",
+            "configurePreset": "debug-msvc",
+            "displayName": "Build (Debug MSVC)"
+        },
+        {
+            "name": "release-gcc",
+            "configurePreset": "release-gcc",
+            "displayName": "Build (Release GCC)"
+        },
+        {
+            "name": "release-clang",
+            "configurePreset": "release-clang",
+            "displayName": "Build (Release Clang)"
+        },
+        {
+            "name": "release-clang-cl",
+            "configurePreset": "release-clang-cl",
+            "displayName": "Build (Release Clang-CL)"
+        },
+        {
+            "name": "release-msvc",
+            "configurePreset": "release-msvc",
+            "displayName": "Build (Release MSVC)"
+        },
+        {
+            "name": "profiling",
+            "configurePreset": "profiling",
+            "displayName": "Build (Profiling)"
+        },
+        {
+            "name": "profiling-msvc",
+            "configurePreset": "profiling-msvc",
+            "displayName": "Build (Profiling MSVC)"
+        },
+        {
+            "name": "asan",
+            "configurePreset": "asan",
+            "displayName": "Build (AddressSanitizer)"
+        },
+        {
+            "name": "ubsan",
+            "configurePreset": "ubsan",
+            "displayName": "Build (UBSanitizer)"
         }
     ],
     "testPresets": [
         {
             "name": "debug",
             "configurePreset": "debug",
-            "displayName": "Test Debug",
+            "displayName": "Test (Debug)",
             "description": "Run all tests in debug mode",
             "output": {
                 "outputOnFailure": true
@@ -94,7 +350,7 @@
         {
             "name": "release",
             "configurePreset": "release",
-            "displayName": "Test Release",
+            "displayName": "Test (Release)",
             "description": "Run all tests in release mode",
             "output": {
                 "outputOnFailure": true
@@ -103,13 +359,83 @@
                 "noTestsAction": "error",
                 "stopOnFailure": false
             }
+        },
+        {
+            "name": "debug-gcc",
+            "inherits": "debug",
+            "configurePreset": "debug-gcc",
+            "displayName": "Test (Debug GCC)",
+            "description": "Run all tests in debug mode (GCC)"
+        },
+        {
+            "name": "debug-clang",
+            "inherits": "debug",
+            "configurePreset": "debug-clang",
+            "displayName": "Test (Debug Clang)",
+            "description": "Run all tests in debug mode (Clang)"
+        },
+        {
+            "name": "debug-clang-cl",
+            "inherits": "debug",
+            "configurePreset": "debug-clang-cl",
+            "displayName": "Test (Debug Clang-CL)",
+            "description": "Run all tests in debug mode (Clang-CL)"
+        },
+        {
+            "name": "debug-msvc",
+            "inherits": "debug",
+            "configurePreset": "debug-msvc",
+            "displayName": "Test (Debug MSVC)",
+            "description": "Run all tests in debug mode (MSVC)"
+        },
+        {
+            "name": "release-gcc",
+            "inherits": "release",
+            "configurePreset": "release-gcc",
+            "displayName": "Test (Release GCC)",
+            "description": "Run all tests in release mode (GCC)"
+        },
+        {
+            "name": "release-clang",
+            "inherits": "release",
+            "configurePreset": "release-clang",
+            "displayName": "Test (Release Clang)",
+            "description": "Run all tests in release mode (Clang)"
+        },
+        {
+            "name": "release-clang-cl",
+            "inherits": "release",
+            "configurePreset": "release-clang-cl",
+            "displayName": "Test (Release Clang-CL)",
+            "description": "Run all tests in release mode (Clang-CL)"
+        },
+        {
+            "name": "release-msvc",
+            "inherits": "release",
+            "configurePreset": "release-msvc",
+            "displayName": "Test (Release MSVC)",
+            "description": "Run all tests in release mode (MSVC)"
+        },
+        {
+            "name": "asan",
+            "inherits": "debug",
+            "configurePreset": "asan",
+            "displayName": "Test (AddressSanitizer)",
+            "description": "Run all tests with address sanitizer"
+        },
+        {
+            "name": "ubsan",
+            "inherits": "debug",
+            "configurePreset": "ubsan",
+            "displayName": "Test (UBSanitizer)",
+            "description": "Run all tests with undefined behavior sanitizer"
         }
     ],
     "workflowPresets": [
         {
-            "name": "d",
+            "name": "debug",
             "displayName": "Debug Workflow",
-            "description": "Build debug",
+            "description": "Build (Debug)",
             "steps": [
                 {
                     "type": "configure",
@@ -122,24 +448,9 @@
             ]
         },
         {
-            "name": "r",
-            "displayName": "Release Workflow",
-            "description": "Build release",
-            "steps": [
-                {
-                    "type": "configure",
-                    "name": "release"
-                },
-                {
-                    "type": "build",
-                    "name": "release"
-                }
-            ]
-        },
-        {
-            "name": "dfull",
+            "name": "debug-full",
             "displayName": "Full Debug Workflow",
-            "description": "Configure, build, and test debug",
+            "description": "Configure, build, and test (Debug)",
             "steps": [
                 {
                     "type": "configure",
@@ -156,9 +467,24 @@
             ]
         },
         {
-            "name": "rfull",
+            "name": "release",
+            "displayName": "Release Workflow",
+            "description": "Build (Release)",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "release"
+                },
+                {
+                    "type": "build",
+                    "name": "release"
+                }
+            ]
+        },
+        {
+            "name": "release-full",
             "displayName": "Full Release Workflow",
-            "description": "Configure, build, and test release",
+            "description": "Configure, build, and test (Release)",
             "steps": [
                 {
                     "type": "configure",
@@ -171,6 +497,308 @@
                 {
                     "type": "test",
                     "name": "release"
+                }
+            ]
+        },
+        {
+            "name": "debug-gcc",
+            "displayName": "Debug Workflow (GCC)",
+            "description": "Build (Debug GCC)",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "debug-gcc"
+                },
+                {
+                    "type": "build",
+                    "name": "debug-gcc"
+                }
+            ]
+        },
+        {
+            "name": "debug-full-gcc",
+            "displayName": "Full Debug Workflow (GCC)",
+            "description": "Configure, build, and test (Debug GCC)",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "debug-gcc"
+                },
+                {
+                    "type": "build",
+                    "name": "debug-gcc"
+                },
+                {
+                    "type": "test",
+                    "name": "debug-gcc"
+                }
+            ]
+        },
+        {
+            "name": "debug-clang",
+            "displayName": "Debug Workflow (Clang)",
+            "description": "Build (Debug Clang)",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "debug-clang"
+                },
+                {
+                    "type": "build",
+                    "name": "debug-clang"
+                }
+            ]
+        },
+        {
+            "name": "debug-full-clang",
+            "displayName": "Full Debug Workflow (Clang)",
+            "description": "Configure, build, and test (Debug Clang)",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "debug-clang"
+                },
+                {
+                    "type": "build",
+                    "name": "debug-clang"
+                },
+                {
+                    "type": "test",
+                    "name": "debug-clang"
+                }
+            ]
+        },
+        {
+            "name": "debug-clang-cl",
+            "displayName": "Debug Workflow (Clang-CL)",
+            "description": "Build (Debug Clang-CL)",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "debug-clang-cl"
+                },
+                {
+                    "type": "build",
+                    "name": "debug-clang-cl"
+                }
+            ]
+        },
+        {
+            "name": "debug-full-clang-cl",
+            "displayName": "Full Debug Workflow (Clang-CL)",
+            "description": "Configure, build, and test (Debug Clang-CL)",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "debug-clang-cl"
+                },
+                {
+                    "type": "build",
+                    "name": "debug-clang-cl"
+                },
+                {
+                    "type": "test",
+                    "name": "debug-clang-cl"
+                }
+            ]
+        },
+        {
+            "name": "debug-msvc",
+            "displayName": "Debug Workflow (MSVC)",
+            "description": "Build (Debug MSVC)",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "debug-msvc"
+                },
+                {
+                    "type": "build",
+                    "name": "debug-msvc"
+                }
+            ]
+        },
+        {
+            "name": "debug-full-msvc",
+            "displayName": "Full Debug Workflow (MSVC)",
+            "description": "Configure, build, and test (Debug MSVC)",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "debug-msvc"
+                },
+                {
+                    "type": "build",
+                    "name": "debug-msvc"
+                },
+                {
+                    "type": "test",
+                    "name": "debug-msvc"
+                }
+            ]
+        },
+        {
+            "name": "release-gcc",
+            "displayName": "Release Workflow (GCC)",
+            "description": "Build (Release GCC)",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "release-gcc"
+                },
+                {
+                    "type": "build",
+                    "name": "release-gcc"
+                }
+            ]
+        },
+        {
+            "name": "release-full-gcc",
+            "displayName": "Full Release Workflow (GCC)",
+            "description": "Configure, build, and test (Release GCC)",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "release-gcc"
+                },
+                {
+                    "type": "build",
+                    "name": "release-gcc"
+                },
+                {
+                    "type": "test",
+                    "name": "release-gcc"
+                }
+            ]
+        },
+        {
+            "name": "release-clang",
+            "displayName": "Release Workflow (Clang)",
+            "description": "Build (Release Clang)",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "release-clang"
+                },
+                {
+                    "type": "build",
+                    "name": "release-clang"
+                }
+            ]
+        },
+        {
+            "name": "release-full-clang",
+            "displayName": "Full Release Workflow (Clang)",
+            "description": "Configure, build, and test (Release Clang)",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "release-clang"
+                },
+                {
+                    "type": "build",
+                    "name": "release-clang"
+                },
+                {
+                    "type": "test",
+                    "name": "release-clang"
+                }
+            ]
+        },
+        {
+            "name": "release-clang-cl",
+            "displayName": "Release Workflow (Clang-CL)",
+            "description": "Build (Release Clang-CL)",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "release-clang-cl"
+                },
+                {
+                    "type": "build",
+                    "name": "release-clang-cl"
+                }
+            ]
+        },
+        {
+            "name": "release-full-clang-cl",
+            "displayName": "Full Release Workflow (Clang-CL)",
+            "description": "Configure, build, and test (Release Clang-CL)",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "release-clang-cl"
+                },
+                {
+                    "type": "build",
+                    "name": "release-clang-cl"
+                },
+                {
+                    "type": "test",
+                    "name": "release-clang-cl"
+                }
+            ]
+        },
+        {
+            "name": "release-msvc",
+            "displayName": "Release Workflow (MSVC)",
+            "description": "Build (Release MSVC)",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "release-msvc"
+                },
+                {
+                    "type": "build",
+                    "name": "release-msvc"
+                }
+            ]
+        },
+        {
+            "name": "release-full-msvc",
+            "displayName": "Full Release Workflow (MSVC)",
+            "description": "Configure, build, and test (Release MSVC)",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "release-msvc"
+                },
+                {
+                    "type": "build",
+                    "name": "release-msvc"
+                },
+                {
+                    "type": "test",
+                    "name": "release-msvc"
+                }
+            ]
+        },
+        {
+            "name": "profiling",
+            "displayName": "Profiling Workflow",
+            "description": "Configure and build (Profiling)",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "profiling"
+                },
+                {
+                    "type": "build",
+                    "name": "profiling"
+                }
+            ]
+        },
+        {
+            "name": "profiling-msvc",
+            "displayName": "Profiling MSVC Workflow",
+            "description": "Configure and build (Profiling MSVC)",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "profiling-msvc"
+                },
+                {
+                    "type": "build",
+                    "name": "profiling-msvc"
                 }
             ]
         }

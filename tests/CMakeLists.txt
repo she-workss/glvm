@@ -18,3 +18,4 @@ function(glvm_add_test NAME)
 endfunction()
 
 glvm_add_test(basic)
+glvm_add_test(rotation_math)
