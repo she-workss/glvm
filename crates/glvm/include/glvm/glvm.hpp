@@ -2171,6 +2171,12 @@ struct WindowInterface {
 public:
     // Window keyboard focus, updated by each backend.
     bool is_focused = true;
+    // Push target for the event stack; the X11/XCB backends push into
+    // global_input_stack directly.
+    EventStack* input_stack = nullptr;
+    // Window size in pixels, updated on resize.
+    u32 width = 0;
+    u32 height = 0;
 
     virtual ~WindowInterface() = default;
 
@@ -2184,6 +2190,15 @@ public:
         i32* out_offset_x,
         i32* out_offset_y
     ) -> void = 0;
+};
+
+// Window-system backend the renderer picked; on Linux every backend is built
+// and the choice is made at runtime (GLVM_WINDOW_SYSTEM overrides).
+enum class WindowSystem: u8 {
+    WAYLAND,
+    X11,
+    XCB,
+    WINDOWS
 };
 
 } // namespace glvm
@@ -2855,9 +2870,6 @@ private:
 
 public:
     static WindowWinVulkan* instance;
-    EventStack* input_stack;
-    u32 width = GetSystemMetrics(SM_CXSCREEN);
-    u32 height = GetSystemMetrics(SM_CYSCREEN);
     WindowWinVulkan();
     auto swap_buffers() -> void override;
     auto clear_display() -> void override;
@@ -3661,7 +3673,6 @@ public:
 
 namespace glvm {
 struct WindowWaylandVulkan: WindowInterface {
-    EventStack* input_stack = nullptr;
     WindowWaylandVulkan();
     auto init() -> void;
     auto close() -> void override;
@@ -3703,9 +3714,6 @@ struct WindowWaylandVulkan: WindowInterface {
     struct zwp_relative_pointer_manager_v1* relative_pointer_manager;
     struct zwp_relative_pointer_v1* relative_pointer;
     void* pixels;
-    // Compositor may never report a size (WSLg sends 0,0); pick a default.
-    u16 width = 1280;
-    u16 height = 720;
     u8 constant_byte = 0;
     u8 close_xdg_toplevel;
     struct wl_display* display;
@@ -3849,16 +3857,14 @@ private:
     XSetWindowAttributes set_window_attributes;
 
 public:
-    Display* display;
+    ::Display* display;
     Window win;
-    u32 width;
-    u32 height;
 
     WindowXVulkan();
     ~WindowXVulkan();
 
     auto get_window() -> Window;
-    auto get_display() -> Display*;
+    auto get_display() -> ::Display*;
     auto cursor_lock(
         i32 pointer_x,
         i32 pointer_y,
@@ -3885,8 +3891,6 @@ private:
     xcb_generic_event_t* next_generic_event = nullptr;
 
 public:
-    u32 width;
-    u32 height;
     bool is_window_resize_read = false;
 
     WindowXCBVulkan();
@@ -5298,11 +5302,9 @@ namespace glvm {
 // live in the game now, see examples/hello_world.cpp.
 } // namespace glvm
 
-#ifdef __linux__
-// #define VK_USE_PLATFORM_XLIB_KHR
-// #define VK_USE_PLATFORM_XCB_KHR
-#define VK_USE_PLATFORM_WAYLAND_KHR
-#endif
+// On Linux every backend (VK_USE_PLATFORM_WAYLAND_KHR / _XLIB_KHR / _XCB_KHR)
+// is compiled in and Renderer picks one at runtime; the defines arrive from
+// the build system (crates/glvm/cmake/dependencies.cmake).
 
 #ifdef _WIN32
 #define VK_USE_PLATFORM_WIN32_KHR // NOLINT(readability-identifier-naming)
@@ -5435,21 +5437,8 @@ public:
     f32 aspect_ratio = 0.0f;
     i32 dragged_item_entity;
 
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
-    glvm::WindowWaylandVulkan* window;
-#endif
-
-#ifdef VK_USE_PLATFORM_XCB_KHR
-    glvm::WindowXCBVulkan* window = nullptr;
-#endif
-
-#ifdef VK_USE_PLATFORM_XLIB_KHR
-    glvm::WindowXVulkan* window;
-#endif
-
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-    glvm::WindowWinVulkan* window;
-#endif
+WindowInterface* window = nullptr;
+    WindowSystem window_system = WindowSystem::WINDOWS;
 
     ImGuiOverlay* imgui_overlay = nullptr;
 

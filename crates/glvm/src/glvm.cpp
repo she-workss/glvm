@@ -48,6 +48,7 @@
 #endif // _WIN32
 #ifdef __linux__
 #include <poll.h>
+#include <strings.h>
 #include <wayland-client-core.h>
 #endif // __linux__
 
@@ -685,39 +686,43 @@ auto Engine::render_vulkan() -> void {
         // Games handle their own UI toggles (e.g. inventory) in the
         // pre-update hook.
         global_event.set_last_event(global_input_stack);
-#ifndef VK_USE_PLATFORM_WAYLAND_KHR
-        const bool cursor_should_be_hidden =
-            !vulkan_renderer->is_inventory_opened
-            && vulkan_renderer->window->is_focused
-            && !vulkan_renderer->is_cursor_released
-            && !vulkan_renderer->imgui_overlay->wants_mouse();
-        if (cursor_should_be_hidden && !is_cursor_hidden) {
-            ShowCursor(FALSE);
-            is_cursor_hidden = true;
-        } else if (!cursor_should_be_hidden && is_cursor_hidden) {
-            ShowCursor(TRUE);
-            is_cursor_hidden = false;
-        }
-        if (cursor_should_be_hidden) {
-            vulkan_renderer->window->cursor_lock(
-                global_event.mouse_pointer_position.position_x,
-                global_event.mouse_pointer_position.position_y,
-                &global_event.mouse_pointer_position.offset_x,
-                &global_event.mouse_pointer_position.offset_y
-            );
-        }
-        // Games reset their own mouse/camera state on UI close in the
-        // pre-update hook.
-#else
-        if (vulkan_renderer->window->is_focused) {
-            vulkan_renderer->window->cursor_lock(
-                global_event.mouse_pointer_position.position_x,
-                global_event.mouse_pointer_position.position_y,
-                &global_event.mouse_pointer_position.offset_x,
-                &global_event.mouse_pointer_position.offset_y
-            );
-        }
+        if (vulkan_renderer->window_system == WindowSystem::WAYLAND) {
+            if (vulkan_renderer->window->is_focused) {
+                vulkan_renderer->window->cursor_lock(
+                    global_event.mouse_pointer_position.position_x,
+                    global_event.mouse_pointer_position.position_y,
+                    &global_event.mouse_pointer_position.offset_x,
+                    &global_event.mouse_pointer_position.offset_y
+                );
+            }
+        } else {
+            const bool cursor_should_be_hidden =
+                !vulkan_renderer->is_inventory_opened
+                && vulkan_renderer->window->is_focused
+                && !vulkan_renderer->is_cursor_released
+                && !vulkan_renderer->imgui_overlay->wants_mouse();
+            if (cursor_should_be_hidden && !is_cursor_hidden) {
+#ifdef _WIN32
+                ShowCursor(FALSE);
 #endif
+                is_cursor_hidden = true;
+            } else if (!cursor_should_be_hidden && is_cursor_hidden) {
+#ifdef _WIN32
+                ShowCursor(TRUE);
+#endif
+                is_cursor_hidden = false;
+            }
+            if (cursor_should_be_hidden) {
+                vulkan_renderer->window->cursor_lock(
+                    global_event.mouse_pointer_position.position_x,
+                    global_event.mouse_pointer_position.position_y,
+                    &global_event.mouse_pointer_position.offset_x,
+                    &global_event.mouse_pointer_position.offset_y
+                );
+            }
+            // Games reset their own mouse/camera state on UI close in the
+            // pre-update hook.
+        }
         compute_hud_screen_coordinates();
         if (pre_update_hook) {
             pre_update_hook();
@@ -813,14 +818,16 @@ auto Engine::set_view_matrix() -> void {
             f32 delta_x = 0.0f;
             f32 delta_y = 0.0f;
             if (!vulkan_renderer->is_inventory_opened) {
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
-                delta_x = vulkan_renderer->current_x;
-                delta_y = vulkan_renderer->current_y;
-#else
-                delta_x = vulkan_renderer->current_x - vulkan_renderer->prev_x;
-                delta_y = vulkan_renderer->current_y - vulkan_renderer->prev_y;
-                delta_y *= -1.0f;
-#endif
+                if (vulkan_renderer->window_system == WindowSystem::WAYLAND) {
+                    delta_x = vulkan_renderer->current_x;
+                    delta_y = vulkan_renderer->current_y;
+                } else {
+                    delta_x =
+                        vulkan_renderer->current_x - vulkan_renderer->prev_x;
+                    delta_y =
+                        vulkan_renderer->current_y - vulkan_renderer->prev_y;
+                    delta_y *= -1.0f;
+                }
             }
             const Vector<f32, 3> right_vec = cross(
                 camera_component->forward,
@@ -1761,34 +1768,35 @@ auto Engine::compute_model_matrix(Transform* transform, f32 yaw)
 }
 
 auto Engine::compute_hud_screen_coordinates() -> void {
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
-    hud_screen_y -= global_event.mouse_pointer_position.offset_y
-        / as<f32>(vulkan_renderer->window->height);
-    hud_screen_x += global_event.mouse_pointer_position.offset_x
-        / as<f32>(vulkan_renderer->window->width);
-#else
-    if (vulkan_renderer->is_inventory_opened
-        || vulkan_renderer->is_cursor_released) {
-        // Cursor is free while the inventory is open or the cursor is released:
-        // track its real position instead of the locked-mouse offsets.
-        hud_screen_x = 1.0f
-            - (global_event.mouse_pointer_position.position_x
-               / (as<f32>(vulkan_renderer->window->width) / 2.0f));
-        hud_screen_y =
-            -((global_event.mouse_pointer_position.position_y
-               / (as<f32>(vulkan_renderer->window->height) / 2.0f))
-              - 1.0f);
-    } else {
-        hud_screen_y -= (previous_mouse_offset_y
-                         - global_event.mouse_pointer_position.offset_y)
+    if (vulkan_renderer->window_system == WindowSystem::WAYLAND) {
+        hud_screen_y -= global_event.mouse_pointer_position.offset_y
             / as<f32>(vulkan_renderer->window->height);
-        hud_screen_x += (previous_mouse_offset_x
-                         - global_event.mouse_pointer_position.offset_x)
+        hud_screen_x += global_event.mouse_pointer_position.offset_x
             / as<f32>(vulkan_renderer->window->width);
+    } else {
+        if (vulkan_renderer->is_inventory_opened
+            || vulkan_renderer->is_cursor_released) {
+            // Cursor is free while the inventory is open or the cursor is
+            // released: track its real position instead of the locked-mouse
+            // offsets.
+            hud_screen_x = 1.0f
+                - (global_event.mouse_pointer_position.position_x
+                   / (as<f32>(vulkan_renderer->window->width) / 2.0f));
+            hud_screen_y =
+                -((global_event.mouse_pointer_position.position_y
+                   / (as<f32>(vulkan_renderer->window->height) / 2.0f))
+                  - 1.0f);
+        } else {
+            hud_screen_y -= (previous_mouse_offset_y
+                             - global_event.mouse_pointer_position.offset_y)
+                / as<f32>(vulkan_renderer->window->height);
+            hud_screen_x += (previous_mouse_offset_x
+                             - global_event.mouse_pointer_position.offset_x)
+                / as<f32>(vulkan_renderer->window->width);
+        }
+        previous_mouse_offset_x = global_event.mouse_pointer_position.offset_x;
+        previous_mouse_offset_y = global_event.mouse_pointer_position.offset_y;
     }
-    previous_mouse_offset_x = global_event.mouse_pointer_position.offset_x;
-    previous_mouse_offset_y = global_event.mouse_pointer_position.offset_y;
-#endif
     if (hud_screen_x > 1.0f) {
         hud_screen_x = 1.0f;
     } else if (hud_screen_x < -1.0f) {
@@ -2689,7 +2697,9 @@ auto ImGuiOverlay::init() -> void {
     create_vertex_buffer();
     create_line_pipeline();
 #ifdef _WIN32
-    ImGui_ImplWin32_Init(renderer.window->get_modern_window_hwnd());
+    ImGui_ImplWin32_Init(
+        static_cast<WindowWinVulkan*>(renderer.window)->get_modern_window_hwnd()
+    );
 #endif
     ImGui_ImplVulkan_InitInfo init_info {};
     init_info.ApiVersion = VK_API_VERSION_1_0;
@@ -3596,7 +3606,9 @@ auto Renderer::recreate_swap_chain() -> void {
     vkDeviceWaitIdle(device);
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
-    window->configure_window();
+    if (window_system == WindowSystem::XCB) {
+        static_cast<WindowXCBVulkan*>(window)->configure_window();
+    }
 #endif
 
     imgui_overlay->destroy_swap_chain_resources();
@@ -3639,52 +3651,89 @@ auto Renderer::run() -> void {
     init_vulkan();
 }
 
+#ifdef __linux__
+namespace {
+auto env_matches(const char* name, const char* value) -> bool {
+    const char* env = std::getenv(name);
+    return env != nullptr && strcasecmp(env, value) == 0;
+}
+
+// Wayland wins over XWayland; GLVM_WINDOW_SYSTEM=wayland|x11|xcb forces one.
+auto detect_window_system() -> WindowSystem {
+    if (env_matches("GLVM_WINDOW_SYSTEM", "wayland")) {
+        return WindowSystem::WAYLAND;
+    }
+    if (env_matches("GLVM_WINDOW_SYSTEM", "x11")) {
+        return WindowSystem::X11;
+    }
+    if (env_matches("GLVM_WINDOW_SYSTEM", "xcb")) {
+        return WindowSystem::XCB;
+    }
+    if (std::getenv("WAYLAND_DISPLAY") != nullptr) {
+        return WindowSystem::WAYLAND;
+    }
+    if (std::getenv("DISPLAY") != nullptr) {
+        return WindowSystem::XCB;
+    }
+    return WindowSystem::WAYLAND;
+}
+} // namespace
+#endif
+
 auto Renderer::init_window() -> void {
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
-    window = initialize_wayland_window();
-    create_wayland_surface_info.display = window->display;
-    create_wayland_surface_info.surface = window->wl_surface;
-    aspect_ratio = as<f32>(window->width) / as<f32>(window->height);
-    create_wayland_surface_info.sType =
-        VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
-    create_wayland_surface_info.pNext = nullptr;
-    create_wayland_surface_info.flags = 0;
-#endif
-
-#ifdef VK_USE_PLATFORM_XLIB_KHR
-    window = new glvm::WindowXVulkan();
-    create_xlib_surface_info.dpy = window->get_display();
-    create_xlib_surface_info.window = window->get_window();
-    aspect_ratio = as<f32>(window->width) / as<f32>(window->height);
-
-    create_xlib_surface_info.sType =
-        VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
-    create_xlib_surface_info.pNext = nullptr;
-    create_xlib_surface_info.flags = 0;
-#endif
-
-#ifdef VK_USE_PLATFORM_XCB_KHR
-    window = new glvm::WindowXCBVulkan();
-    create_xcb_surface_info.window = window->get_window();
-    create_xcb_surface_info.connection = window->get_connection();
-    aspect_ratio = as<f32>(window->width) / as<f32>(window->height);
-
-    create_xcb_surface_info.sType =
-        VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-    create_xcb_surface_info.pNext = nullptr;
-    create_xcb_surface_info.flags = 0;
-#endif
-
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-    window = new glvm::WindowWinVulkan();
-    create_win32_surface_info.hwnd = window->get_modern_window_hwnd();
-    aspect_ratio = as<f32>(window->width) / as<f32>(window->height);
-
+#ifdef _WIN32
+    window_system = WindowSystem::WINDOWS;
+    auto* win32 = new WindowWinVulkan();
+    window = win32;
+    create_win32_surface_info.hwnd = win32->get_modern_window_hwnd();
     create_win32_surface_info.sType =
         VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
     create_win32_surface_info.pNext = nullptr;
     create_win32_surface_info.flags = 0;
 #endif
+
+#ifdef __linux__
+    window_system = detect_window_system();
+    switch (window_system) {
+        case WindowSystem::WAYLAND: {
+            auto* wayland = initialize_wayland_window();
+            window = wayland;
+            create_wayland_surface_info.display = wayland->display;
+            create_wayland_surface_info.surface = wayland->wl_surface;
+            create_wayland_surface_info.sType =
+                VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
+            create_wayland_surface_info.pNext = nullptr;
+            create_wayland_surface_info.flags = 0;
+            break;
+        }
+        case WindowSystem::X11: {
+            auto* x11 = new WindowXVulkan();
+            window = x11;
+            create_xlib_surface_info.dpy = x11->get_display();
+            create_xlib_surface_info.window = x11->get_window();
+            create_xlib_surface_info.sType =
+                VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+            create_xlib_surface_info.pNext = nullptr;
+            create_xlib_surface_info.flags = 0;
+            break;
+        }
+        case WindowSystem::XCB: {
+            auto* xcb = new WindowXCBVulkan();
+            window = xcb;
+            create_xcb_surface_info.window = xcb->get_window();
+            create_xcb_surface_info.connection = xcb->get_connection();
+            create_xcb_surface_info.sType =
+                VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+            create_xcb_surface_info.pNext = nullptr;
+            create_xcb_surface_info.flags = 0;
+            break;
+        }
+        case WindowSystem::WINDOWS:
+            break;
+    }
+#endif
+
+    aspect_ratio = as<f32>(window->width) / as<f32>(window->height);
 }
 
 auto Renderer::initialize_game_level_vertices() -> void {
@@ -4255,53 +4304,60 @@ auto Renderer::setup_debug_messenger() -> void {
 }
 
 auto Renderer::create_surface() -> void {
+    switch (window_system) {
+        case WindowSystem::WAYLAND:
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-    if (vkCreateWaylandSurfaceKHR(
-            instance,
-            &create_wayland_surface_info,
-            nullptr,
-            &surface
-        )
-        != VK_SUCCESS) {
-        throw std::runtime_error("failed to create window surface!");
-    }
+            if (vkCreateWaylandSurfaceKHR(
+                    instance,
+                    &create_wayland_surface_info,
+                    nullptr,
+                    &surface
+                )
+                != VK_SUCCESS) {
+                throw std::runtime_error("failed to create window surface!");
+            }
 #endif
-
+            break;
+        case WindowSystem::X11:
 #ifdef VK_USE_PLATFORM_XLIB_KHR
-    if (vkCreateXlibSurfaceKHR(
-            instance,
-            &create_xlib_surface_info,
-            nullptr,
-            &surface
-        )
-        != VK_SUCCESS) {
-        throw std::runtime_error("failed to create window surface!");
-    }
+            if (vkCreateXlibSurfaceKHR(
+                    instance,
+                    &create_xlib_surface_info,
+                    nullptr,
+                    &surface
+                )
+                != VK_SUCCESS) {
+                throw std::runtime_error("failed to create window surface!");
+            }
 #endif
-
+            break;
+        case WindowSystem::XCB:
 #ifdef VK_USE_PLATFORM_XCB_KHR
-    if (vkCreateXcbSurfaceKHR(
-            instance,
-            &create_xcb_surface_info,
-            nullptr,
-            &surface
-        )
-        != VK_SUCCESS) {
-        throw std::runtime_error("failed to create window surface!");
-    }
+            if (vkCreateXcbSurfaceKHR(
+                    instance,
+                    &create_xcb_surface_info,
+                    nullptr,
+                    &surface
+                )
+                != VK_SUCCESS) {
+                throw std::runtime_error("failed to create window surface!");
+            }
 #endif
-
+            break;
+        case WindowSystem::WINDOWS:
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    if (vkCreateWin32SurfaceKHR(
-            instance,
-            &create_win32_surface_info,
-            nullptr,
-            &surface
-        )
-        != VK_SUCCESS) {
-        throw std::runtime_error("failed to create window surface!");
-    }
+            if (vkCreateWin32SurfaceKHR(
+                    instance,
+                    &create_win32_surface_info,
+                    nullptr,
+                    &surface
+                )
+                != VK_SUCCESS) {
+                throw std::runtime_error("failed to create window surface!");
+            }
 #endif
+            break;
+    }
 }
 
 auto Renderer::pick_physical_device() -> void {
@@ -8505,37 +8561,29 @@ auto Renderer::find_queue_families(VkPhysicalDevice device)
 }
 
 auto Renderer::get_required_extensions() -> Vec<const char*> {
-#ifdef VK_USE_PLATFORM_XLIB_KHR
-    Vec<const char*> required_extensions = {
-        "VK_KHR_xlib_surface",
-        "VK_EXT_acquire_xlib_display",
-        "VK_KHR_display",
-        "VK_KHR_surface",
-        "VK_EXT_direct_mode_display",
-    };
-#endif
-#ifdef VK_USE_PLATFORM_XCB_KHR
-    Vec<const char*> required_extensions = {
-        "VK_KHR_xcb_surface",
-        "VK_KHR_display",
-        "VK_KHR_surface",
-        "VK_EXT_direct_mode_display"
-    };
-#endif
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-    Vec<const char*> required_extensions = {
-        "VK_KHR_win32_surface",
-        "VK_KHR_surface"
-    };
-#endif
+    Vec<const char*> required_extensions = {"VK_KHR_surface"};
+    switch (window_system) {
+        case WindowSystem::WAYLAND:
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-    Vec<const char*> required_extensions = {
-        "VK_KHR_wayland_surface",
-        "VK_KHR_display",
-        "VK_EXT_direct_mode_display",
-        "VK_KHR_surface"
-    };
+            required_extensions.push_back("VK_KHR_wayland_surface");
 #endif
+            break;
+        case WindowSystem::X11:
+#ifdef VK_USE_PLATFORM_XLIB_KHR
+            required_extensions.push_back("VK_KHR_xlib_surface");
+#endif
+            break;
+        case WindowSystem::XCB:
+#ifdef VK_USE_PLATFORM_XCB_KHR
+            required_extensions.push_back("VK_KHR_xcb_surface");
+#endif
+            break;
+        case WindowSystem::WINDOWS:
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+            required_extensions.push_back("VK_KHR_win32_surface");
+#endif
+            break;
+    }
     if (enable_validation_layers) {
         required_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
@@ -10768,6 +10816,8 @@ WindowWinVulkan* WindowWinVulkan::instance = nullptr;
 
 WindowWinVulkan::WindowWinVulkan() {
     instance = this;
+    width = GetSystemMetrics(SM_CXSCREEN);
+    height = GetSystemMetrics(SM_CYSCREEN);
     const char* title = "Game";
     i32 window_width = width / 2, window_height = height / 2;
     // Register the window class for the main window.
@@ -11939,6 +11989,9 @@ auto xdg_toplevel_close(void* data, struct xdg_toplevel* xdg_toplevel) -> void {
 }
 
 WindowWaylandVulkan::WindowWaylandVulkan() {
+    // Compositor may never report a size (WSLg sends 0,0); pick a default.
+    width = 1280;
+    height = 720;
 }
 
 auto WindowWaylandVulkan::init() -> void {
@@ -11971,6 +12024,7 @@ auto WindowWaylandVulkan::init() -> void {
         as<void*>((&wayland_window))
     );
     xdg_toplevel_set_title(xdg_toplevel, "wayland glvm client");
+    xdg_toplevel_set_fullscreen(xdg_toplevel, nullptr);
     wl_surface_commit(wl_surface);
 }
 
@@ -12181,7 +12235,7 @@ auto WindowXVulkan::get_window() -> Window {
     return win;
 }
 
-auto WindowXVulkan::get_display() -> Display* {
+auto WindowXVulkan::get_display() -> ::Display* {
     return display;
 }
 
@@ -12361,7 +12415,6 @@ auto WindowXVulkan::close() -> void {
 #include <X11/XKBlib.h>
 #include <xcb/xcb_cursor.h>
 #include <xcb/xcb_keysyms.h>
-#include <xcb/xfixes.h>
 
 namespace glvm {
 WindowXCBVulkan::WindowXCBVulkan() {

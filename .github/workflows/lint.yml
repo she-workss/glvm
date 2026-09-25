@@ -1,0 +1,85 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CPM_SOURCE_CACHE: ${{ github.workspace }}/.cpm-cache
+
+jobs:
+  typos:
+    name: Spellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: crate-ci/typos@v1
+
+  clang-format:
+    name: Formatting (clang-format-23)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install clang-format-23
+        run: |
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key \
+            | sudo tee /etc/apt/trusted.gpg.d/llvm.asc
+          . /etc/os-release
+          echo "deb http://apt.llvm.org/${VERSION_CODENAME}/ llvm-toolchain-${VERSION_CODENAME}-23 main" \
+            | sudo tee /etc/apt/sources.list.d/llvm-23.list
+          sudo apt-get update
+          sudo apt-get install -y clang-format-23
+
+      - name: Check formatting
+        run: |
+          find crates examples tests benches \
+            \( -name '*.cpp' -o -name '*.hpp' -o -name '*.h' \) \
+            -print0 \
+          | xargs -0 clang-format-23 --dry-run --Werror --style=file
+
+  clang-tidy:
+    name: Static Analysis (clang-tidy-23)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Clang 23 + libc++ + Wayland/X11/XCB/ALSA deps
+        run: |
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key \
+            | sudo tee /etc/apt/trusted.gpg.d/llvm.asc
+          . /etc/os-release
+          echo "deb http://apt.llvm.org/${VERSION_CODENAME}/ llvm-toolchain-${VERSION_CODENAME}-23 main" \
+            | sudo tee /etc/apt/sources.list.d/llvm-23.list
+          sudo apt-get update
+          sudo apt-get install -y clang-23 clang-tidy-23 lld-23 \
+            libc++-23-dev libc++abi-23-dev ninja-build \
+            libwayland-dev libwayland-bin libasound2-dev \
+            libx11-dev libxcb1-dev libxcb-cursor-dev libxcb-keysyms1-dev \
+            glslang-tools
+
+      - uses: actions/cache@v6
+        with:
+          path: ${{ env.CPM_SOURCE_CACHE }}
+          key: cpm-tidy-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+          restore-keys: cpm-tidy-
+
+      - name: Configure & Build
+        run: |
+          cmake --preset debug \
+            -DGLVM_BUILD_DOCS=OFF \
+            -DGLVM_SANITIZERS=OFF \
+            -DCMAKE_C_COMPILER=clang-23 \
+            -DCMAKE_CXX_COMPILER=clang++-23 \
+            -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld-23 -stdlib=libc++"
+          cmake --build --preset debug
+
+      - name: Run clang-tidy
+        run: |
+          find crates -name '*.cpp' -print0 \
+          | xargs -0 clang-tidy-23 \
+              -p build/debug \
+              --header-filter='crates/.*' \
+              --warnings-as-errors='*'

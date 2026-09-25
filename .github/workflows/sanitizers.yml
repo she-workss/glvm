@@ -1,0 +1,133 @@
+name: Sanitizers
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CPM_SOURCE_CACHE: ${{ github.workspace }}/.cpm-cache
+
+jobs:
+  asan:
+    name: AddressSanitizer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install GCC 16 + lld + Wayland/X11/XCB/ALSA deps
+        run: |
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+          sudo apt-get update
+          sudo apt-get install -y gcc-16 g++-16 lld ninja-build \
+            libwayland-dev libwayland-bin libasound2-dev \
+            libx11-dev libxcb1-dev libxcb-cursor-dev libxcb-keysyms1-dev \
+            glslang-tools
+
+      - uses: actions/cache@v6
+        with:
+          path: ${{ env.CPM_SOURCE_CACHE }}
+          key: cpm-asan-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+          restore-keys: cpm-asan-
+
+      - name: Configure
+        run: |
+          cmake --preset asan \
+            -DGLVM_BUILD_DOCS=OFF \
+            -DGLVM_SANITIZERS=OFF \
+            -DCMAKE_C_COMPILER=gcc-16 \
+            -DCMAKE_CXX_COMPILER=g++-16
+
+      - name: Build
+        run: cmake --build build/asan
+
+      - name: Test
+        run: ctest --test-dir build/asan --output-on-failure
+        env:
+          ASAN_OPTIONS: detect_leaks=1:abort_on_error=1:print_stacktrace=1
+
+  ubsan:
+    name: UndefinedBehaviorSanitizer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install GCC 16 + lld + Wayland/X11/XCB/ALSA deps
+        run: |
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+          sudo apt-get update
+          sudo apt-get install -y gcc-16 g++-16 lld ninja-build \
+            libwayland-dev libwayland-bin libasound2-dev \
+            libx11-dev libxcb1-dev libxcb-cursor-dev libxcb-keysyms1-dev \
+            glslang-tools
+
+      - uses: actions/cache@v6
+        with:
+          path: ${{ env.CPM_SOURCE_CACHE }}
+          key: cpm-ubsan-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+          restore-keys: cpm-ubsan-
+
+      - name: Configure
+        run: |
+          cmake --preset ubsan \
+            -DGLVM_BUILD_DOCS=OFF \
+            -DGLVM_SANITIZERS=OFF \
+            -DCMAKE_C_COMPILER=gcc-16 \
+            -DCMAKE_CXX_COMPILER=g++-16
+
+      - name: Build
+        run: cmake --build build/ubsan
+
+      - name: Test
+        run: ctest --test-dir build/ubsan --output-on-failure
+        env:
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+
+  valgrind:
+    name: Valgrind
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install GCC 16 + lld + Valgrind + Wayland/X11/XCB/ALSA deps
+        run: |
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+          sudo apt-get update
+          sudo apt-get install -y gcc-16 g++-16 lld valgrind ninja-build \
+            libwayland-dev libwayland-bin libasound2-dev \
+            libx11-dev libxcb1-dev libxcb-cursor-dev libxcb-keysyms1-dev \
+            glslang-tools
+
+      - uses: actions/cache@v6
+        with:
+          path: ${{ env.CPM_SOURCE_CACHE }}
+          key: cpm-valgrind-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+          restore-keys: cpm-valgrind-
+
+      - name: Configure & Build
+        run: |
+          cmake --preset debug \
+            -DGLVM_BUILD_DOCS=OFF \
+            -DGLVM_SANITIZERS=OFF \
+            -DCMAKE_C_COMPILER=gcc-16 \
+            -DCMAKE_CXX_COMPILER=g++-16
+          cmake --build --preset debug
+
+      - name: Unit tests - glvm
+        run: |
+          valgrind --error-exitcode=1 --leak-check=full \
+            --show-leak-kinds=all --track-origins=yes \
+            ./build/debug/crates/glvm/tests/basic_glvm
+
+      - name: Unit tests - rotation_math
+        run: |
+          valgrind --error-exitcode=1 --leak-check=full \
+            --show-leak-kinds=all --track-origins=yes \
+            ./build/debug/tests/rotation_math
+
+      - name: Integration tests
+        run: |
+          valgrind --error-exitcode=1 --leak-check=full \
+            --show-leak-kinds=all --track-origins=yes \
+            ./build/debug/tests/basic
