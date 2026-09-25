@@ -911,8 +911,6 @@ public:
     f32 gravity {};
     EventStack& input_stack;
     f32 prev_delta_x = 0.0f;
-    f32 prev_x = 0.0f;
-    f32 current_x = 0.0f;
     Vector<f32, 3> prev_forward;
 
     u32 player_archetypes_number = 0;
@@ -944,12 +942,6 @@ public:
         (1ull << ComponentsIndices::TransformComponent)
         | (1ull << ComponentsIndices::RigidBodyComponent)
         | (1ull << GameComponentsIndices::MoveComponent);
-
-    /// Mesh facing direction on the previous frame (XZ plane).
-    Vector<f32, 3> previous_frame_forward = {0.0f, 0.0f, -1.0f};
-    /// WASD pressed state on the previous frame, in MoveForward,
-    /// MoveBackward, MoveLeft, MoveRight order.
-    Array<bool, 4> previous_key_events {};
 
     explicit MovementSystem(EventStack& input_stack);
 
@@ -1483,7 +1475,6 @@ auto main() -> i32 {
             renderer->prev_y = 0.0f;
             renderer->current_x = 0.0f;
             renderer->current_y = 0.0f;
-            movement_system->prev_x = 0.0f;
             engine->set_previous_mouse_offsets(0.0f, 0.0f);
         }
         was_inventory_opened = renderer->is_inventory_opened;
@@ -1553,15 +1544,24 @@ auto main() -> i32 {
             orbit_prev_x = 0.0f;
             orbit_prev_y = 0.0f;
             auto& offset = camera_views[0].position;
-            const auto orbit_yaw = delta_x * 0.0025f;
-            const auto cos_yaw = std::cos(orbit_yaw);
-            const auto sin_yaw = std::sin(orbit_yaw);
-            const auto offset_x = offset[0];
-            const auto offset_z = offset[2];
-            offset[0] = offset_x * cos_yaw + offset_z * sin_yaw;
-            offset[2] = -offset_x * sin_yaw + offset_z * cos_yaw;
-            offset[1] =
-                clamp(as<f32>(0.6), offset[1] - delta_y * 0.01f, as<f32>(6.0));
+            constexpr auto ORBIT_SENSITIVITY = 0.0025f;
+            constexpr auto MAX_ORBIT_PITCH = 1.45f;
+            const auto orbit_radius = vec_length(offset);
+            auto orbit_yaw =
+                std::atan2(offset[0], offset[2]) + delta_x * ORBIT_SENSITIVITY;
+            auto orbit_pitch = std::asin(clamp(
+                                    as<f32>(-1.0f),
+                                    offset[1] / orbit_radius,
+                                    as<f32>(1.0f)
+                                ))
+                - delta_y * ORBIT_SENSITIVITY;
+            orbit_pitch =
+                clamp(-MAX_ORBIT_PITCH, orbit_pitch, MAX_ORBIT_PITCH);
+            offset[0] =
+                orbit_radius * std::cos(orbit_pitch) * std::sin(orbit_yaw);
+            offset[1] = orbit_radius * std::sin(orbit_pitch);
+            offset[2] =
+                orbit_radius * std::cos(orbit_pitch) * std::cos(orbit_yaw);
             // Neutralize engine mouse-look: it would rotate on top of the
             // aim and snap back every frame. Movement already consumed
             // these offsets earlier in the frame.
@@ -3169,7 +3169,6 @@ auto MovementSystem::update() -> void {
         ColliderFlags* player_collider_flags =
             &components_view.player_collider_flags[i];
         RigidBody* player_rigid_body = &components_view.player_rigid_body[i];
-        Transform* player_transform = &components_view.player_transforms[i];
         Rotation* player_rotation = &components_view.player_rotations[i];
         for (i32 n = 0; n < 6; ++n) {
             Vector<f32, 3> right;
@@ -3209,107 +3208,24 @@ auto MovementSystem::update() -> void {
                     break;
             }
         }
-        // Third-person mesh facing: yaw the mesh toward the movement
-        // direction while moving; follow the camera while standing still.
-        // NOTE: the renderer does not apply Rotation yet, so yaw is tracked
-        // as state here and the mesh snaps via forward.
-        if (std::abs(player_move->frame_movement[0]) > 0.0f
-            || std::abs(player_move->frame_movement[2]) > 0.0f) {
-            Array<bool, 4> current_key_events {
-                input_stack.search_element(EventKind::MoveForward)
-                    == EventKind::MoveForward,
-                input_stack.search_element(EventKind::MoveBackward)
-                    == EventKind::MoveBackward,
-                input_stack.search_element(EventKind::MoveLeft)
-                    == EventKind::MoveLeft,
-                input_stack.search_element(EventKind::MoveRight)
-                    == EventKind::MoveRight
-            };
-            if (current_key_events == previous_key_events) {
-                // Same keys held: facing already tracks movement.
-            } else if (
-                !current_key_events[0] && !current_key_events[1]
-                && !current_key_events[2] && !current_key_events[3]
-            ) {
-                // Keys released mid-frame: wait for the standstill branch.
-            } else {
-                previous_key_events = current_key_events;
-                auto sign = cross(
-                    Vector<f32, 2>(
-                        player_move->frame_movement[0],
-                        player_move->frame_movement[2]
-                    ),
-                    Vector<f32, 2>(
-                        player_transform->forward[0],
-                        player_transform->forward[2]
-                    )
-                );
-                if (sign > 0.0f) {
-                    sign = 1.0f;
-                } else if (sign < 0.0f) {
-                    sign = -1.0f;
-                } else {
-                    sign = 1.0f;
-                }
-                const auto rotation_angle = std::acos(clamp(
-                    as<f32>(-1),
-                    dot(normalize(
-                            Vector<f32, 3>(
-                                player_move->frame_movement[0],
-                                0.0f,
-                                player_move->frame_movement[2]
-                            )
-                        ),
-                        normalize(
-                            Vector<f32, 3>(
-                                player_transform->forward[0],
-                                0.0f,
-                                player_transform->forward[2]
-                            )
-                        )),
-                    as<f32>(1)
-                ));
-                player_rotation->yaw += rotation_angle * sign;
-                player_transform->forward = player_move->frame_movement;
-                previous_frame_forward = player_transform->forward;
-            }
-        } else {
-            previous_key_events = {false, false, false, false};
-            player_transform->forward = player_view->forward;
-            auto idle_sign = cross(
-                Vector<f32, 2>(
-                    previous_frame_forward[0],
-                    previous_frame_forward[2]
-                ),
-                Vector<f32, 2>(player_view->forward[0], player_view->forward[2])
-            );
-            if (idle_sign > 0.0f) {
-                idle_sign = 1.0f;
-            } else if (idle_sign < 0.0f) {
-                idle_sign = -1.0f;
-            } else {
-                idle_sign = 1.0f;
-            }
-            player_rotation->yaw -= std::acos(clamp(
-                                        as<f32>(-1),
-                                        dot(normalize(
-                                                Vector<f32, 3>(
-                                                    previous_frame_forward[0],
-                                                    0.0f,
-                                                    previous_frame_forward[2]
-                                                )
-                                            ),
-                                            normalize(
-                                                Vector<f32, 3>(
-                                                    player_view->forward[0],
-                                                    0.0f,
-                                                    player_view->forward[2]
-                                                )
-                                            )),
-                                        as<f32>(1)
-                                    ))
-                * idle_sign;
-            previous_frame_forward = player_view->forward;
+        const bool is_moving =
+            std::abs(player_move->frame_movement[0]) > 0.0f
+            || std::abs(player_move->frame_movement[2]) > 0.0f;
+        const Vector<f32, 3> facing = is_moving
+            ? Vector<f32, 3>(
+                  player_move->frame_movement[0],
+                  0.0f,
+                  player_move->frame_movement[2]
+              )
+            : Vector<f32, 3>(
+                  player_view->forward[0],
+                  0.0f,
+                  player_view->forward[2]
+              );
+        if (vec_length(facing) > 0.001f) {
+            const auto normalized_facing = normalize(facing);
+            player_rotation->yaw =
+                std::atan2(normalized_facing[0], normalized_facing[2]);
         }
     }
 
@@ -3368,38 +3284,15 @@ auto MovementSystem::calculate_vector_rl(Beholder& beholder) -> Vector<f32, 3> {
 
 auto MovementSystem::calculate_vector_fb(Beholder& beholder, Event& /*event*/)
     -> Vector<f32, 3> {
-    Vector<f32, 3> forward(0.0f);
-    current_x = as<f32>(global_event.mouse_pointer_position.offset_x);
-    f32 delta_x = current_x - prev_x;
-    const Vector<f32, 3> rotate_axis = {0.0f, -1.0f, 0.0f};
-    f32 rotation_angle = delta_x;
-    constexpr auto ANGLE_SCALE = 0.1f;
-    rotation_angle = radians(rotation_angle * ANGLE_SCALE);
-    // Quaternions need division by 2.
-    constexpr auto QUAT_ANGLE_CORRECTION = 0.5f;
-    const auto sin_rotation_angle =
-        sinf(rotation_angle * QUAT_ANGLE_CORRECTION);
-    Quaternion rotation_quat = Quaternion(
-        cosf(rotation_angle * QUAT_ANGLE_CORRECTION),
-        sin_rotation_angle * rotate_axis[0],
-        sin_rotation_angle * rotate_axis[1],
-        sin_rotation_angle * rotate_axis[2]
+    const Vector<f32, 3> forward(
+        beholder.forward[0],
+        0.0f,
+        beholder.forward[2]
     );
-    const Quaternion applied_rotation_quat = (rotation_quat
-                                              * Quaternion(
-                                                  0.0f,
-                                                  beholder.forward[0],
-                                                  beholder.forward[1],
-                                                  beholder.forward[2]
-                                              ))
-        * conjugate(rotation_quat);
-
-    forward[0] = applied_rotation_quat.x;
-    forward[1] = 0.0f;
-    forward[2] = applied_rotation_quat.z;
-    prev_x = as<f32>(global_event.mouse_pointer_position.offset_x);
-    forward = normalize(forward);
-    return forward;
+    if (vec_length(forward) < 0.001f) {
+        return Vector<f32, 3>(0.0f, 0.0f, -1.0f);
+    }
+    return normalize(forward);
 }
 
 ProjectileSystem::ProjectileSystem(EventStack& input_stack) :

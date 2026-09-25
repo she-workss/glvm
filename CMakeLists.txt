@@ -31,6 +31,10 @@ option(GLVM_BUILD_TESTS "Build GLVM tests" ${PROJECT_IS_TOP_LEVEL})
 option(GLVM_BUILD_EXAMPLES "Build GLVM examples" ${PROJECT_IS_TOP_LEVEL})
 option(GLVM_BUILD_BENCHES "Build GLVM benchmarks" ${PROJECT_IS_TOP_LEVEL})
 option(GLVM_UNITY_BUILD "Enable unity builds" ${PROJECT_IS_TOP_LEVEL})
+set(GLVM_WINDOW_SYSTEM "WAYLAND" CACHE STRING
+  "Linux window-system backend: WAYLAND, X11 or XCB"
+)
+set_property(CACHE GLVM_WINDOW_SYSTEM PROPERTY STRINGS WAYLAND X11 XCB)
 option(GLVM_SANITIZERS
   "Enable sanitizers in Debug builds (ASan, UBSan)"
   ${PROJECT_IS_TOP_LEVEL}

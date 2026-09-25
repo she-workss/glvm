@@ -5298,11 +5298,9 @@ namespace glvm {
 // live in the game now, see examples/hello_world.cpp.
 } // namespace glvm
 
-#ifdef __linux__
-// #define VK_USE_PLATFORM_XLIB_KHR
-// #define VK_USE_PLATFORM_XCB_KHR
-#define VK_USE_PLATFORM_WAYLAND_KHR
-#endif
+// The Linux backend (VK_USE_PLATFORM_WAYLAND_KHR / _XLIB_KHR / _XCB_KHR) is
+// selected by the GLVM_WINDOW_SYSTEM CMake option and arrives as a compile
+// definition on the target.
 
 #ifdef _WIN32
 #define VK_USE_PLATFORM_WIN32_KHR // NOLINT(readability-identifier-naming)

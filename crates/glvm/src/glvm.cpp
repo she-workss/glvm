@@ -692,10 +692,14 @@ auto Engine::render_vulkan() -> void {
             && !vulkan_renderer->is_cursor_released
             && !vulkan_renderer->imgui_overlay->wants_mouse();
         if (cursor_should_be_hidden && !is_cursor_hidden) {
+#ifdef _WIN32
             ShowCursor(FALSE);
+#endif
             is_cursor_hidden = true;
         } else if (!cursor_should_be_hidden && is_cursor_hidden) {
+#ifdef _WIN32
             ShowCursor(TRUE);
+#endif
             is_cursor_hidden = false;
         }
         if (cursor_should_be_hidden) {
@@ -11971,6 +11975,7 @@ auto WindowWaylandVulkan::init() -> void {
         as<void*>((&wayland_window))
     );
     xdg_toplevel_set_title(xdg_toplevel, "wayland glvm client");
+    xdg_toplevel_set_fullscreen(xdg_toplevel, nullptr);
     wl_surface_commit(wl_surface);
 }
 
