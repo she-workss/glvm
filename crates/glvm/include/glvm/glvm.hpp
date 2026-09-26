@@ -67,7 +67,6 @@
 #ifdef __linux__
 #include "wayland-client.h"
 
-#include <X11/Xlib.h>
 #include <algorithm>
 #include <alsa/asoundlib.h>
 #include <alsa/pcm.h>
@@ -94,17 +93,6 @@
 #include <xcb/xcb_cursor.h>
 #include <xcb/xcb_keysyms.h>
 #include <xcb/xproto.h>
-
-// Xlib #defines these as macros. Leaking them into every consumer breaks
-// common identifiers (gtest's internal::None and Bool(), engine code), so
-// keep only the Xlib types and drop the macros.
-#undef Bool
-#undef CopyFromParent
-#undef False
-#undef None
-#undef Status
-#undef Success
-#undef True
 #endif // __linux__
 
 using namespace rusty::prelude;
@@ -3856,38 +3844,6 @@ auto registry_global_remove(void* data, struct wl_registry* registry, u32 name)
 #ifdef __linux__
 
 namespace glvm {
-struct WindowXVulkan: public WindowInterface {
-private:
-    XWindowAttributes x_window_attributes;
-    Window root_window;
-    XSetWindowAttributes set_window_attributes;
-
-public:
-    ::Display* display;
-    Window win;
-
-    WindowXVulkan();
-    ~WindowXVulkan();
-
-    auto get_window() -> Window;
-    auto get_display() -> ::Display*;
-    auto cursor_lock(
-        i32 pointer_x,
-        i32 pointer_y,
-        i32* out_offset_x,
-        i32* out_offset_y
-    ) -> void override;
-    auto swap_buffers() -> void override;
-    auto clear_display() -> void override;
-    auto handle_event(Event& event) -> bool override;
-    auto close() -> void override;
-};
-} // namespace glvm
-#endif // __linux__
-
-#ifdef __linux__
-
-namespace glvm {
 struct WindowXCBVulkan: public WindowInterface {
 private:
     xcb_connection_t* connection;
@@ -5329,14 +5285,6 @@ namespace glvm {
 #include <xcb/xcb.h>
 #endif
 
-#ifdef VK_USE_PLATFORM_XLIB_KHR
-#include "vulkan/vulkan.h"
-#include "vulkan/vulkan_core.h"
-#include "vulkan/vulkan_xlib.h"
-
-#include <X11/Xlib.h>
-#endif
-
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan/vulkan.h>
 #endif
@@ -5474,10 +5422,6 @@ public:
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
     VkWaylandSurfaceCreateInfoKHR create_wayland_surface_info;
-#endif
-
-#ifdef VK_USE_PLATFORM_XLIB_KHR
-    VkXlibSurfaceCreateInfoKHR create_xlib_surface_info;
 #endif
 
 #ifdef VK_USE_PLATFORM_XCB_KHR

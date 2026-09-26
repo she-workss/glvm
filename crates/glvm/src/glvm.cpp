@@ -47,8 +47,10 @@
 // clang-format on
 #endif // _WIN32
 #ifdef __linux__
+#include <X11/Xlib.h>
 #include <poll.h>
 #include <strings.h>
+#include <vulkan/vulkan_xlib.h>
 #include <wayland-client-core.h>
 #endif // __linux__
 
@@ -3652,6 +3654,37 @@ auto Renderer::run() -> void {
 }
 
 #ifdef __linux__
+struct WindowXVulkan: public WindowInterface {
+private:
+    XWindowAttributes x_window_attributes;
+    Window root_window;
+    XSetWindowAttributes set_window_attributes;
+
+public:
+    ::Display* display;
+    Window win;
+
+    WindowXVulkan();
+    ~WindowXVulkan();
+
+    auto get_window() -> Window;
+    auto get_display() -> ::Display*;
+    auto cursor_lock(
+        i32 pointer_x,
+        i32 pointer_y,
+        i32* out_offset_x,
+        i32* out_offset_y
+    ) -> void override;
+    auto swap_buffers() -> void override;
+    auto clear_display() -> void override;
+    auto handle_event(Event& event) -> bool override;
+    auto close() -> void override;
+};
+
+// Kept out of the header with WindowXVulkan: glvm.hpp must not pull in Xlib,
+// whose global Font typedef and None/Bool macros break consumers.
+static VkXlibSurfaceCreateInfoKHR create_xlib_surface_info {};
+
 namespace {
 auto env_matches(const char* name, const char* value) -> bool {
     const char* env = std::getenv(name);
@@ -12165,8 +12198,6 @@ auto initialize_wayland_window() -> WindowWaylandVulkan* {
 #endif // __linux__
 
 #ifdef __linux__
-
-#include <X11/Xlib.h>
 
 namespace glvm {
 WindowXVulkan::WindowXVulkan() {
