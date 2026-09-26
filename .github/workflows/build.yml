@@ -295,6 +295,7 @@ jobs:
             mingw-w64-clang-aarch64-cmake
             mingw-w64-clang-aarch64-ninja
             mingw-w64-clang-aarch64-lld
+            mingw-w64-clang-aarch64-python
 
       - uses: actions/cache@v6
         with:

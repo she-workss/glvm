@@ -12188,16 +12188,18 @@ WindowXVulkan::WindowXVulkan() {
         width,
         height,
         0,
-        CopyFromParent,
+        // Xlib's None/True/CopyFromParent are #undef'd in glvm.hpp; the
+        // literals below are their values.
+        0,
         InputOutput,
-        CopyFromParent,
+        nullptr,
         CWEventMask,
         &set_window_attributes
     );
 
     XMapWindow(display, win);
 
-    XWarpPointer(display, None, win, 0, 0, 0, 0, 0, 0);
+    XWarpPointer(display, 0, win, 0, 0, 0, 0, 0, 0);
 
     Cursor invisible_cursor;
     Pixmap bitmap_no_data;
@@ -12245,7 +12247,7 @@ auto WindowXVulkan::cursor_lock(
     // accumulate freely; no pixel clamp here (resolution-independent).
     XWarpPointer(
         display,
-        None,
+        0,
         win,
         0,
         0,
@@ -12284,12 +12286,12 @@ auto WindowXVulkan::handle_event(Event& event) -> bool {
                 XGrabPointer(
                     display,
                     win,
-                    True,
+                    1,
                     PointerMotionMask,
                     GrabModeAsync,
                     GrabModeAsync,
                     win,
-                    None,
+                    0,
                     CurrentTime
                 );
                 break;
@@ -12298,12 +12300,12 @@ auto WindowXVulkan::handle_event(Event& event) -> bool {
                 XGrabPointer(
                     display,
                     win,
-                    True,
+                    1,
                     PointerMotionMask,
                     GrabModeAsync,
                     GrabModeAsync,
                     win,
-                    None,
+                    0,
                     CurrentTime
                 );
                 break;
@@ -12405,8 +12407,6 @@ auto WindowXVulkan::close() -> void {
 }
 } // namespace glvm
 
-#include <X11/X.h>
-#include <X11/XKBlib.h>
 #include <xcb/xcb_cursor.h>
 #include <xcb/xcb_keysyms.h>
 

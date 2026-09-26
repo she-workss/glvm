@@ -94,6 +94,17 @@
 #include <xcb/xcb_cursor.h>
 #include <xcb/xcb_keysyms.h>
 #include <xcb/xproto.h>
+
+// Xlib #defines these as macros. Leaking them into every consumer breaks
+// common identifiers (gtest's internal::None and Bool(), engine code), so
+// keep only the Xlib types and drop the macros.
+#undef Bool
+#undef CopyFromParent
+#undef False
+#undef None
+#undef Status
+#undef Success
+#undef True
 #endif // __linux__
 
 using namespace rusty::prelude;
