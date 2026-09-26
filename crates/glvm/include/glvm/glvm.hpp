@@ -457,7 +457,7 @@ inline auto operator!(const Scalar& scalar) -> PseudoScalar {
 }
 
 inline auto normalize(const Plane& plane) -> Plane {
-    f32 length = std::sqrt(
+    const f32 length = std::sqrt(
         (plane.x * plane.x) + (plane.y * plane.y) + (plane.z * plane.z)
     );
     assert(length != 0);
@@ -470,7 +470,7 @@ inline auto normalize(const Plane& plane) -> Plane {
 }
 
 inline auto normalize(const Line& line) -> Line {
-    f32 length = std::sqrt(
+    const f32 length = std::sqrt(
         (line.ix * line.ix) + (line.iy * line.iy) + (line.iz * line.iz)
     );
     assert(length != 0);
@@ -778,7 +778,7 @@ inline auto operator*(Point point0, Point point1) -> Translator {
 }
 
 inline auto exp(f32 theta, RLine rline) -> Rotor {
-    f32 sin = std::sin(theta / 2.0f);
+    const f32 sin = std::sin(theta / 2.0f);
     return {
         .rx = rline.rx * sin,
         .ry = rline.ry * sin,
@@ -788,7 +788,7 @@ inline auto exp(f32 theta, RLine rline) -> Rotor {
 }
 
 inline auto exp(f32 distance, ILine iline) -> Translator {
-    f32 half = distance / 2.0f;
+    const f32 half = distance / 2.0f;
     return {
         .ix = iline.ix * half,
         .iy = iline.iy * half,
@@ -877,7 +877,7 @@ auto ThreadPool::enqueue(F&& f, Args&&... args)
     std::future<typename std::invoke_result_t<F, Args...>> res =
         task->get_future();
     {
-        std::unique_lock<Mutex> lock(queue_mutex);
+        const std::unique_lock<Mutex> lock(queue_mutex);
 
         if (stop) {
             throw std::runtime_error("enqueue on stopped ThreadPool");
@@ -1579,7 +1579,7 @@ auto normalize(Vector<T, 3> other) -> Vector<T, 3> {
     if (other[0] == 0 && other[1] == 0 && other[2] == 0) {
         return Vector<f32, 3> {0.0f, 0.0f, 0.0f};
     }
-    f32 range = std::sqrt(
+    const f32 range = std::sqrt(
         other[0] * other[0] + other[1] * other[1] + other[2] * other[2]
     );
     for (i32 l = 0; l < 3; ++l) {
@@ -1843,8 +1843,8 @@ inline auto norm_quaternion(const Quaternion& quaternion) -> f32 {
 }
 
 inline auto normalize_quaternion(Quaternion quaternion) -> Quaternion {
-    f32 norm = norm_quaternion(quaternion);
-    f32 inverse_norm = 1.0f / norm;
+    const f32 norm = norm_quaternion(quaternion);
+    const f32 inverse_norm = 1.0f / norm;
     quaternion.w *= inverse_norm;
     quaternion.x *= inverse_norm;
     quaternion.y *= inverse_norm;
@@ -1853,9 +1853,9 @@ inline auto normalize_quaternion(Quaternion quaternion) -> Quaternion {
 }
 
 inline auto inverse_quaternion(Quaternion quaternion) -> Quaternion {
-    Quaternion linked_value = conjugate(quaternion);
-    f32 norm = norm_quaternion(quaternion);
-    f32 inverse_norm = 1.0f / norm;
+    const Quaternion linked_value = conjugate(quaternion);
+    const f32 norm = norm_quaternion(quaternion);
+    const f32 inverse_norm = 1.0f / norm;
     quaternion.w = linked_value.w * inverse_norm;
     quaternion.x = linked_value.x * inverse_norm;
     quaternion.y = linked_value.y * inverse_norm;
@@ -3098,7 +3098,7 @@ public:
         number_of_base_components = 0;
         u32 first_component_array_index =
             create_component_container<ComponentType>();
-        Vec<u32>& dense = *as<Vec<u32>*>(
+        const Vec<u32>& dense = *as<Vec<u32>*>(
             world_dense_components_map_to_entities[first_component_array_index]
         );
         if (dense.size() > 0) {
