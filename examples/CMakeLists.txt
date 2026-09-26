@@ -16,8 +16,10 @@ function(glvm_add_example NAME)
       glvm
   )
 
+  # -static only on Windows: Linux examples link the shared system libs
+  # (Wayland, X11, XCB, ALSA), which cannot be pulled into a static link.
   target_link_options(${NAME} PRIVATE
-    -static
+    $<$<BOOL:${WIN32}>:-static>
     $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:-s>
     $<$<BOOL:${WIN32}>:-Wl,-Bstatic,--whole-archive>
     $<$<BOOL:${WIN32}>:-lwinpthread>
