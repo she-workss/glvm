@@ -5272,21 +5272,19 @@ namespace glvm {
 #define VK_USE_PLATFORM_WIN32_KHR // NOLINT(readability-identifier-naming)
 #endif
 
+// Only the platform-specific Vulkan headers: vulkan/vulkan.h pulls in
+// <X11/Xlib.h>, whose global Font typedef and None/Bool macros then leak into
+// every consumer. vulkan_core.h is already included above.
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-#include "vulkan/vulkan.h"
 #include "vulkan/vulkan_wayland.h"
 #endif
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
-#include "vulkan/vulkan.h"
-#include "vulkan/vulkan_core.h"
 #include "vulkan/vulkan_xcb.h"
-
-#include <xcb/xcb.h>
 #endif
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-#include <vulkan/vulkan.h>
+#include "vulkan/vulkan_win32.h"
 #endif
 
 namespace glvm {
