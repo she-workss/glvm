@@ -1,9 +1,9 @@
-#include "cevy_log/level.hpp"
-#include "cevy_log/logger.hpp"
+#include "glvm_log/level.hpp"
+#include "glvm_log/logger.hpp"
 
 #include <gtest/gtest.h>
 
-using namespace cevy_log;
+using namespace glvm_log;
 
 TEST(LogLevelTest, LevelNameReturnsCorrectStrings) {
     EXPECT_EQ(level_name(LogLevel::Trace), "TRACE");
@@ -68,22 +68,22 @@ TEST_F(LoggerTest, ParseFilterBareLevel) {
 }
 
 TEST_F(LoggerTest, ParseFilterSingleCategory) {
-    logger.parse_filter("cevy_render=warn");
+    logger.parse_filter("glvm_render=warn");
     EXPECT_EQ(logger.global_level, LogLevel::Info);
-    EXPECT_EQ(logger.filters.at("cevy_render"), LogLevel::Warn);
+    EXPECT_EQ(logger.filters.at("glvm_render"), LogLevel::Warn);
 }
 
 TEST_F(LoggerTest, ParseFilterMultipleCategories) {
-    logger.parse_filter("cevy_render=error,cevy_ecs=trace");
-    EXPECT_EQ(logger.filters.at("cevy_render"), LogLevel::Error);
-    EXPECT_EQ(logger.filters.at("cevy_ecs"), LogLevel::Trace);
+    logger.parse_filter("glvm_render=error,glvm_ecs=trace");
+    EXPECT_EQ(logger.filters.at("glvm_render"), LogLevel::Error);
+    EXPECT_EQ(logger.filters.at("glvm_ecs"), LogLevel::Trace);
     EXPECT_EQ(logger.global_level, LogLevel::Info);
 }
 
 TEST_F(LoggerTest, ParseFilterMixed) {
-    logger.parse_filter("cevy_render=error,debug");
+    logger.parse_filter("glvm_render=error,debug");
     EXPECT_EQ(logger.global_level, LogLevel::Debug);
-    EXPECT_EQ(logger.filters.at("cevy_render"), LogLevel::Error);
+    EXPECT_EQ(logger.filters.at("glvm_render"), LogLevel::Error);
 }
 
 TEST_F(LoggerTest, ParseFilterEmptyString) {
@@ -93,8 +93,8 @@ TEST_F(LoggerTest, ParseFilterEmptyString) {
 }
 
 TEST_F(LoggerTest, ParseFilterTrailingComma) {
-    logger.parse_filter("cevy_render=warn,");
-    EXPECT_EQ(logger.filters.at("cevy_render"), LogLevel::Warn);
+    logger.parse_filter("glvm_render=warn,");
+    EXPECT_EQ(logger.filters.at("glvm_render"), LogLevel::Warn);
     EXPECT_EQ(logger.global_level, LogLevel::Info);
 }
 
@@ -109,10 +109,10 @@ TEST_F(LoggerTest, ShouldLogRespectsGlobalLevel) {
 
 TEST_F(LoggerTest, ShouldLogCategoryOverridesGlobal) {
     logger.global_level = LogLevel::Info;
-    logger.filters["cevy_ecs"] = LogLevel::Trace;
-    EXPECT_TRUE(logger.should_log("cevy_ecs", LogLevel::Trace));
-    EXPECT_FALSE(logger.should_log("cevy_render", LogLevel::Debug));
-    EXPECT_TRUE(logger.should_log("cevy_render", LogLevel::Info));
+    logger.filters["glvm_ecs"] = LogLevel::Trace;
+    EXPECT_TRUE(logger.should_log("glvm_ecs", LogLevel::Trace));
+    EXPECT_FALSE(logger.should_log("glvm_render", LogLevel::Debug));
+    EXPECT_TRUE(logger.should_log("glvm_render", LogLevel::Info));
 }
 
 TEST_F(LoggerTest, OffLevelSilencesEverything) {
@@ -123,34 +123,34 @@ TEST_F(LoggerTest, OffLevelSilencesEverything) {
 
 TEST_F(LoggerTest, CategoryOffSilencesThatCategory) {
     logger.global_level = LogLevel::Debug;
-    logger.filters["cevy_mesh"] = LogLevel::Off;
-    EXPECT_FALSE(logger.should_log("cevy_mesh", LogLevel::Error));
-    EXPECT_TRUE(logger.should_log("cevy_render", LogLevel::Debug));
+    logger.filters["glvm_mesh"] = LogLevel::Off;
+    EXPECT_FALSE(logger.should_log("glvm_mesh", LogLevel::Error));
+    EXPECT_TRUE(logger.should_log("glvm_render", LogLevel::Debug));
 }
 
 TEST_F(LoggerTest, EffectiveLevelNoOverride) {
     logger.global_level = LogLevel::Warn;
-    EXPECT_EQ(logger.effective_level("cevy_ecs"), LogLevel::Warn);
+    EXPECT_EQ(logger.effective_level("glvm_ecs"), LogLevel::Warn);
 }
 
 TEST_F(LoggerTest, EffectiveLevelWithOverride) {
     logger.global_level = LogLevel::Warn;
-    logger.filters["cevy_ecs"] = LogLevel::Trace;
-    EXPECT_EQ(logger.effective_level("cevy_ecs"), LogLevel::Trace);
-    EXPECT_EQ(logger.effective_level("cevy_render"), LogLevel::Warn);
+    logger.filters["glvm_ecs"] = LogLevel::Trace;
+    EXPECT_EQ(logger.effective_level("glvm_ecs"), LogLevel::Trace);
+    EXPECT_EQ(logger.effective_level("glvm_render"), LogLevel::Warn);
 }
 
 TEST(LoggerSingletonTest, ConfigureAppliesLevelAndFilter) {
     Logger::configure(LogLevel::Info, "");
-    Logger::configure(LogLevel::Debug, "cevy_render=error");
+    Logger::configure(LogLevel::Debug, "glvm_render=error");
     auto& inst = Logger::instance();
     EXPECT_EQ(inst.global_level, LogLevel::Debug);
-    EXPECT_EQ(inst.filters.at("cevy_render"), LogLevel::Error);
+    EXPECT_EQ(inst.filters.at("glvm_render"), LogLevel::Error);
 }
 
 TEST(LoggerSingletonTest, ConfigureClearsPreviousFilters) {
-    Logger::configure(LogLevel::Info, "cevy_ecs=trace");
-    EXPECT_TRUE(Logger::instance().filters.count("cevy_ecs") > 0);
+    Logger::configure(LogLevel::Info, "glvm_ecs=trace");
+    EXPECT_TRUE(Logger::instance().filters.count("glvm_ecs") > 0);
     Logger::configure(LogLevel::Info, "");
     EXPECT_TRUE(Logger::instance().filters.empty());
 }

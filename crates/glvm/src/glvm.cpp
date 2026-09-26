@@ -10271,15 +10271,7 @@ auto SoundEngineAlsa::playback_sound_sample(SoundSample& sample) -> void {
     constexpr auto frame_size = channels * 2;
     constexpr auto alsa_frames = 32;
 
-    snd_pcm_set_params(
-        pcm_,
-        format,
-        access,
-        channels,
-        sample.ui_rate,
-        1,
-        latency
-    );
+    snd_pcm_set_params(pcm, format, access, channels, sample.ui_rate, 1, latency);
 
     FILE* file_descriptor = fopen(sample.path_to_file, "r");
     if (file_descriptor == nullptr) {
@@ -11561,6 +11553,8 @@ auto WavefrontObjParser::parse_float(Vec<char> digits) -> f32 {
 namespace glvm {
 
 static WindowWaylandVulkan wayland_window;
+static i32 global_pointer_x = 0;
+static i32 global_pointer_y = 0;
 
 auto xdg_surface_configure(
     void* data,

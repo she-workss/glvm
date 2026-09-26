@@ -1,9 +1,0 @@
-// raddbg 0.9.28 project file
-
-name: glvm
-target:
-{
-  executable: "build/debug-msvc/examples/tps.exe"
-  working_directory: "build/debug-msvc/examples"
-  enabled: 1
-}

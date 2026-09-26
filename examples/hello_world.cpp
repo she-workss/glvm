@@ -66,7 +66,6 @@ struct DemoLightArchetype: Archetype {
     }
 };
 
-// Cevy setup(): camera + mesh + light.
 auto main() -> i32 {
     glvm_log::info("hello", "main start");
     auto* arch_entity_manager = ArchetypeEntityManager::get_instance();

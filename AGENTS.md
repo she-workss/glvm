@@ -1,4 +1,4 @@
-# CLAUDE.md
+# AGENTS.md
 
 Guidance for agents when working in the `glvm` repository.
 
@@ -22,7 +22,7 @@ Game engine in C++26 using Vulkan.
 - `ctest --test-dir build --output-on-failure` - run all tests (also refer to [TESTING.md](TESTING.md) for comprehensive guide)
 - `cmake --build --preset release -t bench_ecs` - run a specific benchmark from [benches/](benches/) folder by target name (e.g. `ecs`)
 - `cmake --build --preset debug -t docs` - generate docs (and then access them via `./build/debug/docs/html/index.html`)
-- `cmake --build --preset debug -t run_snake` - run a specific example from [examples/](examples/) folder by target name (e.g. `snake`)
+- `cmake --build --preset debug -t run_hello_world` - run a specific example from [examples/](examples/) folder by target name (e.g. `hello_world`)
 
 ## Verification after code changes
 
@@ -30,13 +30,14 @@ After writing, reviewing, or refactoring any code, always verify that compilatio
 
 ## Coding conventions
 
-Strict GLVM coding conventions - Rust-style naming, type aliases, ownership rules, C++26 idioms - apply to **all** code written or reviewed in this repository. They are defined in `.claude/skills/glvm-rules/SKILL.md` and available as the `/glvm-rules` skill.
+Strict GLVM coding conventions - Rust-style naming, type aliases, ownership rules, C++26 idioms - apply to **all** code written or reviewed in this repository. They are defined in `.opencode/skills/glvm-rules/SKILL.md` and available as the `/glvm-rules` skill.
 
-Read `.claude/skills/glvm-rules/SKILL.md` and follow it whenever writing or reviewing code.
+Read `.opencode/skills/glvm-rules/SKILL.md` and follow it whenever writing or reviewing code.
 
 ## MCP servers (project-local, auto-connected)
 
-- `gdb` (`mcp-gdb`) - CPU debugging: breakpoints, stepping, variables. Debug a `build/debug` binary, never a release one.
-- `renderdoc` (`renderdoc-mcp`) - GPU frame analysis of `.rdc` captures (`open_capture`, `list_draws`, `goto_event`, export render targets). Produce a capture first via RenderDoc UI / `renderdoccmd` (Vulkan layer), then analyze - do not guess GPU state from code alone.
+- `gdb` (`mcp-gdb`) - CPU debugging: breakpoints, stepping, variables. Debug a `target/debug` binary, never a release one.
+- `renderdoc` (`renderdoc-mcp`) - GPU frame analysis of captures (`open_capture`, `list_draws`, `goto_event`, export render targets). Produce a capture first via RenderDoc UI / `renderdoccmd` (Vulkan layer), then analyze - do not guess GPU state from code alone.
+- `samply` (`mcp-samply`) - CPU profiling: record, summarize, hot functions/threads (`record`, `summarize_profile`, `inspect_thread`, `focus_functions`). Profile a `target/debug` binary first via `record`, then analyze - do not guess hotspots from code alone.
 - `context7` - up-to-date library docs. Prefer over training knowledge for API details.
-- `zvec_grep` - semantic workspace search. Prefer over `grep` when location is unknown.
+- `zvec_grep` - semantic workspace search. Prefer over `grep` when location is unknown. Run `zg index` first to index all files.

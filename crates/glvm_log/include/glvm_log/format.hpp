@@ -6,7 +6,7 @@ namespace glvm_log {
 using namespace rusty::prelude;
 
 enum struct LogTimestamp : u8 {
-    None,
+    Disabled,
     SystemTime,
     Uptime,
 };
@@ -22,12 +22,12 @@ struct LogFormat {
     }
 
     [[nodiscard]] static auto compact() -> LogFormat {
-        return {.timestamp = LogTimestamp::None};
+        return {.timestamp = LogTimestamp::Disabled};
     }
 
     [[nodiscard]] auto without_time() const -> LogFormat {
         auto copy = *this;
-        copy.timestamp = LogTimestamp::None;
+        copy.timestamp = LogTimestamp::Disabled;
         return copy;
     }
 

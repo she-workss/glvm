@@ -9,7 +9,7 @@
 
 namespace rusty::concepts {
 template<typename T>
-concept Display = std::formattable<T, char>;
+concept Formattable = std::formattable<T, char>;
 
 template<typename T>
 concept Clone = std::copy_constructible<T>;

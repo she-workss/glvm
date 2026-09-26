@@ -39,17 +39,10 @@ using usize = std::size_t;
 using f16 = std::float16_t;
 #endif
 
-#ifdef __STDCPP_FLOAT32_T__
-using f32 = std::float32_t;
-#else
+// float/double on purpose: std::float32_t/float64_t can be distinct extended
+// types on some targets (e.g. MinGW), which breaks plain float overloads.
 using f32 = float;
-#endif
-
-#ifdef __STDCPP_FLOAT64_T__
-using f64 = std::float64_t;
-#else
 using f64 = double;
-#endif
 
 #ifdef __STDCPP_FLOAT128_T__
 using f128 = std::float128_t;

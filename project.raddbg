@@ -6,3 +6,8 @@ target:
   working_directory: "build/debug-msvc/examples"
   enabled: 1
 }
+target:
+{
+  executable: "build/debug-msvc/examples/hello_world.exe"
+  working_directory: "build/debug-msvc/examples"
+}

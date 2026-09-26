@@ -1,4 +1,12 @@
 [files]
-extend-exclude = ["cmake/CPM.cmake", "build/"]
+extend-exclude = [
+  "cmake/CPM.cmake",
+  "build/",
+  ".cpm-cache/",
+  "examples/assets/",
+]
 
 [default.extend-words]
+iy = "iy"
+iz = "iz"
+nd = "nd"

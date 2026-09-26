@@ -2194,12 +2194,7 @@ public:
 
 // Window-system backend the renderer picked; on Linux every backend is built
 // and the choice is made at runtime (GLVM_WINDOW_SYSTEM overrides).
-enum class WindowSystem: u8 {
-    WAYLAND,
-    X11,
-    XCB,
-    WINDOWS
-};
+enum class WindowSystem : u8 { WAYLAND, X11, XCB, WINDOWS };
 
 } // namespace glvm
 
@@ -5437,7 +5432,7 @@ public:
     f32 aspect_ratio = 0.0f;
     i32 dragged_item_entity;
 
-WindowInterface* window = nullptr;
+    WindowInterface* window = nullptr;
     WindowSystem window_system = WindowSystem::WINDOWS;
 
     ImGuiOverlay* imgui_overlay = nullptr;

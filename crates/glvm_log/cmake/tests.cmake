@@ -1,4 +1,4 @@
-if(NOT CEVY_BUILD_TESTS)
+if(NOT GLVM_BUILD_TESTS)
   return()
 endif()
 

@@ -7,12 +7,6 @@ CMakeUserPresets.json
 # ImGui creates config files when running examples from `examples/` folder
 imgui.ini
 
-# Claude Code
-.claude/settings.local.json
-
-# Deprecated agents dir (use .claude + CLAUDE.md)
-.agents/
-
 # RAD Debugger files
 user.raddbg
 

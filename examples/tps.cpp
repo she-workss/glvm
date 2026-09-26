@@ -1303,12 +1303,12 @@ auto game_update_data_hud_screen_ubo(
 auto game_fill_frame_data(u32 actor_counter, i32 dragged_item_entity) -> u32;
 
 auto main() -> i32 {
-    glvm_log::info("hello", "main start");
+    glvm_log::info("tps", "main start");
     auto* entity_manager = EntityManager::get_instance();
     auto* component_manager = ComponentManager::get_instance();
     auto* arch_entity_manager = ArchetypeEntityManager::get_instance();
     auto* engine = Engine::get_instance();
-    glvm_log::info("hello", "engine created");
+    glvm_log::info("tps", "engine created");
     auto hyper_cube = engine->load_mesh_from_gltf(
         "../../../examples/assets/gltf/hyper_cube.gltf"
     );
@@ -1371,7 +1371,7 @@ auto main() -> i32 {
     auto tileset_texture =
         engine
             ->load_texture_from_address(512, 512, tileset_dat_len, tileset_dat);
-    glvm_log::info("hello", "meshes and textures loaded");
+    glvm_log::info("tps", "meshes and textures loaded");
     // Game-owned asset paths: the engine ships no default locations.
     engine->set_model_cache_path("../../../examples/assets/cache/models/cache");
     constexpr auto* SHOOT_SOUND_PATH =
@@ -1550,13 +1550,12 @@ auto main() -> i32 {
             auto orbit_yaw =
                 std::atan2(offset[0], offset[2]) + delta_x * ORBIT_SENSITIVITY;
             auto orbit_pitch = std::asin(clamp(
-                                    as<f32>(-1.0f),
-                                    offset[1] / orbit_radius,
-                                    as<f32>(1.0f)
-                                ))
+                                   as<f32>(-1.0f),
+                                   offset[1] / orbit_radius,
+                                   as<f32>(1.0f)
+                               ))
                 - delta_y * ORBIT_SENSITIVITY;
-            orbit_pitch =
-                clamp(-MAX_ORBIT_PITCH, orbit_pitch, MAX_ORBIT_PITCH);
+            orbit_pitch = clamp(-MAX_ORBIT_PITCH, orbit_pitch, MAX_ORBIT_PITCH);
             offset[0] =
                 orbit_radius * std::cos(orbit_pitch) * std::sin(orbit_yaw);
             offset[1] = orbit_radius * std::sin(orbit_pitch);
@@ -1855,9 +1854,9 @@ auto main() -> i32 {
         .diffuse_texture_id = gray_texture,
         .specular_texture_id = gray_texture
     };
-    glvm_log::info("hello", "scene built, entering game loop");
+    glvm_log::info("tps", "scene built, entering game loop");
     engine->game_loop();
-    glvm_log::info("hello", "game loop exited");
+    glvm_log::info("tps", "game loop exited");
     engine->game_kill();
     delete procedural_level_system;
     delete movement_system;
@@ -1871,7 +1870,7 @@ auto main() -> i32 {
     delete entity_manager;
     delete component_manager;
     delete engine;
-    glvm_log::info("hello", "teardown done, exiting");
+    glvm_log::info("tps", "teardown done, exiting");
 }
 
 auto create_projectile(
@@ -3208,8 +3207,7 @@ auto MovementSystem::update() -> void {
                     break;
             }
         }
-        const bool is_moving =
-            std::abs(player_move->frame_movement[0]) > 0.0f
+        const bool is_moving = std::abs(player_move->frame_movement[0]) > 0.0f
             || std::abs(player_move->frame_movement[2]) > 0.0f;
         const Vector<f32, 3> facing = is_moving
             ? Vector<f32, 3>(
@@ -3284,11 +3282,7 @@ auto MovementSystem::calculate_vector_rl(Beholder& beholder) -> Vector<f32, 3> {
 
 auto MovementSystem::calculate_vector_fb(Beholder& beholder, Event& /*event*/)
     -> Vector<f32, 3> {
-    const Vector<f32, 3> forward(
-        beholder.forward[0],
-        0.0f,
-        beholder.forward[2]
-    );
+    const Vector<f32, 3> forward(beholder.forward[0], 0.0f, beholder.forward[2]);
     if (vec_length(forward) < 0.001f) {
         return Vector<f32, 3>(0.0f, 0.0f, -1.0f);
     }

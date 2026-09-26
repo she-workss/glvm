@@ -276,6 +276,45 @@ jobs:
       - name: Test
         run: ctest --preset debug-clang
 
+  windows-clang-arm64:
+    name: Windows - Clang (MSYS2 CLANGARM64)
+    runs-on: windows-11-arm
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: CLANGARM64
+          update: true
+          install: >-
+            git
+            mingw-w64-clang-aarch64-clang
+            mingw-w64-clang-aarch64-cmake
+            mingw-w64-clang-aarch64-ninja
+            mingw-w64-clang-aarch64-lld
+
+      - uses: actions/cache@v6
+        with:
+          path: ${{ env.CPM_SOURCE_CACHE }}
+          key: cpm-windows-clang-arm64-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+          restore-keys: cpm-windows-clang-arm64-
+
+      - name: Configure
+        run: |
+          cmake --preset debug-clang \
+            -DGLVM_BUILD_DOCS=OFF \
+            -DGLVM_SANITIZERS=OFF \
+            -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld"
+
+      - name: Build
+        run: cmake --build --preset debug-clang
+
+      - name: Test
+        run: ctest --preset debug-clang
+
   windows-msvc-x64:
     name: Windows - MSVC (x86_64)
     runs-on: windows-latest

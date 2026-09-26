@@ -1,8 +1,7 @@
-#include <gtest/gtest.h>
-
-#include <numbers>
-
 #include "glvm/glvm.hpp"
+
+#include <gtest/gtest.h>
+#include <numbers>
 
 TEST(RotationMathTests, YawZeroIsIdentity) {
     const auto matrix = rotation_yaw_matrix(0.0f);
@@ -21,8 +20,7 @@ TEST(RotationMathTests, YawTurnsRestForwardTowardMovement) {
     // Facing scenario from third-person movement: rest forward (0, 0, -1)
     // rotated by -pi/2 must face (1, 0, 0). Applied column-vector style,
     // like the renderer shader does with model matrices.
-    const auto matrix =
-        rotation_yaw_matrix(-std::numbers::pi_v<f32> / 2.0f);
+    const auto matrix = rotation_yaw_matrix(-std::numbers::pi_v<f32> / 2.0f);
     const auto x =
         matrix[0][0] * 0.0f + matrix[1][0] * 0.0f + matrix[2][0] * -1.0f;
     const auto y =
@@ -35,9 +33,7 @@ TEST(RotationMathTests, YawTurnsRestForwardTowardMovement) {
 }
 
 TEST(RotationMathTests, Cross2DSign) {
-    const auto sign = cross(
-        Vector<f32, 2>(1.0f, 0.0f),
-        Vector<f32, 2>(0.0f, -1.0f)
-    );
+    const auto sign =
+        cross(Vector<f32, 2>(1.0f, 0.0f), Vector<f32, 2>(0.0f, -1.0f));
     EXPECT_FLOAT_EQ(sign, -1.0f);
 }

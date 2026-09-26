@@ -46,6 +46,17 @@ workflow *args: (_glvm "workflow" args)
 # List examples discovered from examples/CMakeLists.txt.
 examples: (_glvm "examples" "")
 
+# Format all C/C++ sources in place (override the binary with $CLANG_FORMAT).
+fmt:
+    #!/usr/bin/env sh
+    set -eu
+    clang_format="${CLANG_FORMAT:-clang-format}"
+    # git ls-files, not find: Windows ships a find.exe in System32 that
+    # shadows GNU find in a plain shell.
+    git ls-files -z -- crates examples tests benches \
+      | grep -zE '\.(cpp|cc|cxx|hpp|h)$' \
+      | xargs -0 -r "$clang_format" -i --style=file
+
 [private]
 [positional-arguments]
 _glvm action rest="":
