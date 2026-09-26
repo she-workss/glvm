@@ -3202,10 +3202,14 @@ auto ImGuiOverlay::create_render_pass() -> void {
     dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
         | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT
         | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    dependencies[0].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    // The pass loads the swapchain image, so the initial layout transition
+    // must be ordered with COLOR_ATTACHMENT_OUTPUT (not just FRAGMENT_SHADER).
+    dependencies[0].dstStageMask =
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dependencies[0].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
         | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    dependencies[0].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
+        | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     dependencies[1].srcSubpass = 0;
     dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
     dependencies[1].srcStageMask =
@@ -4596,10 +4600,55 @@ auto Renderer::create_main_render_pass() -> void {
             RENDER_PASS_CONFIGS[j].attachment_descriptions.data();
         render_pass_info.subpassCount = 1;
         render_pass_info.pSubpasses = &subpass;
-        render_pass_info.dependencyCount =
-            RENDER_PASS_CONFIGS[j].actual_subpass_dependency_number;
-        render_pass_info.pDependencies =
-            RENDER_PASS_CONFIGS[j].subpass_dependencies.data();
+
+        // Passes whose config has no full dependency pair (only 0 -> EXTERNAL,
+        // with an empty srcAccessMask) get the standard pair here: the initial
+        // layout transition must be ordered after the acquire and earlier
+        // writes, and the final one after this pass's writes. Without it the
+        // transitions race with the attachment accesses.
+        Array<VkSubpassDependency, 2> standard_dependencies {};
+        standard_dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+        standard_dependencies[0].dstSubpass = 0;
+        standard_dependencies[0].srcStageMask =
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+            | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT
+            | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        standard_dependencies[0].srcAccessMask =
+            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+            | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        standard_dependencies[0].dstStageMask =
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+            | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT
+            | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
+            | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        // The read bits cover attachment loadOp == LOAD (color load happens at
+        // COLOR_ATTACHMENT_OUTPUT, depth/stencil load at EARLY_FRAGMENT_TESTS).
+        standard_dependencies[0].dstAccessMask =
+            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+            | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
+            | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
+            | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT
+            | VK_ACCESS_SHADER_READ_BIT;
+        standard_dependencies[1].srcSubpass = 0;
+        standard_dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+        standard_dependencies[1].srcStageMask =
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+            | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+        standard_dependencies[1].srcAccessMask =
+            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+            | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        standard_dependencies[1].dstStageMask =
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        standard_dependencies[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        const bool has_custom_dependencies =
+            RENDER_PASS_CONFIGS[j].actual_subpass_dependency_number >= 2;
+        render_pass_info.dependencyCount = has_custom_dependencies
+            ? RENDER_PASS_CONFIGS[j].actual_subpass_dependency_number
+            : as<u32>(standard_dependencies.size());
+        render_pass_info.pDependencies = has_custom_dependencies
+            ? RENDER_PASS_CONFIGS[j].subpass_dependencies.data()
+            : standard_dependencies.data();
         if (vkCreateRenderPass(
                 device,
                 &render_pass_info,
@@ -6114,6 +6163,11 @@ auto Renderer::create_command_buffers(
     VkCommandBufferLevel command_buffer_level_flag
 ) -> void {
     command_buffers.resize(command_buffers_number * MAX_FRAMES_IN_FLIGHT);
+    // Nothing to allocate (e.g. no spot/point lights in the scene):
+    // vkAllocateCommandBuffers rejects commandBufferCount == 0.
+    if (command_buffers.empty()) {
+        return;
+    }
 
     VkCommandBufferAllocateInfo alloc_info {};
     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -8689,10 +8743,21 @@ auto Renderer::read_file(const String& filename) -> Vec<char> {
 
 VKAPI_ATTR auto VKAPI_CALL Renderer::debug_callback(
     VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
-    VkDebugUtilsMessageTypeFlagsEXT message_type,
+    [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT message_type,
     const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
-    void* user_data
+    [[maybe_unused]] void* user_data
 ) -> VkBool32 {
+    if ((message_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+        != 0) {
+        glvm_log::error("vulkan", "{}", callback_data->pMessage);
+    } else if (
+        (message_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+        != 0
+    ) {
+        glvm_log::warn("vulkan", "{}", callback_data->pMessage);
+    } else {
+        glvm_log::debug("vulkan", "{}", callback_data->pMessage);
+    }
     return VK_FALSE;
 }
 } // namespace glvm
